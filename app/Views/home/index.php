@@ -559,56 +559,38 @@
     <!-- QUICK ACTIONS -->
     <div class="home-quick-actions">
         <button class="home-qa-btn" id="btnOpenCalc">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
-                <rect x="4" y="2" width="16" height="20" rx="2"/>
-                <line x1="8"  y1="6"  x2="16" y2="6"/>
-                <line x1="8"  y1="10" x2="10" y2="10"/>
-                <line x1="12" y1="10" x2="14" y2="10"/>
-                <line x1="16" y1="10" x2="16" y2="10" stroke-linecap="round" stroke-width="2.5"/>
-                <line x1="8"  y1="14" x2="10" y2="14"/>
-                <line x1="12" y1="14" x2="14" y2="14"/>
-                <line x1="16" y1="14" x2="16" y2="18" stroke-linecap="round"/>
-                <line x1="14" y1="16" x2="18" y2="16" stroke-linecap="round"/>
-                <line x1="8"  y1="18" x2="10" y2="18"/>
-                <line x1="12" y1="18" x2="14" y2="18"/>
-            </svg>
-            <span>Kalkulator</span>
+            <div class="home-qa-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="12" y1="10" x2="14" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="12" y1="14" x2="14" y2="14"/><line x1="16" y1="14" x2="16" y2="18"/><line x1="14" y1="16" x2="18" y2="16"/></svg>
+            </div>
+            <span class="home-qa-label">Kalkulator</span>
         </button>
         <button class="home-qa-btn" id="btnOpenStorage">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                <circle cx="12" cy="10" r="3"/>
-            </svg>
-            <span>Simpanan</span>
-            <span class="hs-badge" id="hsBadge" style="display:none"></span>
+            <div class="home-qa-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><circle cx="12" cy="8" r="7"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>
+            </div>
+            <span class="home-qa-label">Simpanan</span>
+            <span class="qa-badge" id="hsBadge" style="display:none"></span>
         </button>
         <button class="home-qa-btn" id="btnOpenBills">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <polyline points="10 9 9 9 8 9"/>
-            </svg>
-            <span>Tagihan</span>
-            <span class="hs-badge" id="billDueBadge" style="display:none"></span>
+            <div class="home-qa-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/><line x1="8" y1="13" x2="10" y2="13"/><line x1="12" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="10" y2="17"/></svg>
+            </div>
+            <span class="home-qa-label">Tagihan</span>
+            <span class="qa-badge" id="billDueBadge" style="display:none"></span>
         </button>
         <button class="home-qa-btn" id="btnOpenNote">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
-                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-            </svg>
-            <span>Catatan</span>
+            <div class="home-qa-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </div>
+            <span class="home-qa-label">Catatan</span>
         </button>
-        <a href="/hutang" class="home-qa-btn" style="justify-content:center">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="22" height="22">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            <span>Hutang</span>
+        <a href="/hutang" class="home-qa-btn">
+            <div class="home-qa-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <span class="home-qa-label">Hutang</span>
             <?php if (isset($debtSummary) && $debtSummary['active_count'] > 0): ?>
-            <span class="hs-badge"><?= $debtSummary['active_count'] ?></span>
+            <span class="qa-badge"><?= $debtSummary['active_count'] ?></span>
             <?php endif; ?>
         </a>
     </div>
@@ -650,21 +632,29 @@
 
     <!-- DEBT SUMMARY CARD -->
     <?php if ($debtSummary['active_count'] > 0): ?>
-    <a href="/hutang" class="debt-home-card" style="text-decoration:none">
-        <div class="debt-home-title">🤝 Hutang &amp; Piutang</div>
-        <div class="debt-home-row">
-            <div class="debt-home-col hutang">
-                <div class="debt-home-label">🔴 Hutang</div>
-                <div class="debt-home-amt"><?= esc($symbol) ?> <?= number_format($debtSummary['total_hutang'], 0, ',', '.') ?></div>
+    <a href="/hutang" style="text-decoration:none;display:block;margin-bottom:12px">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:14px;transition:border-color var(--transition)" onmouseenter="this.style.borderColor='var(--primary)'" onmouseleave="this.style.borderColor='var(--border)'">
+            <div style="width:40px;height:40px;background:var(--primary-dim);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
-            <div class="debt-home-divider"></div>
-            <div class="debt-home-col piutang">
-                <div class="debt-home-label">🟢 Piutang</div>
-                <div class="debt-home-amt"><?= esc($symbol) ?> <?= number_format($debtSummary['total_piutang'], 0, ',', '.') ?></div>
+            <div style="flex:1;min-width:0">
+                <div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:6px">Hutang &amp; Piutang</div>
+                <div style="display:flex;gap:16px">
+                    <div>
+                        <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">Hutang</div>
+                        <div style="font-size:14px;font-weight:800;color:#EF4444"><?= esc($symbol) ?> <?= number_format($debtSummary['total_hutang'], 0, ',', '.') ?></div>
+                    </div>
+                    <div style="width:1px;background:var(--border)"></div>
+                    <div>
+                        <div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">Piutang</div>
+                        <div style="font-size:14px;font-weight:800;color:#22C55E"><?= esc($symbol) ?> <?= number_format($debtSummary['total_piutang'], 0, ',', '.') ?></div>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="debt-home-footer">
-            <?= $debtSummary['active_count'] ?> catatan aktif · Lihat semua →
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+                <span style="background:#EF444415;color:#EF4444;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px"><?= $debtSummary['active_count'] ?> aktif</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2.2" stroke-linecap="round" width="14" height="14"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
         </div>
     </a>
     <?php endif; ?>
@@ -672,7 +662,7 @@
     <!-- RECENT ACTIVITY -->
     <div class="section-header">
         <h2 class="section-title">Aktivitas Terbaru</h2>
-        <span class="section-meta"><?= count($recent) ?> transaksi</span>
+        <a href="/activity" style="font-size:12px;font-weight:700;color:var(--primary);text-decoration:none"><?= count($recent) ?> transaksi →</a>
     </div>
 
     <?php if (empty($recent)): ?>
