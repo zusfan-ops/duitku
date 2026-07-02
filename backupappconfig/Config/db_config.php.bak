@@ -1,0 +1,21 @@
+<?php
+/**
+ * DuitKu Production Database Config
+ *
+ * ⚠️ PENTING: File ini JANGAN di-upload ke GitHub / version control.
+ *              Hanya upload ke server hosting secara manual (via FTP/cPanel).
+ *
+ * Cara pakai:
+ * 1. Copy file ini ke server di: /app/Config/db_config.php
+ * 2. Isi dengan credential database server hosting Anda
+ * 3. Pastikan file ini ada di .gitignore
+ */
+
+return [
+    'hostname' => 'localhost',             // hostname DB di hosting (biasanya localhost)
+    'username' => 'GANTI_USERNAME_DB',     // ← Ganti dengan username database hosting Anda
+    'password' => 'GANTI_PASSWORD_DB',     // ← Ganti dengan password database hosting Anda
+    'database' => 'GANTI_NAMA_DATABASE',   // ← Ganti dengan nama database hosting Anda
+    'port'     => 3306,
+    'DBDebug'  => false,                   // false = tidak tampil error detail di production
+];

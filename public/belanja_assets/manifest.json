@@ -1,0 +1,37 @@
+{
+  "name": "Daftar Belanja Pasar",
+  "short_name": "Belanja",
+  "description": "Aplikasi daftar belanja praktis untuk Ibu Rumah Tangga",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#6BBF8F",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
