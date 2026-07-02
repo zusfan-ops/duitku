@@ -114,6 +114,14 @@
             </svg>
             <span>Beranda</span>
         </a>
+        <a href="/belanja" class="bottom-nav-item <?= str_contains(current_url(true)->getPath(), '/belanja') ? 'active' : '' ?>" id="nav-belanja">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            <span>Belanja</span>
+        </a>
         <a href="/activity" class="bottom-nav-item <?= str_contains(current_url(true)->getPath(), '/activity') ? 'active' : '' ?>" id="nav-activity">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
@@ -127,14 +135,6 @@
                 <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
             </svg>
             <span>Statistik</span>
-        </a>
-        <a href="/belanja" class="bottom-nav-item <?= str_contains(current_url(true)->getPath(), '/belanja') ? 'active' : '' ?>" id="nav-belanja">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="9" cy="21" r="1"></circle>
-                <circle cx="20" cy="21" r="1"></circle>
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-            </svg>
-            <span>Belanja</span>
         </a>
         <a href="/settings" class="bottom-nav-item <?= str_contains(current_url(true)->getPath(), '/settings') ? 'active' : '' ?>" id="nav-settings">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
