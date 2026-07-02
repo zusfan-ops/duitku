@@ -87,9 +87,9 @@
         <?php endif; ?>
     </div>
 
-    <!-- Bar Chart: Last 6 months -->
+    <!-- Line Chart: Last 6 months -->
     <div class="chart-card">
-        <h3 class="chart-title">6 Bulan Terakhir</h3>
+        <h3 class="chart-title">Tren 6 Bulan Terakhir</h3>
         <?php if (empty($trend)): ?>
         <div class="empty-state compact">
             <p class="empty-title">Belum ada data</p>
@@ -137,52 +137,87 @@
         });
     }
 
-    // Bar Chart
+    // Line Chart — 6-month trend
     if (trendData.length > 0 && document.getElementById('barChart')) {
+        const isDark   = document.documentElement.getAttribute('data-theme') === 'dark';
+        const mutedClr = isDark ? '#64748B' : '#94A3B8';
+        const gridClr  = isDark ? 'rgba(30,48,80,.6)' : 'rgba(221,227,236,.7)';
+
         new Chart(document.getElementById('barChart'), {
-            type: 'bar',
+            type: 'line',
             data: {
                 labels: trendData.map(t => t.month_label),
                 datasets: [
                     {
                         label: 'Pemasukan',
                         data: trendData.map(t => parseFloat(t.income)),
-                        backgroundColor: '#4ADE8020',
-                        borderColor: '#4ADE80',
-                        borderWidth: 2,
-                        borderRadius: 6,
+                        borderColor: '#0AA956',
+                        backgroundColor: 'rgba(10,169,86,.10)',
+                        borderWidth: 2.5,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#0AA956',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
                     },
                     {
                         label: 'Pengeluaran',
                         data: trendData.map(t => parseFloat(t.expense)),
-                        backgroundColor: '#F87171',
-                        borderColor: '#EF4444',
-                        borderWidth: 2,
-                        borderRadius: 6,
+                        borderColor: '#E53E3E',
+                        backgroundColor: 'rgba(229,62,62,.08)',
+                        borderWidth: 2.5,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#E53E3E',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
                     }
                 ]
             },
             options: {
                 responsive: true,
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#94A3B8', font: { family: 'Inter', size: 12 }, boxWidth: 12 }
+                        labels: {
+                            color: mutedClr,
+                            font: { family: 'Inter', size: 12 },
+                            boxWidth: 14,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            padding: 16,
+                        }
                     },
                     tooltip: {
+                        backgroundColor: isDark ? '#162032' : '#fff',
+                        borderColor: isDark ? '#1E3050' : '#DDE3EC',
+                        borderWidth: 1,
+                        titleColor: isDark ? '#F1F5F9' : '#0F172A',
+                        bodyColor: isDark ? '#CBD5E1' : '#475569',
+                        padding: 12,
                         callbacks: {
                             label: (ctx) => ` ${ctx.dataset.label}: ${symbol} ${ctx.parsed.y.toLocaleString('id-ID')}`
                         }
                     }
                 },
                 scales: {
-                    x: { grid: { display: false }, ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#94A3B8', font: { family: 'Inter' } } },
+                    x: {
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: { color: mutedClr, font: { family: 'Inter', size: 11 } }
+                    },
                     y: {
-                        grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#F1F5F9' },
+                        grid: { color: gridClr, drawBorder: false },
+                        border: { display: false, dash: [4, 4] },
                         ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#94A3B8',
+                            color: mutedClr,
                             font: { family: 'Inter', size: 11 },
-                            callback: (v) => symbol + ' ' + (v / 1000000 >= 1 ? (v/1000000).toFixed(1) + 'jt' : v.toLocaleString('id-ID'))
+                            callback: (v) => symbol + ' ' + (v >= 1000000 ? (v/1000000).toFixed(1) + 'jt' : v.toLocaleString('id-ID'))
                         }
                     }
                 }

@@ -5,29 +5,34 @@
 
 /* ─── TOKENS ─────────────────────────────────────────────────────────────── */
 :root {
-    --primary:        #2D5A27;
-    --primary-light:  #3D7A35;
-    --primary-dim:    #2D5A2720;
-    --bg:             #F5F5F0;
+    /* Brand — clean fintech emerald, legible at all sizes */
+    --primary:        #0AA956;
+    --primary-light:  #22C55E;
+    --primary-dim:    rgba(10,169,86,.10);
+    /* Surfaces — light blue-gray like banking apps */
+    --bg:             #EEF2F7;
     --bg-card:        #FFFFFF;
-    --bg-dark:        #1C1C1C;
-    --text-primary:   #1A1A2E;
-    --text-secondary: #64748B;
+    --bg-dark:        #111827;
+    /* Typography — high contrast slate */
+    --text-primary:   #0F172A;
+    --text-secondary: #475569;
     --text-muted:     #94A3B8;
-    --border:         #E2E8F0;
-    --income:         #16A34A;
-    --income-bg:      #DCFCE7;
-    --expense:        #DC2626;
+    /* Structure */
+    --border:         #DDE3EC;
+    --income:         #0AA956;
+    --income-bg:      #D1FAE5;
+    --expense:        #E53E3E;
     --expense-bg:     #FEE2E2;
-    --shadow-sm:      0 1px 3px rgba(0,0,0,.08);
-    --shadow-md:      0 4px 16px rgba(0,0,0,.10);
-    --shadow-lg:      0 8px 32px rgba(0,0,0,.14);
+    /* Shadows — layered for depth */
+    --shadow-sm:      0 1px 2px rgba(15,23,42,.05), 0 1px 4px rgba(15,23,42,.04);
+    --shadow-md:      0 4px 12px rgba(15,23,42,.08), 0 1px 4px rgba(15,23,42,.04);
+    --shadow-lg:      0 10px 32px rgba(15,23,42,.12), 0 4px 8px rgba(15,23,42,.05);
     --radius-sm:      8px;
     --radius-md:      14px;
     --radius-lg:      20px;
     --radius-xl:      28px;
     --nav-height:     92px;   /* clearance = nav(64) + bottom-gap(20) + extra(8) */
-    --top-height:     56px;
+    --top-height:     58px;
     --font:           'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     --transition:     0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -71,14 +76,15 @@ img { max-width: 100%; display: block; }
     top: 0;
     z-index: 100;
     height: var(--top-height);
-    background: var(--bg);
+    background: rgba(255,255,255,.92);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 20px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: 0 1px 0 var(--border), 0 2px 12px rgba(15,23,42,.05);
 }
 
 .topbar-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; }
@@ -354,12 +360,13 @@ img { max-width: 100%; display: block; }
     padding: 14px;
     transition: all var(--transition);
     cursor: pointer;
-    border: 1px solid transparent;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
 }
 .tx-item:hover {
-    border-color: var(--border);
-    box-shadow: var(--shadow-sm);
-    transform: translateY(-1px);
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 .tx-item:active { transform: scale(0.99); }
 
@@ -396,13 +403,15 @@ img { max-width: 100%; display: block; }
 
 .see-all-link {
     display: block; text-align: center;
-    font-size: 13px; color: var(--primary); font-weight: 600;
-    padding: 12px;
+    font-size: 13px; color: var(--primary); font-weight: 700;
+    padding: 13px;
     background: var(--primary-dim);
     border-radius: var(--radius-md);
-    transition: background var(--transition);
+    border: 1.5px dashed var(--primary);
+    opacity: .85;
+    transition: all var(--transition);
 }
-.see-all-link:hover { background: rgba(45,90,39,.12); }
+.see-all-link:hover { opacity: 1; background: rgba(10,169,86,.15); }
 
 /* ─── EMPTY STATE ────────────────────────────────────────────────────────── */
 .empty-state {
@@ -479,14 +488,15 @@ img { max-width: 100%; display: block; }
 .stats-card {
     background: var(--bg-card);
     border-radius: var(--radius-md);
-    padding: 16px;
+    padding: 18px 16px;
     border: 1px solid var(--border);
-    display: flex; flex-direction: column; gap: 4px;
+    display: flex; flex-direction: column; gap: 6px;
+    box-shadow: var(--shadow-sm);
 }
-.stats-card.income  { border-top: 3px solid var(--income); }
-.stats-card.expense { border-top: 3px solid var(--expense); }
-.stats-card-label { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; }
-.stats-card-value { font-size: 16px; font-weight: 800; color: var(--text-primary); }
+.stats-card.income  { border-left: 4px solid var(--income); }
+.stats-card.expense { border-left: 4px solid var(--expense); }
+.stats-card-label { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.6px; text-transform: uppercase; }
+.stats-card-value { font-size: 18px; font-weight: 800; color: var(--text-primary); }
 .stats-card.income  .stats-card-value { color: var(--income); }
 .stats-card.expense .stats-card-value { color: var(--expense); }
 
@@ -495,8 +505,9 @@ img { max-width: 100%; display: block; }
     border-radius: var(--radius-md);
     padding: 20px;
     border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
 }
-.chart-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+.chart-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--text-primary); }
 
 .cat-legend { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
 .cat-legend-item {
@@ -523,6 +534,7 @@ img { max-width: 100%; display: block; }
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
     overflow: hidden;
+    box-shadow: var(--shadow-sm);
 }
 .settings-item {
     display: flex; align-items: center;
@@ -894,58 +906,63 @@ img { max-width: 100%; display: block; }
 
 /* ─── DARK MODE ──────────────────────────────────────────────────────────── */
 [data-theme="dark"] {
-    /* ── Primary green: was #2D5A27 — nearly invisible on dark bg ── */
-    --primary:        #4ADE80;
-    --primary-light:  #86EFAC;
-    --primary-dim:    rgba(74,222,128,0.10);
-    /* ── Surface ── */
-    --bg:             #0A0A0A;
-    --bg-card:        #1A1A1A;
-    --bg-dark:        #000000;
-    /* ── Text: all contrast-checked ── */
+    /* Primary: bright emerald readable on deep navy */
+    --primary:        #34D399;
+    --primary-light:  #6EE7B7;
+    --primary-dim:    rgba(52,211,153,.12);
+    /* Surfaces: deep navy fintech look */
+    --bg:             #0C1422;
+    --bg-card:        #162032;
+    --bg-dark:        #070D1A;
+    /* Text */
     --text-primary:   #F1F5F9;
-    --text-secondary: #A0AEC0;
-    --text-muted:     #94A3B8;   /* was #64748B — only 2.6:1 on dark */
-    /* ── Structure ── */
-    --border:         #2E2E2E;
-    --income-bg:      #052e16;
-    --expense-bg:     #450a0a;
-    --shadow-sm:      0 1px 3px rgba(0,0,0,.4);
-    --shadow-md:      0 4px 16px rgba(0,0,0,.5);
-    --shadow-lg:      0 8px 32px rgba(0,0,0,.6);
+    --text-secondary: #CBD5E1;
+    --text-muted:     #64748B;
+    /* Structure */
+    --border:         #1E3050;
+    --income:         #34D399;
+    --income-bg:      #022c22;
+    --expense-bg:     #3B0A0A;
+    --shadow-sm:      0 1px 3px rgba(0,0,0,.35);
+    --shadow-md:      0 4px 16px rgba(0,0,0,.45);
+    --shadow-lg:      0 10px 32px rgba(0,0,0,.55);
 }
-[data-theme="dark"] .balance-card      { background: #111111; }
-[data-theme="dark"] .topbar            { background: rgba(10,10,10,.96); }
+[data-theme="dark"] .balance-card      { background: #0E1929; }
+[data-theme="dark"] .topbar            { background: rgba(22,32,50,.95); }
 [data-theme="dark"] .bottom-nav {
     background: linear-gradient(120deg,
-        rgba(8, 22, 12, 0.98) 0%,
-        rgba(5, 12, 25, 0.98) 52%,
-        rgba(22, 14, 3, 0.98) 100%
+        rgba(5, 15, 10, 0.98) 0%,
+        rgba(4, 10, 22, 0.98) 52%,
+        rgba(18, 10, 3, 0.98) 100%
     );
-    border-color: rgba(39, 168, 74, 0.28);
+    border-color: rgba(52, 211, 153, 0.22);
 }
-[data-theme="dark"] .pwa-banner-content{ background: #252525; }
-[data-theme="dark"] .auth-card         { background: #1A1A1A; }
-[data-theme="dark"] body               { background: #0A0A0A; }
+[data-theme="dark"] .pwa-banner-content{ background: #162032; }
+[data-theme="dark"] .auth-card         { background: #162032; }
+[data-theme="dark"] body               { background: #0C1422; }
 
-/* Primary buttons now have bright green bg → need dark text */
+/* Primary buttons on dark need dark text for contrast */
 [data-theme="dark"] .btn-save,
 [data-theme="dark"] .btn-save-small,
 [data-theme="dark"] .fab,
 [data-theme="dark"] .filter-tab.active,
 [data-theme="dark"] .hc-btn-eq,
 [data-theme="dark"] .hs-add-btn,
-[data-theme="dark"] .hs-save-btn     { color: #0D1117; }
+[data-theme="dark"] .hs-save-btn     { color: #071A12; }
 
-/* Form focus bg: white looks wrong on dark */
+/* Form focus bg: adapt to dark surface */
 [data-theme="dark"] .form-input:focus,
-[data-theme="dark"] .hc-input:focus   { background: #252525; }
+[data-theme="dark"] .hc-input:focus   { background: #1E3050; }
+
+/* Form inputs on dark */
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .hc-input         { background: #0E1929; border-color: #1E3050; }
 
 /* Pagination btn readable */
-[data-theme="dark"] .page-btn { background: rgba(74,222,128,0.08); }
+[data-theme="dark"] .page-btn { background: rgba(52,211,153,.08); }
 
 /* Chart grid lines adapt */
-[data-theme="dark"] .chart-card { border-color: #2E2E2E; }
+[data-theme="dark"] .chart-card { border-color: #1E3050; }
 
 /* Dark mode toggle */
 .toggle-switch {
@@ -971,6 +988,7 @@ img { max-width: 100%; display: block; }
     border-radius: var(--radius-md);
     padding: 16px;
     border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
 }
 .budget-header {
     display: flex; align-items: center; justify-content: space-between;
@@ -1340,8 +1358,14 @@ img { max-width: 100%; display: block; }
 /* ─── RESPONSIVE: Desktop enhancement ───────────────────────────────────── */
 @media (min-width: 480px) {
     #app { box-shadow: var(--shadow-lg); }
-    .bottom-nav { border-radius: 32px; }  /* keep pill on desktop too */
+    .bottom-nav { border-radius: 32px; }
     .fab { right: calc((100vw - 480px) / 2 + 20px); }
+}
+
+/* ─── Small screen: hide dev photo to save space ────────────────────────── */
+@media (max-width: 380px) {
+    .dev-photo { display: none; }
+    .dev-card-top { gap: 10px; }
 }
 
 /* ─── LANDING PAGE ───────────────────────────────────────────────────────── */

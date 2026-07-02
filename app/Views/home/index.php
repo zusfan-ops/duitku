@@ -7,29 +7,30 @@
 
 /* ── Hero Balance ─────────────────────────────────────────────── */
 .hb-hero {
-    background: linear-gradient(145deg, #1A3A1E 0%, #2D5A27 55%, #3D7A35 100%);
+    background: linear-gradient(140deg, #043D22 0%, #076836 42%, #0AA956 100%);
     border-radius: 24px;
-    padding: 22px 20px 20px;
-    margin-bottom: 14px;
+    padding: 24px 20px 22px;
+    margin-bottom: 16px;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 8px 28px rgba(7,104,54,.30), 0 2px 8px rgba(7,104,54,.15);
 }
 .hb-hero::before {
     content: '';
     position: absolute;
-    top: -40px; right: -40px;
-    width: 160px; height: 160px;
+    top: -50px; right: -50px;
+    width: 180px; height: 180px;
     border-radius: 50%;
-    background: rgba(255,255,255,.05);
+    background: rgba(255,255,255,.06);
     pointer-events: none;
 }
 .hb-hero::after {
     content: '';
     position: absolute;
-    bottom: -50px; left: 20px;
-    width: 130px; height: 130px;
+    bottom: -40px; left: -10px;
+    width: 140px; height: 140px;
     border-radius: 50%;
-    background: rgba(255,255,255,.03);
+    background: rgba(255,255,255,.04);
     pointer-events: none;
 }
 .hb-greeting {
