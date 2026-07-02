@@ -244,6 +244,41 @@
     font-size: 13px;
 }
 .upcoming-banner-title { font-weight: 700; color: #F59E0B; margin-bottom: 4px; }
+
+/* ── Past-debt toggle ── */
+.debt-past-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 14px;
+    cursor: pointer;
+}
+.debt-past-label { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.debt-past-sub   { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.debt-past-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+.debt-past-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.debt-past-knob {
+    position: absolute; inset: 0;
+    background: var(--border);
+    border-radius: 99px;
+    transition: background .2s;
+    cursor: pointer;
+}
+.debt-past-knob::before {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    left: 3px; top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .2s;
+}
+.debt-past-switch input:checked + .debt-past-knob { background: #8B5CF6; }
+.debt-past-switch input:checked + .debt-past-knob::before { transform: translateX(20px); }
+.debt-badge.past { background: rgba(148,163,184,.15); color: #94A3B8; }
 </style>
 <?= $this->endSection() ?>
 
@@ -379,9 +414,14 @@
                 <?php endif; ?>
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-                <span class="debt-badge <?= $d['status'] === 'settled' ? 'settled' : esc($d['type']) ?>">
-                    <?= $d['status'] === 'settled' ? 'Lunas' : ($d['type'] === 'hutang' ? 'Hutang' : 'Piutang') ?>
-                </span>
+                <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
+                    <span class="debt-badge <?= $d['status'] === 'settled' ? 'settled' : esc($d['type']) ?>">
+                        <?= $d['status'] === 'settled' ? 'Lunas' : ($d['type'] === 'hutang' ? 'Hutang' : 'Piutang') ?>
+                    </span>
+                    <?php if (!empty($d['is_past'])): ?>
+                    <span class="debt-badge past">Lama</span>
+                    <?php endif; ?>
+                </div>
                 <?php if ($isDue && $dueLabel): ?>
                 <span class="debt-due <?= $dueCls ?>">📅 <?= esc($dueLabel) ?></span>
                 <?php endif; ?>
@@ -443,13 +483,13 @@
             <div class="debt-type-toggle">
                 <button type="button" class="debt-type-btn hutang active" id="debtTypeHutang" data-val="hutang">
                     <span class="dtb-dot">●</span>
-                    <span class="dtb-label">Saya Berhutang</span>
-                    <span class="dtb-sub">ke orang lain</span>
+                    <span class="dtb-label">Hutang</span>
+                    <span class="dtb-sub">saldo +naik</span>
                 </button>
                 <button type="button" class="debt-type-btn piutang" id="debtTypePiutang" data-val="piutang">
                     <span class="dtb-dot">●</span>
-                    <span class="dtb-label">Saya Dihutangi</span>
-                    <span class="dtb-sub">orang lain ke saya</span>
+                    <span class="dtb-label">Piutang</span>
+                    <span class="dtb-sub">saldo −turun</span>
                 </button>
             </div>
             <input type="hidden" id="debtType" value="hutang">
@@ -473,6 +513,24 @@
                 <label class="form-label">JATUH TEMPO (OPSIONAL)</label>
                 <input type="date" id="debtDueDate" class="form-input">
             </div>
+
+            <!-- Past debt toggle -->
+            <div class="form-group" style="margin-bottom:20px">
+                <label class="debt-past-row" for="debtIsPast">
+                    <div>
+                        <div class="debt-past-label">Hutang / Piutang Lama</div>
+                        <div class="debt-past-sub">Tidak mempengaruhi saldo saat ini</div>
+                    </div>
+                    <label class="debt-past-switch">
+                        <input type="checkbox" id="debtIsPast" value="1">
+                        <span class="debt-past-knob"></span>
+                    </label>
+                </label>
+                <div id="debtIsPastHint" style="display:none;font-size:11px;color:#8B5CF6;margin-top:6px;padding:0 2px">
+                    ✦ Hanya dicatat, saldo tidak berubah. Saat dilunasi, saldo akan berubah sesuai pembayaran.
+                </div>
+            </div>
+
             <button type="submit" class="btn-save" id="debtSaveBtn">Simpan</button>
         </form>
     </div>
@@ -538,6 +596,13 @@
         addOverlay.classList.remove('open');
         document.body.style.overflow = '';
         addForm.reset();
+        // Reset type buttons to hutang
+        document.querySelectorAll('.debt-type-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('debtTypeHutang').classList.add('active');
+        debtTypeInp.value = 'hutang';
+        // Reset past toggle
+        document.getElementById('debtIsPast').checked = false;
+        document.getElementById('debtIsPastHint').style.display = 'none';
     }
 
     // Type toggle
@@ -547,6 +612,11 @@
             btn.classList.add('active');
             debtTypeInp.value = btn.dataset.val;
         });
+    });
+
+    // Past toggle hint
+    document.getElementById('debtIsPast').addEventListener('change', function() {
+        document.getElementById('debtIsPastHint').style.display = this.checked ? 'block' : 'none';
     });
 
     // Format amount input
@@ -568,6 +638,7 @@
             amount,
             description: document.getElementById('debtDesc').value.trim(),
             due_date:    document.getElementById('debtDueDate').value,
+            is_past:     document.getElementById('debtIsPast').checked ? 1 : 0,
         });
 
         const res  = await fetch('/hutang/store', { method: 'POST', headers, body: fd });
@@ -626,7 +697,7 @@
 
     // ── Settle / Delete ─────────────────────────────────────────────
     window.settleDebt = async function(id) {
-        if (!confirm('Tandai sebagai lunas?')) return;
+        if (!confirm('Tandai sebagai lunas?\nSaldo akan berubah sesuai sisa yang belum dibayar.')) return;
         const fd  = csrfFd();
         const res = await fetch('/hutang/settle/' + id, { method: 'POST', headers, body: fd });
         const d   = await res.json();

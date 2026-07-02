@@ -10,7 +10,7 @@ class DebtModel extends Model
     protected $primaryKey = 'id';
     protected $allowedFields = [
         'user_id', 'type', 'person', 'amount', 'paid',
-        'description', 'due_date', 'status',
+        'description', 'due_date', 'status', 'is_past',
     ];
     protected $useTimestamps = true;
 
