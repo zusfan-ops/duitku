@@ -14,7 +14,7 @@ class TransactionModel extends Model
     protected $protectFields    = true;
 
     protected $allowedFields = [
-        'user_id', 'category_id', 'type', 'amount', 'note', 'date', 'image'
+        'user_id', 'wallet_id', 'category_id', 'type', 'amount', 'note', 'date', 'image'
     ];
 
     protected $useTimestamps = true;
@@ -155,6 +155,54 @@ class TransactionModel extends Model
             'perPage'     => $perPage,
             'totalPages'  => (int)ceil($total / $perPage),
         ];
+    }
+
+    // -------------------------------------------------------------------------
+    // Daily running balance for a given month (for sparkline chart)
+    // -------------------------------------------------------------------------
+    public function getDailyBalance(int $userId, string $month): array
+    {
+        $monthStart = $month . '-01';
+
+        // Sum of wallet initial_balances
+        $initRow = $this->db->query("
+            SELECT COALESCE(SUM(initial_balance), 0) AS init FROM wallets WHERE user_id = ?
+        ", [$userId])->getRowArray();
+
+        // Net transactions before this month
+        $prevRow = $this->db->query("
+            SELECT COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE -amount END), 0) AS net
+            FROM transactions WHERE user_id = ? AND date < ?
+        ", [$userId, $monthStart])->getRowArray();
+
+        $running = (float)($initRow['init'] ?? 0) + (float)($prevRow['net'] ?? 0);
+
+        // Daily deltas for this month
+        $rows = $this->db->query("
+            SELECT date,
+                SUM(CASE WHEN type='income'  THEN amount ELSE 0 END) AS inc,
+                SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) AS exp
+            FROM transactions
+            WHERE user_id = ? AND date >= ? AND date < DATE_ADD(?, INTERVAL 1 MONTH)
+            GROUP BY date ORDER BY date ASC
+        ", [$userId, $monthStart, $monthStart])->getResultArray();
+
+        $byDate = [];
+        foreach ($rows as $r) {
+            $byDate[$r['date']] = (float)$r['inc'] - (float)$r['exp'];
+        }
+
+        $today       = date('Y-m-d');
+        $daysInMonth = (int)date('t', strtotime($monthStart));
+        $result      = [];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $ds = $month . '-' . str_pad($d, 2, '0', STR_PAD_LEFT);
+            if ($ds > $today) break;
+            $running += $byDate[$ds] ?? 0.0;
+            $result[] = ['d' => $d, 'b' => $running];
+        }
+
+        return $result;
     }
 
     // -------------------------------------------------------------------------

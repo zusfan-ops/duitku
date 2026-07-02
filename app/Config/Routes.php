@@ -76,4 +76,11 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/hutang/pay/(:num)',        'DebtController::pay/$1');
     $routes->post('/hutang/settle/(:num)',     'DebtController::settle/$1');
     $routes->post('/hutang/delete/(:num)',     'DebtController::delete/$1');
+
+    // Wallets
+    $routes->get('/wallets',                   'WalletController::index');
+    $routes->post('/wallets/store',            'WalletController::store');
+    $routes->post('/wallets/delete/(:num)',    'WalletController::delete/$1');
+    $routes->post('/wallets/default/(:num)',   'WalletController::setDefault/$1');
+    $routes->post('/wallets/transfer',         'WalletController::transfer');
 });

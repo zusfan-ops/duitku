@@ -95,6 +95,23 @@
     const modalClose = $('modalClose');
     const txForm     = $('txForm');
 
+    function populateWalletSelect(selectedId) {
+        const sel = $('txWallet');
+        if (!sel) return;
+        const wallets = window.DUITKU.wallets || [];
+        if (!wallets.length) {
+            const row = $('walletPickerRow');
+            if (row) row.style.display = 'none';
+            return;
+        }
+        const defaultW = wallets.find(w => w.is_default) || wallets[0];
+        sel.innerHTML = wallets.map(w => {
+            const bal = Number(w.balance || 0).toLocaleString('id-ID');
+            const sel = String(w.id) === String(selectedId || defaultW?.id) ? ' selected' : '';
+            return `<option value="${w.id}"${sel}>${w.icon} ${w.name} — ${window.DUITKU.symbol} ${bal}</option>`;
+        }).join('');
+    }
+
     function openModal(editData = null) {
         if (!overlay) return;
         state.editingTxId        = null;
@@ -157,6 +174,7 @@
             if (recWrap) recWrap.style.display = 'none';
         }
 
+        populateWalletSelect(editData ? editData.wallet_id : null);
         renderCategoryChips();
         overlay.classList.add('open');
         document.body.style.overflow = 'hidden';
@@ -308,6 +326,8 @@
             formData.append('note', $('txNote').value);
             formData.append('date', $('txDate').value);
             formData.append('is_recurring', txRecurring ? txRecurring.value : '0');
+            const txWallet = $('txWallet');
+            if (txWallet && txWallet.value) formData.append('wallet_id', txWallet.value);
 
             if (txImage && txImage.files[0]) {
                 formData.append('image', txImage.files[0]);

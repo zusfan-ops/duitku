@@ -57,11 +57,20 @@
                 $avatarJson = session()->get('user_avatar');
                 $avatar     = $avatarJson ? json_decode($avatarJson, true) : ['initials' => 'U', 'color' => '#2D5A27'];
                 $avatarImg  = null;
+                $_layoutWallets = [];
                 if ($userId) {
                     $settingModel = new \App\Models\SettingModel();
                     $avatarImgFile = $settingModel->get($userId, 'avatar_image');
                     if ($avatarImgFile && file_exists(FCPATH . 'uploads/avatars/' . $avatarImgFile)) {
                         $avatarImg = '/uploads/avatars/' . $avatarImgFile;
+                    }
+                    // Load wallet list for transaction modal (available on every page)
+                    if (!isset($wallets)) {
+                        $wm = new \App\Models\WalletModel();
+                        $wd = $wm->getWithBalances($userId);
+                        $_layoutWallets = $wd['wallets'];
+                    } else {
+                        $_layoutWallets = $wallets;
                     }
                 }
             ?>
@@ -177,6 +186,14 @@
                 <input type="hidden" id="txCategory" name="category_id">
             </div>
 
+            <!-- Wallet Picker -->
+            <div class="form-group" id="walletPickerRow">
+                <label class="form-label">REKENING</label>
+                <select id="txWallet" class="form-input">
+                    <option value="">— Pilih rekening —</option>
+                </select>
+            </div>
+
             <!-- Bill Picker (expense only) -->
             <div class="form-group" id="billPickerRow" style="display:none">
                 <label class="form-label">BAYAR TAGIHAN (OPSIONAL)</label>
@@ -226,6 +243,7 @@
 <script>
     window.DUITKU = {
         categories: <?= json_encode($categories ?? []) ?>,
+        wallets:    <?= json_encode($_layoutWallets ?? []) ?>,
         symbol: '<?= esc($symbol ?? 'Rp') ?>',
         csrfToken: '<?= csrf_hash() ?>',
         csrfName: '<?= csrf_token() ?>',

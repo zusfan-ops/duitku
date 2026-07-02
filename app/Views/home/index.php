@@ -103,6 +103,110 @@
 .hb-stat-lbl { font-size: 10px; font-weight: 600; color: rgba(255,255,255,.45); margin-bottom: 2px; }
 .hb-stat-val { font-size: 14px; font-weight: 800; color: #fff; }
 
+/* ── Wallet Strip ─────────────────────────────────────────────── */
+.wallet-strip-wrap { margin-bottom: 16px; }
+.wallet-strip-hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+}
+.wallet-strip-lbl {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .5px; color: var(--text-muted);
+}
+.wallet-strip-link {
+    font-size: 11px; font-weight: 700; color: var(--primary); text-decoration: none;
+}
+.wallet-strip {
+    display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px;
+    scrollbar-width: none; -ms-overflow-style: none;
+}
+.wallet-strip::-webkit-scrollbar { display: none; }
+.w-card {
+    flex-shrink: 0; width: 140px; border-radius: 18px;
+    padding: 12px 14px 10px; text-decoration: none;
+    transition: transform .14s ease; position: relative; overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0,0,0,.12);
+}
+.w-card::before {
+    content:''; position:absolute; top:-25px; right:-25px;
+    width:80px; height:80px; border-radius:50%;
+    background:rgba(255,255,255,.08); pointer-events:none;
+}
+.w-card:active { transform: scale(.96); }
+.w-card-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.w-card-icon { font-size:20px; line-height:1; }
+.w-card-type {
+    font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.4px;
+    color:rgba(255,255,255,.65); background:rgba(0,0,0,.2);
+    border-radius:5px; padding:2px 6px;
+}
+.w-card-name {
+    font-size:11px; font-weight:700; color:rgba(255,255,255,.8);
+    margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.w-card-balance {
+    font-size:13px; font-weight:800; color:#fff;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.w-card-add {
+    background:var(--bg-card) !important;
+    border:1.5px dashed var(--border);
+    box-shadow:none;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+}
+.w-card-add::before { display:none; }
+.w-card-add-icon {
+    font-size:22px; color:var(--primary); font-weight:300; line-height:1;
+    width:36px; height:36px; border-radius:12px;
+    background:var(--primary-dim); display:flex; align-items:center; justify-content:center;
+}
+.w-card-add-label { font-size:11px; font-weight:700; color:var(--text-secondary); }
+
+/* ── Daily Balance Sparkline ───────────────────────────────────── */
+.daily-chart-card {
+    background:var(--bg-card); border:1px solid var(--border);
+    border-radius:18px; padding:12px 14px 8px; margin-bottom:16px;
+}
+.daily-chart-hdr {
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;
+}
+.daily-chart-title { font-size:12px; font-weight:700; color:var(--text-primary); }
+.daily-chart-month { font-size:11px; font-weight:600; color:var(--text-muted); }
+
+/* ── Reminders ─────────────────────────────────────────────────── */
+.reminder-card {
+    background:var(--bg-card); border:1.5px solid #F59E0B;
+    border-radius:16px; padding:12px 14px; margin-bottom:16px;
+    animation: slideIn .25s ease;
+}
+@keyframes slideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+.reminder-hdr {
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;
+}
+.reminder-title { font-size:13px; font-weight:700; color:#D97706; }
+.reminder-close {
+    width:22px; height:22px; border-radius:50%; background:var(--border);
+    font-size:11px; color:var(--text-muted); display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+}
+.reminder-row {
+    display:flex; align-items:center; gap:10px;
+    padding:7px 0; border-top:1px solid var(--border);
+}
+.reminder-icon { font-size:16px; flex-shrink:0; }
+.reminder-body { flex:1; min-width:0; }
+.reminder-name { font-size:13px; font-weight:700; color:var(--text-primary); }
+.reminder-sub { font-size:11px; color:var(--text-muted); margin-top:1px; }
+.reminder-badge {
+    flex-shrink:0; font-size:9px; font-weight:800; letter-spacing:.4px;
+    padding:3px 8px; border-radius:20px; text-transform:uppercase;
+}
+.reminder-badge.soon    { background:#FEF3C7; color:#D97706; }
+.reminder-badge.urgent  { background:#FEE2E2; color:#DC2626; }
+.reminder-badge.overdue { background:#EF4444; color:#fff; }
+[data-theme="dark"] .reminder-badge.soon   { background:#3B2A0A; color:#FCD34D; }
+[data-theme="dark"] .reminder-badge.urgent { background:#3B0A0A; color:#FCA5A5; }
+
 /* ── Quick Actions (icon grid) ────────────────────────────────── */
 .home-quick-actions {
     display: grid;
@@ -526,6 +630,93 @@
             </div>
         </div>
     </div>
+
+    <!-- ── WALLET STRIP ─────────────────────────────────────── -->
+    <?php if (!empty($wallets)): ?>
+    <div class="wallet-strip-wrap">
+        <div class="wallet-strip-hdr">
+            <span class="wallet-strip-lbl">Rekening</span>
+            <a href="/wallets" class="wallet-strip-link">Kelola →</a>
+        </div>
+        <div class="wallet-strip" id="walletStrip">
+            <?php foreach ($wallets as $w):
+                $hex = ltrim($w['color'],'#');
+                if (strlen($hex)===3) $hex=$hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+                $dark = sprintf('#%02x%02x%02x',
+                    (int)(hexdec(substr($hex,0,2))*.6),
+                    (int)(hexdec(substr($hex,2,2))*.6),
+                    (int)(hexdec(substr($hex,4,2))*.6));
+            ?>
+            <a href="/wallets" class="w-card" style="background:linear-gradient(135deg,<?= $dark ?> 0%,<?= esc($w['color']) ?> 100%)">
+                <div class="w-card-top">
+                    <span class="w-card-icon"><?= esc($w['icon']) ?></span>
+                    <span class="w-card-type"><?= esc(\App\Models\WalletModel::typeLabel($w['type'])) ?></span>
+                </div>
+                <div class="w-card-name"><?= esc($w['name']) ?></div>
+                <div class="w-card-balance"><?= esc($symbol) ?> <?= number_format($w['balance'], 0, ',', '.') ?></div>
+            </a>
+            <?php endforeach; ?>
+            <a href="/wallets" class="w-card w-card-add">
+                <div class="w-card-add-icon">+</div>
+                <div class="w-card-add-label">Tambah</div>
+            </a>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- ── DAILY BALANCE SPARKLINE ──────────────────────────── -->
+    <?php if (!empty($dailyBalance) && count($dailyBalance) > 1): ?>
+    <div class="daily-chart-card">
+        <div class="daily-chart-hdr">
+            <span class="daily-chart-title">Tren Saldo Bulan Ini</span>
+            <span class="daily-chart-month"><?= date('F Y') ?></span>
+        </div>
+        <div style="height:88px;position:relative">
+            <canvas id="dailyBalanceChart"></canvas>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- ── REMINDERS (bills + debts) ───────────────────────── -->
+    <?php
+    $hasReminder = !empty($upcomingBills) || !empty($upcomingDebts);
+    if ($hasReminder):
+    ?>
+    <div class="reminder-card" id="reminderCard">
+        <div class="reminder-hdr">
+            <span class="reminder-title">⏰ Pengingat Jatuh Tempo</span>
+            <button onclick="document.getElementById('reminderCard').style.display='none'" class="reminder-close">✕</button>
+        </div>
+        <?php foreach ($upcomingBills as $b):
+            $dl = $b['daysLeft'];
+            $cls = $dl <= 0 ? 'overdue' : ($dl <= 1 ? 'urgent' : 'soon');
+            $dlLabel = $dl <= 0 ? 'LEWAT' : ($dl === 0 ? 'HARI INI' : ($dl === 1 ? 'BESOK' : $dl.' hari'));
+        ?>
+        <div class="reminder-row">
+            <span class="reminder-icon">📋</span>
+            <div class="reminder-body">
+                <div class="reminder-name"><?= esc($b['name']) ?></div>
+                <div class="reminder-sub">Tagihan · tgl <?= (int)$b['dueDay'] ?></div>
+            </div>
+            <span class="reminder-badge <?= $cls ?>"><?= $dlLabel ?></span>
+        </div>
+        <?php endforeach; ?>
+        <?php foreach ($upcomingDebts as $d):
+            $dl = $d['daysLeft'];
+            $cls = $dl <= 0 ? 'overdue' : ($dl <= 1 ? 'urgent' : 'soon');
+            $dlLabel = $dl <= 0 ? 'LEWAT' : ($dl === 0 ? 'HARI INI' : ($dl === 1 ? 'BESOK' : $dl.' hari'));
+        ?>
+        <div class="reminder-row">
+            <span class="reminder-icon"><?= $d['type'] === 'hutang' ? '💸' : '💰' ?></span>
+            <div class="reminder-body">
+                <div class="reminder-name"><?= esc($d['person']) ?></div>
+                <div class="reminder-sub"><?= $d['type'] === 'hutang' ? 'Bayar hutang' : 'Tagih piutang' ?> · <?= esc($symbol) ?> <?= number_format($d['amount'] - $d['paid'], 0, ',', '.') ?></div>
+            </div>
+            <span class="reminder-badge <?= $cls ?>"><?= $dlLabel ?></span>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
 
     <!-- BUDGET PROGRESS BAR -->
     <?php if ($budget > 0):
@@ -995,6 +1186,90 @@
 
 <?= $this->section('scripts') ?>
 <script>
+/* ── Daily Balance Sparkline ──────────────────────────────────── */
+(function() {
+    const dailyData = <?= json_encode($dailyBalance ?? []) ?>;
+    const ctx = document.getElementById('dailyBalanceChart');
+    if (!dailyData.length || !ctx) return;
+    const isDark  = document.documentElement.getAttribute('data-theme') === 'dark';
+    const primary = '#0AA956';
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dailyData.map(d => d.d),
+            datasets: [{
+                data: dailyData.map(d => d.b),
+                borderColor: primary,
+                backgroundColor: isDark ? 'rgba(10,169,86,.08)' : 'rgba(10,169,86,.12)',
+                borderWidth: 2, tension: 0.35, fill: true,
+                pointRadius: 0, pointHoverRadius: 5,
+                pointHoverBackgroundColor: primary,
+                pointHoverBorderColor: '#fff', pointHoverBorderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: isDark ? '#162032' : '#fff',
+                    borderColor:     isDark ? '#1E3050' : '#DDE3EC',
+                    borderWidth: 1,
+                    titleColor: isDark ? '#F1F5F9' : '#0F172A',
+                    bodyColor:  isDark ? '#CBD5E1' : '#475569',
+                    padding: 8,
+                    callbacks: {
+                        title: (ctx) => 'Tgl ' + ctx[0].label,
+                        label: (ctx) => ' <?= esc($symbol) ?> ' + Math.round(ctx.parsed.y).toLocaleString('id-ID'),
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false }, border: { display: false },
+                    ticks: { color: isDark ? '#64748B' : '#94A3B8', font: { size: 10, family: 'Inter' }, maxTicksLimit: 10 }
+                },
+                y: { display: false }
+            }
+        }
+    });
+})();
+
+/* ── Notification reminder ────────────────────────────────────── */
+(function() {
+    if (!('Notification' in window)) return;
+    const upcomingBills = <?= json_encode(array_values($upcomingBills ?? [])) ?>;
+    const upcomingDebts = <?= json_encode(array_values($upcomingDebts ?? [])) ?>;
+    const urgent = [
+        ...upcomingBills.filter(b => b.daysLeft <= 1),
+        ...upcomingDebts.filter(d => d.daysLeft <= 1),
+    ];
+    if (!urgent.length) return;
+    const today    = new Date().toISOString().slice(0, 10);
+    const lastSent = localStorage.getItem('duitku_notif_date');
+    if (lastSent === today) return;
+
+    function sendNotif() {
+        localStorage.setItem('duitku_notif_date', today);
+        const parts = [];
+        upcomingBills.filter(b => b.daysLeft <= 1).forEach(b => parts.push('📋 ' + b.name + ' (tgl ' + b.dueDay + ')'));
+        upcomingDebts.filter(d => d.daysLeft <= 1).forEach(d => {
+            parts.push((d.type === 'hutang' ? '💸 Bayar hutang: ' : '💰 Tagih piutang: ') + d.person);
+        });
+        try {
+            new Notification('DuitKu — Pengingat', { body: parts.join('\n'), icon: '/images/logo.png' });
+        } catch(e) {}
+    }
+
+    if (Notification.permission === 'granted') {
+        sendNotif();
+    } else if (Notification.permission === 'default') {
+        setTimeout(() => Notification.requestPermission().then(p => { if (p === 'granted') sendNotif(); }), 2000);
+    }
+})();
+
+/* ── Calculator modal + home interactions ────────────────────── */
 (function() {
     'use strict';
 

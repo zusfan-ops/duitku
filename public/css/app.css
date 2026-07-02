@@ -1362,9 +1362,9 @@ img { max-width: 100%; display: block; }
     .fab { right: calc((100vw - 480px) / 2 + 20px); }
 }
 
-/* ─── Small screen: hide dev photo to save space ────────────────────────── */
+/* ─── Small screen: shrink dev photo, don't hide ────────────────────────── */
 @media (max-width: 380px) {
-    .dev-photo { display: none; }
+    .dev-photo { width: 44px; height: 44px; }
     .dev-card-top { gap: 10px; }
 }
 

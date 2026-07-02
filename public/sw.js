@@ -27,6 +27,31 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+// Push notification handler (for future server-push support)
+self.addEventListener('push', event => {
+    const data = event.data ? event.data.json() : {};
+    event.waitUntil(
+        self.registration.showNotification(data.title || 'DuitKu', {
+            body:  data.body  || '',
+            icon:  data.icon  || '/images/logo.png',
+            badge: data.badge || '/images/logo.png',
+            data:  data.url   || '/',
+        })
+    );
+});
+
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: 'window' }).then(list => {
+            for (const c of list) {
+                if (c.url.includes(self.registration.scope) && 'focus' in c) return c.focus();
+            }
+            return clients.openWindow(event.notification.data || '/');
+        })
+    );
+});
+
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 

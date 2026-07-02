@@ -164,10 +164,12 @@ class DebtController extends BaseController
 
     private function createDebtTransaction(int $userId, string $transType, float $amount, string $note, string $date): void
     {
-        $catId = $this->ensureDebtCategory($userId, $transType);
-        $db    = \Config\Database::connect();
+        $catId    = $this->ensureDebtCategory($userId, $transType);
+        $walletId = $this->getDefaultWalletId($userId);
+        $db       = \Config\Database::connect();
         $db->table('transactions')->insert([
             'user_id'     => $userId,
+            'wallet_id'   => $walletId,
             'category_id' => $catId,
             'type'        => $transType,
             'amount'      => $amount,
@@ -176,5 +178,14 @@ class DebtController extends BaseController
             'created_at'  => date('Y-m-d H:i:s'),
             'updated_at'  => date('Y-m-d H:i:s'),
         ]);
+    }
+
+    private function getDefaultWalletId(int $userId): ?int
+    {
+        $db = \Config\Database::connect();
+        $w  = $db->table('wallets')->where('user_id', $userId)->where('is_default', 1)->get()->getRowArray();
+        if ($w) return (int)$w['id'];
+        $w = $db->table('wallets')->where('user_id', $userId)->orderBy('id','ASC')->get()->getRowArray();
+        return $w ? (int)$w['id'] : null;
     }
 }

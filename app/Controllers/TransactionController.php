@@ -6,6 +6,7 @@ use App\Models\TransactionModel;
 use App\Models\CategoryModel;
 use App\Models\SettingModel;
 use App\Models\RecurringTransactionModel;
+use App\Models\WalletModel;
 
 class TransactionController extends BaseController
 {
@@ -13,6 +14,7 @@ class TransactionController extends BaseController
     protected CategoryModel             $catModel;
     protected SettingModel              $settingModel;
     protected RecurringTransactionModel $recurringModel;
+    protected WalletModel               $walletModel;
 
     public function __construct()
     {
@@ -20,6 +22,7 @@ class TransactionController extends BaseController
         $this->catModel       = new CategoryModel();
         $this->settingModel   = new SettingModel();
         $this->recurringModel = new RecurringTransactionModel();
+        $this->walletModel    = new WalletModel();
     }
 
     // -------------------------------------------------------------------------
@@ -29,8 +32,14 @@ class TransactionController extends BaseController
     {
         $userId = session()->get('user_id');
 
+        $walletId = (int)($this->request->getPost('wallet_id') ?: 0) ?: null;
+        if (!$walletId) {
+            $walletId = $this->walletModel->getDefaultWalletId($userId);
+        }
+
         $data = [
             'user_id'     => $userId,
+            'wallet_id'   => $walletId,
             'category_id' => $this->request->getPost('category_id') ?: null,
             'type'        => $this->request->getPost('type'),
             'amount'      => (float) str_replace(['.', ','], ['', '.'], $this->request->getPost('amount')),
@@ -85,7 +94,13 @@ class TransactionController extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Tidak ditemukan.']);
         }
 
+        $walletId = (int)($this->request->getPost('wallet_id') ?: 0) ?: null;
+        if (!$walletId) {
+            $walletId = $this->walletModel->getDefaultWalletId($userId);
+        }
+
         $data = [
+            'wallet_id'   => $walletId,
             'category_id' => $this->request->getPost('category_id') ?: null,
             'type'        => $this->request->getPost('type'),
             'amount'      => (float) str_replace(['.', ','], ['', '.'], $this->request->getPost('amount')),
