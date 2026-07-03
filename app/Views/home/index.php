@@ -560,37 +560,6 @@
 
 /* Form modal */
 .hs-form-modal { max-height: 90dvh; overflow-y: auto; max-width: 420px; }
-.hs-outline-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 14px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--bg);
-    color: var(--text-primary);
-    font-size: 13px;
-    font-weight: 600;
-    font-family: var(--font);
-    cursor: pointer;
-    transition: all var(--transition);
-    width: 100%;
-    justify-content: center;
-}
-.hs-outline-btn:hover { border-color: var(--primary); color: var(--primary); }
-.hs-save-btn {
-    padding: 12px 20px;
-    background: var(--primary);
-    color: #fff;
-    border-radius: var(--radius-md);
-    font-size: 14px;
-    font-weight: 700;
-    font-family: var(--font);
-    cursor: pointer;
-    border: none;
-    transition: background var(--transition);
-}
-.hs-save-btn:hover { background: var(--primary-light); }
 </style>
 <?= $this->endSection() ?>
 

@@ -699,17 +699,81 @@ img { max-width: 100%; display: block; }
     color: var(--cat-dark, var(--primary));
 }
 
-/* Save Button */
+/* ─── Elevated (3D/tactile) button system ───────────────────────────────────
+   Applies to every "primary" (filled) and "outline" (bordered) action button
+   app-wide, so Save/Cancel always read as pressable buttons — even on dark
+   surfaces where a flat fill can blend into the background. */
+.btn-save,
+.btn-save-small,
+.hs-save-btn,
+.hs-add-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.3),
+        inset 0 -3px 0 rgba(0,0,0,.15),
+        0 4px 10px rgba(0,0,0,.16);
+    transition: transform .12s ease, box-shadow .12s ease, background var(--transition);
+}
+.btn-save:hover,
+.btn-save-small:hover,
+.hs-save-btn:hover,
+.hs-add-btn:hover { background: var(--primary-light); transform: translateY(-1px); }
+.btn-save:active,
+.btn-save-small:active,
+.hs-save-btn:active,
+.hs-add-btn:active {
+    transform: translateY(2px);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.18),
+        inset 0 -1px 0 rgba(0,0,0,.12),
+        0 1px 3px rgba(0,0,0,.14);
+}
+
+.btn-cancel-small,
+.hs-outline-btn {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    font-family: var(--font);
+    box-shadow: 0 2px 6px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.5);
+    transition: transform .12s ease, box-shadow .12s ease, border-color var(--transition), color var(--transition);
+}
+[data-theme="dark"] .btn-cancel-small,
+[data-theme="dark"] .hs-outline-btn {
+    box-shadow: 0 2px 6px rgba(0,0,0,.35);
+}
+.btn-cancel-small:hover,
+.hs-outline-btn:hover { border-color: var(--primary); color: var(--primary); }
+.btn-cancel-small:active,
+.hs-outline-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0,0,0,.1);
+}
+
+/* Save Button (primary CTA — transaction modal) */
 .btn-save {
     width: 100%; padding: 16px;
-    background: var(--primary);
-    color: #fff; font-size: 16px; font-weight: 700;
-    border: none; border-radius: var(--radius-xl);
-    cursor: pointer; transition: all var(--transition);
+    font-size: 16px; font-weight: 700;
+    border-radius: var(--radius-xl);
     margin-top: 4px;
 }
-.btn-save:hover  { background: var(--primary-light); transform: translateY(-1px); }
-.btn-save:active { transform: scale(0.98); }
+
+/* hs-* variants (home & wallet mini-modals) */
+.hs-outline-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 14px; border-radius: var(--radius-md);
+    font-size: 13px; font-weight: 600;
+    width: 100%;
+}
+.hs-save-btn {
+    padding: 12px 20px; border-radius: var(--radius-md);
+    font-size: 14px; font-weight: 700;
+}
 
 /* ─── MODALS ─────────────────────────────────────────────────────────────── */
 .modal-overlay { /* z-index must beat bottom-nav (200) and fab (99) */
@@ -791,22 +855,14 @@ img { max-width: 100%; display: block; }
 
 .btn-cancel-small {
     flex: 1; padding: 12px;
-    border: 1.5px solid var(--border);
     border-radius: var(--radius-md);
     font-size: 14px; font-weight: 600;
-    color: var(--text-muted);
-    background: var(--bg);
-    transition: all var(--transition);
 }
-.btn-cancel-small:hover { border-color: var(--text-muted); }
 .btn-save-small {
     flex: 1; padding: 12px;
-    background: var(--primary); color: #fff;
     border-radius: var(--radius-md);
     font-size: 14px; font-weight: 700;
-    transition: all var(--transition);
 }
-.btn-save-small:hover { background: var(--primary-light); }
 
 /* Confirm */
 .confirm-overlay {

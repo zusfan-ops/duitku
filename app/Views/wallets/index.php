@@ -47,9 +47,11 @@
     font-weight: 700;
     color: #fff;
     cursor: pointer;
-    transition: background .15s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    transition: background .15s ease, transform .12s ease, box-shadow .12s ease;
 }
-.wp-transfer-btn:hover { background: rgba(255,255,255,.22); }
+.wp-transfer-btn:hover  { background: rgba(255,255,255,.22); }
+.wp-transfer-btn:active { transform: translateY(1px) scale(.98); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 
 /* Wallet list */
 .wallet-list {
