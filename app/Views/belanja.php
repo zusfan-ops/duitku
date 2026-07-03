@@ -43,7 +43,7 @@
 .blj-header {
     position: sticky; top: 0; z-index: 200;
     background: var(--bg-card, #fff);
-    border-bottom: 1px solid var(--border-color, #E8EDF5);
+    border-bottom: 1px solid var(--border);
     padding: 0 16px;
     display: flex; align-items: center; gap: 10px;
     min-height: 52px;
@@ -55,14 +55,14 @@
 }
 .blj-header-title {
     flex: 1; font-size: 16px; font-weight: 700;
-    color: var(--text-primary, #1A1D2E);
+    color: var(--text-primary);
     display: flex; align-items: center; gap: 8px;
     overflow: hidden;
 }
 [data-theme="dark"] .blj-header-title { color: #F1F5FB; }
 .blj-header-title .blj-list-name {
     font-size: 12px; font-weight: 500;
-    color: var(--text-muted, #9CA3AF);
+    color: var(--text-muted);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     max-width: 120px;
 }
@@ -71,9 +71,9 @@
     width: 36px; height: 36px; border-radius: 10px; border: none;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; font-size: 17px; transition: background .15s;
-    background: transparent; color: var(--text-secondary, #6B7280);
+    background: transparent; color: var(--text-secondary);
 }
-.blj-hbtn:hover, .blj-hbtn:active { background: var(--bg-hover, #F3F4F6); }
+.blj-hbtn:hover, .blj-hbtn:active { background: var(--border); }
 [data-theme="dark"] .blj-hbtn { color: #9CA3AF; }
 [data-theme="dark"] .blj-hbtn:hover { background: #252840; }
 .blj-hbtn.danger:hover { background: #FEE2E2; color: #DC2626; }
@@ -88,8 +88,8 @@
 [data-theme="dark"] .blj-list-bar { background: #1A1D2E; }
 .blj-list-bar .list-select-wrap {
     flex: 1; display: flex; align-items: center; gap: 8px;
-    background: var(--bg-surface, #F8FAFC);
-    border: 1.5px solid var(--border-color, #E8EDF5);
+    background: var(--bg);
+    border: 1.5px solid var(--border);
     border-radius: 10px; padding: 0 12px; height: 40px;
 }
 [data-theme="dark"] .blj-list-bar .list-select-wrap {
@@ -99,16 +99,16 @@
 .blj-list-bar .list-select-wrap i { flex-shrink: 0; width: 16px; height: 16px; opacity: .5; }
 #list-select {
     flex: 1; border: none; background: transparent; font-size: 14px;
-    font-weight: 600; color: var(--text-primary, #1A1D2E); outline: none; cursor: pointer;
+    font-weight: 600; color: var(--text-primary); outline: none; cursor: pointer;
 }
 [data-theme="dark"] #list-select { color: #F1F5FB; }
 .blj-list-action {
     width: 36px; height: 36px; border-radius: 10px; border: none;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; font-size: 16px; transition: background .15s;
-    background: var(--bg-surface, #F8FAFC);
-    border: 1.5px solid var(--border-color, #E8EDF5);
-    color: var(--text-secondary, #6B7280);
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    color: var(--text-secondary);
 }
 [data-theme="dark"] .blj-list-action { background: #252840; border-color: #2A2D3E; color: #9CA3AF; }
 .blj-list-action:hover { background: #EEF2FF; color: #4F46E5; }
@@ -120,7 +120,7 @@
 .blj-tabs {
     display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x mandatory;
     padding: 8px 16px 10px; background: var(--bg-card, #fff);
-    border-bottom: 1px solid var(--border-color, #E8EDF5);
+    border-bottom: 1px solid var(--border);
     scrollbar-width: none; -webkit-overflow-scrolling: touch;
     position: sticky; top: 52px; z-index: 190;
 }
@@ -130,15 +130,15 @@
     flex-shrink: 0; scroll-snap-align: start;
     display: flex; align-items: center; gap: 5px;
     padding: 7px 14px; border-radius: 20px; border: none;
-    background: var(--bg-surface, #F3F4F6);
-    color: var(--text-secondary, #6B7280);
+    background: var(--bg);
+    color: var(--text-secondary);
     font-size: 12.5px; font-weight: 600; cursor: pointer;
     transition: background .18s, color .18s, transform .12s;
     white-space: nowrap; line-height: 1;
 }
 .blj-tab:active { transform: scale(.95); }
 .blj-tab.active {
-    background: var(--primary, #2D5A27);
+    background: var(--primary);
     color: #fff;
     box-shadow: 0 2px 8px rgba(45,90,39,.3);
 }
@@ -160,8 +160,8 @@
 [data-theme="dark"] .belanja-wrapper .shopping-search { background: #1A1D2E; }
 .belanja-wrapper .search-inline {
     display: flex; align-items: center; gap: 8px;
-    background: var(--bg-surface, #F3F4F6);
-    border: 1.5px solid var(--border-color, #E8EDF5);
+    background: var(--bg);
+    border: 1.5px solid var(--border);
     border-radius: 12px; padding: 0 12px; height: 42px;
 }
 [data-theme="dark"] .belanja-wrapper .search-inline {
@@ -171,10 +171,10 @@
 .belanja-wrapper .search-inline svg { opacity: .4; width: 16px; height: 16px; }
 #item-search {
     flex: 1; border: none; background: transparent; font-size: 14px;
-    color: var(--text-primary, #1A1D2E); outline: none;
+    color: var(--text-primary); outline: none;
 }
 [data-theme="dark"] #item-search { color: #F1F5FB; }
-#item-search::placeholder { color: var(--text-muted, #9CA3AF); }
+#item-search::placeholder { color: var(--text-muted); }
 
 /* ══════════════════════════════════ CATEGORY PILLS */
 .belanja-wrapper .filters-container {
@@ -189,8 +189,8 @@
 .belanja-wrapper .category-pills::-webkit-scrollbar { display: none; }
 .belanja-wrapper .pill {
     flex-shrink: 0; padding: 5px 12px; border-radius: 16px; border: none;
-    background: var(--bg-surface, #F3F4F6);
-    color: var(--text-secondary, #6B7280);
+    background: var(--bg);
+    color: var(--text-secondary);
     font-size: 12px; font-weight: 600; cursor: pointer;
     transition: background .15s, color .15s;
 }
@@ -207,7 +207,7 @@
 .belanja-wrapper .shopping-item {
     display: flex; align-items: center; gap: 10px;
     background: var(--bg-card, #fff);
-    border: 1.5px solid var(--border-color, #E8EDF5);
+    border: 1.5px solid var(--border);
     border-radius: 14px; padding: 12px 14px;
     transition: all .2s;
 }
@@ -218,7 +218,7 @@
     opacity: .6; border-style: dashed;
 }
 .belanja-wrapper .item-check {
-    width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border-color, #CBD5E0);
+    width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border);
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     cursor: pointer; transition: all .15s; background: transparent;
 }
@@ -228,14 +228,14 @@
 .belanja-wrapper .item-info { flex: 1; min-width: 0; }
 .belanja-wrapper .item-name {
     font-size: 14px; font-weight: 600;
-    color: var(--text-primary, #1A1D2E); line-height: 1.3;
+    color: var(--text-primary); line-height: 1.3;
 }
 [data-theme="dark"] .belanja-wrapper .item-name { color: #F1F5FB; }
 .belanja-wrapper .shopping-item.checked .item-name {
-    text-decoration: line-through; color: var(--text-muted, #9CA3AF);
+    text-decoration: line-through; color: var(--text-muted);
 }
 .belanja-wrapper .item-meta {
-    font-size: 11.5px; color: var(--text-muted, #9CA3AF); margin-top: 2px;
+    font-size: 11.5px; color: var(--text-muted); margin-top: 2px;
     display: flex; gap: 8px; flex-wrap: wrap;
 }
 .belanja-wrapper .item-price-badge {
@@ -249,7 +249,7 @@
 .belanja-wrapper .item-btn {
     width: 32px; height: 32px; border-radius: 8px; border: none;
     display: flex; align-items: center; justify-content: center;
-    cursor: pointer; background: transparent; color: var(--text-muted, #9CA3AF);
+    cursor: pointer; background: transparent; color: var(--text-muted);
     font-size: 15px; transition: background .15s, color .15s;
 }
 .belanja-wrapper .item-btn:hover { background: #F3F4F6; color: #4F46E5; }
@@ -264,16 +264,16 @@
 .belanja-wrapper .empty-illustration i,
 .belanja-wrapper .empty-illustration svg {
     width: 64px; height: 64px; opacity: .2;
-    color: var(--text-primary, #1A1D2E);
+    color: var(--text-primary);
 }
 [data-theme="dark"] .belanja-wrapper .empty-illustration i { color: #F1F5FB; }
 .belanja-wrapper .empty-state h2 {
     font-size: 17px; font-weight: 700; margin-top: 16px;
-    color: var(--text-primary, #1A1D2E);
+    color: var(--text-primary);
 }
 [data-theme="dark"] .belanja-wrapper .empty-state h2 { color: #F1F5FB; }
 .belanja-wrapper .empty-state p {
-    font-size: 13px; color: var(--text-muted, #9CA3AF); margin-top: 6px;
+    font-size: 13px; color: var(--text-muted); margin-top: 6px;
 }
 
 /* ══════════════════════════════════ CONTENT AREA */
@@ -289,7 +289,7 @@
     border-radius: 16px; z-index: 180;
     background: var(--bg-card, #fff);
     box-shadow: 0 -2px 20px rgba(0,0,0,.12);
-    border: 1px solid var(--border-color, #E8EDF5);
+    border: 1px solid var(--border);
     overflow: hidden;
 }
 [data-theme="dark"] .belanja-wrapper #summary-footer {
@@ -299,7 +299,7 @@
     display: flex; align-items: center; padding: 10px 16px; gap: 12px;
 }
 .belanja-wrapper .summary-info .label {
-    font-size: 11px; font-weight: 600; color: var(--text-muted, #9CA3AF);
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
     text-transform: uppercase; letter-spacing: .4px; display: block;
 }
 .belanja-wrapper .summary-info .value {
@@ -312,8 +312,8 @@
     width: 40px; height: 40px; border-radius: 12px; border: none;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; font-size: 17px;
-    background: var(--bg-surface, #F3F4F6);
-    color: var(--text-secondary, #6B7280);
+    background: var(--bg);
+    color: var(--text-secondary);
     transition: background .15s, color .15s;
 }
 .belanja-wrapper .footer-action:hover { background: #EEF2FF; color: #4F46E5; }
@@ -346,22 +346,22 @@
 }
 .belanja-wrapper .screen-header h2 {
     font-size: 17px; font-weight: 700;
-    color: var(--text-primary, #1A1D2E);
+    color: var(--text-primary);
 }
 [data-theme="dark"] .belanja-wrapper .screen-header h2 { color: #F1F5FB; }
 .belanja-wrapper .screen-header p,
 .belanja-wrapper .last-updated {
-    font-size: 12px; color: var(--text-muted, #9CA3AF); margin-top: 2px;
+    font-size: 12px; color: var(--text-muted); margin-top: 2px;
 }
 .belanja-wrapper .screen-header.with-back {
     display: flex; align-items: center; gap: 10px;
 }
 .belanja-wrapper .btn-back {
     width: 36px; height: 36px; border-radius: 10px; border: none;
-    background: var(--bg-surface, #F3F4F6);
+    background: var(--bg);
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0;
-    color: var(--text-secondary, #6B7280);
+    color: var(--text-secondary);
 }
 [data-theme="dark"] .belanja-wrapper .btn-back { background: #252840; color: #9CA3AF; }
 
@@ -374,8 +374,8 @@
 .belanja-wrapper .info-tab {
     flex-shrink: 0; display: flex; align-items: center; gap: 5px;
     padding: 7px 14px; border-radius: 20px; border: none;
-    background: var(--bg-surface, #F3F4F6);
-    color: var(--text-secondary, #6B7280);
+    background: var(--bg);
+    color: var(--text-secondary);
     font-size: 12.5px; font-weight: 600; cursor: pointer;
     transition: background .15s, color .15s;
 }
@@ -385,7 +385,7 @@
 
 /* ── budget bar ── */
 .belanja-wrapper .budget-bar-wrap {
-    height: 4px; background: var(--border-color, #E8EDF5);
+    height: 4px; background: var(--border);
 }
 .belanja-wrapper .budget-bar {
     height: 100%; background: #2D5A27; transition: width .4s;
@@ -1087,7 +1087,7 @@
 
 <?= $this->section('scripts') ?>
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="/belanja_assets/js/app.js?v=24"></script>
+<script src="/belanja_assets/js/app.js?v=25"></script>
 <script>
     lucide.createIcons();
 

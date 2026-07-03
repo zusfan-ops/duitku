@@ -769,6 +769,7 @@ img { max-width: 100%; display: block; }
     padding: 20px;
     opacity: 0; pointer-events: none;
     transition: opacity var(--transition);
+    overflow-y: auto;
 }
 .mini-modal-overlay.open { opacity: 1; pointer-events: all; }
 .mini-modal {
@@ -776,9 +777,13 @@ img { max-width: 100%; display: block; }
     border-radius: var(--radius-lg);
     padding: 24px;
     width: 100%; max-width: 360px;
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     box-shadow: var(--shadow-lg);
     transform: scale(0.95);
     transition: transform 0.2s ease;
+    margin: auto;
 }
 .mini-modal-overlay.open .mini-modal { transform: scale(1); }
 .mini-modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }

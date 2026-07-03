@@ -1242,7 +1242,8 @@ const App = {
         this.lists     = get('belanja_lists', []);
         this.currentListId = localStorage.getItem('belanja_current_list');
         this.budget = parseInt(localStorage.getItem('belanja_budget')) || 0;
-        this.theme  = localStorage.getItem('belanja_theme') || 'dark';
+        // Follow DuitKu's global theme so Belanja stays visually consistent with the rest of the app
+        this.theme  = localStorage.getItem('duitku_dark') === '1' ? 'dark' : 'light';
 
         // Fetch from server — overrides localStorage with fresher cross-device data
         try {
@@ -2014,7 +2015,9 @@ const App = {
 
     toggleTheme() {
         this.theme = this.theme === 'light' ? 'dark' : 'light';
-        localStorage.setItem('belanja_theme', this.theme);
+        // Write through to DuitKu's global theme key so the switch stays in sync app-wide
+        localStorage.setItem('duitku_dark', this.theme === 'dark' ? '1' : '0');
+        document.documentElement.setAttribute('data-theme', this.theme === 'dark' ? 'dark' : '');
         this.applyTheme();
     },
 
