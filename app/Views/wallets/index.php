@@ -437,12 +437,12 @@
         document.querySelectorAll('.color-swatch').forEach(b => b.classList.toggle('selected', b.dataset.color === wfColor.value));
 
         wfOverlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        window.DuitkuLockScroll();
         setTimeout(() => wfName.focus(), 80);
     }
     function closeWalletForm() {
         wfOverlay.classList.remove('open');
-        document.body.style.overflow = '';
+        window.DuitkuUnlockScroll();
     }
 
     document.getElementById('btnAddWallet').addEventListener('click', () => openWalletForm());
@@ -540,11 +540,11 @@
 
     document.getElementById('btnOpenTransfer').addEventListener('click', () => {
         trOverlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        window.DuitkuLockScroll();
     });
-    trClose.addEventListener('click',  () => { trOverlay.classList.remove('open'); document.body.style.overflow = ''; });
-    trCancel.addEventListener('click', () => { trOverlay.classList.remove('open'); document.body.style.overflow = ''; });
-    trOverlay.addEventListener('click', e => { if (e.target === trOverlay) { trOverlay.classList.remove('open'); document.body.style.overflow = ''; } });
+    trClose.addEventListener('click',  () => { trOverlay.classList.remove('open'); window.DuitkuUnlockScroll(); });
+    trCancel.addEventListener('click', () => { trOverlay.classList.remove('open'); window.DuitkuUnlockScroll(); });
+    trOverlay.addEventListener('click', e => { if (e.target === trOverlay) { trOverlay.classList.remove('open'); window.DuitkuUnlockScroll(); } });
 
     trAmount.addEventListener('input', function() {
         const raw = this.value.replace(/\D/g,'');
@@ -575,7 +575,7 @@
 
         if (data.success) {
             trOverlay.classList.remove('open');
-            document.body.style.overflow = '';
+            window.DuitkuUnlockScroll();
             window.showToast && window.showToast('Transfer berhasil!');
             setTimeout(() => location.reload(), 600);
         } else {

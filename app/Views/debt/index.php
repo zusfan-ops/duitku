@@ -588,13 +588,13 @@
     fabBtn && fabBtn.addEventListener('click', e => {
         e.stopImmediatePropagation();
         addOverlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        window.DuitkuLockScroll();
     }, true);
     addClose.addEventListener('click', closeAdd);
     addOverlay.addEventListener('click', e => { if (e.target === addOverlay) closeAdd(); });
     function closeAdd() {
         addOverlay.classList.remove('open');
-        document.body.style.overflow = '';
+        window.DuitkuUnlockScroll();
         addForm.reset();
         // Reset type buttons to hutang
         document.querySelectorAll('.debt-type-btn').forEach(b => b.classList.remove('active'));

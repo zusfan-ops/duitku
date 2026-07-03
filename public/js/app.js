@@ -17,6 +17,30 @@
     // ── Cached Elements ──────────────────────────────────────────────────────
     const $ = id => document.getElementById(id);
 
+    // ── Body scroll lock ────────────────────────────────────────────────────
+    // overflow:hidden alone doesn't stop touch-drag scrolling on iOS Safari,
+    // which lets the background "slide" behind an open modal. Pin the body
+    // with position:fixed instead and restore the scroll position on unlock.
+    let _scrollLockY = 0;
+    window.DuitkuLockScroll = function () {
+        _scrollLockY = window.scrollY || window.pageYOffset || 0;
+        document.body.style.position = 'fixed';
+        document.body.style.top      = `-${_scrollLockY}px`;
+        document.body.style.left     = '0';
+        document.body.style.right    = '0';
+        document.body.style.width    = '100%';
+        document.body.style.overflow = 'hidden';
+    };
+    window.DuitkuUnlockScroll = function () {
+        document.body.style.position = '';
+        document.body.style.top      = '';
+        document.body.style.left     = '';
+        document.body.style.right    = '';
+        document.body.style.width    = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, _scrollLockY);
+    };
+
     // ── CSRF Helper ──────────────────────────────────────────────────────────
     function csrfHeaders() {
         return {
@@ -177,14 +201,14 @@
         populateWalletSelect(editData ? editData.wallet_id : null);
         renderCategoryChips();
         overlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        window.DuitkuLockScroll();
         setTimeout(() => $('txAmount').focus(), 350);
     }
 
     function closeModal() {
         if (!overlay) return;
         overlay.classList.remove('open');
-        document.body.style.overflow = '';
+        window.DuitkuUnlockScroll();
     }
 
     if (fabBtn)     fabBtn.addEventListener('click', () => openModal());

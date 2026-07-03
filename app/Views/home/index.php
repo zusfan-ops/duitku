@@ -1315,11 +1315,11 @@
     // ── Open / Close ───────────────────────────────────────────────
     function openCalc() {
         overlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        window.DuitkuLockScroll();
     }
     function closeCalc() {
         overlay.classList.remove('open');
-        document.body.style.overflow = '';
+        window.DuitkuUnlockScroll();
     }
 
     btnOpen.addEventListener('click', openCalc);
@@ -1582,11 +1582,11 @@
         render();
         updateBadge();
         listOverlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        window.DuitkuLockScroll();
     }
     function closeList() {
         listOverlay.classList.remove('open');
-        document.body.style.overflow = '';
+        window.DuitkuUnlockScroll();
     }
     function openForm(item = null) {
         editId = item ? item.id : null;
@@ -1874,7 +1874,7 @@
     async function openBillsModal() {
         billsList.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted)">Memuat…</div>`;
         billsOverlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        window.DuitkuLockScroll();
         await loadBills();
         render();
         updateBadge();
@@ -1882,7 +1882,7 @@
     }
     function closeBillsModal() {
         billsOverlay.classList.remove('open');
-        document.body.style.overflow = '';
+        window.DuitkuUnlockScroll();
     }
     function openForm(bill) {
         editBillId        = bill ? bill.id : null;
@@ -1975,11 +1975,11 @@
 
     function openModal() {
         overlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        window.DuitkuLockScroll();
     }
     function closeModal() {
         overlay.classList.remove('open');
-        document.body.style.overflow = '';
+        window.DuitkuUnlockScroll();
     }
 
     function numVal(input) {
@@ -2048,12 +2048,12 @@
     btnOpen.addEventListener('click', openModal);
     function openModal() {
         overlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        window.DuitkuLockScroll();
         setTimeout(() => textarea.focus(), 80);
     }
     function closeModal() {
         overlay.classList.remove('open');
-        document.body.style.overflow = '';
+        window.DuitkuUnlockScroll();
     }
 
     saveBtn.addEventListener('click', async () => {
