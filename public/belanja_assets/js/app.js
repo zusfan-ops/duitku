@@ -663,15 +663,6 @@ const App = {
         });
     },
 
-    loadData() {
-        const saved = localStorage.getItem('belanja_data');
-        this.data = saved ? JSON.parse(saved) : [];
-    },
-
-    saveData() {
-        localStorage.setItem('belanja_data', JSON.stringify(this.data));
-    },
-
     getCurrentList() {
         return this.lists.find(l => l.id === this.currentListId) || this.lists[0] || { id: '', name: 'Daftar' };
     },
@@ -883,6 +874,7 @@ const App = {
     },
 
     updateOnlineStatus() {
+        if (!this.onlineStatus) return; // element removed from current header layout
         if (navigator.onLine) {
             this.onlineStatus.textContent = 'Online';
             this.onlineStatus.classList.remove('offline');

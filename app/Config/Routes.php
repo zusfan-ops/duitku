@@ -84,3 +84,71 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/wallets/default/(:num)',   'WalletController::setDefault/$1');
     $routes->post('/wallets/transfer',         'WalletController::transfer');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// API (mobile app — Bearer token auth)
+// ─────────────────────────────────────────────────────────────────────────────
+$routes->group('api', function ($routes) {
+
+    // Public: auth
+    $routes->post('login',    'Api\AuthController::login');
+    $routes->post('register', 'Api\AuthController::register');
+    $routes->get('me',        'Api\AuthController::me',  ['filter' => 'api_auth']);
+    $routes->post('logout',   'Api\AuthController::logout', ['filter' => 'api_auth']);
+
+    // Protected
+    $routes->group('', ['filter' => 'api_auth'], function ($routes) {
+
+        // Dashboard / home
+        $routes->get('dashboard', 'Api\DashboardController::index');
+
+        // Stats
+        $routes->get('stats', 'Api\StatsController::index');
+
+        // Categories
+        $routes->get('categories', 'Api\CategoryController::index');
+        $routes->post('categories/store', 'Api\CategoryController::store');
+        $routes->post('categories/delete/(:num)', 'Api\CategoryController::delete/$1');
+
+        // Transactions + activity
+        $routes->get('activity', 'Api\ActivityController::index');
+        $routes->get('transaction/(:num)', 'Api\TransactionController::show/$1');
+        $routes->post('transaction/store', 'Api\TransactionController::store');
+        $routes->post('transaction/update/(:num)', 'Api\TransactionController::update/$1');
+        $routes->post('transaction/delete/(:num)', 'Api\TransactionController::delete/$1');
+        $routes->post('recurring/delete/(:num)', 'Api\TransactionController::deleteRecurring/$1');
+
+        // Belanja (offline-first sync)
+        $routes->get('belanja',  'Api\BelanjaController::index');
+        $routes->post('belanja/sync', 'Api\BelanjaController::sync');
+
+        // Bills
+        $routes->get('bills', 'Api\BillController::index');
+        $routes->post('bills/store', 'Api\BillController::store');
+        $routes->post('bills/delete/(:segment)', 'Api\BillController::delete/$1');
+
+        // Debts
+        $routes->get('hutang', 'Api\DebtController::index');
+        $routes->post('hutang/store', 'Api\DebtController::store');
+        $routes->post('hutang/pay/(:num)', 'Api\DebtController::pay/$1');
+        $routes->post('hutang/settle/(:num)', 'Api\DebtController::settle/$1');
+        $routes->post('hutang/delete/(:num)', 'Api\DebtController::delete/$1');
+
+        // Wallets
+        $routes->get('wallets', 'Api\WalletController::index');
+        $routes->post('wallets/store', 'Api\WalletController::store');
+        $routes->post('wallets/delete/(:num)', 'Api\WalletController::delete/$1');
+        $routes->post('wallets/default/(:num)', 'Api\WalletController::setDefault/$1');
+        $routes->post('wallets/transfer', 'Api\WalletController::transfer');
+
+        // Settings
+        $routes->get('settings', 'Api\SettingController::index');
+        $routes->post('settings/currency', 'Api\SettingController::saveCurrency');
+        $routes->post('settings/budget', 'Api\SettingController::saveBudget');
+        $routes->post('settings/profile', 'Api\SettingController::saveProfile');
+        $routes->post('settings/avatar', 'Api\SettingController::saveAvatar');
+        $routes->post('settings/savings', 'Api\SettingController::saveSavings');
+        $routes->post('settings/savings/delete', 'Api\SettingController::deleteSavings');
+        $routes->post('settings/note', 'Api\SettingController::saveNote');
+    });
+});

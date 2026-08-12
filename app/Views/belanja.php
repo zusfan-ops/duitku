@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/main') ?>
 
 <?= $this->section('styles') ?>
-<link rel="stylesheet" href="/belanja_assets/css/style.css?v=22">
+<link rel="stylesheet" href="/belanja_assets/css/style.css?v=23">
 <style>
 /* ── hide DuitKu FAB, fix belanja wrapper ── */
 #fabBtn { display: none !important; }
@@ -200,63 +200,6 @@
 [data-theme="dark"] .belanja-wrapper .pill { background: #252840; color: #9CA3AF; }
 [data-theme="dark"] .belanja-wrapper .pill.active { background: #1C3A1E; color: #6EE7A3; }
 
-/* ══════════════════════════════════ SHOPPING LIST ITEMS */
-.belanja-wrapper .shopping-list {
-    padding: 8px 12px; display: flex; flex-direction: column; gap: 6px;
-}
-.belanja-wrapper .shopping-item {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--bg-card, #fff);
-    border: 1.5px solid var(--border);
-    border-radius: 14px; padding: 12px 14px;
-    transition: all .2s;
-}
-[data-theme="dark"] .belanja-wrapper .shopping-item {
-    background: #1E2035; border-color: #2A2D3E;
-}
-.belanja-wrapper .shopping-item.checked {
-    opacity: .6; border-style: dashed;
-}
-.belanja-wrapper .item-check {
-    width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border);
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    cursor: pointer; transition: all .15s; background: transparent;
-}
-.belanja-wrapper .shopping-item.checked .item-check {
-    background: #2D5A27; border-color: #2D5A27; color: #fff;
-}
-.belanja-wrapper .item-info { flex: 1; min-width: 0; }
-.belanja-wrapper .item-name {
-    font-size: 14px; font-weight: 600;
-    color: var(--text-primary); line-height: 1.3;
-}
-[data-theme="dark"] .belanja-wrapper .item-name { color: #F1F5FB; }
-.belanja-wrapper .shopping-item.checked .item-name {
-    text-decoration: line-through; color: var(--text-muted);
-}
-.belanja-wrapper .item-meta {
-    font-size: 11.5px; color: var(--text-muted); margin-top: 2px;
-    display: flex; gap: 8px; flex-wrap: wrap;
-}
-.belanja-wrapper .item-price-badge {
-    font-size: 11.5px; font-weight: 700; color: #2D5A27;
-    background: #D4EDDA; border-radius: 6px; padding: 1px 7px;
-}
-[data-theme="dark"] .belanja-wrapper .item-price-badge { background: #1C3A1E; color: #6EE7A3; }
-.belanja-wrapper .item-actions {
-    display: flex; gap: 2px; flex-shrink: 0;
-}
-.belanja-wrapper .item-btn {
-    width: 32px; height: 32px; border-radius: 8px; border: none;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; background: transparent; color: var(--text-muted);
-    font-size: 15px; transition: background .15s, color .15s;
-}
-.belanja-wrapper .item-btn:hover { background: #F3F4F6; color: #4F46E5; }
-[data-theme="dark"] .belanja-wrapper .item-btn:hover { background: #252840; color: #818CF8; }
-.belanja-wrapper .item-btn.delete:hover { background: #FEE2E2; color: #DC2626; }
-[data-theme="dark"] .belanja-wrapper .item-btn.delete:hover { background: #3B1212; color: #F87171; }
-
 /* ══════════════════════════════════ EMPTY STATE */
 .belanja-wrapper .empty-state {
     text-align: center; padding: 48px 20px;
@@ -390,6 +333,31 @@
 .belanja-wrapper .budget-bar {
     height: 100%; background: #2D5A27; transition: width .4s;
 }
+
+/* ══════════════════════════════════ FORM FIELDS (match redesign theme) */
+/* belanja_assets/css/style.css hardcodes these dark (#2d2d2d/white) from the
+   old standalone app — override so they follow the same light/dark theme as
+   the rest of the redesigned modal instead of always rendering dark. */
+.belanja-wrapper .form-group input,
+.belanja-wrapper .form-group select,
+.belanja-wrapper .form-group textarea {
+    background-color: var(--bg-card, #fff);
+    color: var(--text-primary, #0F172A);
+    border-color: var(--border, #DDE3EC);
+}
+[data-theme="dark"] .belanja-wrapper .form-group input,
+[data-theme="dark"] .belanja-wrapper .form-group select,
+[data-theme="dark"] .belanja-wrapper .form-group textarea {
+    background-color: #1E2035;
+    color: #F1F5FB;
+    border-color: #2A2D3E;
+}
+
+/* ══════════════════════════════════ FAB vs modal */
+/* Keep the "+" FAB from floating visibly over an open modal's content.
+   (Belt-and-suspenders on top of the z-index fix in style.css — the FAB's
+   real class is .blj-fab-btn, not .fab.) */
+.page-content:has(.modal-overlay:not(.hidden)) .blj-fab-btn { display: none !important; }
 </style>
 <?= $this->endSection() ?>
 
@@ -1087,7 +1055,7 @@
 
 <?= $this->section('scripts') ?>
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="/belanja_assets/js/app.js?v=25"></script>
+<script src="/belanja_assets/js/app.js?v=26"></script>
 <script>
     lucide.createIcons();
 

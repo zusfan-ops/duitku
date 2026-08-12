@@ -116,7 +116,7 @@ class TransactionModel extends Model
             FROM transactions
             WHERE user_id = ?
               AND date >= DATE_SUB(CURDATE(), INTERVAL ? MONTH)
-            GROUP BY DATE_FORMAT(date, '%Y-%m')
+            GROUP BY DATE_FORMAT(date, '%Y-%m'), DATE_FORMAT(date, '%b')
             ORDER BY month ASC
         ", [$userId, $months])->getResultArray();
     }
