@@ -13,7 +13,14 @@ class SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('🪙', style: TextStyle(fontSize: 64)),
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(20)),
+              child: Image(
+                image: AssetImage('assets/icon/logo.png'),
+                width: 84,
+                height: 84,
+              ),
+            ),
             SizedBox(height: 12),
             Text(
               'DuitKu',

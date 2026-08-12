@@ -150,15 +150,13 @@ class _Hero extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Container(
-            width: 62,
-            height: 62,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: .14),
-              shape: BoxShape.circle,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Image.asset(
+              'assets/icon/logo.png',
+              width: 72,
+              height: 72,
             ),
-            child: const Text('🪙', style: TextStyle(fontSize: 30)),
           ),
           const SizedBox(height: 10),
           const Text(

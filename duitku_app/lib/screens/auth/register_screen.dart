@@ -70,12 +70,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     end: Alignment.bottomRight,
                   ),
                 ),
-                child: const Column(
+                child: Column(
                   children: [
-                    Text('Buat Akun Baru',
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset('assets/icon/logo.png', width: 56, height: 56),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Buat Akun Baru',
                         style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
-                    SizedBox(height: 6),
-                    Text(
+                    const SizedBox(height: 6),
+                    const Text(
                       'Mulai catat keuangan pribadimu, gratis.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white70, fontSize: 12.5),
