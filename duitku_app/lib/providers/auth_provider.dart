@@ -15,7 +15,13 @@ class AuthProvider extends ChangeNotifier {
   bool get busy => _busy;
 
   Future<void> init() async {
-    _user = await SessionManager.restore();
+    // Keep the splash visible for a moment so its rotating tip is actually readable,
+    // even though restoring the session locally is otherwise near-instant.
+    final results = await Future.wait([
+      SessionManager.restore(),
+      Future.delayed(const Duration(milliseconds: 2500)),
+    ]);
+    _user = results[0] as User?;
     _initializing = false;
     notifyListeners();
   }
