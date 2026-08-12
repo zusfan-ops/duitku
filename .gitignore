@@ -46,6 +46,7 @@ app/Config/db_config.php
 public/uploads/
 .vagrant
 Vagrantfile
+backupappconfig/
 
 #-------------------------
 # Temporary Files
