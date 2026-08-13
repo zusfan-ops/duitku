@@ -2,4 +2,13 @@
 <resources>
     <color name="ic_launcher_background">#F6F7F9</color>
     <color name="splash_background">#0A2A1F</color>
+
+    <!-- Widget colors -->
+    <color name="widget_background">#FFFFFF</color>
+    <color name="widget_border">#EDF0F4</color>
+    <color name="widget_text_primary">#0F172A</color>
+    <color name="widget_text_muted">#64748B</color>
+    <color name="widget_divider">#EDF0F4</color>
+    <color name="widget_income">#16A34A</color>
+    <color name="widget_expense">#DC2626</color>
 </resources>

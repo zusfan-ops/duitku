@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/user.dart';
@@ -17,13 +19,19 @@ class AuthProvider extends ChangeNotifier {
   Future<void> init() async {
     // Keep the splash visible for a moment so its rotating tip is actually readable,
     // even though restoring the session locally is otherwise near-instant.
-    final results = await Future.wait([
-      SessionManager.restore(),
-      Future.delayed(const Duration(milliseconds: 2500)),
-    ]);
-    _user = results[0] as User?;
-    _initializing = false;
-    notifyListeners();
+    try {
+      final results = await Future.wait([
+        SessionManager.restore(),
+        Future.delayed(const Duration(milliseconds: 2500)),
+      ]);
+      _user = results[0] as User?;
+    } catch (e, st) {
+      log('Session restore failed: $e', stackTrace: st);
+      _user = null;
+    } finally {
+      _initializing = false;
+      notifyListeners();
+    }
   }
 
   Future<String?> login(String email, String password) async {

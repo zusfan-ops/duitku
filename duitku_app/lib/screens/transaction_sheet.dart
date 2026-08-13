@@ -7,6 +7,7 @@ import '../models/category.dart';
 import '../models/transaction.dart';
 import '../models/wallet.dart';
 import '../services/api_service.dart';
+import '../services/widget_helper.dart';
 import '../theme.dart';
 import '../utils/format.dart';
 import '../widgets/category_icon.dart';
@@ -132,6 +133,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
         );
       }
       if (!mounted) return;
+      WidgetHelper.updateDashboardWidget();
       Navigator.pop(context, true);
     } on ApiException catch (e) {
       if (!mounted) return;

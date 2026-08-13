@@ -9,6 +9,7 @@ import '../models/wallet.dart';
 import '../providers/app_data_provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../services/widget_helper.dart';
 import '../theme.dart';
 import '../utils/format.dart';
 import '../widgets/calculator_sheet.dart';
@@ -62,6 +63,7 @@ class DashboardScreenState extends State<DashboardScreen> {
         _loading = false;
       });
       context.read<AppDataProvider>().ensureLoaded(force: true);
+      WidgetHelper.updateDashboardWidget();
     } on ApiException catch (e) {
       if (!mounted) return;
       if (e.status == 401) {

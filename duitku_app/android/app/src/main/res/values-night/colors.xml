@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widget colors (dark mode) -->
+    <color name="widget_background">#1C1C1E</color>
+    <color name="widget_border">#2C2C2E</color>
+    <color name="widget_text_primary">#FFFFFF</color>
+    <color name="widget_text_muted">#A1A1AA</color>
+    <color name="widget_divider">#2C2C2E</color>
+    <color name="widget_income">#4ADE80</color>
+    <color name="widget_expense">#F87171</color>
+</resources>

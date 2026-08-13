@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_balance_default">Rp 0</string>
+    <string name="widget_income_default">Rp 0</string>
+    <string name="widget_expense_default">Rp 0</string>
+    <string name="widget_month_default">Bulan ini</string>
+    <string name="widget_balance_label">Total saldo</string>
+    <string name="widget_income_label">Pemasukan</string>
+    <string name="widget_expense_label">Pengeluaran</string>
+</resources>

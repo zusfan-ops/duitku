@@ -47,6 +47,24 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            // R8 dinonaktifkan karena menyebabkan crash/force close di BlueStacks.
+            // Ukuran APK tetap dioptimasi melalui split ABI untuk distribusi langsung
+            // dan App Bundle split untuk Play Store.
+            isMinifyEnabled = false
+            isShrinkResources = false
+            isDebuggable = false
+        }
+    }
+
+    bundle {
+        language {
+            enableSplit = true
+        }
+        density {
+            enableSplit = true
+        }
+        abi {
+            enableSplit = true
         }
     }
 }
