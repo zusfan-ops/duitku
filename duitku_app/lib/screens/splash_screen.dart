@@ -85,57 +85,67 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: FadeTransition(
-                  opacity: _fade,
-                  child: SlideTransition(
-                    position: _slide,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _GlassIconFrame(),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'DuitKu',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Pencatat keuangan pribadi',
-                          style: TextStyle(color: Colors.white70, fontSize: 13),
-                        ),
-                        const SizedBox(height: 40),
-                        const Text('💡', style: TextStyle(fontSize: 20)),
-                        const SizedBox(height: 10),
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 450),
-                          child: Text(
-                            _financialTips[_tipIndex],
-                            key: ValueKey(_tipIndex),
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              height: 1.55,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text('TIPS KEUANGAN',
-                            style: TextStyle(
-                              color: Color(0xFFFBBF24),
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.2,
-                            )),
-                      ],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Identical to what the native pre-Flutter splash already shows —
+                    // rendered statically (no fade-in) so there's no visible flicker
+                    // at the handoff between native splash and this Dart screen.
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.asset('assets/icon/logo.png', width: 92, height: 92),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'DuitKu',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Pencatat keuangan pribadi',
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                    const SizedBox(height: 40),
+                    FadeTransition(
+                      opacity: _fade,
+                      child: SlideTransition(
+                        position: _slide,
+                        child: Column(
+                          children: [
+                            const Text('💡', style: TextStyle(fontSize: 20)),
+                            const SizedBox(height: 10),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 450),
+                              child: Text(
+                                _financialTips[_tipIndex],
+                                key: ValueKey(_tipIndex),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  height: 1.55,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text('TIPS KEUANGAN',
+                                style: TextStyle(
+                                  color: Color(0xFFFBBF24),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.2,
+                                )),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -165,29 +175,6 @@ class _Glow extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
-      ),
-    );
-  }
-}
-
-class _GlassIconFrame extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 104,
-      height: 104,
-      padding: const EdgeInsets.all(9),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .12),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withValues(alpha: .22), width: 1),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: .18), blurRadius: 24, offset: const Offset(0, 10)),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Image.asset('assets/icon/logo.png', fit: BoxFit.cover),
       ),
     );
   }

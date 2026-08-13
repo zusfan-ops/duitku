@@ -9,6 +9,7 @@ import 'dashboard_screen.dart';
 import 'settings_screen.dart';
 import 'stats_screen.dart';
 import 'transaction_sheet.dart';
+import 'traveling/traveling_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late final List<Widget> _pages = [
     DashboardScreen(key: _dashKey),
     const BelanjaScreen(),
+    const TravelingScreen(),
     const ActivityScreen(),
     const StatsScreen(),
     const SettingsScreen(),
@@ -33,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _index, children: _pages),
-      floatingActionButton: _index == 1
+      floatingActionButton: (_index == 1 || _index == 2)
           ? null
           : FloatingActionButton(
               onPressed: _openTransactionSheet,
@@ -62,9 +64,10 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _navItem(0, Icons.home_rounded, 'Beranda'),
               _navItem(1, Icons.shopping_cart_rounded, 'Belanja'),
-              _navItem(2, Icons.receipt_long_rounded, 'Aktivitas'),
-              _navItem(3, Icons.pie_chart_rounded, 'Statistik'),
-              _navItem(4, Icons.settings_rounded, 'Pengaturan'),
+              _navItem(2, Icons.travel_explore_rounded, 'Travel'),
+              _navItem(3, Icons.receipt_long_rounded, 'Aktivitas'),
+              _navItem(4, Icons.pie_chart_rounded, 'Statistik'),
+              _navItem(5, Icons.settings_rounded, 'Pengaturan'),
             ],
           ),
         ),
