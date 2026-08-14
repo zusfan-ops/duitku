@@ -52,11 +52,11 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<String?> register(String name, String email, String password, String confirm) async {
+  Future<String?> register(String name, String email, String phone, String password, String confirm) async {
     _busy = true;
     notifyListeners();
     try {
-      final (user, token) = await ApiService.instance.register(name, email, password, confirm);
+      final (user, token) = await ApiService.instance.register(name, email, phone, password, confirm);
       await SessionManager.save(token, user);
       _user = user;
       return null;

@@ -9,6 +9,7 @@ import '../models/wallet.dart';
 import '../providers/app_data_provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../services/belanja_store.dart';
 import '../services/widget_helper.dart';
 import '../theme.dart';
 import '../utils/format.dart';
@@ -16,6 +17,7 @@ import '../widgets/calculator_sheet.dart';
 import '../widgets/category_icon.dart';
 import '../widgets/transaction_tile.dart';
 import 'barang/barang_screen.dart';
+import 'belanja/belanja_screen.dart';
 import 'bills_screen.dart';
 import 'debt_screen.dart';
 import 'note_sheet.dart';
@@ -34,6 +36,8 @@ class DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? _data;
   bool _loading = true;
   String? _error;
+  int _recentPage = 1;
+  static const int _recentPerPage = 5;
 
   @override
   void initState() {
@@ -125,6 +129,7 @@ class DashboardScreenState extends State<DashboardScreen> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
         _HeroCard(data: data),
+        const _BelanjaHomeCard(),
         if ((data.wallets as List).isNotEmpty) _WalletStrip(wallets: data.wallets as List<Wallet>),
         if ((data.dailyBalance as List).length > 1)
           _DailyChart(data: data),
@@ -135,25 +140,87 @@ class DashboardScreenState extends State<DashboardScreen> {
         if (data.savingsTarget > 0) _SavingsCard(data: data),
         if ((data.monthNote ?? '').isNotEmpty) _NotePreview(data: data),
         if ((data.debtSummary.activeCount as int) > 0) _DebtSummaryCard(data: data),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('Aktivitas Terbaru',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-            Text('${recent.length} transaksi',
+            Text('${recent.length} total',
                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         if (recent.isEmpty)
           const _EmptyRecent()
-        else
-          ...recent.map((tx) => TransactionTile(
-                tx: tx,
-                symbol: data.symbol as String,
-                onTap: () => _editTransaction(context, tx),
-              )),
+        else ...[
+          ...() {
+            final totalRecent = recent.length;
+            final totalPages = (totalRecent / _recentPerPage).ceil().clamp(1, 999);
+            final curPage = _recentPage.clamp(1, totalPages);
+            final startIndex = (curPage - 1) * _recentPerPage;
+            final pageItems = recent.skip(startIndex).take(_recentPerPage).toList();
+
+            return [
+              ...pageItems.map((tx) => TransactionTile(
+                    tx: tx,
+                    symbol: data.symbol as String,
+                    onTap: () => _editTransaction(context, tx),
+                  )),
+              if (totalPages > 1)
+                Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.borderLight),
+                    boxShadow: AppColors.cardShadow,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: curPage > 1 ? () => setState(() => _recentPage = curPage - 1) : null,
+                        icon: const Icon(Icons.chevron_left_rounded, size: 18),
+                        label: const Text('Sebelumnya', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          visualDensity: VisualDensity.compact,
+                          side: BorderSide(color: curPage > 1 ? AppColors.primary : AppColors.border),
+                          foregroundColor: curPage > 1 ? AppColors.primary : AppColors.textMuted,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.bg,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '$curPage / $totalPages',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: curPage < totalPages ? () => setState(() => _recentPage = curPage + 1) : null,
+                        label: const Text('Selanjutnya', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                        icon: const Icon(Icons.chevron_right_rounded, size: 18),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          visualDensity: VisualDensity.compact,
+                          side: BorderSide(color: curPage < totalPages ? AppColors.primary : AppColors.border),
+                          foregroundColor: curPage < totalPages ? AppColors.primary : AppColors.textMuted,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ];
+          }(),
+        ],
       ],
     );
   }
@@ -163,14 +230,25 @@ class DashboardScreenState extends State<DashboardScreen> {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => TransactionSheet(
-        categories: appData.categories,
-        wallets: appData.wallets,
-        transaction: tx,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: 74 + MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: AppColors.cardShadow,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: TransactionSheet(
+              categories: appData.categories,
+              wallets: appData.wallets,
+              transaction: tx,
+            ),
+          ),
+        ),
       ),
     );
     if (saved == true) refresh();
@@ -189,44 +267,82 @@ class _HeroCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF043D22), Color(0xFF076836), Color(0xFF0AA956)],
+          colors: [Color(0xFF064E3B), Color(0xFF047857), Color(0xFF059669)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: const Color(0xFF076836).withValues(alpha: .3), blurRadius: 24, offset: const Offset(0, 8)),
+          BoxShadow(color: const Color(0xFF059669).withValues(alpha: .28), blurRadius: 20, offset: const Offset(0, 8)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('TOTAL SALDO',
-              style: TextStyle(
-                  fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .6,
-                  color: Colors.white54)),
-          const SizedBox(height: 4),
-          Text(Fmt.money(data.balance as double, symbol: symbol),
-              style: const TextStyle(
-                  fontSize: 32, fontWeight: FontWeight.w800, color: Colors.white,
-                  letterSpacing: -.5, height: 1.1)),
-          const SizedBox(height: 4),
-          const Text('Akumulasi semua transaksi', style: TextStyle(fontSize: 11, color: Colors.white38)),
-          const SizedBox(height: 16),
-          const Divider(color: Colors.white12, height: 1),
-          const SizedBox(height: 12),
-          Text('BULAN INI · ${(data.month as String).toUpperCase()}',
-              style: const TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: .4, color: Colors.white38)),
-          const SizedBox(height: 10),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _Stat(icon: Icons.south_west, color: const Color(0xFF4ADE80), label: 'Pemasukan',
-                  value: Fmt.money(data.monthlyIncome as double, symbol: symbol)),
-              const SizedBox(width: 10),
-              _Stat(icon: Icons.north_east, color: const Color(0xFFF87171), label: 'Pengeluaran',
-                  value: Fmt.money(data.monthlyExpense as double, symbol: symbol)),
+              const Text('TOTAL SALDO KEUANGAN',
+                  style: TextStyle(
+                      fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: .7,
+                      color: Colors.white70)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  (data.month as String).toUpperCase(),
+                  style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.3),
+                ),
+              ),
             ],
+          ),
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              Fmt.money(data.balance as double, symbol: symbol),
+              style: const TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: -0.8,
+                height: 1.1,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                _Stat(
+                  icon: Icons.arrow_downward_rounded,
+                  color: const Color(0xFF4ADE80),
+                  label: 'Pemasukan',
+                  value: Fmt.money(data.monthlyIncome as double, symbol: symbol),
+                ),
+                Container(
+                  width: 1,
+                  height: 32,
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  color: Colors.white12,
+                ),
+                _Stat(
+                  icon: Icons.arrow_upward_rounded,
+                  color: const Color(0xFFF87171),
+                  label: 'Pengeluaran',
+                  value: Fmt.money(data.monthlyExpense as double, symbol: symbol),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -244,32 +360,39 @@ class _Stat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: .18),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(color: color.withValues(alpha: .18), borderRadius: BorderRadius.circular(9)),
-              child: Icon(icon, size: 16, color: color),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(color: color.withValues(alpha: .2), borderRadius: BorderRadius.circular(8)),
+            child: Icon(icon, size: 15, color: color),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white70),
+                ),
+                const SizedBox(height: 1),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Colors.white),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white54)),
-                  Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white)),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -727,7 +850,7 @@ class _QuickActions extends StatelessWidget {
     final symbol = data.symbol as String;
     return Container(
       margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(18),
@@ -736,17 +859,32 @@ class _QuickActions extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _QaBtn(icon: Icons.calculate_outlined, label: 'Kalkulator',
-              onTap: () => _openCalculator(context)),
-          _QaBtn(icon: Icons.receipt_long_outlined, label: 'Tagihan',
-              onTap: () => _openBills(context, symbol)),
-          _QaBtn(icon: Icons.inventory_2_outlined, label: 'Barang',
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BarangScreen()))),
-          _QaBtn(icon: Icons.edit_note, label: 'Catatan',
-              onTap: () => _openNote(context)),
-          _QaBtn(icon: Icons.people_outline, label: 'Hutang',
-              badge: (data.debtSummary.activeCount as int) > 0 ? '${data.debtSummary.activeCount}' : null,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DebtScreen()))),
+          _QaBtn(
+            icon: Icons.calculate_outlined,
+            label: 'Kalkulator',
+            onTap: () => _openCalculator(context),
+          ),
+          _QaBtn(
+            icon: Icons.receipt_long_outlined,
+            label: 'Tagihan',
+            onTap: () => _openBills(context, symbol),
+          ),
+          _QaBtn(
+            icon: Icons.inventory_2_outlined,
+            label: 'Barang',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BarangScreen())),
+          ),
+          _QaBtn(
+            icon: Icons.edit_note_rounded,
+            label: 'Catatan',
+            onTap: () => _openNote(context),
+          ),
+          _QaBtn(
+            icon: Icons.account_balance_wallet_outlined,
+            label: 'Hutang',
+            badge: (data.debtSummary.activeCount as int) > 0 ? '${data.debtSummary.activeCount}' : null,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DebtScreen())),
+          ),
         ],
       ),
     );
@@ -763,39 +901,58 @@ class _QaBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+            child: Column(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: .08),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: AppColors.primary, size: 20),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySubtle,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, color: AppColors.primary, size: 20),
+                    ),
+                    if (badge != null)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: const BoxDecoration(color: AppColors.expense, shape: BoxShape.circle),
+                          child: Text(
+                            badge!,
+                            style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-                if (badge != null)
-                  Positioned(
-                    right: -6,
-                    top: -6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: const BoxDecoration(color: AppColors.expense, shape: BoxShape.circle),
-                      child: Text(badge!,
-                          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white)),
+                const SizedBox(height: 6),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
                     ),
                   ),
+                ),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-          ],
+          ),
         ),
       ),
     );
@@ -1079,3 +1236,238 @@ void _openNote(BuildContext context) {
     builder: (_) => const NoteSheet(),
   );
 }
+
+// ── Belanja Home Card ──────────────────────────────────────────
+class _BelanjaHomeCard extends StatefulWidget {
+  const _BelanjaHomeCard();
+
+  @override
+  State<_BelanjaHomeCard> createState() => _BelanjaHomeCardState();
+}
+
+class _BelanjaHomeCardState extends State<_BelanjaHomeCard> {
+  List<Map<String, dynamic>> _items = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final list = await BelanjaStore.localList('data');
+      if (!mounted) return;
+      setState(() {
+        _items = list;
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _openBelanja() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const BelanjaScreen()),
+    );
+    _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const SizedBox.shrink();
+
+    final unbought = _items.where((e) => (e['bought']?.toString() ?? 'false') != 'true').toList();
+    final boughtCount = _items.length - unbought.length;
+    final progress = _items.isEmpty ? 0.0 : (boughtCount / _items.length);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF9D174D), Color(0xFFBE185D), Color(0xFFF43F5E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF43F5E).withValues(alpha: 0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _openBelanja,
+            child: Stack(
+              children: [
+                // Watermark Vector Icon
+                Positioned(
+                  right: -10,
+                  bottom: -15,
+                  child: Transform.rotate(
+                    angle: -0.15,
+                    child: Icon(
+                      Icons.shopping_bag_rounded,
+                      size: 90,
+                      color: Colors.white.withValues(alpha: 0.12),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.22),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 20),
+                              ),
+                              const SizedBox(width: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Daftar Belanja',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                  Text(
+                                    _items.isEmpty
+                                        ? 'Belum ada catatan belanja'
+                                        : '${unbought.length} item perlu dibeli',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white.withValues(alpha: 0.85),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.22),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Buka',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(width: 3),
+                                Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Colors.white),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_items.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            minHeight: 5,
+                            backgroundColor: Colors.black.withValues(alpha: 0.2),
+                            valueColor: const AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        ),
+                        if (unbought.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          Column(
+                            children: unbought.take(2).map((item) {
+                              final name = item['name']?.toString() ?? '';
+                              final qty = item['qty']?.toString() ?? '';
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 3),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 14,
+                                      height: 14,
+                                      margin: const EdgeInsets.only(right: 8),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.white70, width: 1.5),
+                                        borderRadius: BorderRadius.circular(4),
+                                        color: Colors.white.withValues(alpha: 0.1),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
+                                      ),
+                                    ),
+                                    if (qty.isNotEmpty)
+                                      Text(
+                                        qty,
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white.withValues(alpha: 0.8)),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ] else ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Icon(Icons.add_circle_outline_rounded, size: 15, color: Colors.white.withValues(alpha: 0.9)),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Ketuk untuk membuat daftar belanjaan baru',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

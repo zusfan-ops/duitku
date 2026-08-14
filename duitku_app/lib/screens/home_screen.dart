@@ -4,12 +4,10 @@ import 'package:provider/provider.dart';
 import '../providers/app_data_provider.dart';
 import '../theme.dart';
 import 'activity_screen.dart';
-import 'belanja/belanja_screen.dart';
 import 'dashboard_screen.dart';
+import 'features_screen.dart';
 import 'settings_screen.dart';
-import 'stats_screen.dart';
 import 'transaction_sheet.dart';
-import 'traveling/traveling_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,107 +20,143 @@ class _HomeScreenState extends State<HomeScreen> {
   int _index = 0;
   final _dashKey = GlobalKey<DashboardScreenState>();
 
-  late final List<Widget> _pages = [
-    DashboardScreen(key: _dashKey),
-    const BelanjaScreen(),
-    const TravelingScreen(),
-    const ActivityScreen(),
-    const StatsScreen(),
-    const SettingsScreen(),
+  final List<GlobalKey<NavigatorState>> _navigatorKeys = [
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
   ];
+
+  Widget _buildTabNavigator(int index, Widget root) {
+    return Navigator(
+      key: _navigatorKeys[index],
+      onGenerateRoute: (settings) => MaterialPageRoute(
+        builder: (_) => root,
+        settings: settings,
+      ),
+    );
+  }
+
+  void _onTabSelected(int index) {
+    if (_index == index) {
+      _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
+    } else {
+      setState(() => _index = index);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(index: _index, children: _pages),
-      floatingActionButton: (_index == 1 || _index == 2)
-          ? null
-          : FloatingActionButton(
-              onPressed: _openTransactionSheet,
-              backgroundColor: AppColors.primary,
-              shape: const CircleBorder(),
-              child: const Icon(Icons.add, color: Colors.white, size: 28),
-            ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: Container(
-          height: 70,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final isFirstRouteInCurrentTab =
+            !await _navigatorKeys[_index].currentState!.maybePop();
+        if (isFirstRouteInCurrentTab) {
+          if (_index != 0) {
+            setState(() => _index = 0);
+          }
+        }
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: _index,
+          children: [
+            _buildTabNavigator(0, DashboardScreen(key: _dashKey)),
+            _buildTabNavigator(1, const ActivityScreen()),
+            _buildTabNavigator(2, const FeaturesScreen()),
+            _buildTabNavigator(3, const SettingsScreen()),
+          ],
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: Container(
+          height: 56,
+          width: 56,
+          margin: const EdgeInsets.only(top: 24),
           decoration: BoxDecoration(
-            color: const Color(0xFF111114),
-            borderRadius: BorderRadius.circular(31),
-            boxShadow: [
+            shape: BoxShape.circle,
+            boxShadow: AppColors.fabShadow,
+          ),
+          child: FloatingActionButton(
+            elevation: 0,
+            highlightElevation: 0,
+            onPressed: _openTransactionSheet,
+            backgroundColor: AppColors.primary,
+            shape: const CircleBorder(),
+            child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
+          ),
+        ),
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            border: const Border(top: BorderSide(color: AppColors.border, width: 1)),
+            boxShadow: const [
               BoxShadow(
-                color: Colors.black.withValues(alpha: .28),
-                blurRadius: 22,
-                offset: const Offset(0, 10),
+                color: Color(0x08000000),
+                blurRadius: 20,
+                offset: Offset(0, -4),
               ),
             ],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _navItem(0, Icons.home_rounded, 'Beranda'),
-              _navItem(1, Icons.shopping_cart_rounded, 'Belanja'),
-              _navItem(2, Icons.travel_explore_rounded, 'Travel'),
-              _navItem(3, Icons.receipt_long_rounded, 'Aktivitas'),
-              _navItem(4, Icons.pie_chart_rounded, 'Statistik'),
-              _navItem(5, Icons.settings_rounded, 'Pengaturan'),
-            ],
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              height: 64,
+              child: Row(
+                children: [
+                  _navItem(0, Icons.home_rounded, Icons.home_outlined, 'Beranda'),
+                  _navItem(1, Icons.receipt_long_rounded, Icons.receipt_long_outlined, 'Aktivitas'),
+                  const SizedBox(width: 56), // Spacing for centered FAB
+                  _navItem(2, Icons.grid_view_rounded, Icons.grid_view_outlined, 'Fitur'),
+                  _navItem(3, Icons.person_rounded, Icons.person_outline_rounded, 'Akun'),
+                ],
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _navItem(int index, IconData icon, String label) {
+  Widget _navItem(int index, IconData activeIcon, IconData inactiveIcon, String label) {
     final active = _index == index;
     return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _index = index),
-        behavior: HitTestBehavior.opaque,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 5),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 260),
-            curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
-            decoration: BoxDecoration(
-              color: active ? AppColors.primaryLight : Colors.transparent,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _onTabSelected(index),
+          splashColor: AppColors.primaryLight.withValues(alpha: 0.1),
+          highlightColor: Colors.transparent,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+                decoration: BoxDecoration(
+                  color: active ? AppColors.primarySubtle : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  active ? activeIcon : inactiveIcon,
                   size: 22,
-                  color: active ? Colors.white : Colors.white38,
+                  color: active ? AppColors.primary : AppColors.textMuted,
                 ),
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeOutCubic,
-                  child: active
-                      ? Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              label,
-                              maxLines: 1,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        )
-                      : const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                  color: active ? AppColors.primary : AppColors.textSecondary,
+                  letterSpacing: -0.1,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -136,12 +170,22 @@ class _HomeScreenState extends State<HomeScreen> {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: 74 + MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: AppColors.cardShadow,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: TransactionSheet(categories: data.categories, wallets: data.wallets),
+          ),
+        ),
       ),
-      builder: (_) =>
-          TransactionSheet(categories: data.categories, wallets: data.wallets),
     );
     if (saved == true && mounted) {
       _dashKey.currentState?.refresh();

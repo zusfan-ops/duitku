@@ -25,17 +25,17 @@ class AuthController extends ApiController
     public function login()
     {
         $json     = $this->request->getJSON(true) ?? [];
-        $email    = trim($json['email'] ?? '');
+        $email    = trim($json['email'] ?? $json['phone'] ?? $json['whatsapp'] ?? '');
         $password = $json['password'] ?? '';
         $device   = trim($json['device'] ?? 'android');
 
         if (!$email || !$password) {
-            return $this->fail('Email dan password wajib diisi.');
+            return $this->fail('No. WhatsApp / Email dan password wajib diisi.');
         }
 
-        $user = $this->userModel->findByEmail($email);
+        $user = $this->userModel->findByIdentifier($email);
         if (!$user || !password_verify($password, $user['password'])) {
-            return $this->fail('Email atau password salah.');
+            return $this->fail('No. WhatsApp / Email atau password salah.');
         }
 
         $token = $this->issueToken((int) $user['id'], $device);
@@ -48,18 +48,25 @@ class AuthController extends ApiController
 
     public function register()
     {
-        $json    = $this->request->getJSON(true) ?? [];
-        $name    = trim($json['name'] ?? '');
-        $email   = trim($json['email'] ?? '');
+        $json     = $this->request->getJSON(true) ?? [];
+        $name     = trim($json['name'] ?? '');
+        $email    = trim($json['email'] ?? '');
+        $phone    = trim($json['phone'] ?? $json['whatsapp'] ?? '');
         $password = $json['password'] ?? '';
-        $confirm = $json['password_confirm'] ?? '';
-        $device  = trim($json['device'] ?? 'android');
+        $confirm  = $json['password_confirm'] ?? '';
+        $device   = trim($json['device'] ?? 'android');
 
         if (strlen($name) < 2) {
             return $this->fail('Nama minimal 2 karakter.');
         }
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return $this->fail('Format email tidak valid.');
+        if ($phone && strlen($phone) < 8) {
+            return $this->fail('Nomor WhatsApp minimal 8 digit.');
+        }
+        if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->fail('Format Email tidak valid.');
+        }
+        if (!$phone && !$email) {
+            return $this->fail('Nomor WhatsApp atau Email wajib diisi.');
         }
         if (strlen($password) < 6) {
             return $this->fail('Password minimal 6 karakter.');
@@ -67,14 +74,18 @@ class AuthController extends ApiController
         if ($password !== $confirm) {
             return $this->fail('Konfirmasi password tidak cocok.');
         }
-        if ($this->userModel->findByEmail($email)) {
+        if ($email && $this->userModel->findByEmail($email)) {
             return $this->fail('Email sudah terdaftar.');
+        }
+        if ($phone && $this->userModel->findByPhone($phone)) {
+            return $this->fail('Nomor WhatsApp sudah terdaftar.');
         }
 
         $avatar = $this->userModel->generateAvatar($name);
         $userId = $this->userModel->insert([
             'name'     => $name,
-            'email'    => $email,
+            'email'    => $email ?: $phone,
+            'phone'    => $phone,
             'password' => password_hash($password, PASSWORD_DEFAULT),
             'avatar'   => $avatar,
         ]);

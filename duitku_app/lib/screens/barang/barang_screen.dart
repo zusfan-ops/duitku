@@ -179,7 +179,7 @@ class _BarangScreenState extends State<BarangScreen> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
               sliver: SliverList.separated(
                 itemCount: _filtered.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final item = _filtered[index];
                   return _BarangCard(
@@ -302,7 +302,7 @@ class _PhotoThumb extends StatelessWidget {
           ? Image.file(
               File(path!),
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _fallback(),
+              errorBuilder: (_, _, _) => _fallback(),
               frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
                 if (wasSynchronouslyLoaded || frame != null) return child;
                 return const Center(
@@ -642,7 +642,7 @@ class _PhotoField extends StatelessWidget {
                 height: 180,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const _PhotoPlaceholder(),
+                errorBuilder: (_, _, _) => const _PhotoPlaceholder(),
               ),
             )
           else

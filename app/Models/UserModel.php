@@ -14,7 +14,7 @@ class UserModel extends Model
     protected $protectFields    = true;
 
     protected $allowedFields = [
-        'name', 'email', 'password', 'avatar'
+        'name', 'email', 'phone', 'password', 'avatar'
     ];
 
     protected $useTimestamps  = true;
@@ -23,19 +23,33 @@ class UserModel extends Model
 
     protected $validationRules = [
         'name'     => 'required|min_length[2]|max_length[100]',
-        'email'    => 'required|valid_email|max_length[150]',
+        'email'    => 'permit_empty|max_length[150]',
+        'phone'    => 'permit_empty|max_length[30]',
         'password' => 'required|min_length[6]',
     ];
 
     protected $validationMessages = [
         'name'     => ['required' => 'Nama wajib diisi.'],
-        'email'    => ['required' => 'Email wajib diisi.', 'valid_email' => 'Format email tidak valid.'],
         'password' => ['required' => 'Password wajib diisi.', 'min_length' => 'Password minimal 6 karakter.'],
     ];
 
     public function findByEmail(string $email): ?array
     {
         return $this->where('email', $email)->first();
+    }
+
+    public function findByPhone(string $phone): ?array
+    {
+        return $this->where('phone', $phone)->first();
+    }
+
+    public function findByIdentifier(string $val): ?array
+    {
+        return $this->groupStart()
+                    ->where('email', $val)
+                    ->orWhere('phone', $val)
+                    ->groupEnd()
+                    ->first();
     }
 
     public function generateAvatar(string $name): string

@@ -22,16 +22,13 @@ class ApiService {
   ApiService._();
   static final ApiService instance = ApiService._();
 
-  String? _token;
-  String? get token => _token;
-
-  set token(String? t) => _token = t;
+  String? token;
 
   static const Duration _timeout = Duration(seconds: 45);
 
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
-        if (_token != null) 'Authorization': 'Bearer $_token',
+        if (token != null) 'Authorization': 'Bearer $token',
       };
 
   Uri _uri(String path, [Map<String, String>? query]) {
@@ -88,10 +85,11 @@ class ApiService {
     return (User.fromJson(json['user'] as Map<String, dynamic>), json['token'] as String);
   }
 
-  Future<(User, String)> register(String name, String email, String password, String confirm) async {
+  Future<(User, String)> register(String name, String email, String phone, String password, String confirm) async {
     final json = await post('register', {
       'name': name,
       'email': email,
+      'phone': phone,
       'password': password,
       'password_confirm': confirm,
       'device': 'android',
@@ -149,12 +147,12 @@ class ApiService {
     final body = {
       'type': type,
       'amount': amount,
-      if (categoryId != null) 'category_id': categoryId,
-      if (walletId != null) 'wallet_id': walletId,
+      'category_id': ?categoryId,
+      'wallet_id': ?walletId,
       if (note != null && note.isNotEmpty) 'note': note,
       'date': date ?? DateTime.now().toIso8601String().substring(0, 10),
       'is_recurring': isRecurring ? 1 : 0,
-      if (imageBase64 != null) 'image_base64': imageBase64,
+      'image_base64': ?imageBase64,
     };
     return post('transaction/store', body);
   }
@@ -172,11 +170,11 @@ class ApiService {
     final body = {
       'type': type,
       'amount': amount,
-      if (categoryId != null) 'category_id': categoryId,
-      if (walletId != null) 'wallet_id': walletId,
+      'category_id': ?categoryId,
+      'wallet_id': ?walletId,
       if (note != null && note.isNotEmpty) 'note': note,
       'date': date ?? DateTime.now().toIso8601String().substring(0, 10),
-      if (imageBase64 != null) 'image_base64': imageBase64,
+      'image_base64': ?imageBase64,
     };
     return post('transaction/update/$id', body);
   }
@@ -208,7 +206,7 @@ class ApiService {
     double initialBalance = 0,
   }) async {
     return post('wallets/store', {
-      if (id != null) 'id': id,
+      'id': ?id,
       'name': name,
       'type': type,
       'icon': icon,

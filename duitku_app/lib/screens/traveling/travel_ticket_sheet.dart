@@ -124,7 +124,7 @@ class _TravelTicketSheetState extends State<TravelTicketSheet> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: _types.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (context, index) {
                   final t = _types[index];
                   final selected = _type == t['value'];

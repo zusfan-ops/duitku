@@ -142,28 +142,48 @@ class _TransactionSheetState extends State<TransactionSheet> {
     }
   }
 
+  void _addAmount(double add) {
+    final currentStr = Fmt.parseAmount(_amountCtrl.text);
+    final current = double.tryParse(currentStr) ?? 0;
+    final total = current + add;
+    _amountCtrl.text = Fmt.money0(total);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 14),
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2),
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-            Text(
-              widget.transaction == null ? 'Transaksi Baru' : 'Edit Transaksi',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.transaction == null ? 'Catat Transaksi' : 'Edit Transaksi',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary, letterSpacing: -0.3),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 22),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
             ),
             const SizedBox(height: 14),
 
@@ -172,7 +192,8 @@ class _TransactionSheetState extends State<TransactionSheet> {
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: AppColors.bg,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 children: [
@@ -185,24 +206,51 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
-            // Amount
+            // Amount input
             TextField(
               controller: _amountCtrl,
               keyboardType: TextInputType.number,
-              style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800),
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -0.5),
               textAlign: TextAlign.center,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: '0',
                 prefixText: 'Rp ',
-                hintStyle: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w500),
+                prefixStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textMuted),
+                hintStyle: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w500),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.border)),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Quick add amount chips
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _quickAmountChip('+10rb', 10000),
+                  _quickAmountChip('+20rb', 20000),
+                  _quickAmountChip('+50rb', 50000),
+                  _quickAmountChip('+100rb', 100000),
+                  _quickAmountChip('+500rb', 500000),
+                  ActionChip(
+                    label: const Text('Reset', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.expense)),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    visualDensity: VisualDensity.compact,
+                    backgroundColor: AppColors.expenseSubtle,
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    onPressed: () => _amountCtrl.text = '',
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
 
             // Category chips
-            Text('KATEGORI', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .5, color: AppColors.textMuted)),
+            const Text('KATEGORI', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .6, color: AppColors.textMuted)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -214,7 +262,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
                   label: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(categoryIcon(c.icon), size: 16, color: selected ? Colors.white : color),
+                      Icon(categoryIcon(c.icon), size: 15, color: selected ? Colors.white : color),
                       const SizedBox(width: 4),
                       Text(c.name),
                     ],
@@ -223,21 +271,21 @@ class _TransactionSheetState extends State<TransactionSheet> {
                   onSelected: (_) => setState(() => _categoryId = c.id),
                   selectedColor: color,
                   labelStyle: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                     color: selected ? Colors.white : AppColors.textPrimary,
                   ),
                   backgroundColor: AppColors.bg,
                   side: BorderSide(color: selected ? color : AppColors.border),
                   showCheckmark: false,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 );
               }).toList(),
             ),
             const SizedBox(height: 16),
 
             // Wallet
-            Text('REKENING', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .5, color: AppColors.textMuted)),
+            const Text('REKENING / DOMPET', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: .6, color: AppColors.textMuted)),
             const SizedBox(height: 8),
             DropdownButtonFormField<int?>(
               initialValue: _walletId,
@@ -246,7 +294,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 const DropdownMenuItem<int?>(value: null, child: Text('— Pilih rekening —')),
                 ...widget.wallets.map((w) => DropdownMenuItem<int?>(
                       value: w.id,
-                      child: Text('${w.icon} ${w.name}'),
+                      child: Text('${w.icon} ${w.name} (${Fmt.money0(w.balance)})'),
                     )),
               ],
               onChanged: (v) => setState(() => _walletId = v),
@@ -256,12 +304,12 @@ class _TransactionSheetState extends State<TransactionSheet> {
             // Date
             InkWell(
               onTap: _pickDate,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               child: InputDecorator(
-                decoration: const InputDecoration(labelText: 'TANGGAL'),
+                decoration: const InputDecoration(labelText: 'TANGGAL TRANSAKSI'),
                 child: Row(
                   children: [
-                    const Icon(Icons.calendar_today, size: 18, color: AppColors.textMuted),
+                    const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.textMuted),
                     const SizedBox(width: 10),
                     Text(Fmt.dateDay(_date), style: const TextStyle(fontWeight: FontWeight.w600)),
                   ],
@@ -273,7 +321,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
             // Note
             TextField(
               controller: _noteCtrl,
-              decoration: const InputDecoration(labelText: 'CATATAN (OPSIONAL)', hintText: 'Tambahkan catatan...'),
+              decoration: const InputDecoration(labelText: 'CATATAN (OPSIONAL)', hintText: 'Misal: Beli makan siang...'),
             ),
             const SizedBox(height: 14),
 
@@ -282,18 +330,23 @@ class _TransactionSheetState extends State<TransactionSheet> {
               OutlinedButton.icon(
                 onPressed: _pickImage,
                 icon: const Icon(Icons.photo_camera_outlined, size: 18),
-                label: const Text('Ambil Foto / Bukti'),
+                label: const Text('Ambil Foto Struk / Bukti'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(44),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  side: const BorderSide(color: AppColors.border),
+                ),
               )
             else
               Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     child: Image.file(_image!, height: 100, width: double.infinity, fit: BoxFit.cover),
                   ),
                   Positioned(
-                    top: 4,
-                    right: 4,
+                    top: 6,
+                    right: 6,
                     child: GestureDetector(
                       onTap: () => setState(() => _image = null),
                       child: Container(
@@ -312,14 +365,14 @@ class _TransactionSheetState extends State<TransactionSheet> {
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('🔁 Ulangi Setiap Bulan',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                subtitle: const Text('Otomatis dicatat tiap bulan berikutnya', style: TextStyle(fontSize: 12)),
+                    style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                subtitle: const Text('Otomatis dicatat pada bulan berikutnya', style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
                 value: _recurring,
-                activeThumbColor: AppColors.primary,
+                activeTrackColor: AppColors.primaryLight,
                 onChanged: (v) => setState(() => _recurring = v),
               ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             FilledButton(
               onPressed: _saving ? null : _save,
               child: _saving
@@ -334,6 +387,21 @@ class _TransactionSheetState extends State<TransactionSheet> {
     );
   }
 
+  Widget _quickAmountChip(String label, double amount) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: ActionChip(
+        label: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        visualDensity: VisualDensity.compact,
+        backgroundColor: AppColors.primarySubtle,
+        side: const BorderSide(color: AppColors.primaryLight, width: 0.8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        onPressed: () => _addAmount(amount),
+      ),
+    );
+  }
+
   Widget _typeBtn(String label, String type, Color color) {
     final active = _type == type;
     return GestureDetector(
@@ -342,7 +410,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: active ? color : Colors.transparent,
-          borderRadius: BorderRadius.circular(9),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
           label,
