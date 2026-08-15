@@ -315,6 +315,15 @@ class ApiService {
     await post('belanja/sync', body);
   }
 
+  // ── Traveling sync ───────────────────────────────────────────
+  Future<Map<String, dynamic>> travelingGet() async {
+    return get('traveling');
+  }
+
+  Future<Map<String, dynamic>> travelingSync(Map<String, dynamic> data) async {
+    return post('traveling/sync', data);
+  }
+
   // ── Settings ─────────────────────────────────────────────────
   Future<Map<String, dynamic>> settings() async {
     return get('settings');

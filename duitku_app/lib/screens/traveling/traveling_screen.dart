@@ -19,7 +19,7 @@ class _TravelingScreenState extends State<TravelingScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TravelProvider>().ensureLoaded();
+      context.read<TravelProvider>().ensureLoaded(force: true);
     });
   }
 
@@ -36,12 +36,26 @@ class _TravelingScreenState extends State<TravelingScreen> {
           }
           final trips = travel.trips;
           if (trips.isEmpty) {
-            return _emptyState();
+            return RefreshIndicator(
+              onRefresh: () => context.read<TravelProvider>().refresh(),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: _emptyState(),
+                  ),
+                ],
+              ),
+            );
           }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: trips.length,
-            itemBuilder: (context, index) {
+          return RefreshIndicator(
+            onRefresh: () => context.read<TravelProvider>().refresh(),
+            child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              itemCount: trips.length,
+              itemBuilder: (context, index) {
               final trip = trips[index];
               final cost = travel.totalCostForTrip(trip.id);
               return GestureDetector(
@@ -143,9 +157,10 @@ class _TravelingScreenState extends State<TravelingScreen> {
                 ),
               );
             },
-          );
-        },
-      ),
+          ),
+        );
+      },
+    ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _addTrip,
         backgroundColor: AppColors.primary,

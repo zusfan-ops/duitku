@@ -156,6 +156,10 @@ $routes->group('api', function ($routes) {
         $routes->post('wallets/default/(:num)', 'Api\WalletController::setDefault/$1');
         $routes->post('wallets/transfer', 'Api\WalletController::transfer');
 
+        // Traveling & Trips
+        $routes->get('traveling', 'Api\TravelingController::index');
+        $routes->post('traveling/sync', 'Api\TravelingController::sync');
+
         // Settings
         $routes->get('settings', 'Api\SettingController::index');
         $routes->post('settings/currency', 'Api\SettingController::saveCurrency');

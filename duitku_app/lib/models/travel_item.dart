@@ -16,7 +16,10 @@ class TravelItem {
       id: json['id']?.toString() ?? '',
       tripId: json['trip_id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
-      isPacked: (json['is_packed']?.toString() ?? '0') == '1',
+      isPacked: json['is_packed'] == 1 ||
+          json['is_packed'] == true ||
+          (json['is_packed']?.toString() ?? '0') == '1' ||
+          (json['is_packed']?.toString() ?? '') == 'true',
     );
   }
 
@@ -24,7 +27,7 @@ class TravelItem {
         'id': id,
         'trip_id': tripId,
         'name': name,
-        'is_packed': isPacked ? '1' : '0',
+        'is_packed': isPacked ? 1 : 0,
       };
 
   TravelItem copyWith({String? name, bool? isPacked}) {

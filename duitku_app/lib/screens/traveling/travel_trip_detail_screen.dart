@@ -35,7 +35,7 @@ class _TravelTripDetailScreenState extends State<TravelTripDetailScreen>
     super.initState();
     _tabCtrl = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TravelProvider>().ensureLoaded();
+      context.read<TravelProvider>().ensureLoaded(force: true);
       context.read<AppDataProvider>().ensureLoaded();
     });
   }
