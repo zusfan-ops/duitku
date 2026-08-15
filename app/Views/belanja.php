@@ -3,22 +3,12 @@
 <?= $this->section('styles') ?>
 <link rel="stylesheet" href="/belanja_assets/css/style.css?v=23">
 <style>
-/* ── hide DuitKu FAB, fix belanja wrapper ── */
-#fabBtn { display: none !important; }
-.belanja-wrapper { padding-bottom: 100px; }
-
 /* ── hide old belanja bottom-nav & install btn ── */
 .belanja-wrapper .bottom-nav,
 #btn-install { display: none !important; }
 
-/* ── guard DuitKu dynamic-island nav from belanja CSS ── */
-#bottomNav.bottom-nav {
-    left: 50% !important; transform: translateX(-50%) !important;
-    right: auto !important; bottom: 20px !important;
-    max-width: 432px !important; height: 64px !important;
-    display: grid !important; border-radius: 32px !important;
-    padding: 0 8px !important; border-top: none !important;
-}
+/* ── page layout ── */
+.belanja-wrapper { padding-bottom: 110px; }
 
 /* ── guard belanja modals from DuitKu opacity rules ── */
 .belanja-wrapper .modal-overlay:not(.hidden) {
