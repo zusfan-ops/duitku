@@ -725,26 +725,27 @@
             </div>
             <span class="home-qa-label">Kalkulator</span>
         </button>
-        <button class="home-qa-btn" id="btnOpenStorage">
+        <a href="/barang" class="home-qa-btn">
             <div class="home-qa-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><circle cx="12" cy="8" r="7"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
             </div>
-            <span class="home-qa-label">Simpanan</span>
-            <span class="qa-badge" id="hsBadge" style="display:none"></span>
-        </button>
-        <button class="home-qa-btn" id="btnOpenBills">
+            <span class="home-qa-label">Barang</span>
+        </a>
+        <a href="/bills" class="home-qa-btn">
             <div class="home-qa-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/><line x1="8" y1="13" x2="10" y2="13"/><line x1="12" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="10" y2="17"/></svg>
             </div>
             <span class="home-qa-label">Tagihan</span>
-            <span class="qa-badge" id="billDueBadge" style="display:none"></span>
-        </button>
-        <button class="home-qa-btn" id="btnOpenNote">
+            <?php if (!empty($upcomingBills)): ?>
+            <span class="qa-badge"><?= count($upcomingBills) ?></span>
+            <?php endif; ?>
+        </a>
+        <a href="/traveling" class="home-qa-btn">
             <div class="home-qa-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
             </div>
-            <span class="home-qa-label">Catatan</span>
-        </button>
+            <span class="home-qa-label">Traveling</span>
+        </a>
         <a href="/hutang" class="home-qa-btn">
             <div class="home-qa-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>

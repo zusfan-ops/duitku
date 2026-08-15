@@ -77,6 +77,21 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/hutang/settle/(:num)',     'DebtController::settle/$1');
     $routes->post('/hutang/delete/(:num)',     'DebtController::delete/$1');
 
+    // Features Hub
+    $routes->get('/features',                  'FeaturesController::index');
+    $routes->get('/fitur',                     'FeaturesController::index');
+
+    // Traveling & Trips
+    $routes->get('/traveling',                 'TravelingController::index');
+    $routes->get('/traveling/(:segment)',      'TravelingController::show/$1');
+    $routes->post('/traveling/sync',           'TravelingController::sync');
+
+    // Barang Storage Tracker
+    $routes->get('/barang',                    'BarangController::index');
+    $routes->post('/barang/store',             'BarangController::store');
+    $routes->post('/barang/delete/(:segment)', 'BarangController::delete/$1');
+    $routes->post('/barang/sync',              'BarangController::sync');
+
     // Wallets
     $routes->get('/wallets',                   'WalletController::index');
     $routes->post('/wallets/store',            'WalletController::store');

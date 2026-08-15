@@ -28,7 +28,20 @@ class BillController extends BaseController
     public function index()
     {
         $userId = session()->get('user_id');
-        return $this->response->setJSON(['success' => true, 'bills' => $this->getBills($userId)]);
+        $bills  = $this->getBills($userId);
+
+        // If AJAX request or expects JSON, return JSON
+        if ($this->request->isAJAX() || $this->request->header('Accept')?->getValue() === 'application/json') {
+            return $this->response->setJSON(['success' => true, 'bills' => $bills]);
+        }
+
+        $symbol = $this->settingModel->get($userId, 'currency_symbol', 'Rp');
+
+        return view('bills/index', [
+            'pageTitle' => 'Daftar Tagihan',
+            'bills'     => $bills,
+            'symbol'    => $symbol,
+        ]);
     }
 
     // POST /bills/store
