@@ -99,25 +99,15 @@ class _ActivityScreenState extends State<ActivityScreen> {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: 74 + MediaQuery.of(ctx).viewInsets.bottom),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: AppColors.cardShadow,
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: TransactionSheet(
-              categories: data.categories,
-              wallets: data.wallets,
-              transaction: tx,
-            ),
-          ),
-        ),
+      useSafeArea: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => TransactionSheet(
+        categories: data.categories,
+        wallets: data.wallets,
+        transaction: tx,
       ),
     );
     if (saved == true) _load(reset: true);
