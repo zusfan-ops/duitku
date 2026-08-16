@@ -18,6 +18,56 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/app.css?v=<?= time() ?>">
+    <style>
+    .topbar-btn-notif {
+        position: relative;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.15s ease, background 0.15s ease;
+    }
+    .topbar-btn-notif:hover { background: var(--border); }
+    .topbar-btn-notif:active { transform: scale(0.92); }
+    .notif-badge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        background: #DC2626;
+        color: #fff;
+        font-size: 9.5px;
+        font-weight: 900;
+        min-width: 17px;
+        height: 17px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+        border: 2px solid var(--bg-card);
+        line-height: 1;
+    }
+    .notif-item-card {
+        padding: 12px 14px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    .notif-item-card.urgent { border-color: #FCA5A5; background: #FEF2F2; }
+    .notif-item-card.warning { border-color: #FDE68A; background: #FFFBEB; }
+    [data-theme="dark"] .notif-item-card.urgent { background: rgba(220, 38, 38, 0.12); border-color: #DC2626; }
+    [data-theme="dark"] .notif-item-card.warning { background: rgba(217, 119, 6, 0.12); border-color: #D97706; }
+    </style>
     <script>
         // Apply dark mode before render to avoid flash
         (function() {
@@ -72,8 +122,79 @@
                     } else {
                         $_layoutWallets = $wallets;
                     }
+
+                    // Compute notifications if not already provided
+                    if (!isset($notifications)) {
+                        $bm = new \App\Models\SettingModel();
+                        $dm = new \App\Models\DebtModel();
+                        $vm = new \App\Models\VehicleModel();
+                        $rm = new \App\Models\RecurringTransactionModel();
+                        
+                        $billsRaw = $bm->get($userId, 'bills', '[]');
+                        $billsAll = json_decode($billsRaw, true) ?: [];
+                        $todayDay = (int)date('j');
+                        $todayDate = date('Y-m-d');
+                        $_layoutNotifs = [];
+                        foreach ($billsAll as $b) {
+                            $dueDay = (int)($b['dueDay'] ?? 0);
+                            $daysLeft = $dueDay - $todayDay;
+                            if ($daysLeft >= -3 && $daysLeft <= 3) {
+                                $_layoutNotifs[] = [
+                                    'id' => 'b_' . ($b['id'] ?? uniqid()),
+                                    'type' => 'bill',
+                                    'title' => $b['name'],
+                                    'subtitle' => ($daysLeft <= 0 ? ($daysLeft == 0 ? 'Jatuh tempo Hari Ini!' : 'Lewat ' . abs($daysLeft) . ' hari') : 'Jatuh tempo ' . $daysLeft . ' hari lagi'),
+                                    'amount' => (float)($b['amount'] ?? 0),
+                                    'days_left' => $daysLeft,
+                                    'icon' => '📋',
+                                    'action_url' => '/bills',
+                                ];
+                            }
+                        }
+                        $debts = $dm->getUpcoming($userId, 7);
+                        foreach ($debts as $d) {
+                            $daysLeft = (int)floor((strtotime($d['due_date']) - strtotime($todayDate)) / 86400);
+                            $_layoutNotifs[] = [
+                                'id' => 'd_' . $d['id'],
+                                'type' => 'debt',
+                                'title' => ($d['type'] === 'hutang' ? 'Bayar Hutang: ' : 'Tagih Piutang: ') . $d['person'],
+                                'subtitle' => ($daysLeft <= 0 ? ($daysLeft == 0 ? 'Jatuh tempo Hari Ini!' : 'Lewat ' . abs($daysLeft) . ' hari') : 'Jatuh tempo ' . $daysLeft . ' hari lagi'),
+                                'amount' => (float)($d['amount'] ?? 0),
+                                'days_left' => $daysLeft,
+                                'icon' => $d['type'] === 'hutang' ? '💸' : '💰',
+                                'action_url' => '/hutang',
+                            ];
+                        }
+                        $taxes = $vm->getUpcomingTaxes($userId, 30);
+                        foreach ($taxes as $t) {
+                            $_layoutNotifs[] = [
+                                'id' => 't_' . $t['vehicle_id'] . '_' . md5($t['type']),
+                                'type' => 'tax',
+                                'title' => $t['type'] . ' · ' . $t['vehicle_name'],
+                                'subtitle' => ($t['days_left'] <= 0 ? ($t['days_left'] == 0 ? 'Jatuh tempo Hari Ini!' : 'Lewat ' . abs($t['days_left']) . ' hari') : 'Jatuh tempo ' . $t['days_left'] . ' hari lagi'),
+                                'amount' => 0,
+                                'days_left' => $t['days_left'],
+                                'icon' => '🚗',
+                                'action_url' => '/kendaraan/' . $t['vehicle_id'],
+                            ];
+                        }
+                        usort($_layoutNotifs, fn($a, $b) => $a['days_left'] <=> $b['days_left']);
+                    } else {
+                        $_layoutNotifs = $notifications;
+                    }
+                } else {
+                    $_layoutNotifs = [];
                 }
             ?>
+            <button class="topbar-btn-notif" id="btnOpenNotif" title="Notifikasi Pengingat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <?php if (!empty($_layoutNotifs)): ?>
+                    <span class="notif-badge"><?= count($_layoutNotifs) ?></span>
+                <?php endif; ?>
+            </button>
             <div class="user-avatar" id="userMenuToggle" title="<?= esc(session()->get('user_name')) ?>">
                 <?php if ($avatarImg): ?>
                     <img src="<?= esc($avatarImg) ?>?v=<?= time() ?>" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
@@ -255,15 +376,127 @@
     </div>
 </div>
 
+<!-- ════════════════════════════ NOTIFICATION SHEET MODAL -->
+<div class="modal-overlay" id="notifModalOverlay">
+    <div class="modal-sheet" id="notifModal" style="max-height:85vh">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+            <div style="display:flex;align-items:center;gap:8px">
+                <h3 style="margin:0;font-size:16px;font-weight:800">🔔 Notifikasi & Pengingat</h3>
+                <?php if (!empty($_layoutNotifs)): ?>
+                <span style="font-size:11px;font-weight:800;background:#FEE2E2;color:#DC2626;padding:2px 8px;border-radius:10px">
+                    <?= count($_layoutNotifs) ?>
+                </span>
+                <?php endif; ?>
+            </div>
+            <button class="modal-close" id="notifModalClose">✕</button>
+        </div>
+
+        <div style="padding:14px 16px 30px;overflow-y:auto;display:flex;flex-direction:column;gap:12px">
+            <!-- Web Notification permission prompt -->
+            <div id="webNotifPrompt" style="display:none;background:var(--primary-dim);border:1px solid var(--primary);border-radius:14px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+                <div style="font-size:12px;color:var(--text-primary)">
+                    <strong>🔔 Aktifkan Notifikasi Pop-up Browser</strong><br>
+                    <span style="font-size:11px;color:var(--text-muted)">Dapatkan pop-up saat tagihan mendekati jatuh tempo.</span>
+                </div>
+                <button id="btnEnableWebNotif" style="background:var(--primary);color:#fff;border:none;padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap">
+                    Aktifkan
+                </button>
+            </div>
+
+            <?php if (empty($_layoutNotifs)): ?>
+            <div style="text-align:center;padding:40px 20px;color:var(--text-muted)">
+                <div style="font-size:44px;margin-bottom:10px">🎉</div>
+                <div style="font-weight:800;font-size:15px;color:var(--text-primary);margin-bottom:4px">Semua Aman Terkendali!</div>
+                <div style="font-size:12px">Tidak ada tagihan, hutang, atau pajak yang jatuh tempo dalam waktu dekat.</div>
+            </div>
+            <?php else: ?>
+                <?php foreach ($_layoutNotifs as $item):
+                    $daysLeft = (int)$item['days_left'];
+                    $cardClass = $daysLeft <= 0 ? 'urgent' : ($daysLeft <= 2 ? 'warning' : '');
+                    $badgeColor = $daysLeft <= 0 ? '#DC2626' : ($daysLeft <= 2 ? '#D97706' : 'var(--text-muted)');
+                ?>
+                <div class="notif-item-card <?= $cardClass ?>">
+                    <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
+                        <div style="font-size:24px;flex-shrink:0"><?= $item['icon'] ?></div>
+                        <div style="min-width:0">
+                            <div style="font-size:13.5px;font-weight:800;color:var(--text-primary);margin-bottom:2px"><?= esc($item['title']) ?></div>
+                            <div style="font-size:11.5px;font-weight:700;color:<?= $badgeColor ?>">
+                                <?= esc($item['subtitle']) ?>
+                            </div>
+                            <?php if ($item['amount'] > 0): ?>
+                            <div style="font-size:12px;font-weight:800;color:var(--text-primary);margin-top:2px">
+                                <?= esc($symbol ?? 'Rp') ?> <?= number_format($item['amount'], 0, ',', '.') ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <a href="<?= esc($item['action_url']) ?>" style="background:var(--primary);color:#fff;text-decoration:none;padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:700;white-space:nowrap">
+                        <?= $item['type'] === 'bill' || $item['type'] === 'debt' ? 'Bayar' : 'Buka' ?>
+                    </a>
+                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════════════════════ SCRIPTS -->
 <script>
     window.DUITKU = {
-        categories: <?= json_encode($categories ?? []) ?>,
-        wallets:    <?= json_encode($_layoutWallets ?? []) ?>,
-        symbol: '<?= esc($symbol ?? 'Rp') ?>',
-        csrfToken: '<?= csrf_hash() ?>',
-        csrfName: '<?= csrf_token() ?>',
+        categories:    <?= json_encode($categories ?? []) ?>,
+        wallets:       <?= json_encode($_layoutWallets ?? []) ?>,
+        notifications: <?= json_encode($_layoutNotifs ?? []) ?>,
+        symbol:        '<?= esc($symbol ?? 'Rp') ?>',
+        csrfToken:     '<?= csrf_hash() ?>',
+        csrfName:      '<?= csrf_token() ?>',
     };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Notif Sheet
+        const notifOverlay = document.getElementById('notifModalOverlay');
+        document.getElementById('btnOpenNotif')?.addEventListener('click', () => {
+            notifOverlay?.classList.add('open');
+        });
+        document.getElementById('notifModalClose')?.addEventListener('click', () => {
+            notifOverlay?.classList.remove('open');
+        });
+        notifOverlay?.addEventListener('click', (e) => {
+            if (e.target === notifOverlay) notifOverlay.classList.remove('open');
+        });
+
+        // Browser Web Notifications
+        const promptEl = document.getElementById('webNotifPrompt');
+        if ('Notification' in window) {
+            if (Notification.permission === 'default' && promptEl) {
+                promptEl.style.display = 'flex';
+            }
+            document.getElementById('btnEnableWebNotif')?.addEventListener('click', async () => {
+                const perm = await Notification.requestPermission();
+                if (perm === 'granted') {
+                    if (promptEl) promptEl.style.display = 'none';
+                    new Notification('DuitKu Notifikasi Aktif! 🔔', {
+                        body: 'Pengingat tagihan dan jatuh tempo akan otomatis muncul.',
+                        icon: '/images/logo.png'
+                    });
+                }
+            });
+
+            // Automatic push reminder if granted and urgent
+            if (Notification.permission === 'granted' && window.DUITKU.notifications) {
+                const urgent = window.DUITKU.notifications.filter(n => Number(n.days_left) <= 1);
+                if (urgent.length > 0 && !sessionStorage.getItem('duitku_notif_fired')) {
+                    sessionStorage.setItem('duitku_notif_fired', '1');
+                    urgent.slice(0, 2).forEach(n => {
+                        new Notification(`⏰ ${n.title}`, {
+                            body: `${n.subtitle}` + (n.amount > 0 ? ` (${window.DUITKU.symbol} ${Number(n.amount).toLocaleString('id-ID')})` : ''),
+                            icon: '/images/logo.png'
+                        });
+                    });
+                }
+            }
+        }
+    });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="/js/app.js?v=<?= time() ?>"></script>

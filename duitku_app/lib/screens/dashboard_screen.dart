@@ -21,8 +21,10 @@ import 'belanja/belanja_screen.dart';
 import 'bills_screen.dart';
 import 'debt_screen.dart';
 import 'note_sheet.dart';
+import 'recurring/recurring_screen.dart';
 import 'stats_screen.dart';
 import 'transaction_sheet.dart';
+import 'vehicle/vehicle_screen.dart';
 import 'wallet_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -94,6 +96,11 @@ class DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: Text('Halo, ${auth.user?.name.split(' ').first ?? ''} 👋'),
         actions: [
+          if (_data?['dashboard'] != null)
+            _NotificationBell(
+              data: _data!['dashboard'],
+              onRefresh: refresh,
+            ),
           PopupMenuButton<String>(
             onSelected: (v) {
               if (v == 'logout') auth.logout();
@@ -124,10 +131,18 @@ class DashboardScreenState extends State<DashboardScreen> {
     }
     final data = _data!['dashboard'] as dynamic;
     final recent = _data!['recent'] as List<Transaction>;
+    final notifs = (data.notifications as List?) ?? [];
+    final urgentCount = notifs.where((n) => (n['days_left'] as num?)?.toInt() != null && (n['days_left'] as num).toInt() <= 1).length;
+
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
+        if (urgentCount > 0)
+          _UrgentAlertBanner(
+            count: urgentCount,
+            onTap: () => _showNotificationsSheet(context, data, refresh),
+          ),
         _HeroCard(data: data),
         const _BelanjaHomeCard(),
         if ((data.wallets as List).isNotEmpty) _WalletStrip(wallets: data.wallets as List<Wallet>),
@@ -616,7 +631,10 @@ class _ReminderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final bills = data.upcomingBills as List;
     final debts = data.upcomingDebts as List;
-    if (bills.isEmpty && debts.isEmpty) return const SizedBox.shrink();
+    final taxes = (data.upcomingTaxes as List?) ?? [];
+    final recurring = (data.upcomingRecurring as List?) ?? [];
+
+    if (bills.isEmpty && debts.isEmpty && taxes.isEmpty && recurring.isEmpty) return const SizedBox.shrink();
 
     return Container(
       margin: const EdgeInsets.only(top: 16),
@@ -629,8 +647,18 @@ class _ReminderCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('⏰ Pengingat Jatuh Tempo',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFFD97706))),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('⏰ Pengingat Jatuh Tempo',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFFD97706))),
+              GestureDetector(
+                onTap: () => _showNotificationsSheet(context, data, onRefresh),
+                child: const Text('Semua →',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFD97706))),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           ...bills.map((b) {
             final bill = b as Bill;
@@ -648,6 +676,20 @@ class _ReminderCard extends StatelessWidget {
                 subtitle: '${d['type']}' == 'hutang' ? 'Bayar hutang' : 'Tagih piutang',
                 daysLeft: (d['daysLeft'] as num?)?.toInt() ?? 0,
                 onPay: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DebtScreen())).then((_) => onRefresh()),
+              )),
+          ...taxes.map((t) => _ReminderRow(
+                icon: '🚗',
+                title: '${t['vehicle_name']}',
+                subtitle: '${t['type']}',
+                daysLeft: (t['days_left'] as num?)?.toInt() ?? 0,
+                onPay: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VehicleScreen())).then((_) => onRefresh()),
+              )),
+          ...recurring.map((r) => _ReminderRow(
+                icon: '🔁',
+                title: '${r['category_name'] ?? 'Transaksi Berulang'}',
+                subtitle: r['note']?.toString() ?? 'Transaksi Rutin',
+                daysLeft: (r['daysLeft'] as num?)?.toInt() ?? 0,
+                onPay: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RecurringScreen())).then((_) => onRefresh()),
               )),
         ],
       ),
@@ -1517,5 +1559,355 @@ class _BelanjaHomeCardState extends State<_BelanjaHomeCard> {
       ),
     );
   }
+}
+
+// ── Notification Bell ───────────────────────────────────────────
+class _NotificationBell extends StatelessWidget {
+  final dynamic data;
+  final VoidCallback onRefresh;
+  const _NotificationBell({required this.data, required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    final notifs = (data.notifications as List?) ?? [];
+    final count = notifs.length;
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        IconButton(
+          tooltip: 'Notifikasi Pengingat',
+          icon: const Icon(Icons.notifications_outlined, size: 24),
+          onPressed: () => _showNotificationsSheet(context, data, onRefresh),
+        ),
+        if (count > 0)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: AppColors.expense,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(
+                count > 9 ? '9+' : '$count',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  height: 1,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ── Urgent Alert Banner ─────────────────────────────────────────
+class _UrgentAlertBanner extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+  const _UrgentAlertBanner({required this.count, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFDC2626), Color(0xFFEF4444)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFDC2626).withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Text('⏰', style: TextStyle(fontSize: 18)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$count Pengingat Jatuh Tempo Segera!',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Ketuk untuk melihat dan bayar tagihan hari ini.',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'Lihat',
+                    style: TextStyle(
+                      color: Color(0xFFDC2626),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Notifications Bottom Sheet ──────────────────────────────────
+void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback onRefresh) {
+  final notifs = (data.notifications as List?) ?? [];
+  final symbol = data.symbol as String? ?? 'Rp';
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.card,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (ctx) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.65,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (c, scrollCtrl) {
+          return Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          '🔔 Notifikasi & Pengingat',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        if (notifs.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.expense.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${notifs.length}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.expense,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: notifs.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('🎉', style: TextStyle(fontSize: 48)),
+                            SizedBox(height: 12),
+                            Text(
+                              'Tidak Ada Pengingat',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Semua tagihan, hutang, dan pajak aman terkendali!',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        controller: scrollCtrl,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: notifs.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (context, idx) {
+                          final item = notifs[idx] as Map<String, dynamic>;
+                          final daysLeft = (item['days_left'] as num?)?.toInt() ?? 0;
+                          final isUrgent = daysLeft <= 0;
+                          final isSoon = daysLeft > 0 && daysLeft <= 2;
+                          final amount = Fmt.toDouble(item['amount']);
+
+                          return Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: AppColors.bg,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isUrgent
+                                    ? const Color(0xFFEF4444)
+                                    : (isSoon ? const Color(0xFFF59E0B) : AppColors.border),
+                                width: (isUrgent || isSoon) ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['icon']?.toString() ?? '⏰',
+                                  style: const TextStyle(fontSize: 24),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item['title']?.toString() ?? '',
+                                        style: const TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        item['subtitle']?.toString() ?? '',
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: isUrgent
+                                              ? const Color(0xFFDC2626)
+                                              : (isSoon ? const Color(0xFFD97706) : AppColors.textSecondary),
+                                        ),
+                                      ),
+                                      if (amount > 0) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          Fmt.money(amount, symbol: symbol),
+                                          style: const TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(ctx);
+                                    final type = item['type']?.toString();
+                                    if (type == 'bill') {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => BillsScreen(symbol: symbol))).then((_) => onRefresh());
+                                    } else if (type == 'debt') {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => const DebtScreen())).then((_) => onRefresh());
+                                    } else if (type == 'tax') {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => const VehicleScreen())).then((_) => onRefresh());
+                                    } else if (type == 'recurring') {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => const RecurringScreen())).then((_) => onRefresh());
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isUrgent ? const Color(0xFFDC2626) : AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    minimumSize: const Size(60, 32),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    item['type'] == 'bill' || item['type'] == 'debt' ? 'Bayar' : 'Buka',
+                                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
 }
 

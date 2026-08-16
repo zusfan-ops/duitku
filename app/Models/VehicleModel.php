@@ -71,4 +71,49 @@ class VehicleModel extends Model
 
         return $vehicle;
     }
+
+    /**
+     * Get upcoming vehicle tax reminders (within $days days or overdue)
+     */
+    public function getUpcomingTaxes(int $userId, int $days = 30): array
+    {
+        $vehicles = $this->where('user_id', $userId)->findAll();
+        $alerts   = [];
+        $today    = date('Y-m-d');
+
+        foreach ($vehicles as $v) {
+            // Annual Tax (PKB)
+            if (!empty($v['tax_annual_date'])) {
+                $daysLeft = (int)floor((strtotime($v['tax_annual_date']) - strtotime($today)) / 86400);
+                if ($daysLeft <= $days) {
+                    $alerts[] = [
+                        'vehicle_id'    => $v['id'],
+                        'vehicle_name'  => $v['name'],
+                        'license_plate' => $v['license_plate'] ?? '',
+                        'type'          => 'Pajak Tahunan (PKB)',
+                        'due_date'      => $v['tax_annual_date'],
+                        'days_left'     => $daysLeft,
+                    ];
+                }
+            }
+
+            // 5-Year Plate Tax
+            if (!empty($v['tax_5year_date'])) {
+                $daysLeft = (int)floor((strtotime($v['tax_5year_date']) - strtotime($today)) / 86400);
+                if ($daysLeft <= $days) {
+                    $alerts[] = [
+                        'vehicle_id'    => $v['id'],
+                        'vehicle_name'  => $v['name'],
+                        'license_plate' => $v['license_plate'] ?? '',
+                        'type'          => 'Pajak 5 Tahun (Ganti Plat)',
+                        'due_date'      => $v['tax_5year_date'],
+                        'days_left'     => $daysLeft,
+                    ];
+                }
+            }
+        }
+
+        usort($alerts, fn($a, $b) => $a['days_left'] <=> $b['days_left']);
+        return $alerts;
+    }
 }

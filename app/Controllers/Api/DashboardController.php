@@ -6,20 +6,26 @@ use App\Models\DebtModel;
 use App\Models\SettingModel;
 use App\Models\TransactionModel;
 use App\Models\WalletModel;
+use App\Models\VehicleModel;
+use App\Models\RecurringTransactionModel;
 
 class DashboardController extends ApiController
 {
-    protected TransactionModel $txModel;
-    protected SettingModel     $settingModel;
-    protected DebtModel        $debtModel;
-    protected WalletModel      $walletModel;
+    protected TransactionModel           $txModel;
+    protected SettingModel               $settingModel;
+    protected DebtModel                  $debtModel;
+    protected WalletModel                $walletModel;
+    protected VehicleModel               $vehicleModel;
+    protected RecurringTransactionModel  $recurringModel;
 
     public function __construct()
     {
-        $this->txModel      = new TransactionModel();
-        $this->settingModel = new SettingModel();
-        $this->debtModel    = new DebtModel();
-        $this->walletModel  = new WalletModel();
+        $this->txModel        = new TransactionModel();
+        $this->settingModel   = new SettingModel();
+        $this->debtModel      = new DebtModel();
+        $this->walletModel    = new WalletModel();
+        $this->vehicleModel   = new VehicleModel();
+        $this->recurringModel = new RecurringTransactionModel();
     }
 
     public function index()
@@ -82,6 +88,80 @@ class DashboardController extends ApiController
         }
         unset($d);
 
+        // Vehicle tax reminders (within 30 days)
+        $upcomingTaxes = $this->vehicleModel->getUpcomingTaxes($userId, 30);
+
+        // Recurring due reminders (within 3 days)
+        $allRecurring = $this->recurringModel->getForUser($userId);
+        $upcomingRecurring = [];
+        foreach ($allRecurring as $rec) {
+            $recDays = (int) floor((strtotime($rec['next_date']) - strtotime($todayDate)) / 86400);
+            if ($recDays <= 3) {
+                $upcomingRecurring[] = array_merge($rec, ['daysLeft' => $recDays]);
+            }
+        }
+
+        // Consolidated Notifications Array
+        $notifications = [];
+        foreach ($upcomingBills as $b) {
+            $notifications[] = [
+                'id'         => 'bill_' . ($b['id'] ?? uniqid()),
+                'type'       => 'bill',
+                'title'      => $b['name'],
+                'subtitle'   => ($b['daysLeft'] <= 0 ? ($b['daysLeft'] == 0 ? 'Jatuh tempo Hari Ini!' : 'Lewat ' . abs($b['daysLeft']) . ' hari!') : 'Jatuh tempo dalam ' . $b['daysLeft'] . ' hari (tgl ' . ($b['dueDay'] ?? '') . ')'),
+                'amount'     => (float)($b['amount'] ?? 0),
+                'days_left'  => (int)$b['daysLeft'],
+                'urgency'    => $b['daysLeft'] <= 0 ? 'urgent' : ($b['daysLeft'] <= 2 ? 'warning' : 'info'),
+                'icon'       => '📋',
+                'action_url' => '/bills',
+                'raw'        => $b,
+            ];
+        }
+        foreach ($upcomingDebts as $d) {
+            $notifications[] = [
+                'id'         => 'debt_' . $d['id'],
+                'type'       => 'debt',
+                'title'      => ($d['type'] === 'hutang' ? 'Bayar Hutang: ' : 'Tagih Piutang: ') . $d['person'],
+                'subtitle'   => ($d['daysLeft'] <= 0 ? ($d['daysLeft'] == 0 ? 'Jatuh tempo Hari Ini!' : 'Lewat ' . abs($d['daysLeft']) . ' hari!') : 'Jatuh tempo dalam ' . $d['daysLeft'] . ' hari (' . date('d M', strtotime($d['due_date'])) . ')'),
+                'amount'     => (float)($d['amount'] ?? 0),
+                'days_left'  => (int)$d['daysLeft'],
+                'urgency'    => $d['daysLeft'] <= 0 ? 'urgent' : ($d['daysLeft'] <= 2 ? 'warning' : 'info'),
+                'icon'       => $d['type'] === 'hutang' ? '💸' : '💰',
+                'action_url' => '/hutang',
+                'raw'        => $d,
+            ];
+        }
+        foreach ($upcomingTaxes as $t) {
+            $notifications[] = [
+                'id'         => 'tax_' . $t['vehicle_id'] . '_' . md5($t['type']),
+                'type'       => 'tax',
+                'title'      => $t['type'] . ' · ' . $t['vehicle_name'],
+                'subtitle'   => ($t['days_left'] <= 0 ? ($t['days_left'] == 0 ? 'Jatuh tempo Hari Ini!' : 'Lewat ' . abs($t['days_left']) . ' hari!') : 'Jatuh tempo dalam ' . $t['days_left'] . ' hari (' . date('d M Y', strtotime($t['due_date'])) . ')'),
+                'amount'     => 0,
+                'days_left'  => (int)$t['days_left'],
+                'urgency'    => $t['days_left'] <= 0 ? 'urgent' : ($t['days_left'] <= 7 ? 'warning' : 'info'),
+                'icon'       => '🚗',
+                'action_url' => '/kendaraan/' . $t['vehicle_id'],
+                'raw'        => $t,
+            ];
+        }
+        foreach ($upcomingRecurring as $r) {
+            $notifications[] = [
+                'id'         => 'recurring_' . $r['id'],
+                'type'       => 'recurring',
+                'title'      => ($r['category_name'] ?? 'Transaksi Berulang') . ($r['note'] ? ' (' . $r['note'] . ')' : ''),
+                'subtitle'   => ($r['daysLeft'] <= 0 ? ($r['daysLeft'] == 0 ? 'Jatuh tempo Hari Ini!' : 'Lewat ' . abs($r['daysLeft']) . ' hari!') : 'Jatuh tempo dalam ' . $r['daysLeft'] . ' hari (' . date('d M', strtotime($r['next_date'])) . ')'),
+                'amount'     => (float)($r['amount'] ?? 0),
+                'days_left'  => (int)$r['daysLeft'],
+                'urgency'    => $r['daysLeft'] <= 0 ? 'urgent' : ($r['daysLeft'] <= 1 ? 'warning' : 'info'),
+                'icon'       => '🔁',
+                'action_url' => '/recurring',
+                'raw'        => $r,
+            ];
+        }
+
+        usort($notifications, fn($a, $b) => $a['days_left'] <=> $b['days_left']);
+
         return $this->ok([
             'balance'        => $balance,
             'monthly'        => $monthly,
@@ -102,9 +182,13 @@ class DashboardController extends ApiController
             'topCategories'  => $topCategories,
             'wallets'        => $wallets,
             'dailyBalance'   => $dailyBalance,
-            'upcomingBills'  => $upcomingBills,
-            'upcomingDebts'  => $upcomingDebts,
-            'user'           => [
+            'upcomingBills'      => $upcomingBills,
+            'upcomingDebts'      => $upcomingDebts,
+            'upcomingTaxes'      => $upcomingTaxes,
+            'upcomingRecurring'  => $upcomingRecurring,
+            'notifications'      => $notifications,
+            'unreadCount'        => count($notifications),
+            'user'               => [
                 'name'  => session()->get('user_name') ?: '',
             ],
         ]);

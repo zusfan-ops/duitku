@@ -26,6 +26,9 @@ class DashboardData {
   final List<dynamic> dailyBalance;
   final List<Bill> upcomingBills;
   final List<dynamic> upcomingDebts;
+  final List<dynamic> upcomingTaxes;
+  final List<dynamic> upcomingRecurring;
+  final List<dynamic> notifications;
 
   DashboardData({
     this.balance = 0,
@@ -50,6 +53,9 @@ class DashboardData {
     this.dailyBalance = const [],
     this.upcomingBills = const [],
     this.upcomingDebts = const [],
+    this.upcomingTaxes = const [],
+    this.upcomingRecurring = const [],
+    this.notifications = const [],
   });
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
@@ -83,6 +89,9 @@ class DashboardData {
           .map((e) => Bill.fromJson(e as Map<String, dynamic>))
           .toList(),
       upcomingDebts: json['upcomingDebts'] as List<dynamic>? ?? [],
+      upcomingTaxes: json['upcomingTaxes'] as List<dynamic>? ?? [],
+      upcomingRecurring: json['upcomingRecurring'] as List<dynamic>? ?? [],
+      notifications: json['notifications'] as List<dynamic>? ?? [],
     );
   }
 }
