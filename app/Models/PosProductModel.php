@@ -15,7 +15,7 @@ class PosProductModel extends Model
     protected $allowedFields = [
         'user_id', 'name', 'description', 'category', 'sku', 'cost_price',
         'selling_price', 'stock', 'min_stock_alert', 'unit',
-        'icon', 'image', 'is_available', 'is_active',
+        'icon', 'image', 'variants_json', 'is_available', 'is_active',
     ];
 
     protected $useTimestamps = true;

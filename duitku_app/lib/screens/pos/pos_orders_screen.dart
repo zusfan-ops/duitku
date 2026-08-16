@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../services/api_service.dart';
 import '../../theme.dart';
 import 'pos_qr_screen.dart';
@@ -325,6 +326,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
     final orderNum = order['order_number']?.toString() ?? '';
     final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
     final deliveryFee = (order['delivery_fee'] as num?)?.toDouble() ?? 0.0;
+    final discountAmount = (order['discount_amount'] as num?)?.toDouble() ?? 0.0;
 
     return Container(
       decoration: BoxDecoration(
@@ -441,6 +443,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
               children: [
                 ...items.map((it) {
                   final note = it['notes']?.toString();
+                  final variants = it['selected_variants']?.toString();
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 3),
                     child: Row(
@@ -454,6 +457,11 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                                 '${it['product_name']} x${it['qty']}',
                                 style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
                               ),
+                              if (variants != null && variants.isNotEmpty)
+                                Text(
+                                  '✨ $variants',
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF38BDF8), fontWeight: FontWeight.w600),
+                                ),
                               if (note != null && note.isNotEmpty)
                                 Text(
                                   '📝 $note',
@@ -478,6 +486,17 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                       children: [
                         const Text('🛵 Ongkir Delivery', style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
                         Text(_formatCurrency(deliveryFee), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                if (discountAmount > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('🏷️ Kupon Promo (${order['voucher_code'] ?? 'DISKON'})', style: const TextStyle(fontSize: 11.5, color: Color(0xFF10B981), fontWeight: FontWeight.w700)),
+                        Text('-${_formatCurrency(discountAmount)}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF10B981))),
                       ],
                     ),
                   ),
@@ -573,14 +592,29 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
   Widget _buildActionButtons(Map<String, dynamic> order) {
     final status = order['status']?.toString() ?? 'paid';
     final orderType = order['order_type']?.toString() ?? 'dine_in';
+    final customerPhone = order['customer_phone']?.toString() ?? '';
     final orderId = (order['id'] as num?)?.toInt() ?? 0;
     final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
     final orderNum = order['order_number']?.toString() ?? '';
 
-    if (status == 'pending') {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (customerPhone.isNotEmpty) ...[
+          IconButton(
+            onPressed: () => _sendWhatsAppNotification(order),
+            icon: const Icon(Icons.chat_bubble_rounded, size: 18, color: Color(0xFF15803D)),
+            tooltip: 'Kirim Update WhatsApp',
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(),
+            style: IconButton.styleFrom(
+              backgroundColor: const Color(0xFF15803D).withValues(alpha: 0.12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          const SizedBox(width: 6),
+        ],
+        if (status == 'pending') ...[
           OutlinedButton(
             onPressed: () => _updateStatus(orderId, 'cancelled'),
             style: OutlinedButton.styleFrom(
@@ -603,12 +637,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
               minimumSize: Size.zero,
             ),
           ),
-        ],
-      );
-    } else if (status == 'processing') {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+        ] else if (status == 'processing') ...[
           if (orderType == 'delivery')
             ElevatedButton.icon(
               onPressed: () => _updateStatus(orderId, 'delivering'),
@@ -656,12 +685,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
             ),
             child: const Text('Bayar', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
           ),
-        ],
-      );
-    } else if (status == 'delivering') {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+        ] else if (status == 'delivering') ...[
           if (orderType == 'delivery')
             ElevatedButton(
               onPressed: () => _updateStatus(orderId, 'delivered_unpaid'),
@@ -685,23 +709,49 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
               minimumSize: Size.zero,
             ),
           ),
+        ] else if (status == 'served_unpaid' || status == 'delivered_unpaid') ...[
+          ElevatedButton.icon(
+            onPressed: () => _showPaymentDialog(orderId, orderNum, totalAmount),
+            icon: const Icon(Icons.payments_rounded, size: 16),
+            label: const Text('Bayar & Selesai', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              minimumSize: Size.zero,
+            ),
+          ),
         ],
-      );
-    } else if (status == 'served_unpaid' || status == 'delivered_unpaid') {
-      return ElevatedButton.icon(
-        onPressed: () => _showPaymentDialog(orderId, orderNum, totalAmount),
-        icon: const Icon(Icons.payments_rounded, size: 16),
-        label: const Text('Terima Bayar & Selesai', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF10B981),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          minimumSize: Size.zero,
-        ),
-      );
+      ],
+    );
+  }
+
+  Future<void> _sendWhatsAppNotification(Map<String, dynamic> order) async {
+    var phone = order['customer_phone']?.toString().replaceAll(RegExp(r'[^0-9]'), '') ?? '';
+    if (phone.startsWith('0')) phone = '62${phone.substring(1)}';
+    if (phone.isEmpty) return;
+
+    final name = order['customer_name']?.toString() ?? 'Pelanggan';
+    final orderNum = order['order_number']?.toString() ?? '';
+    final status = order['status']?.toString() ?? '';
+    final total = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
+    final storeName = _store['store_name']?.toString() ?? 'Toko';
+
+    String text = '';
+    if (status == 'pending') {
+      text = 'Halo Kak $name, pesanan #$orderNum di $storeName telah kami terima & sedang disiapkan! Total: ${_formatCurrency(total)}. Terima kasih!';
+    } else if (status == 'delivering') {
+      text = 'Halo Kak $name, 🛵 Kurir kami sedang jalan mengantarkan pesanan #$orderNum ke alamat Anda. Mohon siapkan pembayaran ${_formatCurrency(total)}. Terima kasih!';
+    } else if (status == 'paid') {
+      text = 'Terima kasih Kak $name telah berbelanja di $storeName! Transaksi #$orderNum telah selesai & lunas. ⭐';
+    } else {
+      text = 'Halo Kak $name, pesanan #$orderNum Anda di $storeName sudah SIAP! Silakan dinikmati ya. Terima kasih!';
     }
 
-    return const SizedBox.shrink();
+    final uri = Uri.parse('https://wa.me/$phone?text=${Uri.encodeComponent(text)}');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   void _showPaymentDialog(int orderId, String orderNum, double totalAmount) {

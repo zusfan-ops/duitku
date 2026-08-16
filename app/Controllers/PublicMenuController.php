@@ -89,6 +89,7 @@ class PublicMenuController extends BaseController
             $deliveryNotes   = trim($this->request->getPost('delivery_notes') ?? '');
             $pickupTime      = trim($this->request->getPost('pickup_time') ?? '');
             $payMethod       = trim($this->request->getPost('payment_method') ?? 'cod');
+            $voucherCode     = trim($this->request->getPost('voucher_code') ?? '');
             $notes           = trim($this->request->getPost('notes') ?? '');
         } else {
             $items           = $json['items'] ?? [];
@@ -100,6 +101,7 @@ class PublicMenuController extends BaseController
             $deliveryNotes   = trim($json['delivery_notes'] ?? '');
             $pickupTime      = trim($json['pickup_time'] ?? '');
             $payMethod       = trim($json['payment_method'] ?? 'cod');
+            $voucherCode     = trim($json['voucher_code'] ?? '');
             $notes           = trim($json['notes'] ?? '');
         }
 
@@ -124,14 +126,15 @@ class PublicMenuController extends BaseController
             }
         }
 
-        $totalAmount = 0.0;
-        $totalCost   = 0.0;
-        $orderItems  = [];
+        $subtotalProducts = 0.0;
+        $totalCost        = 0.0;
+        $orderItems       = [];
 
         foreach ($items as $item) {
-            $productId = (int)($item['product_id'] ?? 0);
-            $qty       = (int)($item['qty'] ?? 1);
-            $itemNotes = trim($item['notes'] ?? '');
+            $productId        = (int)($item['product_id'] ?? 0);
+            $qty              = (int)($item['qty'] ?? 1);
+            $itemNotes        = trim($item['notes'] ?? '');
+            $selectedVariants = $item['selected_variants'] ?? null;
 
             if ($qty <= 0) continue;
 
@@ -149,23 +152,45 @@ class PublicMenuController extends BaseController
             $price = (float)$product['selling_price'];
             $cost  = (float)$product['cost_price'];
 
+            // Factor in variant price add-ons if selected
+            $variantText = '';
+            if (!empty($selectedVariants)) {
+                if (is_string($selectedVariants)) {
+                    $variantText = $selectedVariants;
+                } elseif (is_array($selectedVariants)) {
+                    $parts = [];
+                    foreach ($selectedVariants as $v) {
+                        $vName = $v['name'] ?? '';
+                        $vPrice = (float)($v['price'] ?? 0);
+                        if ($vPrice > 0) {
+                            $price += $vPrice;
+                            $parts[] = $vName . ' (+' . number_format($vPrice, 0, ',', '.') . ')';
+                        } elseif ($vName) {
+                            $parts[] = $vName;
+                        }
+                    }
+                    $variantText = implode(', ', $parts);
+                }
+            }
+
             // Deduct stock if tracked
             if ((int)$product['stock'] > 0) {
                 $this->productModel->deductStock($productId, $qty);
             }
 
-            $subtotal = $price * $qty;
-            $totalAmount += $subtotal;
-            $totalCost   += ($cost * $qty);
+            $itemSubtotal = $price * $qty;
+            $subtotalProducts += $itemSubtotal;
+            $totalCost        += ($cost * $qty);
 
             $orderItems[] = [
-                'product_id'   => $productId,
-                'product_name' => $name,
-                'notes'        => $itemNotes ?: null,
-                'qty'          => $qty,
-                'price'        => $price,
-                'cost_price'   => $cost,
-                'subtotal'     => $subtotal,
+                'product_id'        => $productId,
+                'product_name'      => $name,
+                'notes'             => $itemNotes ?: null,
+                'selected_variants' => $variantText ?: null,
+                'qty'               => $qty,
+                'price'             => $price,
+                'cost_price'        => $cost,
+                'subtotal'          => $itemSubtotal,
             ];
         }
 
@@ -176,9 +201,22 @@ class PublicMenuController extends BaseController
         $deliveryFee = 0.0;
         if ($orderType === 'delivery') {
             $deliveryFee = (float)($store['store_delivery_fee'] ?? 0);
-            $totalAmount += $deliveryFee;
         }
 
+        // Voucher Calculation
+        $discountAmount = 0.0;
+        $appliedVoucher = null;
+        if ($voucherCode) {
+            $voucherModel = new \App\Models\PosVoucherModel();
+            $vRes = $voucherModel->validateAndCalculate($userId, $voucherCode, $subtotalProducts, $deliveryFee);
+            if ($vRes['valid']) {
+                $discountAmount = (float)$vRes['discount_amount'];
+                $appliedVoucher = $vRes['voucher'];
+                $voucherModel->where('id', $appliedVoucher['id'])->increment('used_count', 1);
+            }
+        }
+
+        $totalAmount = max(0, ($subtotalProducts + $deliveryFee) - $discountAmount);
         $profit      = $totalAmount - $totalCost;
         $orderNumber = 'ORD-' . date('ymd') . '-' . strtoupper(substr(uniqid(), -4));
 
@@ -212,6 +250,8 @@ class PublicMenuController extends BaseController
             'delivery_address' => ($orderType === 'delivery') ? $deliveryAddress : null,
             'delivery_notes'   => ($orderType === 'delivery') ? $deliveryNotes : null,
             'delivery_fee'     => $deliveryFee,
+            'voucher_code'     => $appliedVoucher ? $appliedVoucher['code'] : null,
+            'discount_amount'  => $discountAmount,
             'pickup_time'      => ($orderType === 'takeaway') ? $pickupTime : null,
             'debt_id'          => null,
             'transaction_id'   => null,
@@ -280,12 +320,70 @@ class PublicMenuController extends BaseController
                 'id'             => $order['id'],
                 'order_number'   => $order['order_number'],
                 'status'         => $order['status'],
-                'table_no'       => $order['table_no'],
-                'customer_name'  => $order['customer_name'],
                 'total_amount'   => (float)$order['total_amount'],
-                'payment_method' => $order['payment_method'],
-                'updated_at'     => $order['updated_at'],
-            ]
+                'delivery_fee'   => (float)($order['delivery_fee'] ?? 0),
+                'discount_amount'=> (float)($order['discount_amount'] ?? 0),
+            ],
+            'status'  => $order['status'],
+        ]);
+    }
+
+    /**
+     * POST /menu/{slug}/verify-voucher — Check voucher validity and calculate discount
+     */
+    public function verifyVoucher(string $slug)
+    {
+        $store = $this->settingModel->findUserByStoreSlug($slug);
+        if (!$store) {
+            return $this->response->setJSON(['valid' => false, 'message' => 'Toko tidak ditemukan.']);
+        }
+
+        $userId      = (int)$store['user_id'];
+        $code        = trim($this->request->getPost('code') ?? '');
+        $subtotal    = (float)($this->request->getPost('subtotal') ?? 0);
+        $deliveryFee = (float)($this->request->getPost('delivery_fee') ?? 0);
+
+        if (!$code) {
+            return $this->response->setJSON(['valid' => false, 'message' => 'Masukkan kode promo.']);
+        }
+
+        $voucherModel = new \App\Models\PosVoucherModel();
+        $result = $voucherModel->validateAndCalculate($userId, $code, $subtotal, $deliveryFee);
+
+        return $this->response->setJSON($result);
+    }
+
+    /**
+     * GET /menu/{slug}/stamps — Check customer loyalty stamp count
+     */
+    public function checkStamps(string $slug)
+    {
+        $store = $this->settingModel->findUserByStoreSlug($slug);
+        if (!$store) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Toko tidak ditemukan.']);
+        }
+
+        $userId = (int)$store['user_id'];
+        $phone  = trim($this->request->getGet('phone') ?? '');
+
+        if (!$phone) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Nomor telepon tidak valid.']);
+        }
+
+        $loyaltyModel = new \App\Models\PosLoyaltyModel();
+        $record = $loyaltyModel->getCustomerStamps($userId, $phone);
+
+        $target = (int)($store['store_loyalty_target'] ?? 10);
+        $reward = $store['store_loyalty_reward'] ?? 'Gratis 1 Menu Favorit';
+        $stamps = $record ? (int)$record['stamps_count'] : 0;
+
+        return $this->response->setJSON([
+            'success'      => true,
+            'phone'        => $phone,
+            'stamps_count' => $stamps,
+            'target'       => $target,
+            'reward'       => $reward,
+            'progress_pct' => min(100, round(($stamps / max(1, $target)) * 100)),
         ]);
     }
 }

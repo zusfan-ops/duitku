@@ -615,6 +615,22 @@ class ApiService {
     return post('pos/store-profile', data);
   }
 
+  Future<Map<String, dynamic>> getPosVouchers() async {
+    return get('pos/vouchers');
+  }
+
+  Future<Map<String, dynamic>> savePosVoucher(Map<String, dynamic> data) async {
+    return post('pos/vouchers/store', data);
+  }
+
+  Future<Map<String, dynamic>> deletePosVoucher(int id) async {
+    return post('pos/vouchers/delete/$id');
+  }
+
+  Future<Map<String, dynamic>> getPosLoyaltyStamps() async {
+    return get('pos/loyalty');
+  }
+
   // ── Universal Global Search ──────────────────────────────────
   Future<Map<String, dynamic>> searchGlobal(String query) async {
     return get('search', query: {'q': query});

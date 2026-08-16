@@ -196,6 +196,15 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <label class="form-label">VARIAN & TOPPING / ADD-ONS (OPSIONAL)</label>
+                    <span style="font-size:11px;color:#38BDF8;cursor:pointer;font-weight:700" onclick="insertVariantTemplate()">+ Contoh Template</span>
+                </div>
+                <textarea id="prodVariants" name="variants_json" class="form-input" rows="3" placeholder='Contoh: [{"name":"Ukuran","type":"single","required":true,"options":[{"name":"Regular","price":0},{"name":"Large","price":5000}]},{"name":"Topping","type":"multiple","options":[{"name":"Boba","price":3000}]}]' style="font-family:monospace;font-size:11px"></textarea>
+                <small style="font-size:10.5px;color:var(--text-muted)">Gunakan format JSON untuk mengatur pilihan ukuran atau topping tambahan.</small>
+            </div>
+
             <button type="submit" class="btn-save" style="background:#EA580C;margin-top:8px">
                 Simpan Produk
             </button>
@@ -234,6 +243,30 @@
 
 <?= $this->section('scripts') ?>
 <script>
+function insertVariantTemplate() {
+    const tpl = [
+        {
+            "name": "Ukuran",
+            "type": "single",
+            "required": true,
+            "options": [
+                { "name": "Regular", "price": 0 },
+                { "name": "Large (+5rb)", "price": 5000 }
+            ]
+        },
+        {
+            "name": "Topping",
+            "type": "multiple",
+            "required": false,
+            "options": [
+                { "name": "Extra Keju", "price": 3000 },
+                { "name": "Boba / Jelly", "price": 3000 }
+            ]
+        }
+    ];
+    document.getElementById('prodVariants').value = JSON.stringify(tpl, null, 2);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const prodOverlay = document.getElementById('productModalOverlay');
     const restockOverlay = document.getElementById('restockModalOverlay');
@@ -245,6 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('prodModalTitle').textContent = 'Tambah Menu / Produk Baru';
         prodForm.reset();
         document.getElementById('prodId').value = '0';
+        document.getElementById('prodVariants').value = '';
         btnDelete.style.display = 'none';
         prodOverlay.classList.add('open');
     });
@@ -266,6 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('prodUnit').value = p.unit;
             document.getElementById('prodMinStock').value = p.min_stock_alert;
             document.getElementById('prodIcon').value = p.icon || 'box';
+            document.getElementById('prodVariants').value = p.variants_json || '';
             btnDelete.style.display = 'block';
             prodOverlay.classList.add('open');
         });

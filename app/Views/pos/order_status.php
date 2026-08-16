@@ -405,6 +405,9 @@
                     <div class="order-item-line">
                         <div class="item-line-left">
                             <div class="item-line-name"><?= esc($it['product_name']) ?> <span style="color:var(--primary)">x<?= $it['qty'] ?></span></div>
+                            <?php if (!empty($it['selected_variants'])): ?>
+                                <div style="font-size:11.5px;color:#93C5FD;margin-top:2px">✨ <?= esc($it['selected_variants']) ?></div>
+                            <?php endif; ?>
                             <?php if (!empty($it['notes'])): ?>
                                 <div class="item-line-note">📝 Catatan: <?= esc($it['notes']) ?></div>
                             <?php endif; ?>
@@ -423,11 +426,40 @@
                         <span><?= esc($symbol) ?> <?= number_format((float)$order['delivery_fee'], 0, ',', '.') ?></span>
                     </div>
                 <?php endif; ?>
+                <?php if ((float)($order['discount_amount'] ?? 0) > 0): ?>
+                    <div class="total-row" style="color:#10B981;font-weight:700">
+                        <span>Diskon Kupon Promo (<?= esc($order['voucher_code'] ?: 'PROMO') ?>)</span>
+                        <span>-<?= esc($symbol) ?> <?= number_format((float)$order['discount_amount'], 0, ',', '.') ?></span>
+                    </div>
+                <?php endif; ?>
                 <div class="total-row" style="margin-top:4px">
                     <span class="total-label-final">Total Tagihan (<?= strtoupper(esc($order['payment_method'] ?? 'COD')) ?>)</span>
                     <span class="total-value-final"><?= esc($symbol) ?> <?= number_format($order['total_amount'], 0, ',', '.') ?></span>
                 </div>
             </div>
+
+            <!-- Loyalty Stamp Box if store enabled -->
+            <?php if (!empty($order['customer_phone']) && ($store['store_loyalty_enabled'] ?? false)): ?>
+                <?php
+                    $loyaltyModel = new \App\Models\PosLoyaltyModel();
+                    $stampRec = $loyaltyModel->getCustomerStamps((int)$store['user_id'], $order['customer_phone']);
+                    $stampsCount = $stampRec ? (int)$stampRec['stamps_count'] : 0;
+                    $target = (int)($store['store_loyalty_target'] ?? 10);
+                    $pct = min(100, round(($stampsCount / max(1, $target)) * 100));
+                ?>
+                <div style="background:rgba(234,88,12,0.1);border:1px dashed rgba(234,88,12,0.4);border-radius:12px;padding:12px;margin-top:14px">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:#FB923C;margin-bottom:6px">
+                        <span>⭐ Stamp Loyalitas Anda</span>
+                        <span><?= $stampsCount ?> / <?= $target ?> Stamp</span>
+                    </div>
+                    <div class="progress" style="height:6px;border-radius:4px;background:rgba(255,255,255,0.1)">
+                        <div class="progress-bar bg-warning" style="width:<?= $pct ?>%"></div>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:6px">
+                        Kumpulkan <?= $target ?> stamp untuk mendapatkan reward: <strong><?= esc($store['store_loyalty_reward'] ?? 'Gratis 1 Menu Favorit') ?></strong>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- Contact Store WhatsApp -->

@@ -167,6 +167,7 @@ class PosController extends BaseController
             'change_amount'  => $changeAmount,
             'customer_name'  => $customerName ?: null,
             'customer_phone' => $customerPhone ?: null,
+            'status'         => 'paid',
             'debt_id'        => $debtId,
             'transaction_id' => $txId,
             'notes'          => $notes ?: null,
@@ -178,6 +179,12 @@ class PosController extends BaseController
             $this->orderItemModel->insert($oi);
         }
         unset($oi);
+
+        // Add Loyalty Stamp if customer phone exists
+        if ($customerPhone) {
+            $loyaltyModel = new \App\Models\PosLoyaltyModel();
+            $loyaltyModel->addStamps($userId, $customerPhone, $customerName ?: 'Pelanggan', 1);
+        }
 
         $orderData = $this->orderModel->getWithItems($orderId, $userId);
 
@@ -220,9 +227,15 @@ class PosController extends BaseController
         $minStock     = (int)($this->request->getPost('min_stock_alert') ?? 5);
         $unit         = trim($this->request->getPost('unit') ?? 'pcs') ?: 'pcs';
         $icon         = trim($this->request->getPost('icon') ?? 'coffee') ?: 'coffee';
+        $variantsRaw  = $this->request->getPost('variants_json');
 
         if (!$name || $sellingPrice <= 0) {
             return $this->response->setJSON(['success' => false, 'message' => 'Nama produk dan harga jual wajib diisi.']);
+        }
+
+        $variantsJson = null;
+        if (!empty($variantsRaw)) {
+            $variantsJson = is_string($variantsRaw) ? $variantsRaw : json_encode($variantsRaw);
         }
 
         $data = [
@@ -236,6 +249,7 @@ class PosController extends BaseController
             'min_stock_alert' => $minStock,
             'unit'            => $unit,
             'icon'            => $icon,
+            'variants_json'   => $variantsJson,
             'is_active'       => 1,
         ];
 
@@ -434,10 +448,141 @@ class PosController extends BaseController
             'transaction_id' => $txId,
         ]);
 
+        // Add Loyalty Stamp if customer phone exists
+        if (!empty($order['customer_phone'])) {
+            $loyaltyModel = new \App\Models\PosLoyaltyModel();
+            $loyaltyModel->addStamps($userId, $order['customer_phone'], $order['customer_name'] ?: 'Pelanggan', 1);
+        }
+
         return $this->response->setJSON([
             'success'       => true,
             'change_amount' => $changeAmount,
             'message'       => 'Pembayaran berhasil disimpan! Pesanan selesai.',
+        ]);
+    }
+
+    // GET /pos/kds — Kitchen Display System (Fullscreen Screen for Kitchen/Barista)
+    public function kds()
+    {
+        $userId = session()->get('user_id');
+        $store  = $this->settingModel->getStoreProfile($userId);
+        $orders = $this->orderModel->getOrdersList($userId, null, 100);
+
+        // Filter active cooking orders (pending & processing)
+        $kitchenOrders = array_values(array_filter($orders, function($o) {
+            return in_array($o['status'], ['pending', 'processing'], true);
+        }));
+
+        return view('pos/kds', [
+            'pageTitle'     => 'Kitchen Display System (KDS)',
+            'store'         => $store,
+            'kitchenOrders' => $kitchenOrders,
+            'symbol'        => $store['currency_symbol'] ?? 'Rp',
+        ]);
+    }
+
+    // GET /pos/kds/poll — Realtime AJAX polling for Kitchen Display System
+    public function kdsPoll()
+    {
+        $userId = session()->get('user_id');
+        $orders = $this->orderModel->getOrdersList($userId, null, 100);
+
+        $kitchenOrders = array_values(array_filter($orders, function($o) {
+            return in_array($o['status'], ['pending', 'processing'], true);
+        }));
+
+        return $this->response->setJSON([
+            'success' => true,
+            'orders'  => $kitchenOrders,
+            'count'   => count($kitchenOrders),
+        ]);
+    }
+
+    // GET /pos/vouchers — Voucher Codes & Promotions Management
+    public function vouchers()
+    {
+        $userId       = session()->get('user_id');
+        $voucherModel = new \App\Models\PosVoucherModel();
+        $vouchers     = $voucherModel->where('user_id', $userId)->orderBy('id', 'DESC')->findAll();
+        $symbol       = $this->settingModel->get($userId, 'currency_symbol', 'Rp');
+
+        return view('pos/vouchers', [
+            'pageTitle' => 'Kupon Diskon & Promo Toko',
+            'vouchers'  => $vouchers,
+            'symbol'    => $symbol,
+        ]);
+    }
+
+    // POST /pos/vouchers/store
+    public function storeVoucher()
+    {
+        $userId       = session()->get('user_id');
+        $voucherModel = new \App\Models\PosVoucherModel();
+        $id           = (int)($this->request->getPost('id') ?? 0);
+        $code         = strtoupper(trim($this->request->getPost('code') ?? ''));
+        $title        = trim($this->request->getPost('title') ?? '');
+        $type         = trim($this->request->getPost('type') ?? 'nominal');
+        $value        = (float)str_replace(['.', ','], ['', '.'], $this->request->getPost('value') ?? '0');
+        $minOrder     = (float)str_replace(['.', ','], ['', '.'], $this->request->getPost('min_order') ?? '0');
+        $maxDiscount  = (float)str_replace(['.', ','], ['', '.'], $this->request->getPost('max_discount') ?? '0');
+        $usageLimit   = (int)($this->request->getPost('usage_limit') ?? 0);
+        $expiresAt    = trim($this->request->getPost('expires_at') ?? '') ?: null;
+        $isActive     = $this->request->getPost('is_active') === '0' ? 0 : 1;
+
+        if (!$code) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Kode voucher wajib diisi.']);
+        }
+
+        // Check uniqueness for this user
+        $existing = $voucherModel->where('user_id', $userId)->where('code', $code);
+        if ($id > 0) $existing->where('id !=', $id);
+        if ($existing->first()) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Kode promo "' . esc($code) . '" sudah ada.']);
+        }
+
+        $data = [
+            'user_id'      => $userId,
+            'code'         => $code,
+            'title'        => $title ?: $code,
+            'type'         => in_array($type, ['percent', 'nominal', 'free_shipping']) ? $type : 'nominal',
+            'value'        => $value,
+            'min_order'    => $minOrder,
+            'max_discount' => $maxDiscount,
+            'usage_limit'  => $usageLimit,
+            'is_active'    => $isActive,
+            'expires_at'   => $expiresAt,
+        ];
+
+        if ($id > 0) {
+            $voucherModel->where('id', $id)->where('user_id', $userId)->set($data)->update();
+        } else {
+            $voucherModel->insert($data);
+        }
+
+        return $this->response->setJSON(['success' => true, 'message' => 'Kupon promo berhasil disimpan!']);
+    }
+
+    // POST /pos/vouchers/delete/(:num)
+    public function deleteVoucher(int $id)
+    {
+        $userId       = session()->get('user_id');
+        $voucherModel = new \App\Models\PosVoucherModel();
+        $voucherModel->where('id', $id)->where('user_id', $userId)->delete();
+        return $this->response->setJSON(['success' => true, 'message' => 'Kupon promo berhasil dihapus!']);
+    }
+
+    // GET /pos/loyalty — Customer Stamps Program
+    public function loyalty()
+    {
+        $userId       = session()->get('user_id');
+        $loyaltyModel = new \App\Models\PosLoyaltyModel();
+        $stamps       = $loyaltyModel->where('user_id', $userId)->orderBy('stamps_count', 'DESC')->findAll();
+        $store        = $this->settingModel->getStoreProfile($userId);
+
+        return view('pos/loyalty', [
+            'pageTitle' => 'Program Stamp & Loyalitas Pelanggan',
+            'stamps'    => $stamps,
+            'store'     => $store,
         ]);
     }
 
@@ -482,6 +627,9 @@ class PosController extends BaseController
         $pickupOn     = $this->request->getPost('store_pickup_enabled') === '1' ? '1' : '0';
         $bankInfo     = trim($this->request->getPost('store_bank_info') ?? '');
         $qrisInfo     = trim($this->request->getPost('store_qris_info') ?? '');
+        $loyaltyOn    = $this->request->getPost('store_loyalty_enabled') === '1' ? '1' : '0';
+        $loyaltyTarget= (int)($this->request->getPost('store_loyalty_target') ?? 10);
+        $loyaltyReward= trim($this->request->getPost('store_loyalty_reward') ?? 'Gratis 1 Menu Favorit');
 
         if (!$storeName) {
             return $this->response->setJSON(['success' => false, 'message' => 'Nama toko/pos wajib diisi.']);
@@ -518,6 +666,9 @@ class PosController extends BaseController
         $this->settingModel->setPref($userId, 'store_pickup_enabled', $pickupOn);
         $this->settingModel->setPref($userId, 'store_bank_info', $bankInfo);
         $this->settingModel->setPref($userId, 'store_qris_info', $qrisInfo);
+        $this->settingModel->setPref($userId, 'store_loyalty_enabled', $loyaltyOn);
+        $this->settingModel->setPref($userId, 'store_loyalty_target', (string)$loyaltyTarget);
+        $this->settingModel->setPref($userId, 'store_loyalty_reward', $loyaltyReward);
 
         return $this->response->setJSON([
             'success'    => true,

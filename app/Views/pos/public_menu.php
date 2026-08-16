@@ -742,6 +742,22 @@
 
                 <!-- Order Item List -->
                 <div>
+                <!-- Voucher / Promo Code Box -->
+                <div style="background:#0F172A;border:1px dashed rgba(234,88,12,0.4);border-radius:14px;padding:12px">
+                    <div style="font-size:12px;font-weight:800;color:#FB923C;margin-bottom:6px;display:flex;align-items:center;gap:4px">
+                        <span>🏷️</span> Punya Kode Promo / Kupon?
+                    </div>
+                    <div style="display:flex;gap:6px">
+                        <input type="text" id="voucherCodeInput" placeholder="Contoh: HEMAT10" class="input-control" style="text-transform:uppercase;font-family:monospace;font-weight:800;font-size:13px;padding:8px 12px">
+                        <button type="button" onclick="applyVoucher()" id="btnApplyVoucher" style="background:#EA580C;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap">
+                            Pakai
+                        </button>
+                    </div>
+                    <div id="voucherFeedback" style="font-size:11.5px;margin-top:6px;display:none"></div>
+                </div>
+
+                <!-- Order Item List -->
+                <div>
                     <div style="font-size:12px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Rincian Menu Dipilih</div>
                     <div id="cartItemList">
                         <!-- Rendered by JS -->
@@ -758,6 +774,10 @@
                         <span>Ongkos Kirim (Delivery)</span>
                         <span id="drawerDeliveryFee"><?= esc($symbol) ?> <?= number_format((float)($store['store_delivery_fee'] ?? 0), 0, ',', '.') ?></span>
                     </div>
+                    <div id="discountFeeRow" style="display:none;justify-content:space-between;font-size:12.5px;color:#10B981;font-weight:700">
+                        <span>Diskon Kupon Promo (<span id="appliedVoucherText"></span>)</span>
+                        <span id="drawerDiscountAmount">-<?= esc($symbol) ?> 0</span>
+                    </div>
                     <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:900;color:#fff;border-top:1px dashed var(--border);padding-top:6px;margin-top:2px">
                         <span>Total Pembayaran</span>
                         <span id="drawerTotalAmount" style="color:#FB923C"><?= esc($symbol) ?> 0</span>
@@ -772,6 +792,31 @@
             <div class="drawer-footer">
                 <button class="btn-submit-order" id="btnSubmitOrder" onclick="submitOrder()">
                     <span>🚀</span> Kirim Pesanan Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Variant & Topping Selection Modal -->
+    <div class="modal-overlay" id="variantModal">
+        <div class="modal-drawer" style="max-height:80vh">
+            <div class="drawer-header">
+                <div>
+                    <div class="drawer-title" id="variantModalTitle">Pilih Varian & Topping</div>
+                    <div style="font-size:12px;color:var(--text-muted)" id="variantModalBasePrice">Rp 0</div>
+                </div>
+                <button class="drawer-close" onclick="closeVariantModal()">✕</button>
+            </div>
+            <div class="drawer-body" id="variantModalBody">
+                <!-- Variant Groups Rendered Dynamically -->
+            </div>
+            <div class="drawer-footer" style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+                <div>
+                    <div style="font-size:11px;color:var(--text-muted);font-weight:700">TOTAL HARGA</div>
+                    <div style="font-size:16px;font-weight:900;color:#FB923C" id="variantModalTotalPrice">Rp 0</div>
+                </div>
+                <button class="btn-submit-order" style="flex:1" onclick="confirmVariantToCart()">
+                    + Masukkan Keranjang
                 </button>
             </div>
         </div>
@@ -805,9 +850,15 @@
         const PRODUCTS = <?= json_encode($products) ?>;
         const DELIVERY_FEE = <?= (float)($store['store_delivery_fee'] ?? 0) ?>;
         
-        let cart = {}; // { productId: { id, name, price, qty, notes } }
+        let cart = {}; // key: string => { key, product_id, name, price, base_price, qty, notes, selected_variants }
         let currentTable = "<?= esc($tableQuery) ?>";
         let currentOrderType = currentTable ? "dine_in" : "delivery";
+        let appliedDiscount = 0;
+        let appliedVoucherCode = '';
+
+        // Variant state
+        let activeVariantProduct = null;
+        let selectedVariantOptions = []; // [{ group, name, price }]
 
         function formatMoney(num) {
             return CURRENCY_SYMBOL + ' ' + Number(num).toLocaleString('id-ID');
@@ -845,58 +896,195 @@
             const product = PRODUCTS.find(p => p.id == productId);
             if (!product) return;
 
-            if (!cart[productId]) {
-                cart[productId] = {
+            // Check if product has variants_json
+            let variants = null;
+            if (product.variants_json) {
+                try {
+                    variants = typeof product.variants_json === 'string' ? JSON.parse(product.variants_json) : product.variants_json;
+                } catch(e) {}
+            }
+
+            if (variants && Array.isArray(variants) && variants.length > 0) {
+                openVariantModal(product, variants);
+                return;
+            }
+
+            // Simple product without variants
+            const itemKey = 'prod_' + productId;
+            if (!cart[itemKey]) {
+                cart[itemKey] = {
+                    key: itemKey,
                     product_id: productId,
                     name: product.name,
                     price: parseFloat(product.selling_price),
+                    base_price: parseFloat(product.selling_price),
                     qty: 1,
-                    notes: ''
+                    notes: '',
+                    selected_variants: null
                 };
             } else {
-                cart[productId].qty += 1;
+                cart[itemKey].qty += 1;
             }
             updateUI();
         }
 
-        function changeQty(productId, delta) {
-            if (!cart[productId]) return;
-            cart[productId].qty += delta;
-            if (cart[productId].qty <= 0) {
-                delete cart[productId];
+        function openVariantModal(product, variants) {
+            activeVariantProduct = product;
+            selectedVariantOptions = [];
+
+            document.getElementById('variantModalTitle').textContent = product.name;
+            document.getElementById('variantModalBasePrice').textContent = 'Harga Dasar: ' + formatMoney(product.selling_price);
+
+            const body = document.getElementById('variantModalBody');
+            body.innerHTML = variants.map((grp, gIdx) => {
+                const isSingle = (grp.type === 'single' || !grp.type);
+                const opts = grp.options || [];
+
+                return `
+                    <div style="margin-bottom:14px;background:#0F172A;border:1px solid var(--border);border-radius:12px;padding:12px">
+                        <div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:8px">
+                            ${escapeHtml(grp.name)} ${grp.required ? '<span style="color:#EF4444;font-size:11px">*wajib</span>' : ''}
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:6px">
+                            ${opts.map((opt, oIdx) => {
+                                const addPrice = parseFloat(opt.price) || 0;
+                                const addPriceText = addPrice > 0 ? ` (+${formatMoney(addPrice)})` : '';
+                                const inputType = isSingle ? 'radio' : 'checkbox';
+                                const inputName = 'var_grp_' + gIdx;
+                                const isChecked = (isSingle && oIdx === 0 && grp.required) ? 'checked' : '';
+
+                                return `
+                                    <label style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px">
+                                        <div style="display:flex;align-items:center;gap:8px">
+                                            <input type="${inputType}" name="${inputName}" data-grp="${escapeHtml(grp.name)}" data-name="${escapeHtml(opt.name)}" data-price="${addPrice}" ${isChecked} onchange="calculateVariantTotal()">
+                                            <span>${escapeHtml(opt.name)}</span>
+                                        </div>
+                                        <span style="color:#FB923C;font-weight:700;font-size:12px">${addPriceText}</span>
+                                    </label>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            calculateVariantTotal();
+            document.getElementById('variantModal').classList.add('active');
+        }
+
+        function closeVariantModal() {
+            document.getElementById('variantModal').classList.remove('active');
+            activeVariantProduct = null;
+        }
+
+        function calculateVariantTotal() {
+            if (!activeVariantProduct) return;
+            let total = parseFloat(activeVariantProduct.selling_price);
+            selectedVariantOptions = [];
+
+            document.querySelectorAll('#variantModalBody input:checked').forEach(inp => {
+                const addPrice = parseFloat(inp.getAttribute('data-price')) || 0;
+                total += addPrice;
+                selectedVariantOptions.push({
+                    group: inp.getAttribute('data-grp'),
+                    name: inp.getAttribute('data-name'),
+                    price: addPrice
+                });
+            });
+
+            document.getElementById('variantModalTotalPrice').textContent = formatMoney(total);
+        }
+
+        function confirmVariantToCart() {
+            if (!activeVariantProduct) return;
+
+            // Generate unique variant key
+            const variantHash = selectedVariantOptions.map(v => v.name).sort().join('_');
+            const itemKey = 'prod_' + activeVariantProduct.id + '_' + (variantHash || 'default');
+
+            let finalPrice = parseFloat(activeVariantProduct.selling_price);
+            selectedVariantOptions.forEach(v => { finalPrice += v.price; });
+
+            if (!cart[itemKey]) {
+                cart[itemKey] = {
+                    key: itemKey,
+                    product_id: activeVariantProduct.id,
+                    name: activeVariantProduct.name,
+                    price: finalPrice,
+                    base_price: parseFloat(activeVariantProduct.selling_price),
+                    qty: 1,
+                    notes: '',
+                    selected_variants: selectedVariantOptions
+                };
+            } else {
+                cart[itemKey].qty += 1;
+            }
+
+            closeVariantModal();
+            updateUI();
+        }
+
+        function changeQty(itemKey, delta) {
+            if (!cart[itemKey]) return;
+            cart[itemKey].qty += delta;
+            if (cart[itemKey].qty <= 0) {
+                delete cart[itemKey];
             }
             updateUI();
         }
 
-        function updateItemNote(productId, noteText) {
-            if (cart[productId]) {
-                cart[productId].notes = noteText.trim();
+        function updateItemNote(itemKey, noteText) {
+            if (cart[itemKey]) {
+                cart[itemKey].notes = noteText.trim();
+            }
+        }
+
+        async function applyVoucher() {
+            const code = document.getElementById('voucherCodeInput').value.trim();
+            const feedback = document.getElementById('voucherFeedback');
+            if (!code) {
+                feedback.style.display = 'block';
+                feedback.style.color = '#EF4444';
+                feedback.textContent = 'Masukkan kode promo terlebih dahulu.';
+                return;
+            }
+
+            let subtotalPrice = 0;
+            Object.values(cart).forEach(it => { subtotalPrice += (it.price * it.qty); });
+            const currentDeliveryFee = (currentOrderType === 'delivery') ? DELIVERY_FEE : 0;
+
+            const formData = new FormData();
+            formData.append('code', code);
+            formData.append('subtotal', subtotalPrice);
+            formData.append('delivery_fee', currentDeliveryFee);
+
+            try {
+                const res = await fetch('/menu/' + encodeURIComponent(STORE_SLUG) + '/verify-voucher', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                feedback.style.display = 'block';
+                if (data.valid) {
+                    feedback.style.color = '#10B981';
+                    feedback.textContent = '✅ ' + data.message;
+                    appliedDiscount = parseFloat(data.discount_amount) || 0;
+                    appliedVoucherCode = code.toUpperCase();
+                } else {
+                    feedback.style.color = '#EF4444';
+                    feedback.textContent = '❌ ' + (data.message || 'Kode promo tidak valid');
+                    appliedDiscount = 0;
+                    appliedVoucherCode = '';
+                }
+                updateUI();
+            } catch(e) {
+                feedback.style.display = 'block';
+                feedback.style.color = '#EF4444';
+                feedback.textContent = 'Gagal memverifikasi kode promo.';
             }
         }
 
         function updateUI() {
-            // Update Card Action Buttons
-            PRODUCTS.forEach(p => {
-                const actionEl = document.getElementById('action-' + p.id);
-                if (!actionEl) return;
-
-                if (cart[p.id] && cart[p.id].qty > 0) {
-                    actionEl.innerHTML = `
-                        <div class="item-stepper">
-                            <button class="btn-step-mini" onclick="changeQty(${p.id}, -1)">−</button>
-                            <span class="step-qty-val">${cart[p.id].qty}</span>
-                            <button class="btn-step-mini" onclick="changeQty(${p.id}, 1)">+</button>
-                        </div>
-                    `;
-                } else {
-                    actionEl.innerHTML = `
-                        <button class="btn-add-item" onclick="addToCart(${p.id})">
-                            + Tambah
-                        </button>
-                    `;
-                }
-            });
-
             // Calculate Totals
             let totalQty = 0;
             let subtotalPrice = 0;
@@ -906,7 +1094,7 @@
             });
 
             const currentDeliveryFee = (currentOrderType === 'delivery') ? DELIVERY_FEE : 0;
-            const finalTotal = subtotalPrice + currentDeliveryFee;
+            const finalTotal = Math.max(0, subtotalPrice + currentDeliveryFee - appliedDiscount);
 
             // Update Bottom Bar
             const bar = document.getElementById('bottomCartBar');
@@ -922,6 +1110,16 @@
             // Update Drawer
             document.getElementById('drawerTotalQty').textContent = totalQty;
             document.getElementById('drawerSubtotalAmount').textContent = formatMoney(subtotalPrice);
+            
+            const discRow = document.getElementById('discountFeeRow');
+            if (appliedDiscount > 0) {
+                discRow.style.display = 'flex';
+                document.getElementById('appliedVoucherText').textContent = appliedVoucherCode;
+                document.getElementById('drawerDiscountAmount').textContent = '-' + formatMoney(appliedDiscount);
+            } else {
+                discRow.style.display = 'none';
+            }
+
             document.getElementById('drawerTotalAmount').textContent = formatMoney(finalTotal);
             renderDrawerItems();
         }
@@ -936,25 +1134,33 @@
                 return;
             }
 
-            listEl.innerHTML = items.map(it => `
-                <div class="cart-item-row">
-                    <div style="flex:1">
-                        <div class="cart-item-title">${escapeHtml(it.name)}</div>
-                        <div style="font-size:12px;color:#FB923C;font-weight:700">${formatMoney(it.price)} x ${it.qty} = ${formatMoney(it.price * it.qty)}</div>
-                        <input type="text" class="cart-item-note-input" placeholder="Catatan: misal pedas, less sugar..." value="${escapeHtml(it.notes || '')}" onchange="updateItemNote(${it.product_id}, this.value)">
+            listEl.innerHTML = items.map(it => {
+                let variantBadges = '';
+                if (it.selected_variants && it.selected_variants.length > 0) {
+                    variantBadges = `<div style="font-size:11.5px;color:#93C5FD;margin-top:2px">✨ ${it.selected_variants.map(v => v.name + (v.price > 0 ? ' (+' + formatMoney(v.price) + ')' : '')).join(', ')}</div>`;
+                }
+
+                return `
+                    <div class="cart-item-row">
+                        <div style="flex:1">
+                            <div class="cart-item-title">${escapeHtml(it.name)}</div>
+                            ${variantBadges}
+                            <div style="font-size:12px;color:#FB923C;font-weight:700;margin-top:2px">${formatMoney(it.price)} x ${it.qty} = ${formatMoney(it.price * it.qty)}</div>
+                            <input type="text" class="cart-item-note-input" placeholder="Catatan: misal pedas, less sugar..." value="${escapeHtml(it.notes || '')}" onchange="updateItemNote('${it.key}', this.value)">
+                        </div>
+                        <div class="item-stepper" style="margin-top:4px">
+                            <button class="btn-step-mini" onclick="changeQty('${it.key}', -1)">−</button>
+                            <span class="step-qty-val">${it.qty}</span>
+                            <button class="btn-step-mini" onclick="changeQty('${it.key}', 1)">+</button>
+                        </div>
                     </div>
-                    <div class="item-stepper" style="margin-top:4px">
-                        <button class="btn-step-mini" onclick="changeQty(${it.product_id}, -1)">−</button>
-                        <span class="step-qty-val">${it.qty}</span>
-                        <button class="btn-step-mini" onclick="changeQty(${it.product_id}, 1)">+</button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function escapeHtml(text) {
             const div = document.createElement('div');
-            div.textContent = text;
+            div.textContent = text || '';
             return div.innerHTML;
         }
 
@@ -1012,7 +1218,6 @@
                 }
             });
 
-            // Check if any block is completely empty
             document.querySelectorAll('.category-block').forEach(block => {
                 const visibleCards = block.querySelectorAll('.menu-card[style="display: flex;"], .menu-card:not([style*="display: none"])');
                 block.style.display = visibleCards.length > 0 ? 'block' : 'none';
@@ -1083,13 +1288,13 @@
                         pickup_time: pickupTime,
                         table_no: tableNo,
                         payment_method: paymentMethod,
+                        voucher_code: appliedVoucherCode,
                         items: items
                     })
                 });
 
                 const data = await res.json();
                 if (data.success) {
-                    // Redirect to status tracking page
                     window.location.href = data.status_url;
                 } else {
                     alert('Gagal mengirim pesanan: ' + (data.message || 'Terjadi kesalahan'));

@@ -223,6 +223,136 @@ class _PosReportsScreenState extends State<PosReportsScreen> {
                       ),
                       const SizedBox(height: 14),
 
+                      // Peak Hours Section
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.card,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('⏰ Analisis Jam Sibuk (Peak Hours)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                            const SizedBox(height: 4),
+                            const Text('Distribusi jam transaksi untuk optimasi operasional & staf.', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                            const SizedBox(height: 10),
+                            if ((_report['peakHours'] as List?)?.isEmpty ?? true)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 14),
+                                child: Center(
+                                  child: Text('Belum ada data transaksi per jam.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                                ),
+                              )
+                            else
+                              ...((_report['peakHours'] as List?) ?? []).map((ph) {
+                                final h = (ph['hour_num'] as num?)?.toInt() ?? 0;
+                                final count = (ph['count'] as num?)?.toInt() ?? 0;
+                                final sales = (ph['total_sales'] as num?)?.toDouble() ?? 0.0;
+                                final hLabel = '${h.toString().padLeft(2, '0')}:00 - ${((h + 1) % 24).toString().padLeft(2, '0')}:00';
+
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.bg,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(hLabel, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, fontFamily: 'monospace')),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFEA580C).withValues(alpha: 0.15),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text('$count trx', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFFEA580C))),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(Fmt.money(sales, symbol: widget.symbol), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Product Margins Section
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.card,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('📊 Analisis Margin Keuntungan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                            const SizedBox(height: 4),
+                            const Text('Persentase profit bersih per produk terjual.', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                            const SizedBox(height: 10),
+                            if ((_report['margins'] as List?)?.isEmpty ?? true)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 14),
+                                child: Center(
+                                  child: Text('Belum ada data margin produk.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                                ),
+                              )
+                            else
+                              ...((_report['margins'] as List?) ?? []).map((m) {
+                                final name = m['product_name']?.toString() ?? '';
+                                final qty = (m['total_qty'] as num?)?.toInt() ?? 0;
+                                final profit = (m['total_profit'] as num?)?.toDouble() ?? 0.0;
+                                final marginPct = (m['margin_pct'] as num?)?.toDouble() ?? 0.0;
+
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 6),
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.bg,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(name, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800)),
+                                            Text('$qty terjual • Laba ${Fmt.money(profit, symbol: widget.symbol)}', style: const TextStyle(fontSize: 11, color: Color(0xFF10B981), fontWeight: FontWeight.w600)),
+                                          ],
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFEA580C).withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          '${marginPct.toStringAsFixed(1)}%',
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFFEA580C)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
                       // Payment Breakdown
                       Container(
                         padding: const EdgeInsets.all(16),

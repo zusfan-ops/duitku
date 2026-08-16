@@ -66,6 +66,9 @@ class SettingModel extends Model
             'store_pickup_enabled'   => ($all['store_pickup_enabled'] ?? '1') === '1',
             'store_bank_info'        => $all['store_bank_info'] ?? '',
             'store_qris_info'        => $all['store_qris_info'] ?? '',
+            'store_loyalty_enabled'  => ($all['store_loyalty_enabled'] ?? '1') === '1',
+            'store_loyalty_target'   => (int)($all['store_loyalty_target'] ?? 10),
+            'store_loyalty_reward'   => $all['store_loyalty_reward'] ?? 'Gratis 1 Menu Favorit',
             'currency_symbol'        => $all['currency_symbol'] ?? 'Rp',
             'currency'               => $all['currency'] ?? 'IDR',
         ];

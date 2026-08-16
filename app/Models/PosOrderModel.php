@@ -18,6 +18,7 @@ class PosOrderModel extends Model
         'change_amount', 'customer_name', 'customer_phone',
         'table_no', 'status', 'order_source', 'order_type',
         'delivery_address', 'delivery_notes', 'delivery_fee', 'pickup_time',
+        'voucher_code', 'discount_amount',
         'debt_id', 'transaction_id', 'notes', 'date',
     ];
 
@@ -210,17 +211,50 @@ class PosOrderModel extends Model
             ORDER BY date ASC
         ", [$userId, $monthKey])->getResultArray();
 
+        // Peak Hours (24-hour distribution)
+        $peakHours = $db->query("
+            SELECT 
+                HOUR(created_at) AS hour_num,
+                COUNT(id) AS count,
+                COALESCE(SUM(total_amount), 0) AS total_sales
+            FROM pos_orders
+            WHERE user_id = ? AND DATE_FORMAT(date, '%Y-%m') = ?
+            GROUP BY HOUR(created_at)
+            ORDER BY hour_num ASC
+        ", [$userId, $monthKey])->getResultArray();
+
+        // Product Profit Margins Ranking
+        $margins = $db->query("
+            SELECT 
+                i.product_name,
+                SUM(i.qty) AS total_qty,
+                SUM(i.subtotal) AS total_sales,
+                SUM(i.cost_price * i.qty) AS total_cost,
+                SUM(i.subtotal - (i.cost_price * i.qty)) AS total_profit,
+                CASE WHEN SUM(i.subtotal) > 0 
+                     THEN ROUND((SUM(i.subtotal - (i.cost_price * i.qty)) / SUM(i.subtotal)) * 100, 1) 
+                     ELSE 0 END AS margin_pct
+            FROM pos_order_items i
+            JOIN pos_orders o ON o.id = i.order_id
+            WHERE o.user_id = ? AND DATE_FORMAT(o.date, '%Y-%m') = ?
+            GROUP BY i.product_name
+            ORDER BY total_profit DESC
+            LIMIT 10
+        ", [$userId, $monthKey])->getResultArray();
+
         return [
-            'summary'     => [
+            'summary'        => [
                 'total_sales'     => (float)($summary['total_sales'] ?? 0),
                 'total_cost'      => (float)($summary['total_cost'] ?? 0),
                 'total_profit'    => (float)($summary['total_profit'] ?? 0),
                 'total_orders'    => (int)($summary['total_orders'] ?? 0),
                 'avg_order_value' => (float)($summary['avg_order_value'] ?? 0),
             ],
-            'payments'    => $payments,
-            'bestSellers' => $bestSellers,
-            'daily'       => $daily,
+            'payments'       => $payments,
+            'bestSellers'    => $bestSellers,
+            'daily'          => $daily,
+            'peakHours'      => $peakHours,
+            'margins'        => $margins,
         ];
     }
 

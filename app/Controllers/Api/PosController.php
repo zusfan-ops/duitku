@@ -456,9 +456,106 @@ class PosController extends ApiController
             'transaction_id' => $txId,
         ]);
 
+        // Add loyalty stamp
+        if (!empty($order['customer_phone'])) {
+            $loyaltyModel = new \App\Models\PosLoyaltyModel();
+            $loyaltyModel->addStamps($userId, $order['customer_phone'], $order['customer_name'] ?: 'Pelanggan', 1);
+        }
+
         return $this->ok([
             'change_amount' => $changeAmount,
             'message'       => 'Pembayaran berhasil disimpan! Pesanan selesai.',
+        ]);
+    }
+
+    /**
+     * GET api/pos/vouchers
+     */
+    public function getVouchers()
+    {
+        $userId       = $this->uid();
+        $voucherModel = new \App\Models\PosVoucherModel();
+        $vouchers     = $voucherModel->where('user_id', $userId)->orderBy('id', 'DESC')->findAll();
+
+        return $this->ok(['vouchers' => $vouchers]);
+    }
+
+    /**
+     * POST api/pos/vouchers/store
+     */
+    public function storeVoucher()
+    {
+        $userId       = $this->uid();
+        $json         = $this->request->getJSON(true) ?? [];
+        $voucherModel = new \App\Models\PosVoucherModel();
+
+        $id           = (int)($json['id'] ?? 0);
+        $code         = strtoupper(trim($json['code'] ?? ''));
+        $title        = trim($json['title'] ?? '');
+        $type         = trim($json['type'] ?? 'nominal');
+        $value        = (float)($json['value'] ?? 0);
+        $minOrder     = (float)($json['min_order'] ?? 0);
+        $maxDiscount  = (float)($json['max_discount'] ?? 0);
+        $usageLimit   = (int)($json['usage_limit'] ?? 0);
+        $expiresAt    = trim($json['expires_at'] ?? '') ?: null;
+        $isActive     = ($json['is_active'] ?? true) ? 1 : 0;
+
+        if (!$code) {
+            return $this->fail('Kode voucher wajib diisi.');
+        }
+
+        $existing = $voucherModel->where('user_id', $userId)->where('code', $code);
+        if ($id > 0) $existing->where('id !=', $id);
+        if ($existing->first()) {
+            return $this->fail('Kode promo "' . esc($code) . '" sudah ada.');
+        }
+
+        $data = [
+            'user_id'      => $userId,
+            'code'         => $code,
+            'title'        => $title ?: $code,
+            'type'         => in_array($type, ['percent', 'nominal', 'free_shipping']) ? $type : 'nominal',
+            'value'        => $value,
+            'min_order'    => $minOrder,
+            'max_discount' => $maxDiscount,
+            'usage_limit'  => $usageLimit,
+            'is_active'    => $isActive,
+            'expires_at'   => $expiresAt,
+        ];
+
+        if ($id > 0) {
+            $voucherModel->where('id', $id)->where('user_id', $userId)->set($data)->update();
+        } else {
+            $voucherModel->insert($data);
+        }
+
+        return $this->ok(['message' => 'Kupon promo berhasil disimpan!']);
+    }
+
+    /**
+     * POST api/pos/vouchers/delete/{id}
+     */
+    public function deleteVoucher(int $id)
+    {
+        $userId       = $this->uid();
+        $voucherModel = new \App\Models\PosVoucherModel();
+        $voucherModel->where('id', $id)->where('user_id', $userId)->delete();
+        return $this->ok(['message' => 'Kupon promo berhasil dihapus!']);
+    }
+
+    /**
+     * GET api/pos/loyalty
+     */
+    public function getLoyaltyStamps()
+    {
+        $userId       = $this->uid();
+        $loyaltyModel = new \App\Models\PosLoyaltyModel();
+        $stamps       = $loyaltyModel->where('user_id', $userId)->orderBy('stamps_count', 'DESC')->findAll();
+        $store        = $this->settingModel->getStoreProfile($userId);
+
+        return $this->ok([
+            'stamps' => $stamps,
+            'store'  => $store,
         ]);
     }
 
@@ -483,20 +580,23 @@ class PosController extends ApiController
      */
     public function saveStoreProfile()
     {
-        $userId      = $this->uid();
-        $json        = $this->request->getJSON(true) ?? [];
-        $storeName   = trim($json['store_name'] ?? '');
-        $storeSlug   = trim($json['store_slug'] ?? '');
-        $tagline     = trim($json['store_tagline'] ?? '');
-        $address     = trim($json['store_address'] ?? '');
-        $phone       = trim($json['store_phone'] ?? '');
-        $qrFooter    = trim($json['store_qr_footer'] ?? '');
-        $isOpen      = ($json['store_is_open'] ?? true) ? '1' : '0';
-        $deliveryOn  = ($json['store_delivery_enabled'] ?? true) ? '1' : '0';
-        $deliveryFee = (float)($json['store_delivery_fee'] ?? 0);
-        $pickupOn    = ($json['store_pickup_enabled'] ?? true) ? '1' : '0';
-        $bankInfo    = trim($json['store_bank_info'] ?? '');
-        $qrisInfo    = trim($json['store_qris_info'] ?? '');
+        $userId        = $this->uid();
+        $json          = $this->request->getJSON(true) ?? [];
+        $storeName     = trim($json['store_name'] ?? '');
+        $storeSlug     = trim($json['store_slug'] ?? '');
+        $tagline       = trim($json['store_tagline'] ?? '');
+        $address       = trim($json['store_address'] ?? '');
+        $phone         = trim($json['store_phone'] ?? '');
+        $qrFooter      = trim($json['store_qr_footer'] ?? '');
+        $isOpen        = ($json['store_is_open'] ?? true) ? '1' : '0';
+        $deliveryOn    = ($json['store_delivery_enabled'] ?? true) ? '1' : '0';
+        $deliveryFee   = (float)($json['store_delivery_fee'] ?? 0);
+        $pickupOn      = ($json['store_pickup_enabled'] ?? true) ? '1' : '0';
+        $bankInfo      = trim($json['store_bank_info'] ?? '');
+        $qrisInfo      = trim($json['store_qris_info'] ?? '');
+        $loyaltyOn     = ($json['store_loyalty_enabled'] ?? true) ? '1' : '0';
+        $loyaltyTarget = (int)($json['store_loyalty_target'] ?? 10);
+        $loyaltyReward = trim($json['store_loyalty_reward'] ?? 'Gratis 1 Menu Favorit');
 
         if (!$storeName) {
             return $this->fail('Nama toko/outlet wajib diisi.');
@@ -528,6 +628,9 @@ class PosController extends ApiController
         $this->settingModel->setPref($userId, 'store_pickup_enabled', $pickupOn);
         $this->settingModel->setPref($userId, 'store_bank_info', $bankInfo);
         $this->settingModel->setPref($userId, 'store_qris_info', $qrisInfo);
+        $this->settingModel->setPref($userId, 'store_loyalty_enabled', $loyaltyOn);
+        $this->settingModel->setPref($userId, 'store_loyalty_target', (string)$loyaltyTarget);
+        $this->settingModel->setPref($userId, 'store_loyalty_reward', $loyaltyReward);
 
         $store = $this->settingModel->getStoreProfile($userId);
 

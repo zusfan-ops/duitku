@@ -171,6 +171,24 @@ flowchart TD
    - Budi menuju kasir dan membayar tunai Rp 50.000.
    - Kasir menekan **`[ 💳 Terima Bayar & Lunas ]`**, sistem menghitung kembalian Rp 17.000, dan pesanan selesai lunas.
 
+### 🌟 6 Fitur Unggulan Tambahan POS & Toko Online:
+1. 🍧 **Varian & Topping / Add-ons (*Product Modifiers*):**
+   - Mendukung pilihan ukuran (*Regular, Large, XL*) dan topping tambahan (*Extra Keju, Boba, Sambal Ekstra*).
+   - Setiap varian dapat memiliki biaya tambahan tersendiri yang otomatis dihitung saat checkout dan dicetak di rincian pesanan.
+2. 💬 **1-Click WhatsApp Notification Blast:**
+   - Kirim notifikasi status ke nomor WhatsApp pelanggan dalam 1 ketukan: *Konfirmasi Pesanan Baru, Kurir Sedang Berangkat, Pesanan Siap Saji, hingga Struk & Ucapan Terima Kasih*.
+3. 🏷️ **Kode Kupon Promo & Diskon (*Voucher Engine*):**
+   - Buat promo diskon persentase (`%`), potongan nominal (`Rp`), atau gratis ongkir flat.
+   - Dilengkapi batas kuota pemakaian, minimal belanja, maksimal nominal potongan, dan masa kedaluwarsa.
+4. 🍳 **Kitchen Display System (*KDS Layar Dapur*):**
+   - Layar monitor khusus dapur/barista (`/pos/kds`) dengan tampilan kontras tinggi, pengukur waktu memasak per tiket (*stopwatch*), alarm suara lonceng pesanan masuk, dan tombol ubah status masak 1 klik.
+5. 📊 **Analisis Jam Sibuk (*Peak Hours*) & Margin Keuntungan Produk:**
+   - Grafik 24 jam distribusi transaksi untuk memudahkan pengaturan jadwal staf dan persiapan bahan baku.
+   - Tabel ranking persentase margin keuntungan produk (`Margin %`) untuk memetakan produk paling menguntungkan.
+6. ⭐ **Program Kartu Stamp Loyalitas Pelanggan (*Loyalty Stamps*):**
+   - Pelanggan otomatis mendapatkan stamp setiap kali transaksi selesai berdasarkan nomor WhatsApp aktif.
+   - Target reward dapat diatur (contoh: *Kumpulkan 10 Stamp = Gratis 1 Menu Favorit*). Pelanggan dapat memantau akumulasi stamp langsung dari web menu.
+
 ---
 
 ### 🚗 2. Pencatat Armada & Kendaraan Pribadi

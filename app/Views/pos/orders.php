@@ -337,11 +337,18 @@
         </div>
 
         <div class="top-action-group">
-            <!-- QR Standee Print Link -->
+            <a href="/pos/kds" target="_blank" class="btn-top-pos" style="background:#1E293B;color:#38BDF8;border-color:#38BDF8">
+                <span>👨‍🍳</span> KDS Dapur
+            </a>
+            <a href="/pos/vouchers" class="btn-top-pos">
+                <span>🏷️</span> Kupon
+            </a>
+            <a href="/pos/loyalty" class="btn-top-pos">
+                <span>⭐</span> Stamp
+            </a>
             <a href="/pos/qr" class="btn-top-pos">
                 <span>📱</span> Cetak QR
             </a>
-            <!-- Store Profile Settings Modal Trigger -->
             <button class="btn-top-pos" onclick="openStoreSettingModal()">
                 <span>⚙️</span> Toko
             </button>
@@ -482,6 +489,9 @@
                                 <div style="flex:1">
                                     <span class="item-name-pos"><?= esc($it['product_name']) ?></span>
                                     <span style="color:#EA580C;font-weight:800">x<?= $it['qty'] ?></span>
+                                    <?php if (!empty($it['selected_variants'])): ?>
+                                        <div style="font-size:11px;color:#38BDF8;margin-top:2px">✨ <?= esc($it['selected_variants']) ?></div>
+                                    <?php endif; ?>
                                     <?php if (!empty($it['notes'])): ?>
                                         <div class="item-note-pos">📝 <?= esc($it['notes']) ?></div>
                                     <?php endif; ?>
@@ -497,6 +507,12 @@
                                 <span><?= esc($symbol) ?> <?= number_format((float)$ord['delivery_fee'], 0, ',', '.') ?></span>
                             </div>
                         <?php endif; ?>
+                        <?php if ((float)($ord['discount_amount'] ?? 0) > 0): ?>
+                            <div class="order-item-row-pos" style="border-top:1px dashed var(--border);padding-top:4px;color:#10B981;font-weight:700">
+                                <span>🏷️ Diskon Promo (<?= esc($ord['voucher_code'] ?: 'KUPON') ?>)</span>
+                                <span>-<?= esc($symbol) ?> <?= number_format((float)$ord['discount_amount'], 0, ',', '.') ?></span>
+                            </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Footer Total & Actions -->
@@ -507,7 +523,26 @@
                         </div>
 
                         <!-- Action Buttons according to status & type -->
-                        <div style="display:flex;gap:6px;flex-wrap:wrap">
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                            <?php if (!empty($ord['customer_phone'])): ?>
+                                <?php
+                                    $cPhone = preg_replace('/[^0-9]/', '', $ord['customer_phone']);
+                                    if (str_starts_with($cPhone, '0')) $cPhone = '62' . substr($cPhone, 1);
+                                    $trackingUrl = base_url('/menu/' . esc($store['store_slug']) . '/status/' . esc($ord['order_number']));
+                                    
+                                    // Predefined WA messages
+                                    $msgConfirm = urlencode("Halo Kak {$ord['customer_name']}, pesanan #{$ord['order_number']} di {$store['store_name']} telah kami terima & sedang disiapkan! Total: Rp " . number_format($ord['total_amount'], 0, ',', '.') . ".\n\nPantau status pesanan live di:\n{$trackingUrl}\n\nTerima kasih!");
+                                    $msgCourier = urlencode("Halo Kak {$ord['customer_name']}, 🛵 Kurir kami sedang jalan mengantarkan pesanan #{$ord['order_number']} ke alamat Anda. Mohon siapkan uang pas Rp " . number_format($ord['total_amount'], 0, ',', '.') . " jika bayar COD ya. Terima kasih!");
+                                    $msgReady = urlencode("Halo Kak {$ord['customer_name']}, pesanan #{$ord['order_number']} Anda di {$store['store_name']} sudah SIAP! Silakan dinikmati / diambil di kasir ya. Terima kasih!");
+                                    $msgThanks = urlencode("Terima kasih Kak {$ord['customer_name']} telah berbelanja di {$store['store_name']}! Transaksi #{$ord['order_number']} telah selesai. Semoga berkah & puas dengan layanan kami! ⭐");
+
+                                    $targetWaMsg = ($ord['status'] === 'pending') ? $msgConfirm : (($ord['status'] === 'delivering') ? $msgCourier : (($ord['status'] === 'paid') ? $msgThanks : $msgReady));
+                                ?>
+                                <a href="https://wa.me/<?= $cPhone ?>?text=<?= $targetWaMsg ?>" target="_blank" class="btn-action-pos" style="background:#15803D;color:#fff;text-decoration:none" title="Kirim notifikasi pesan WhatsApp ke pelanggan">
+                                    💬 Notif WA
+                                </a>
+                            <?php endif; ?>
+
                             <?php if ($ord['status'] === 'pending'): ?>
                                 <button class="btn-action-pos btn-act-process" onclick="updateOrderStatus(<?= $ord['id'] ?>, 'processing')">
                                     🍳 Terima & Siapkan

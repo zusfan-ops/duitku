@@ -134,6 +134,12 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/pos/orders/pay',            'PosController::payOrder');
     $routes->get('/pos/qr',                     'PosController::qrPrint');
     $routes->post('/pos/store-profile',         'PosController::saveStoreProfile');
+    $routes->get('/pos/kds',                    'PosController::kds');
+    $routes->get('/pos/kds/poll',               'PosController::kdsPoll');
+    $routes->get('/pos/vouchers',               'PosController::vouchers');
+    $routes->post('/pos/vouchers/store',        'PosController::storeVoucher');
+    $routes->post('/pos/vouchers/delete/(:num)','PosController::deleteVoucher/$1');
+    $routes->get('/pos/loyalty',                'PosController::loyalty');
     $routes->get('/pos/products',               'PosController::products');
     $routes->post('/pos/products/store',        'PosController::storeProduct');
     $routes->post('/pos/products/adjust-stock', 'PosController::adjustStock');
@@ -147,17 +153,23 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 $routes->get('/menu/(:segment)',                           'PublicMenuController::index/$1');
 $routes->get('/menu/(:segment)/status/(:segment)',          'PublicMenuController::orderStatus/$1/$2');
 $routes->get('/menu/(:segment)/status-poll/(:segment)',     'PublicMenuController::pollStatus/$1/$2');
+$routes->post('/menu/(:segment)/verify-voucher',           'PublicMenuController::verifyVoucher/$1');
+$routes->get('/menu/(:segment)/stamps',                     'PublicMenuController::checkStamps/$1');
 $routes->post('/menu/(:segment)/order',                     'PublicMenuController::placeOrder/$1');
 
 // Aliases for Marketplace & Online Shop
 $routes->get('/shop/(:segment)',                           'PublicMenuController::index/$1');
 $routes->get('/shop/(:segment)/status/(:segment)',          'PublicMenuController::orderStatus/$1/$2');
 $routes->get('/shop/(:segment)/status-poll/(:segment)',     'PublicMenuController::pollStatus/$1/$2');
+$routes->post('/shop/(:segment)/verify-voucher',           'PublicMenuController::verifyVoucher/$1');
+$routes->get('/shop/(:segment)/stamps',                     'PublicMenuController::checkStamps/$1');
 $routes->post('/shop/(:segment)/order',                     'PublicMenuController::placeOrder/$1');
 
 $routes->get('/toko/(:segment)',                           'PublicMenuController::index/$1');
 $routes->get('/toko/(:segment)/status/(:segment)',          'PublicMenuController::orderStatus/$1/$2');
 $routes->get('/toko/(:segment)/status-poll/(:segment)',     'PublicMenuController::pollStatus/$1/$2');
+$routes->post('/toko/(:segment)/verify-voucher',           'PublicMenuController::verifyVoucher/$1');
+$routes->get('/toko/(:segment)/stamps',                     'PublicMenuController::checkStamps/$1');
 $routes->post('/toko/(:segment)/order',                     'PublicMenuController::placeOrder/$1');
 
 
@@ -258,6 +270,10 @@ $routes->group('api', function ($routes) {
         $routes->post('pos/orders/pay',             'Api\PosController::payOrder');
         $routes->get('pos/store-profile',           'Api\PosController::getStoreProfile');
         $routes->post('pos/store-profile',          'Api\PosController::saveStoreProfile');
+        $routes->get('pos/vouchers',                'Api\PosController::getVouchers');
+        $routes->post('pos/vouchers/store',         'Api\PosController::storeVoucher');
+        $routes->post('pos/vouchers/delete/(:num)', 'Api\PosController::deleteVoucher/$1');
+        $routes->get('pos/loyalty',                 'Api\PosController::getLoyaltyStamps');
         $routes->get('pos/products',                'Api\PosController::products');
         $routes->post('pos/products/store',         'Api\PosController::storeProduct');
         $routes->post('pos/products/adjust-stock',  'Api\PosController::adjustStock');
