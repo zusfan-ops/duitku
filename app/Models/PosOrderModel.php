@@ -59,7 +59,7 @@ class PosOrderModel extends Model
         $builder = $this->where('user_id', $userId);
 
         if ($status && $status !== 'all') {
-            if ($status === 'unpaid_active') {
+            if ($status === 'unpaid_active' || $status === 'served_unpaid') {
                 $builder->whereIn('status', ['served_unpaid', 'delivered_unpaid']);
             } else {
                 $builder->where('status', $status);
