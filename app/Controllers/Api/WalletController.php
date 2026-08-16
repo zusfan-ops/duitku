@@ -192,4 +192,49 @@ class WalletController extends ApiController
         ]);
         return (int) $db->insertID();
     }
+
+    // ── Shared Wallet API ────────────────────────────────────────
+
+    public function members(int $walletId)
+    {
+        $memberModel = new \App\Models\WalletMemberModel();
+        $members = $memberModel->getMembers($walletId);
+        return $this->ok(['members' => $members]);
+    }
+
+    public function addMember(int $walletId)
+    {
+        $userId = $this->uid();
+        $json   = $this->request->getJSON(true) ?? [];
+        $email  = trim($json['email'] ?? '');
+        $role   = ($json['role'] ?? '') === 'viewer' ? 'viewer' : 'editor';
+        $name   = trim($json['name'] ?? '') ?: null;
+
+        if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->fail('Alamat email tidak valid.');
+        }
+
+        $wallet = $this->walletModel->where('id', $walletId)->where('user_id', $userId)->first();
+        if (!$wallet) {
+            return $this->fail('Hanya pemilik dompet yang dapat mengundang anggota.');
+        }
+
+        $memberModel = new \App\Models\WalletMemberModel();
+        $res = $memberModel->addMember($walletId, $userId, $email, $role, $name);
+
+        return $this->ok(['message' => 'Anggota berhasil ditambahkan.', 'data' => $res]);
+    }
+
+    public function removeMember(int $id)
+    {
+        $userId = $this->uid();
+        $memberModel = new \App\Models\WalletMemberModel();
+        $ok = $memberModel->removeMember($id, $userId);
+
+        if (!$ok) {
+            return $this->fail('Gagal menghapus anggota.');
+        }
+
+        return $this->ok(['message' => 'Anggota berhasil dihapus.']);
+    }
 }

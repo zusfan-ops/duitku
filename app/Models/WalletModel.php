@@ -22,10 +22,41 @@ class WalletModel extends Model
 
     public function getForUser(int $userId): array
     {
-        return $this->where('user_id', $userId)
-                    ->orderBy('sort_order', 'ASC')
-                    ->orderBy('id', 'ASC')
-                    ->findAll();
+        $owned = $this->where('user_id', $userId)
+                      ->orderBy('sort_order', 'ASC')
+                      ->orderBy('id', 'ASC')
+                      ->findAll();
+
+        foreach ($owned as &$w) {
+            $w['is_shared'] = false;
+            $w['role'] = 'owner';
+        }
+        unset($w);
+
+        // Fetch shared wallets where user is a collaborator
+        $db = \Config\Database::connect();
+        $user = $db->table('users')->where('id', $userId)->get()->getRowArray();
+        $userEmail = $user['email'] ?? '';
+
+        $sharedRows = $db->table('wallet_members wm')
+            ->select('w.*, wm.role, wm.owner_user_id, u.name AS owner_name')
+            ->join('wallets w', 'w.id = wm.wallet_id', 'inner')
+            ->join('users u', 'u.id = wm.owner_user_id', 'left')
+            ->groupStart()
+                ->where('wm.member_user_id', $userId)
+                ->orWhere('wm.member_email', $userEmail)
+            ->groupEnd()
+            ->where('wm.status', 'active')
+            ->get()
+            ->getResultArray();
+
+        foreach ($sharedRows as &$sw) {
+            $sw['is_shared'] = true;
+            $sw['is_default'] = 0; // shared wallet is never the default personal wallet
+        }
+        unset($sw);
+
+        return array_merge($owned, $sharedRows);
     }
 
     public function getDefaultWallet(int $userId): ?array
@@ -53,29 +84,33 @@ class WalletModel extends Model
             return ['wallets' => [], 'total' => 0.0];
         }
 
-        $db   = \Config\Database::connect();
-        $rows = $db->query("
-            SELECT wallet_id,
-                SUM(CASE WHEN type='income'  THEN amount ELSE 0 END) -
-                SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) AS net
-            FROM transactions
-            WHERE user_id = ? AND wallet_id IS NOT NULL
-            GROUP BY wallet_id
-        ", [$userId])->getResultArray();
-
+        $walletIds = array_column($wallets, 'id');
+        $db = \Config\Database::connect();
+        
         $netByWallet = [];
-        foreach ($rows as $r) {
-            $netByWallet[(int)$r['wallet_id']] = (float)$r['net'];
+        if (!empty($walletIds)) {
+            $rows = $db->table('transactions')
+                ->select('wallet_id, SUM(CASE WHEN type="income" THEN amount ELSE 0 END) - SUM(CASE WHEN type="expense" THEN amount ELSE 0 END) AS net')
+                ->whereIn('wallet_id', $walletIds)
+                ->groupBy('wallet_id')
+                ->get()
+                ->getResultArray();
+
+            foreach ($rows as $r) {
+                $netByWallet[(int)$r['wallet_id']] = (float)$r['net'];
+            }
         }
 
         $total = 0.0;
         foreach ($wallets as &$w) {
             $w['balance'] = (float)$w['initial_balance'] + ($netByWallet[(int)$w['id']] ?? 0.0);
-            $total += $w['balance'];
+            if (empty($w['is_shared'])) {
+                $total += $w['balance'];
+            }
         }
         unset($w);
 
-        // Also include transactions not linked to any wallet (legacy)
+        // Also include transactions not linked to any wallet (legacy) for owned wallets
         $legacy = $db->query("
             SELECT
                 SUM(CASE WHEN type='income'  THEN amount ELSE 0 END) -

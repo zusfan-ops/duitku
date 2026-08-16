@@ -719,6 +719,109 @@ class PosController extends ApiController
             'message' => 'Shift berhasil ditutup dan direkonsiliasi.',
         ]);
     }
+
+    // ── Raw Ingredients & Recipes (BOM) ───────────────────────────
+
+    public function ingredients()
+    {
+        $userId = $this->uid();
+        $ingModel = new \App\Models\PosIngredientModel();
+        $ingredients = $ingModel->getForUser($userId);
+        $lowStock = $ingModel->getLowStockCount($userId);
+
+        return $this->ok([
+            'ingredients'     => $ingredients,
+            'low_stock_count' => $lowStock,
+        ]);
+    }
+
+    public function storeIngredient()
+    {
+        $userId = $this->uid();
+        $json   = $this->request->getJSON(true) ?? [];
+
+        $id          = (int)($json['id'] ?? 0);
+        $name        = trim($json['name'] ?? '');
+        $unit        = trim($json['unit'] ?? 'gram') ?: 'gram';
+        $stock       = (float)($json['stock'] ?? 0);
+        $minStock    = (float)($json['min_stock'] ?? 10);
+        $costPerUnit = (float)($json['cost_per_unit'] ?? 0);
+
+        if (!$name) {
+            return $this->fail('Nama bahan baku wajib diisi.');
+        }
+
+        $ingModel = new \App\Models\PosIngredientModel();
+        $data = [
+            'user_id'       => $userId,
+            'name'          => $name,
+            'unit'          => $unit,
+            'stock'         => $stock,
+            'min_stock'     => $minStock,
+            'cost_per_unit' => $costPerUnit,
+        ];
+
+        if ($id > 0) {
+            $ingModel->where('id', $id)->where('user_id', $userId)->set($data)->update();
+        } else {
+            $id = $ingModel->insert($data);
+        }
+
+        return $this->ok(['id' => $id, 'message' => 'Bahan baku berhasil disimpan.']);
+    }
+
+    public function restockIngredient()
+    {
+        $userId      = $this->uid();
+        $json        = $this->request->getJSON(true) ?? [];
+        $id          = (int)($json['id'] ?? 0);
+        $addStock    = (float)($json['add_stock'] ?? 0);
+        $costPerUnit = isset($json['cost_per_unit']) ? (float)$json['cost_per_unit'] : null;
+
+        if ($addStock <= 0) {
+            return $this->fail('Jumlah restock harus lebih dari 0.');
+        }
+
+        $ingModel = new \App\Models\PosIngredientModel();
+        $ok = $ingModel->restock($id, $userId, $addStock, $costPerUnit);
+        if (!$ok) {
+            return $this->fail('Bahan baku tidak ditemukan.');
+        }
+
+        return $this->ok(['message' => 'Stok bahan baku berhasil ditambah.']);
+    }
+
+    public function deleteIngredient($id = null)
+    {
+        $userId   = $this->uid();
+        $id       = (int)$id;
+        $ingModel = new \App\Models\PosIngredientModel();
+        $recModel = new \App\Models\PosRecipeModel();
+
+        $ingModel->where('id', $id)->where('user_id', $userId)->delete();
+        $recModel->where('ingredient_id', $id)->where('user_id', $userId)->delete();
+
+        return $this->ok(['message' => 'Bahan baku berhasil dihapus.']);
+    }
+
+    public function productRecipe($productId)
+    {
+        $recModel = new \App\Models\PosRecipeModel();
+        $recipes  = $recModel->getForProduct((int)$productId);
+        return $this->ok(['recipes' => $recipes]);
+    }
+
+    public function saveProductRecipe($productId)
+    {
+        $userId   = $this->uid();
+        $json     = $this->request->getJSON(true) ?? [];
+        $recipes  = $json['recipes'] ?? [];
+
+        $recModel = new \App\Models\PosRecipeModel();
+        $recModel->saveProductRecipes($userId, (int)$productId, (array)$recipes);
+
+        return $this->ok(['message' => 'Resep produk berhasil disimpan.']);
+    }
 }
 
 

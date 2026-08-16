@@ -196,4 +196,56 @@ class WalletController extends BaseController
         ]);
         return (int)$db->insertID();
     }
+
+    // ── Shared Wallet Collaborator Management ────────────────────
+
+    public function getMembers(int $walletId)
+    {
+        $userId = session()->get('user_id');
+        $memberModel = new \App\Models\WalletMemberModel();
+        $members = $memberModel->getMembers($walletId);
+
+        return $this->response->setJSON(['success' => true, 'members' => $members]);
+    }
+
+    public function addMember(int $walletId)
+    {
+        $userId = session()->get('user_id');
+        $email  = trim((string)$this->request->getPost('email'));
+        $role   = $this->request->getPost('role') === 'viewer' ? 'viewer' : 'editor';
+        $name   = trim((string)$this->request->getPost('name')) ?: null;
+
+        if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Alamat email anggota tidak valid.']);
+        }
+
+        // Verify wallet ownership
+        $wallet = $this->walletModel->where('id', $walletId)->where('user_id', $userId)->first();
+        if (!$wallet) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Hanya pemilik dompet yang dapat mengundang anggota.']);
+        }
+
+        $memberModel = new \App\Models\WalletMemberModel();
+        $res = $memberModel->addMember($walletId, $userId, $email, $role, $name);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => 'Anggota kolaborator berhasil ditambahkan!',
+            'data'    => $res,
+        ]);
+    }
+
+    public function removeMember(int $id)
+    {
+        $userId = session()->get('user_id');
+        $memberModel = new \App\Models\WalletMemberModel();
+        $ok = $memberModel->removeMember($id, $userId);
+
+        if (!$ok) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menghapus anggota.']);
+        }
+
+        return $this->response->setJSON(['success' => true, 'message' => 'Anggota berhasil dihapus dari dompet ini.']);
+    }
 }
+

@@ -708,6 +708,80 @@ class ApiService {
     return post('backup/restore', {'backup': backupData});
   }
 
+  // ── Ingredients Inventory & Recipes (BOM) ────────────────────
+  Future<Map<String, dynamic>> getPosIngredients() async {
+    return get('pos/ingredients');
+  }
+
+  Future<Map<String, dynamic>> storePosIngredient({
+    int id = 0,
+    required String name,
+    String unit = 'gram',
+    double stock = 0,
+    double minStock = 10,
+    double costPerUnit = 0,
+  }) async {
+    return post('pos/ingredients/store', {
+      'id': id,
+      'name': name,
+      'unit': unit,
+      'stock': stock,
+      'min_stock': minStock,
+      'cost_per_unit': costPerUnit,
+    });
+  }
+
+  Future<Map<String, dynamic>> restockPosIngredient({
+    required int id,
+    required double addStock,
+    double? costPerUnit,
+  }) async {
+    final body = <String, dynamic>{
+      'id': id,
+      'add_stock': addStock,
+    };
+    if (costPerUnit != null) body['cost_per_unit'] = costPerUnit;
+    return post('pos/ingredients/restock', body);
+  }
+
+  Future<Map<String, dynamic>> deletePosIngredient(int id) async {
+    return post('pos/ingredients/delete/$id', {});
+  }
+
+  Future<Map<String, dynamic>> getProductRecipe(int productId) async {
+    return get('pos/recipes/$productId');
+  }
+
+  Future<Map<String, dynamic>> saveProductRecipe({
+    required int productId,
+    required List<Map<String, dynamic>> recipes,
+  }) async {
+    return post('pos/recipes/$productId/save', {'recipes': recipes});
+  }
+
+  // ── Shared Wallet Collaborator Management ────────────────────
+  Future<Map<String, dynamic>> getWalletMembers(int walletId) async {
+    return get('wallets/members/$walletId');
+  }
+
+  Future<Map<String, dynamic>> addWalletMember({
+    required int walletId,
+    required String email,
+    String role = 'editor',
+    String? name,
+  }) async {
+    final body = <String, dynamic>{
+      'email': email,
+      'role': role,
+    };
+    if (name != null) body['name'] = name;
+    return post('wallets/members/$walletId', body);
+  }
+
+  Future<Map<String, dynamic>> removeWalletMember(int memberId) async {
+    return post('wallets/members/delete/$memberId', {});
+  }
+
   // ── Upload helpers ───────────────────────────────────────────
   Future<String?> base64FromFile(String path) async {
     final file = File(path);

@@ -265,6 +265,9 @@ class PublicMenuController extends BaseController
         }
         unset($oi);
 
+        // Deduct raw ingredients based on Recipe (BOM)
+        (new \App\Models\PosRecipeModel())->deductForOrder($orderId, $userId);
+
         return $this->response->setJSON([
             'success'      => true,
             'order_number' => $orderNumber,

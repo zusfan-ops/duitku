@@ -379,10 +379,163 @@ class _WalletScreenState extends State<WalletScreen> {
                           onTap: () => _setDefault(w),
                           onEdit: () => _openAddEdit(wallet: w),
                           onDelete: () => _deleteWallet(w),
+                          onMembers: () => _openMembersDialog(w),
                         )),
                 ],
               ),
             ),
+    );
+  }
+
+  Future<void> _openMembersDialog(Wallet w) async {
+    final emailCtrl = TextEditingController();
+    final nameCtrl = TextEditingController();
+    String role = 'editor';
+    List<dynamic> members = [];
+    bool loadingMembers = true;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          Future<void> fetchMembers() async {
+            try {
+              final res = await ApiService.instance.getWalletMembers(w.id);
+              if (ctx.mounted) {
+                setSheetState(() {
+                  members = (res['members'] as List?) ?? [];
+                  loadingMembers = false;
+                });
+              }
+            } catch (_) {
+              if (ctx.mounted) setSheetState(() => loadingMembers = false);
+            }
+          }
+
+          if (loadingMembers) {
+            fetchMembers();
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              left: 20,
+              right: 20,
+              top: 16,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('👥 Anggota Dompet: ${w.name}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Undang Anggota / Keluarga:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: emailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(labelText: 'Email Anggota (Terdaftar di DuitKu)'),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: nameCtrl,
+                          decoration: const InputDecoration(labelText: 'Nama / Panggilan'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: role,
+                          decoration: const InputDecoration(labelText: 'Peran'),
+                          items: const [
+                            DropdownMenuItem(value: 'editor', child: Text('Editor')),
+                            DropdownMenuItem(value: 'viewer', child: Text('Viewer')),
+                          ],
+                          onChanged: (v) => setSheetState(() => role = v ?? 'editor'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: () async {
+                      if (emailCtrl.text.trim().isEmpty) return;
+                      try {
+                        await ApiService.instance.addWalletMember(
+                          walletId: w.id,
+                          email: emailCtrl.text.trim(),
+                          role: role,
+                          name: nameCtrl.text.trim(),
+                        );
+                        emailCtrl.clear();
+                        nameCtrl.clear();
+                        loadingMembers = true;
+                        fetchMembers();
+                      } catch (e) {
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Gagal: $e')));
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.person_add_rounded, size: 16),
+                    label: const Text('Undang Anggota'),
+                    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(42)),
+                  ),
+                  const Divider(height: 28),
+                  const Text('Daftar Anggota Saat Ini:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  if (loadingMembers)
+                    const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
+                  else if (members.isEmpty)
+                    const Text('Belum ada anggota yang diundang ke dompet ini.', style: TextStyle(fontSize: 12, color: AppColors.textMuted))
+                  else
+                    ...members.map((m) => Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.borderLight,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(m['member_name'] ?? m['member_email'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Text('${m['member_email']} · ${(m['role'] ?? 'editor').toString().toUpperCase()}', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                ],
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.red),
+                                onPressed: () async {
+                                  await ApiService.instance.removeWalletMember(m['id'] as int);
+                                  loadingMembers = true;
+                                  fetchMembers();
+                                },
+                              ),
+                            ],
+                          ),
+                        )),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -431,6 +584,7 @@ class _WalletListTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onMembers;
 
   const _WalletListTile({
     required this.wallet,
@@ -439,6 +593,7 @@ class _WalletListTile extends StatelessWidget {
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
+    required this.onMembers,
   });
 
   @override
@@ -480,10 +635,26 @@ class _WalletListTile extends StatelessWidget {
                     style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: AppColors.primaryLight)),
               ),
             ],
+            if (wallet.isShared) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0284C7).withValues(alpha: .15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text('👥 BERSAMA (${wallet.role.toUpperCase()})',
+                    style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Color(0xFF0284C7))),
+              ),
+            ],
           ],
         ),
-        subtitle: Text('${wallet.typeLabel} · saldo awal ${Fmt.money0(wallet.initialBalance)}',
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+        subtitle: Text(
+          wallet.isShared && wallet.ownerName != null
+              ? 'Milik ${wallet.ownerName} · saldo awal ${Fmt.money0(wallet.initialBalance)}'
+              : '${wallet.typeLabel} · saldo awal ${Fmt.money0(wallet.initialBalance)}',
+          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -491,12 +662,17 @@ class _WalletListTile extends StatelessWidget {
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
             PopupMenuButton<String>(
               onSelected: (v) {
+                if (v == 'members') onMembers();
                 if (v == 'edit') onEdit();
                 if (v == 'delete') onDelete();
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'edit', child: Text('Edit')),
-                PopupMenuItem(value: 'delete', child: Text('Hapus')),
+              itemBuilder: (_) => [
+                if (!wallet.isShared)
+                  const PopupMenuItem(value: 'members', child: Row(children: [Icon(Icons.people_alt_rounded, size: 16), SizedBox(width: 6), Text('Anggota')])),
+                if (!wallet.isShared || wallet.role == 'editor')
+                  const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_rounded, size: 16), SizedBox(width: 6), Text('Edit')])),
+                if (!wallet.isShared)
+                  const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red), SizedBox(width: 6), Text('Hapus')])),
               ],
             ),
           ],

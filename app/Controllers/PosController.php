@@ -183,6 +183,9 @@ class PosController extends BaseController
         }
         unset($oi);
 
+        // Deduct raw ingredients based on Recipe (BOM)
+        (new \App\Models\PosRecipeModel())->deductForOrder($orderId, $userId);
+
         // Add Loyalty Stamp if customer phone exists
         if ($customerPhone) {
             $loyaltyModel = new \App\Models\PosLoyaltyModel();

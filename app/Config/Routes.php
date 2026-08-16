@@ -110,12 +110,15 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/barang/delete/(:segment)', 'BarangController::delete/$1');
     $routes->post('/barang/sync',              'BarangController::sync');
 
-    // Wallets
+    // Wallets & Shared Wallets
     $routes->get('/wallets',                   'WalletController::index');
     $routes->post('/wallets/store',            'WalletController::store');
     $routes->post('/wallets/delete/(:num)',    'WalletController::delete/$1');
     $routes->post('/wallets/default/(:num)',   'WalletController::setDefault/$1');
     $routes->post('/wallets/transfer',         'WalletController::transfer');
+    $routes->get('/wallets/members/(:num)',    'WalletController::getMembers/$1');
+    $routes->post('/wallets/members/(:num)',   'WalletController::addMember/$1');
+    $routes->post('/wallets/members/delete/(:num)', 'WalletController::removeMember/$1');
 
     // Kendaraan & Servis Tracker
     $routes->get('/kendaraan',                  'VehicleController::index');
@@ -141,6 +144,12 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/pos/shifts/open',           'PosController::openShift');
     $routes->post('/pos/shifts/close',          'PosController::closeShift');
     $routes->get('/pos/shifts/active',          'PosController::activeShift');
+    $routes->get('/pos/ingredients',            'PosIngredientController::index');
+    $routes->post('/pos/ingredients/save',      'PosIngredientController::saveIngredient');
+    $routes->post('/pos/ingredients/restock',   'PosIngredientController::restock');
+    $routes->post('/pos/ingredients/delete/(:num)', 'PosIngredientController::deleteIngredient/$1');
+    $routes->get('/pos/recipes/(:num)',         'PosIngredientController::getProductRecipe/$1');
+    $routes->post('/pos/recipes/(:num)/save',   'PosIngredientController::saveProductRecipe/$1');
     $routes->get('/pos/qr',                     'PosController::qrPrint');
     $routes->post('/pos/store-profile',         'PosController::saveStoreProfile');
     $routes->get('/pos/kds',                    'PosController::kds');
@@ -236,12 +245,15 @@ $routes->group('api', function ($routes) {
         $routes->post('hutang/settle/(:num)', 'Api\DebtController::settle/$1');
         $routes->post('hutang/delete/(:num)', 'Api\DebtController::delete/$1');
 
-        // Wallets
+        // Wallets & Shared Wallets
         $routes->get('wallets', 'Api\WalletController::index');
         $routes->post('wallets/store', 'Api\WalletController::store');
         $routes->post('wallets/delete/(:num)', 'Api\WalletController::delete/$1');
         $routes->post('wallets/default/(:num)', 'Api\WalletController::setDefault/$1');
         $routes->post('wallets/transfer', 'Api\WalletController::transfer');
+        $routes->get('wallets/members/(:num)', 'Api\WalletController::members/$1');
+        $routes->post('wallets/members/(:num)', 'Api\WalletController::addMember/$1');
+        $routes->post('wallets/members/delete/(:num)', 'Api\WalletController::removeMember/$1');
 
         // Traveling & Trips
         $routes->get('traveling', 'Api\TravelingController::index');
@@ -292,6 +304,12 @@ $routes->group('api', function ($routes) {
         $routes->post('pos/products/store',         'Api\PosController::storeProduct');
         $routes->post('pos/products/adjust-stock',  'Api\PosController::adjustStock');
         $routes->post('pos/products/delete/(:num)', 'Api\PosController::deleteProduct/$1');
+        $routes->get('pos/ingredients',             'Api\PosController::ingredients');
+        $routes->post('pos/ingredients/store',      'Api\PosController::storeIngredient');
+        $routes->post('pos/ingredients/restock',    'Api\PosController::restockIngredient');
+        $routes->post('pos/ingredients/delete/(:num)','Api\PosController::deleteIngredient/$1');
+        $routes->get('pos/recipes/(:num)',          'Api\PosController::productRecipe/$1');
+        $routes->post('pos/recipes/(:num)/save',    'Api\PosController::saveProductRecipe/$1');
         $routes->get('pos/history',                 'Api\PosController::history');
         $routes->get('pos/order/(:num)',            'Api\PosController::orderDetail/$1');
         $routes->get('pos/reports',                 'Api\PosController::reports');

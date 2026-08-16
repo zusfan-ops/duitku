@@ -252,17 +252,28 @@
                     <?php if ($w['is_default']): ?>
                     <span class="wi-default-badge">Utama</span>
                     <?php endif; ?>
+                    <?php if (!empty($w['is_shared'])): ?>
+                    <span style="background:rgba(14,165,233,.15);color:#0284C7;font-size:10px;font-weight:700;padding:1px 6px;border-radius:12px">👥 Bersama (<?= esc($w['role'] ?? 'anggota') ?>)</span>
+                    <?php if (!empty($w['owner_name'])): ?>
+                    <span style="font-size:10px;color:var(--text-muted)">oleh <?= esc($w['owner_name']) ?></span>
+                    <?php endif; ?>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="wi-balance<?= $neg ? ' negative' : '' ?>">
                 <?= esc($symbol) ?> <?= number_format($w['balance'], 0, ',', '.') ?>
             </div>
             <div class="wi-actions">
-                <?php if (!$w['is_default']): ?>
+                <?php if (empty($w['is_shared'])): ?>
+                <button class="wi-action-btn" data-act="members" data-id="<?= $w['id'] ?>" data-name="<?= esc($w['name']) ?>" title="Kelola Anggota Kolaborator">👥</button>
+                <?php endif; ?>
+                <?php if (!$w['is_default'] && empty($w['is_shared'])): ?>
                 <button class="wi-action-btn primary" data-act="default" data-id="<?= $w['id'] ?>" title="Jadikan utama">⭐</button>
                 <?php endif; ?>
+                <?php if (empty($w['is_shared']) || ($w['role'] ?? '') === 'editor'): ?>
                 <button class="wi-action-btn" data-act="edit" data-wallet='<?= json_encode($w) ?>' title="Edit">✏️</button>
-                <?php if (!$w['is_default']): ?>
+                <?php endif; ?>
+                <?php if (!$w['is_default'] && empty($w['is_shared'])): ?>
                 <button class="wi-action-btn danger" data-act="delete" data-id="<?= $w['id'] ?>" title="Hapus">🗑</button>
                 <?php endif; ?>
             </div>
@@ -585,6 +596,137 @@
         }
     });
 
+    // ── Members / Shared Wallet Modal ────────────────────────────
+    const memOverlay = document.getElementById('membersOverlay');
+    const memClose   = document.getElementById('memClose');
+    const memForm    = document.getElementById('formAddMember');
+    let currentWalletIdForMem = null;
+
+    memClose.addEventListener('click', () => { memOverlay.classList.remove('open'); window.DuitkuUnlockScroll(); });
+    memOverlay.addEventListener('click', e => { if (e.target === memOverlay) { memOverlay.classList.remove('open'); window.DuitkuUnlockScroll(); } });
+
+    document.querySelectorAll('[data-act=members]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentWalletIdForMem = this.dataset.id;
+            document.getElementById('memWalletTitle').textContent = 'Anggota Dompet: ' + this.dataset.name;
+            document.getElementById('memWalletId').value = currentWalletIdForMem;
+            memOverlay.classList.add('open');
+            window.DuitkuLockScroll();
+            loadWalletMembers(currentWalletIdForMem);
+        });
+    });
+
+    async function loadWalletMembers(walletId) {
+        const container = document.getElementById('membersListContainer');
+        container.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted)">Memuat anggota…</div>';
+        try {
+            const res = await fetch('/wallets/members/' + walletId, { headers: { 'X-Requested-With': 'XMLHttpRequest' } }).then(r => r.json());
+            if (res.members && res.members.length > 0) {
+                let html = '<div style="display:flex;flex-direction:column;gap:8px">';
+                res.members.forEach(m => {
+                    html += `
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px">
+                            <div>
+                                <div style="font-weight:700;font-size:13px">${m.member_name || m.member_email}</div>
+                                <div style="font-size:11px;color:var(--text-muted)">${m.member_email} · <strong style="color:var(--primary)">${m.role.toUpperCase()}</strong></div>
+                            </div>
+                            <button type="button" class="wi-action-btn danger" onclick="removeMember(${m.id})" title="Hapus Anggota">🗑</button>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:12px">Belum ada anggota yang diundang ke dompet ini.</div>';
+            }
+        } catch(e) {
+            container.innerHTML = '<div style="color:var(--expense);font-size:12px">Gagal memuat anggota.</div>';
+        }
+    }
+
+    memForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('memEmail').value.trim();
+        const name  = document.getElementById('memName').value.trim();
+        const role  = document.getElementById('memRole').value;
+        const btn   = this.querySelector('[type=submit]');
+        btn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('email', email);
+        formData.append('name', name);
+        formData.append('role', role);
+
+        try {
+            const res = await fetch('/wallets/members/' + currentWalletIdForMem, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(r => r.json());
+
+            if (res.success) {
+                document.getElementById('memEmail').value = '';
+                document.getElementById('memName').value = '';
+                window.showToast && window.showToast('Anggota berhasil ditambahkan!');
+                loadWalletMembers(currentWalletIdForMem);
+            } else {
+                alert(res.message || 'Gagal menambahkan anggota.');
+            }
+        } catch(err) {
+            alert('Terjadi kesalahan jaringan.');
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    window.removeMember = async function(id) {
+        if (!confirm('Hapus akses anggota ini dari dompet?')) return;
+        try {
+            const res = await fetch('/wallets/members/delete/' + id, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(r => r.json());
+            if (res.success) {
+                window.showToast && window.showToast('Anggota dihapus.');
+                loadWalletMembers(currentWalletIdForMem);
+            } else {
+                alert(res.message || 'Gagal.');
+            }
+        } catch(e) {
+            alert('Gagal.');
+        }
+    };
 })();
 </script>
+
+<!-- ══════════════════════ MEMBERS OVERLAY ══════════════════════ -->
+<div class="mini-modal-overlay" id="membersOverlay">
+    <div class="mini-modal" style="max-width:440px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <h3 id="memWalletTitle" style="font-size:16px;font-weight:700">👥 Anggota Kolaborator Dompet</h3>
+            <button class="modal-close" id="memClose">✕</button>
+        </div>
+
+        <form id="formAddMember" style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+            <input type="hidden" id="memWalletId">
+            <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px">Undang Anggota / Keluarga Baru:</div>
+            <div class="w-form-group" style="margin-bottom:8px">
+                <input type="email" id="memEmail" class="w-input" placeholder="Email anggota (terdaftar di DuitKu)" required>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                <input type="text" id="memName" class="w-input" placeholder="Nama / Panggilan">
+                <select id="memRole" class="w-select">
+                    <option value="editor">Editor (Bisa Catat)</option>
+                    <option value="viewer">Viewer (Hanya Lihat)</option>
+                </select>
+            </div>
+            <button type="submit" class="w-btn-submit" style="padding:8px 14px;font-size:13px">+ Undang Anggota</button>
+        </form>
+
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px">Daftar Anggota Saat Ini:</div>
+        <div id="membersListContainer">
+            <!-- Dynamic members list -->
+        </div>
+    </div>
+</div>
 <?= $this->endSection() ?>
