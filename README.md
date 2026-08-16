@@ -45,8 +45,13 @@ Bagi pengguna Android yang ingin menginstall aplikasi native DuitKu langsung tan
 
 ## ✨ Fitur-Fitur Utama & Fungsinya
 
-### ☕ 1. Suite Usaha & Kasir Mini (POS) UMKM
+### ☕ 1. Suite Usaha & Kasir Mini (POS) UMKM + Menu Publik QR Self-Ordering
 *Khusus dirancang ramah layar sentuh smartphone (*mobile-first*) untuk pengusaha Coffee Shop, Kedai Kopi, Warung Makan, Toko Kelontong, dan Retail Mini.*
+- **Daftar Menu Konsumen & Self-Ordering Publik:** Pelanggan dapat membuka katalog menu langsung lewat browser di `domain/menu/namatoko` atau scan QR Code di meja makan tanpa perlu download aplikasi/login. Dilengkapi catatan khusus per item (*cth: "Less Sugar", "Pedas level 3"*).
+- **Cetak Poster & Standee QR Code (PDF):** Cetak kartu nomor meja akrilik/standee siap pasang dengan 3 pilihan bingkai elegan (*Oranye Modern, Klasik Vintage, Dark Minimal*), nama toko, URL link, dan teks instruksi custom.
+- **Manajemen Antrean Pesanan Masuk (Live Orders):** Pantau pesanan masuk secara realtime dengan filter tab status (*🔔 Baru, ⏳ Diproses, ⚠️ Sudah Dilayani [Belum Bayar], ✅ Selesai, ❌ Batal*) disertai notifikasi bunyi bel chime.
+- **Penanda Khusus "Sudah Dilayani tapi Belum Bayar":** Visual border emas kontras dan badge khusus agar kasir/pelayan dapat dengan mudah melihat meja mana yang sudah selesai dilayani/disajikan namun belum melakukan pembayaran kasir.
+- **Live Status Tracking Konsumen:** Pelanggan dapat memantau status pesanannya secara langsung dari layar HP mereka (*Pesanan Diterima ➔ Sedang Diracik ➔ Disajikan ke Meja ➔ Selesai/Lunas*).
 - **Kasir Kilat (Point of Sale):** Grid produk touch-friendly, filter kategori instan (*Kopi, Minuman, Makanan, Sembako, dll.*), serta pencarian nama & kode produk.
 - **Keranjang Melayang (*Floating Cart Bar*):** Tampilan ringkas total item & harga dengan bottom sheet penyesuaian kuantitas (*stepper +/-*).
 - **Checkout Cepat & Kalkulator Kembalian:** Pilihan metode bayar **Tunai (Cash)** dengan tombol nominal cepat (*Uang Pas, 10rb, 20rb, 50rb, 100rb, 200rb*), **QRIS**, **Transfer Bank**, dan **Kasbon Pelanggan**.
@@ -113,17 +118,73 @@ Bagi pengguna Android yang ingin menginstall aplikasi native DuitKu langsung tan
 
 ---
 
-## 📖 Panduan Penggunaan Singkat
+## 📖 Panduan Penggunaan & Simulasi Skenario
 
-### Cara Menggunakan Kasir Mini POS:
-1. Buka menu **Layanan & Fitur** $\rightarrow$ pilih **Kasir Mini (POS)**.
-2. Tambahkan produk menu usaha Anda terlebih dahulu melalui menu **Katalog & Stok** (isi nama, harga modal HPP, harga jual, dan stok awal).
-3. Di layar Kasir, ketuk kartu menu untuk memasukkan ke keranjang pesanan.
-4. Ketuk bilah hijau di bawah (*Keranjang*) untuk memeriksa pesanan, lalu klik **Bayar Sekarang**.
-5. Pilih metode pembayaran (Tunai, QRIS, Transfer, atau Kasbon):
-   - Jika *Tunai*, pilih tombol uang pas atau nominal bayar pelanggan untuk menghitung kembalian otomatis.
-   - Jika *Kasbon*, isi nama pelanggan dan nomor WhatsApp.
-6. Klik **Konfirmasi Pembayaran** $\rightarrow$ struk digital muncul $\rightarrow$ klik **Kirim Struk via WhatsApp** atau **Cetak Struk**.
+```mermaid
+flowchart LR
+    A[🪑 Konsumen Duduk di Meja] --> B[📱 Scan QR Standee]
+    B --> C[🍽️ Pilih Menu & Isi No Meja]
+    C --> D[🚀 Kirim Pesanan Online]
+    D --> E[🔔 Kasir/Dapur: Status Baru]
+    E --> F[⏳ Tombol: Mulai Proses/Racik]
+    F --> G[🍽️ Tombol: Sajikan Meja\nStatus: Sudah Dilayani - Belum Bayar]
+    G --> H[💳 Konsumen ke Kasir]
+    H --> I[✅ Tombol: Bayar & Selesaikan\nOtomatis Masuk Buku Kas]
+```
+
+### 🛠️ A. Panduan Pengaturan Awal (Pemilik Outlet):
+1. **Atur Profil Toko & URL Slug:**
+   - Masuk ke menu **Pesanan Masuk** atau **Kasir POS**, klik tombol **⚙️ Profil Toko**.
+   - Masukkan *Nama Toko* (misal: `Kopi Senja Nusantara`), *URL Slug* (misal: `kopi-senja`), *Slogan*, *Alamat*, dan *Keterangan Footer QR*.
+   - Link publik menu Anda otomatis aktif di: `domain/menu/kopi-senja`.
+2. **Cetak Standee QR Code Meja:**
+   - Buka menu **📱 Cetak QR Standee** (`/pos/qr` atau di Flutter).
+   - Pilih tema bingkai (*Oranye Modern*, *Vintage Cafe*, atau *Dark Minimal*).
+   - Masukkan nomor meja (misal: `01`, `02`, `Meja VIP`).
+   - Klik **🖨️ Cetak / Simpan PDF** lalu cetak dan letakkan di atas meja makan/akrilik kasir.
+
+---
+
+### ☕ B. Contoh Skenario & Simulasi Kasus Nyata:
+
+> **Kasus:** *Seorang pelanggan bernama **Budi** datang ke Coffee Shop **"Kopi Senja"** dan duduk di **Meja 04**.*
+
+1. **Konsumen Melakukan Pemesanan:**
+   - Budi memindai QR Code di mejanya dengan kamera smartphone dan terbuka halaman `domain/menu/kopi-senja?table=04`.
+   - Budi memilih menu:
+     - `1x Es Kopi Susu Aren` (Rp 18.000) $\rightarrow$ Catatan: *"Less sugar & es sedikit"*.
+     - `1x Roti Bakar Coklat Keju` (Rp 15.000) $\rightarrow$ Catatan: *"Keju ekstra"*.
+   - Budi memasukkan nama pemesan *"Budi"*, mengecek total (**Rp 33.000**), lalu menekan tombol **"Kirim Pesanan Sekarang"**.
+   - Layar smartphone Budi otomatis berpindah ke **Halaman Live Tracking Status**.
+
+2. **Dapur & Kasir Menerima Pesanan:**
+   - Di layar kasir/tablet barista (`/pos/orders` atau Native App), berbunyi **suara bel lonceng (Chime Bell)** dan muncul kartu pesanan baru:
+     - Badge: `🪑 Meja 04` · `#ORD-260816-XXXX` · `Budi`
+     - Status: `🔔 Baru (Pending)`
+   - Barista menekan tombol **`[ ⏳ Terima & Proses ]`** $\rightarrow$ Status berubah menjadi `processing`.
+   - Di layar HP Budi, status otomatis ter-update menjadi: *"Pesanan Sedang Disiapkan oleh Barista/Dapur"*.
+
+3. **Makanan Disajikan ke Meja (Belum Bayar):**
+   - Setelah kopi dan roti matang, pelayan mengantarkan pesanan ke **Meja 04**.
+   - Pelayan menekan tombol **`[ 🍽️ Sajikan (Belum Bayar) ]`** pada aplikasi DuitKu.
+   - Status kartu pesanan berubah menjadi **`⚠️ DILAYANI (BELUM BAYAR)`** dengan highlight emas menyala.
+   - Kasir dan pelayan dapat dengan mudah melihat bahwa Meja 04 sudah menikmati makanan tetapi belum melunasi tagihan.
+   - Di layar HP Budi, status bertuliskan: *"Pesanan Sudah Disajikan. Silakan Menikmati & Selesaikan Pembayaran di Kasir"*.
+
+4. **Pelunasan Pembayaran di Kasir:**
+   - Setelah selesai nongkrong, Budi menuju meja kasir untuk membayar.
+   - Kasir menekan tombol **`[ 💳 Bayar & Selesaikan ]`** pada kartu pesanan Meja 04.
+   - Muncul jendela popup kasir:
+     - Total Tagihan: **Rp 33.000**
+     - Metode Bayar: **Tunai**
+     - Budi memberikan uang selembar **Rp 50.000**.
+     - Sistem otomatis menampilkan kembalian: **Rp 17.000**.
+     - Kasir memilih rekening kas masuk: **Dompet Kas Toko**.
+   - Kasir klik **"Konfirmasi & Selesaikan"**:
+     - Status pesanan selesai (**`✅ Lunas`**).
+     - Pendapatan **Rp 33.000** otomatis masuk ke buku kas/saldo dompet DuitKu.
+     - Laba kotor/bersih otomatis terhitung di modul **Laporan Laba Rugi POS**.
+     - Di HP Budi, status otomatis berubah menjadi *"Pesanan Selesai. Terima kasih atas kunjungan Anda!"*.
 
 ---
 
