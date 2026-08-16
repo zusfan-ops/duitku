@@ -85,6 +85,21 @@ class RecurringController extends BaseController
         ]);
     }
 
+    // POST /recurring/execute/{id}
+    public function execute(int $id)
+    {
+        $userId = session()->get('user_id');
+        $txId   = $this->recurringModel->executeSingle($id, $userId);
+        if (!$txId) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Gagal mengeksekusi transaksi.']);
+        }
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => 'Transaksi berhasil dicatat sebagai pengeluaran/pemasukan!',
+            'tx_id'   => $txId,
+        ]);
+    }
+
     // POST /recurring/delete/{id}
     public function delete(int $id)
     {

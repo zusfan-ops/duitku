@@ -53,6 +53,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('/recurring',                'RecurringController::index');
     $routes->post('/recurring/store',         'RecurringController::store');
     $routes->post('/recurring/process',       'RecurringController::process');
+    $routes->post('/recurring/execute/(:num)', 'RecurringController::execute/$1');
     $routes->post('/recurring/drop/(:num)',   'RecurringController::delete/$1');
 
     // Savings Goals
@@ -108,6 +109,14 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/wallets/delete/(:num)',    'WalletController::delete/$1');
     $routes->post('/wallets/default/(:num)',   'WalletController::setDefault/$1');
     $routes->post('/wallets/transfer',         'WalletController::transfer');
+
+    // Kendaraan & Servis Tracker
+    $routes->get('/kendaraan',                  'VehicleController::index');
+    $routes->get('/kendaraan/(:num)',           'VehicleController::show/$1');
+    $routes->post('/kendaraan/store',           'VehicleController::store');
+    $routes->post('/kendaraan/delete/(:num)',   'VehicleController::delete/$1');
+    $routes->post('/kendaraan/log/store',       'VehicleController::storeLog');
+    $routes->post('/kendaraan/log/delete/(:num)','VehicleController::deleteLog/$1');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -145,6 +154,7 @@ $routes->group('api', function ($routes) {
         $routes->get('recurring', 'Api\RecurringController::index');
         $routes->post('recurring/store', 'Api\RecurringController::store');
         $routes->post('recurring/process', 'Api\RecurringController::process');
+        $routes->post('recurring/execute/(:num)', 'Api\RecurringController::execute/$1');
 
         // Belanja (offline-first sync)
         $routes->get('belanja',  'Api\BelanjaController::index');
@@ -188,5 +198,14 @@ $routes->group('api', function ($routes) {
         $routes->post('savings/store', 'Api\SavingsController::store');
         $routes->post('savings/topup/(:num)', 'Api\SavingsController::topup/$1');
         $routes->post('savings/delete/(:num)', 'Api\SavingsController::delete/$1');
+
+        // Vehicles & Maintenance Tracker
+        $routes->get('vehicles',                    'Api\VehicleController::index');
+        $routes->get('vehicles/(:num)',             'Api\VehicleController::show/$1');
+        $routes->post('vehicles/store',             'Api\VehicleController::store');
+        $routes->post('vehicles/delete/(:num)',     'Api\VehicleController::delete/$1');
+        $routes->get('vehicles/logs',               'Api\VehicleController::logs');
+        $routes->post('vehicles/logs/store',        'Api\VehicleController::storeLog');
+        $routes->post('vehicles/logs/delete/(:num)','Api\VehicleController::deleteLog/$1');
     });
 });

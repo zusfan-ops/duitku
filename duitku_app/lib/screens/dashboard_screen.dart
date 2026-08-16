@@ -133,7 +133,7 @@ class DashboardScreenState extends State<DashboardScreen> {
         if ((data.wallets as List).isNotEmpty) _WalletStrip(wallets: data.wallets as List<Wallet>),
         if ((data.dailyBalance as List).length > 1)
           _DailyChart(data: data),
-        _ReminderCard(data: data),
+        _ReminderCard(data: data, onRefresh: _load),
         if (data.budget > 0) _BudgetCard(data: data),
         if ((data.topCategories as List).isNotEmpty) _TopCategoriesCard(data: data),
         _QuickActions(data: data),
@@ -577,7 +577,40 @@ class _DailyChart extends StatelessWidget {
 // ── Reminders ──────────────────────────────────────────────────
 class _ReminderCard extends StatelessWidget {
   final dynamic data;
-  const _ReminderCard({required this.data});
+  final VoidCallback onRefresh;
+  const _ReminderCard({required this.data, required this.onRefresh});
+
+  Future<void> _payBill(BuildContext context, Bill b) async {
+    final appData = context.read<AppDataProvider>();
+    await appData.ensureLoaded();
+    if (!context.mounted) return;
+
+    final dummyTx = Transaction(
+      id: 0,
+      type: 'expense',
+      amount: b.amount,
+      note: 'Bayar Tagihan: ${b.name}',
+      date: DateTime.now().toIso8601String().substring(0, 10),
+    );
+
+    final res = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => TransactionSheet(
+        categories: appData.categories,
+        wallets: appData.wallets,
+        transaction: dummyTx,
+      ),
+    );
+
+    if (res == true) {
+      onRefresh();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -599,17 +632,22 @@ class _ReminderCard extends StatelessWidget {
           const Text('⏰ Pengingat Jatuh Tempo',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFFD97706))),
           const SizedBox(height: 8),
-          ...bills.map((b) => _ReminderRow(
-                icon: '📋',
-                title: (b as Bill).name,
-                subtitle: 'Tagihan · tgl ${b.dueDay}',
-                daysLeft: b.daysLeft ?? 0,
-              )),
+          ...bills.map((b) {
+            final bill = b as Bill;
+            return _ReminderRow(
+              icon: '📋',
+              title: bill.name,
+              subtitle: 'Tagihan · tgl ${bill.dueDay}',
+              daysLeft: bill.daysLeft ?? 0,
+              onPay: () => _payBill(context, bill),
+            );
+          }),
           ...debts.map((d) => _ReminderRow(
                 icon: '${d['type']}' == 'hutang' ? '💸' : '💰',
                 title: '${d['person']}',
                 subtitle: '${d['type']}' == 'hutang' ? 'Bayar hutang' : 'Tagih piutang',
                 daysLeft: (d['daysLeft'] as num?)?.toInt() ?? 0,
+                onPay: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DebtScreen())).then((_) => onRefresh()),
               )),
         ],
       ),
@@ -622,7 +660,14 @@ class _ReminderRow extends StatelessWidget {
   final String title;
   final String subtitle;
   final int daysLeft;
-  const _ReminderRow({required this.icon, required this.title, required this.subtitle, required this.daysLeft});
+  final VoidCallback onPay;
+  const _ReminderRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.daysLeft,
+    required this.onPay,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -641,31 +686,44 @@ class _ReminderRow extends StatelessWidget {
       label = '$daysLeft hari';
       color = const Color(0xFFD97706);
     }
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.border))),
-      child: Row(
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 16)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-              ],
+    return InkWell(
+      onTap: onPay,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 4),
+        decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.border))),
+        child: Row(
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 16)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                  Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                ],
+              ),
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(20),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: .12),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: color)),
             ),
-            child: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: color)),
-          ),
-        ],
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: .1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text('Bayar', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary)),
+            ),
+          ],
+        ),
       ),
     );
   }

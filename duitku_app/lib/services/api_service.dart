@@ -405,6 +405,10 @@ class ApiService {
     return post('recurring/process');
   }
 
+  Future<Map<String, dynamic>> executeRecurring(int id) async {
+    return post('recurring/execute/$id');
+  }
+
   // ── Savings Goals ────────────────────────────────────────────
   Future<Map<String, dynamic>> savingsGoals() async {
     return get('savings');
@@ -460,6 +464,79 @@ class ApiService {
 
   Future<void> deleteCategory(int id) async {
     await post('categories/delete/$id');
+  }
+
+  // ── Vehicles & Maintenance Tracker ───────────────────────────
+  Future<Map<String, dynamic>> vehicles() async {
+    return get('vehicles');
+  }
+
+  Future<Map<String, dynamic>> vehicleDetail(int id) async {
+    return get('vehicles/$id');
+  }
+
+  Future<Map<String, dynamic>> storeVehicle({
+    int? id,
+    required String name,
+    String type = 'motor',
+    String? licensePlate,
+    String? brand,
+    String? modelYear,
+    int odometer = 0,
+    String? taxAnnualDate,
+    String? tax5yearDate,
+    String? photoBase64,
+  }) async {
+    return post('vehicles/store', {
+      'id': ?id,
+      'name': name,
+      'type': type,
+      'license_plate': ?licensePlate,
+      'brand': ?brand,
+      'model_year': ?modelYear,
+      'odometer': odometer,
+      'tax_annual_date': ?taxAnnualDate,
+      'tax_5year_date': ?tax5yearDate,
+      'photo_base64': ?photoBase64,
+    });
+  }
+
+  Future<void> deleteVehicle(int id) async {
+    await post('vehicles/delete/$id');
+  }
+
+  Future<Map<String, dynamic>> vehicleLogs({int? vehicleId}) async {
+    return get('vehicles/logs', query: vehicleId != null ? {'vehicle_id': '$vehicleId'} : null);
+  }
+
+  Future<Map<String, dynamic>> storeVehicleLog({
+    required int vehicleId,
+    required String type,
+    required String title,
+    required double cost,
+    int? km,
+    int? nextKm,
+    String? nextDate,
+    required String date,
+    String? workshop,
+    String? notes,
+  }) async {
+    return post('vehicles/logs/store', {
+      'vehicle_id': vehicleId,
+      'type': type,
+      'title': title,
+      'cost': cost,
+      'km': ?km,
+      'next_km': ?nextKm,
+      'next_date': ?nextDate,
+      'date': date,
+      'workshop': ?workshop,
+      'notes': ?notes,
+    });
+  }
+
+  Future<void> deleteVehicleLog(int id) async {
+    await post('vehicles/logs/delete/$id');
   }
 
   // ── Upload helpers ───────────────────────────────────────────

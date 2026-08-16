@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../models/bill.dart';
+import '../models/transaction.dart';
+import '../providers/app_data_provider.dart';
 import '../services/api_service.dart';
 import '../theme.dart';
 import '../utils/format.dart';
+import 'transaction_sheet.dart';
 
 class BillsScreen extends StatefulWidget {
   final String symbol;
@@ -166,6 +170,41 @@ class _BillsScreenState extends State<BillsScreen> {
     }
   }
 
+  Future<void> _payBill(Bill b) async {
+    final appData = context.read<AppDataProvider>();
+    await appData.ensureLoaded();
+    if (!mounted) return;
+
+    final dummyTx = Transaction(
+      id: 0,
+      type: 'expense',
+      amount: b.amount,
+      note: 'Bayar Tagihan: ${b.name}',
+      date: DateTime.now().toIso8601String().substring(0, 10),
+    );
+
+    final res = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => TransactionSheet(
+        categories: appData.categories,
+        wallets: appData.wallets,
+        transaction: dummyTx,
+      ),
+    );
+
+    if (res == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tagihan "${b.name}" berhasil dibayar & dicatat sebagai pengeluaran!')),
+      );
+      _load();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final sorted = [..._bills]..sort((a, b) => a.dueDay.compareTo(b.dueDay));
@@ -208,6 +247,7 @@ class _BillsScreenState extends State<BillsScreen> {
                     ...sorted.map((b) => _BillCard(
                           bill: b,
                           symbol: widget.symbol,
+                          onPay: () => _payBill(b),
                           onEdit: () => _openAddEdit(bill: b),
                           onDelete: () => _delete(b),
                         )),
@@ -221,9 +261,10 @@ class _BillsScreenState extends State<BillsScreen> {
 class _BillCard extends StatelessWidget {
   final Bill bill;
   final String symbol;
+  final VoidCallback onPay;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
-  const _BillCard({required this.bill, required this.symbol, required this.onEdit, required this.onDelete});
+  const _BillCard({required this.bill, required this.symbol, required this.onPay, required this.onEdit, required this.onDelete});
 
   String get _daysLabel {
     final d = bill.daysLeft;
@@ -290,14 +331,27 @@ class _BillCard extends StatelessWidget {
                       color: urgent ? const Color(0xFFD97706) : AppColors.textSecondary)),
             ),
           PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, size: 20, color: AppColors.textMuted),
             onSelected: (v) {
+              if (v == 'pay') onPay();
               if (v == 'edit') onEdit();
               if (v == 'delete') onDelete();
             },
             itemBuilder: (_) => const [
-              PopupMenuItem(value: 'edit', child: Text('Edit')),
-              PopupMenuItem(value: 'delete', child: Text('Hapus')),
+              PopupMenuItem(value: 'pay', child: Row(children: [Icon(Icons.payment, size: 16, color: AppColors.primary), SizedBox(width: 8), Text('Bayar Tagihan', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary))])),
+              PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 16), SizedBox(width: 8), Text('Edit')])),
+              PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 16, color: AppColors.expense), SizedBox(width: 8), Text('Hapus', style: TextStyle(color: AppColors.expense))])),
             ],
+          ),
+          const SizedBox(width: 4),
+          ElevatedButton(
+            onPressed: onPay,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              minimumSize: const Size(60, 32),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Bayar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
           ),
         ],
       ),

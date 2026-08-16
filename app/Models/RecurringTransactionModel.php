@@ -87,6 +87,35 @@ class RecurringTransactionModel extends Model
     }
 
     /**
+     * Execute/Pay a single recurring transaction immediately.
+     * Creates a real transaction and advances next_date.
+     *
+     * @return int|null Created transaction ID or null on failure
+     */
+    public function executeSingle(int $id, int $userId): ?int
+    {
+        $r = $this->where('id', $id)->where('user_id', $userId)->first();
+        if (!$r) return null;
+
+        $txModel = new TransactionModel();
+        $txId = $txModel->insert([
+            'user_id'     => $userId,
+            'wallet_id'   => $r['wallet_id'] ?? null,
+            'category_id' => $r['category_id'] ?? null,
+            'type'        => $r['type'],
+            'amount'      => $r['amount'],
+            'note'        => ($r['note'] ? $r['note'] . ' (pembayaran rutin)' : 'Pembayaran rutin'),
+            'date'        => date('Y-m-d'),
+        ]);
+
+        // Advance next_date based on frequency
+        $nextDate = $this->advanceDate($r['next_date'], $r['frequency'] ?? 'monthly');
+        $this->update($id, ['next_date' => $nextDate]);
+
+        return $txId ?: null;
+    }
+
+    /**
      * Calculate the next date based on frequency.
      */
     private function advanceDate(string $from, string $frequency): string

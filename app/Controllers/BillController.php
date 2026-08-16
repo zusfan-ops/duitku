@@ -3,14 +3,20 @@
 namespace App\Controllers;
 
 use App\Models\SettingModel;
+use App\Models\WalletModel;
+use App\Models\CategoryModel;
 
 class BillController extends BaseController
 {
-    protected SettingModel $settingModel;
+    protected SettingModel  $settingModel;
+    protected WalletModel   $walletModel;
+    protected CategoryModel $catModel;
 
     public function __construct()
     {
         $this->settingModel = new SettingModel();
+        $this->walletModel  = new WalletModel();
+        $this->catModel     = new CategoryModel();
     }
 
     private function getBills(int $userId): array
@@ -35,12 +41,16 @@ class BillController extends BaseController
             return $this->response->setJSON(['success' => true, 'bills' => $bills]);
         }
 
-        $symbol = $this->settingModel->get($userId, 'currency_symbol', 'Rp');
+        $symbol     = $this->settingModel->get($userId, 'currency_symbol', 'Rp');
+        $wallets    = $this->walletModel->getForUser($userId);
+        $categories = $this->catModel->getForUser($userId);
 
         return view('bills/index', [
-            'pageTitle' => 'Daftar Tagihan',
-            'bills'     => $bills,
-            'symbol'    => $symbol,
+            'pageTitle'  => 'Daftar Tagihan',
+            'bills'      => $bills,
+            'wallets'    => $wallets,
+            'categories' => $categories,
+            'symbol'     => $symbol,
         ]);
     }
 

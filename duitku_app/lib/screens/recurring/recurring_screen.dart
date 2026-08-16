@@ -60,6 +60,35 @@ class _RecurringScreenState extends State<RecurringScreen> {
     }
   }
 
+  Future<void> _executeSingle(int id, String name) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Catat Transaksi Sekarang?'),
+        content: Text('Transaksi "$name" akan langsung dicatat sebagai pengeluaran/pemasukan baru hari ini dan jadwal berikutnya akan dimajukan otomatis.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Catat Sekarang'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+
+    try {
+      final res = await ApiService.instance.executeRecurring(id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(res['message']?.toString() ?? 'Transaksi berhasil dicatat!')),
+      );
+      _load();
+    } on ApiException catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
   Future<void> _delete(int id) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -286,9 +315,20 @@ class _RecurringScreenState extends State<RecurringScreen> {
                               if ((r['note']?.toString() ?? '').isNotEmpty)
                                 Text(r['note'].toString(), style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
                             ]),
-                            trailing: IconButton(
-                              onPressed: () => _delete(id),
-                              icon: const Icon(Icons.stop_circle_outlined, color: AppColors.expense, size: 22),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  tooltip: 'Eksekusi & Catat Sekarang',
+                                  onPressed: () => _executeSingle(id, r['category_name']?.toString() ?? 'Transaksi'),
+                                  icon: const Icon(Icons.flash_on_rounded, color: AppColors.primary, size: 22),
+                                ),
+                                IconButton(
+                                  tooltip: 'Hentikan',
+                                  onPressed: () => _delete(id),
+                                  icon: const Icon(Icons.stop_circle_outlined, color: AppColors.expense, size: 22),
+                                ),
+                              ],
                             ),
                           ),
                         );

@@ -54,7 +54,12 @@
                         <?php endif; ?>
                     </div>
                 </div>
-                <button class="cat-delete-btn recurring-del-btn" data-id="<?= $r['id'] ?>" title="Hapus">✕</button>
+                <div style="display:flex;align-items:center;gap:6px">
+                    <button class="btn-outline recurring-exec-btn" data-id="<?= $r['id'] ?>" data-name="<?= esc($r['category_name'] ?? 'Transaksi') ?>" style="padding:4px 8px;font-size:11px;border-radius:8px" title="Catat transaksi sekarang">
+                        ⚡ Catat Sekarang
+                    </button>
+                    <button class="cat-delete-btn recurring-del-btn" data-id="<?= $r['id'] ?>" title="Hapus">✕</button>
+                </div>
             </div>
             <?php endforeach; ?>
         </div>
@@ -204,6 +209,29 @@
                 // Show empty if none left
                 if (!document.querySelector('.recurring-item')) location.reload();
             }
+        });
+    });
+
+    // Execute single recurring
+    document.querySelectorAll('.recurring-exec-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const name = btn.dataset.name;
+            if (!confirm(`Catat transaksi "${name}" sekarang dan majukan jadwal berikutnya?`)) return;
+            const id = btn.dataset.id;
+            btn.disabled = true; btn.textContent = 'Memproses...';
+            try {
+                const res = await fetch('/recurring/execute/' + id, {method:'POST',headers:{'X-Requested-With':'XMLHttpRequest'}});
+                const json = await res.json();
+                if (json.success) {
+                    alert(json.message || 'Transaksi berhasil dicatat!');
+                    location.reload();
+                } else {
+                    alert(json.message || 'Gagal mengeksekusi transaksi.');
+                }
+            } catch(e) {
+                alert('Terjadi kesalahan.');
+            }
+            btn.disabled = false; btn.textContent = '⚡ Catat Sekarang';
         });
     });
 

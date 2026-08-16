@@ -11,6 +11,7 @@ import 'recurring/recurring_screen.dart';
 import 'savings/savings_screen.dart';
 import 'stats_screen.dart';
 import 'traveling/traveling_screen.dart';
+import 'vehicle/vehicle_screen.dart';
 import 'wallet_screen.dart';
 
 class FeaturesScreen extends StatelessWidget {
@@ -147,6 +148,17 @@ class FeaturesScreen extends StatelessWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const BarangScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Kendaraan & Servis',
+              subtitle: 'Oli, servis & pajak armada',
+              icon: Icons.directions_car_filled_rounded,
+              gradient: const [Color(0xFFD97706), Color(0xFFF59E0B)],
+              shadowColor: const Color(0xFFF59E0B),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const VehicleScreen()),
               ),
             ),
             _FeatureItem(

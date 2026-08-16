@@ -360,6 +360,69 @@
         </form>
     </div>
 </div>
+
+<!-- ════════════════════════════ PAY BILL MODAL SHEET -->
+<div class="modal-overlay" id="payBillModalOverlay">
+    <div class="modal-sheet" id="payBillModal">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+            <h3>💳 Bayar Tagihan</h3>
+            <button class="modal-close" id="payBillModalClose">✕</button>
+        </div>
+
+        <form id="payBillForm" autocomplete="off" style="display:flex; flex-direction:column; gap:14px;">
+            <input type="hidden" name="type" value="expense">
+
+            <div class="form-group">
+                <label class="form-label">NAMA TAGIHAN / CATATAN</label>
+                <input type="text" id="payBillNote" name="note" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">NOMINAL PEMBAYARAN (<?= esc($symbol) ?>)</label>
+                <input type="number" id="payBillAmount" name="amount" class="form-input" min="0" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">SUMBER DANA / REKENING</label>
+                <select id="payBillWallet" name="wallet_id" class="form-input">
+                    <?php if (!empty($wallets)): ?>
+                        <?php foreach ($wallets as $w): ?>
+                            <option value="<?= $w['id'] ?>" <?= !empty($w['is_default']) ? 'selected' : '' ?>>
+                                <?= esc($w['name']) ?> (<?= esc($symbol) ?> <?= number_format((float)$w['balance'], 0, ',', '.') ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <option value="">— Kas Utama —</option>
+                    <?php endif; ?>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">KATEGORI PENGELUARAN</label>
+                <select id="payBillCategory" name="category_id" class="form-input">
+                    <option value="">— Pilih Kategori —</option>
+                    <?php if (!empty($categories)): ?>
+                        <?php foreach ($categories as $c): ?>
+                            <?php if ($c['type'] === 'expense'): ?>
+                                <option value="<?= $c['id'] ?>"><?= esc($c['name']) ?></option>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">TANGGAL BAYAR</label>
+                <input type="date" id="payBillDate" name="date" class="form-input" value="<?= date('Y-m-d') ?>">
+            </div>
+
+            <button type="submit" class="btn-save" id="btnSubmitPayBill" style="margin-top:8px; background:var(--primary);">
+                Konfirmasi & Catat Pengeluaran
+            </button>
+        </form>
+    </div>
+</div>
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
@@ -396,26 +459,42 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.payBill = function(b) {
-        // Open main transaction modal pre-filled
-        const txOverlay = document.getElementById('txModalOverlay');
-        if (txOverlay) {
-            document.getElementById('txType').value = 'expense';
-            const btnExp = document.getElementById('btnExpense');
-            const btnInc = document.getElementById('btnIncome');
-            if (btnExp) btnExp.classList.add('active');
-            if (btnInc) btnInc.classList.remove('active');
-
-            const amountInput = document.getElementById('txAmount');
-            if (amountInput) {
-                amountInput.value = Number(b.amount || 0).toLocaleString('id-ID');
-            }
-            const noteInput = document.getElementById('txNote');
-            if (noteInput) {
-                noteInput.value = 'Bayar ' + (b.name || 'Tagihan');
-            }
-            txOverlay.classList.add('open');
-        }
+        document.getElementById('payBillNote').value   = 'Bayar ' + (b.name || 'Tagihan');
+        document.getElementById('payBillAmount').value = b.amount || '';
+        document.getElementById('payBillModalOverlay').classList.add('open');
     };
+
+    document.getElementById('payBillModalClose')?.addEventListener('click', () => {
+        document.getElementById('payBillModalOverlay').classList.remove('open');
+    });
+
+    document.getElementById('payBillForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = document.getElementById('payBillForm');
+        const btn  = document.getElementById('btnSubmitPayBill');
+        btn.disabled = true; btn.textContent = 'Memproses...';
+
+        const formData = new FormData(form);
+        formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+        try {
+            const res = await fetch('/transaction/store', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('Pembayaran tagihan berhasil dicatat sebagai pengeluaran!');
+                window.location.reload();
+            } else {
+                alert(data.message || 'Gagal mencatat transaksi.');
+            }
+        } catch (e) {
+            alert('Terjadi kesalahan jaringan.');
+        }
+        btn.disabled = false; btn.textContent = 'Konfirmasi & Catat Pengeluaran';
+    });
 
     window.deleteBill = async function(id, name) {
         if (!confirm(`Hapus tagihan "${name}" secara permanen?`)) return;

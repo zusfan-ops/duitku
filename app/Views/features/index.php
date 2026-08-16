@@ -144,6 +144,10 @@
     background: linear-gradient(135deg, #334155 0%, #64748B 100%);
     box-shadow: 0 6px 18px rgba(100, 116, 139, 0.25);
 }
+.feat-vehicle {
+    background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
+    box-shadow: 0 6px 18px rgba(245, 158, 11, 0.25);
+}
 </style>
 <?= $this->endSection() ?>
 
@@ -284,7 +288,25 @@
             </div>
         </a>
 
-        <!-- 8. Semua Mutasi -->
+        <!-- 8. Kendaraan & Servis -->
+        <a href="/kendaraan" class="feature-card feat-vehicle">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
+                <circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>
+            </svg>
+            <div class="feature-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
+                    <circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>
+                </svg>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Kendaraan & Servis</div>
+                <div class="feature-card-desc">Oli, servis & pajak armada</div>
+            </div>
+        </a>
+
+        <!-- 9. Semua Mutasi -->
         <a href="/activity" class="feature-card feat-activity">
             <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>

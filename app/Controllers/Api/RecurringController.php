@@ -76,4 +76,17 @@ class RecurringController extends ApiController
                 : 'Tidak ada transaksi yang jatuh tempo.',
         ]);
     }
+
+    // POST api/recurring/execute/(:num)
+    public function execute(int $id)
+    {
+        $userId = $this->uid();
+        $txId   = $this->recurringModel->executeSingle($id, $userId);
+        if (!$txId) return $this->fail('Gagal mengeksekusi transaksi.');
+
+        return $this->ok([
+            'message' => 'Transaksi berhasil dicatat sebagai pengeluaran/pemasukan!',
+            'tx_id'   => $txId,
+        ]);
+    }
 }
