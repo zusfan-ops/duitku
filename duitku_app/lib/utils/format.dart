@@ -7,13 +7,15 @@ class Fmt {
     decimalDigits: 0,
   );
 
-  static String money(double amount, {String symbol = 'Rp'}) {
-    final formatted = _idr.format(amount).trim();
+  static String money(dynamic amount, {String symbol = 'Rp'}) {
+    final d = toDouble(amount);
+    final formatted = _idr.format(d).trim();
     return '$symbol $formatted';
   }
 
-  static String money0(double amount) {
-    return _idr.format(amount).trim();
+  static String money0(dynamic amount) {
+    final d = toDouble(amount);
+    return _idr.format(d).trim();
   }
 
   static String monthLabel(String ym) {
