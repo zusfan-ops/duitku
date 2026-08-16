@@ -142,12 +142,23 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PUBLIC MENU & SELF-ORDERING (Accessible by consumers via QR Code / URL)
+// PUBLIC MENU & MARKETPLACE ORDERING (Accessible by consumers via QR Code / URL)
 // ─────────────────────────────────────────────────────────────────────────────
 $routes->get('/menu/(:segment)',                           'PublicMenuController::index/$1');
 $routes->get('/menu/(:segment)/status/(:segment)',          'PublicMenuController::orderStatus/$1/$2');
 $routes->get('/menu/(:segment)/status-poll/(:segment)',     'PublicMenuController::pollStatus/$1/$2');
 $routes->post('/menu/(:segment)/order',                     'PublicMenuController::placeOrder/$1');
+
+// Aliases for Marketplace & Online Shop
+$routes->get('/shop/(:segment)',                           'PublicMenuController::index/$1');
+$routes->get('/shop/(:segment)/status/(:segment)',          'PublicMenuController::orderStatus/$1/$2');
+$routes->get('/shop/(:segment)/status-poll/(:segment)',     'PublicMenuController::pollStatus/$1/$2');
+$routes->post('/shop/(:segment)/order',                     'PublicMenuController::placeOrder/$1');
+
+$routes->get('/toko/(:segment)',                           'PublicMenuController::index/$1');
+$routes->get('/toko/(:segment)/status/(:segment)',          'PublicMenuController::orderStatus/$1/$2');
+$routes->get('/toko/(:segment)/status-poll/(:segment)',     'PublicMenuController::pollStatus/$1/$2');
+$routes->post('/toko/(:segment)/order',                     'PublicMenuController::placeOrder/$1');
 
 
 // ─────────────────────────────────────────────────────────────────────────────

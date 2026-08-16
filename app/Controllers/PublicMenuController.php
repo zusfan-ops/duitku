@@ -79,26 +79,49 @@ class PublicMenuController extends BaseController
         $json   = $this->request->getJSON(true);
 
         if (!$json) {
-            $rawItems      = $this->request->getPost('items');
-            $items         = is_string($rawItems) ? json_decode($rawItems, true) : ($rawItems ?? []);
-            $customerName  = trim($this->request->getPost('customer_name') ?? '');
-            $customerPhone = trim($this->request->getPost('customer_phone') ?? '');
-            $tableNo       = trim($this->request->getPost('table_no') ?? '');
-            $notes         = trim($this->request->getPost('notes') ?? '');
+            $rawItems        = $this->request->getPost('items');
+            $items           = is_string($rawItems) ? json_decode($rawItems, true) : ($rawItems ?? []);
+            $orderType       = trim($this->request->getPost('order_type') ?? 'dine_in');
+            $customerName    = trim($this->request->getPost('customer_name') ?? '');
+            $customerPhone   = trim($this->request->getPost('customer_phone') ?? '');
+            $tableNo         = trim($this->request->getPost('table_no') ?? '');
+            $deliveryAddress = trim($this->request->getPost('delivery_address') ?? '');
+            $deliveryNotes   = trim($this->request->getPost('delivery_notes') ?? '');
+            $pickupTime      = trim($this->request->getPost('pickup_time') ?? '');
+            $payMethod       = trim($this->request->getPost('payment_method') ?? 'cod');
+            $notes           = trim($this->request->getPost('notes') ?? '');
         } else {
-            $items         = $json['items'] ?? [];
-            $customerName  = trim($json['customer_name'] ?? '');
-            $customerPhone = trim($json['customer_phone'] ?? '');
-            $tableNo       = trim($json['table_no'] ?? '');
-            $notes         = trim($json['notes'] ?? '');
+            $items           = $json['items'] ?? [];
+            $orderType       = trim($json['order_type'] ?? 'dine_in');
+            $customerName    = trim($json['customer_name'] ?? '');
+            $customerPhone   = trim($json['customer_phone'] ?? '');
+            $tableNo         = trim($json['table_no'] ?? '');
+            $deliveryAddress = trim($json['delivery_address'] ?? '');
+            $deliveryNotes   = trim($json['delivery_notes'] ?? '');
+            $pickupTime      = trim($json['pickup_time'] ?? '');
+            $payMethod       = trim($json['payment_method'] ?? 'cod');
+            $notes           = trim($json['notes'] ?? '');
         }
 
         if (empty($items)) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Pilih minimal satu menu untuk memesan.']);
+            return $this->response->setJSON(['success' => false, 'message' => 'Pilih minimal satu produk/menu untuk memesan.']);
         }
 
-        if (!$tableNo) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Nomor Meja atau Catatan Lokasi wajib diisi.']);
+        if ($orderType === 'delivery') {
+            if (!$deliveryAddress) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Alamat pengiriman lengkap wajib diisi untuk pesanan antar (Delivery).']);
+            }
+            if (!$customerPhone) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Nomor WhatsApp aktif wajib diisi agar kurir/toko dapat mengonfirmasi pengiriman.']);
+            }
+        } elseif ($orderType === 'dine_in') {
+            if (!$tableNo) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Nomor Meja wajib diisi untuk makan di tempat.']);
+            }
+        } elseif ($orderType === 'takeaway') {
+            if (!$customerPhone && !$customerName) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Nama atau Nomor WhatsApp wajib diisi untuk pesanan ambil sendiri.']);
+            }
         }
 
         $totalAmount = 0.0;
@@ -150,28 +173,50 @@ class PublicMenuController extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Daftar pesanan kosong.']);
         }
 
+        $deliveryFee = 0.0;
+        if ($orderType === 'delivery') {
+            $deliveryFee = (float)($store['store_delivery_fee'] ?? 0);
+            $totalAmount += $deliveryFee;
+        }
+
         $profit      = $totalAmount - $totalCost;
         $orderNumber = 'ORD-' . date('ymd') . '-' . strtoupper(substr(uniqid(), -4));
 
+        $defaultCustomerName = $customerName;
+        if (!$defaultCustomerName) {
+            if ($orderType === 'delivery') {
+                $defaultCustomerName = 'Pelanggan Delivery';
+            } elseif ($orderType === 'takeaway') {
+                $defaultCustomerName = 'Pelanggan Ambil Sendiri';
+            } else {
+                $defaultCustomerName = 'Pelanggan Meja ' . $tableNo;
+            }
+        }
+
         $orderId = $this->orderModel->insert([
-            'user_id'        => $userId,
-            'order_number'   => $orderNumber,
-            'total_amount'   => $totalAmount,
-            'total_cost'     => $totalCost,
-            'profit'         => $profit,
-            'payment_method' => 'unpaid', // Customer will pay at cashier
-            'wallet_id'      => null,
-            'cash_received'  => 0.0,
-            'change_amount'  => 0.0,
-            'customer_name'  => $customerName ?: ('Pelanggan ' . $tableNo),
-            'customer_phone' => $customerPhone ?: null,
-            'table_no'       => $tableNo,
-            'status'         => 'pending', // 'pending', 'processing', 'served_unpaid', 'paid', 'cancelled'
-            'order_source'   => 'public_menu',
-            'debt_id'        => null,
-            'transaction_id' => null,
-            'notes'          => $notes ?: null,
-            'date'           => date('Y-m-d'),
+            'user_id'          => $userId,
+            'order_number'     => $orderNumber,
+            'total_amount'     => $totalAmount,
+            'total_cost'       => $totalCost,
+            'profit'           => $profit,
+            'payment_method'   => $payMethod ?: 'cod',
+            'wallet_id'        => null,
+            'cash_received'    => 0.0,
+            'change_amount'    => 0.0,
+            'customer_name'    => $defaultCustomerName,
+            'customer_phone'   => $customerPhone ?: null,
+            'table_no'         => ($orderType === 'dine_in') ? $tableNo : null,
+            'status'           => 'pending',
+            'order_source'     => 'public_menu',
+            'order_type'       => $orderType,
+            'delivery_address' => ($orderType === 'delivery') ? $deliveryAddress : null,
+            'delivery_notes'   => ($orderType === 'delivery') ? $deliveryNotes : null,
+            'delivery_fee'     => $deliveryFee,
+            'pickup_time'      => ($orderType === 'takeaway') ? $pickupTime : null,
+            'debt_id'          => null,
+            'transaction_id'   => null,
+            'notes'            => $notes ?: null,
+            'date'             => date('Y-m-d'),
         ]);
 
         foreach ($orderItems as &$oi) {
@@ -185,7 +230,7 @@ class PublicMenuController extends BaseController
             'order_number' => $orderNumber,
             'order_id'     => $orderId,
             'status_url'   => '/menu/' . urlencode($slug) . '/status/' . urlencode($orderNumber),
-            'message'      => 'Pesanan Anda berhasil dikirim ke kasir / dapur!',
+            'message'      => 'Pesanan Anda berhasil dikirim ke toko!',
         ]);
     }
 

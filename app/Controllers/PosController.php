@@ -331,9 +331,9 @@ class PosController extends BaseController
         $orderId = (int)($this->request->getPost('order_id') ?? 0);
         $status  = trim($this->request->getPost('status') ?? '');
 
-        $allowedStatuses = ['pending', 'processing', 'served_unpaid', 'paid', 'cancelled'];
+        $allowedStatuses = ['pending', 'processing', 'delivering', 'served_unpaid', 'delivered_unpaid', 'paid', 'cancelled'];
         if (!in_array($status, $allowedStatuses, true)) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Status tidak valid.']);
+            return $this->response->setJSON(['success' => false, 'message' => 'Status pesanan tidak valid.']);
         }
 
         $order = $this->orderModel->where('id', $orderId)->where('user_id', $userId)->first();
@@ -354,11 +354,13 @@ class PosController extends BaseController
         $this->orderModel->update($orderId, ['status' => $status]);
 
         $statusLabels = [
-            'pending'       => 'Pesanan Baru (Pending)',
-            'processing'    => 'Sedang Disiapkan / Diproses',
-            'served_unpaid' => 'Sudah Dilayani (Belum Bayar)',
-            'paid'          => 'Selesai & Lunas',
-            'cancelled'     => 'Dibatalkan',
+            'pending'          => 'Pesanan Baru (Pending)',
+            'processing'       => 'Sedang Disiapkan / Dikemas',
+            'delivering'       => 'Sedang Dikirim Kurir / Siap Diambil',
+            'served_unpaid'    => 'Sudah Disajikan Meja (Belum Bayar)',
+            'delivered_unpaid' => 'Sudah Diterima Pembeli (Belum Bayar/COD)',
+            'paid'             => 'Selesai & Lunas',
+            'cancelled'        => 'Dibatalkan',
         ];
 
         return $this->response->setJSON([
@@ -368,7 +370,7 @@ class PosController extends BaseController
         ]);
     }
 
-    // POST /pos/orders/pay — Settle payment for served_unpaid / pending orders
+    // POST /pos/orders/pay — Settle payment for served_unpaid / delivered_unpaid / pending orders
     public function payOrder()
     {
         $userId        = session()->get('user_id');
@@ -391,12 +393,17 @@ class PosController extends BaseController
             if (!$walletId) {
                 $walletId = $this->walletModel->getDefaultWalletId($userId);
             }
+            $targetNote = 'Pembayaran POS: ' . $order['order_number'] . ($order['table_no'] ? ' (' . $order['table_no'] . ')' : '') . ($order['customer_name'] ? ' - ' . $order['customer_name'] : '');
+            if (($order['order_type'] ?? '') === 'delivery') {
+                $targetNote = 'Pembayaran Delivery: ' . $order['order_number'] . ' - ' . $order['customer_name'];
+            }
+
             $txId = $this->txModel->insert([
                 'user_id'   => $userId,
                 'wallet_id' => $walletId,
                 'type'      => 'income',
                 'amount'    => $totalAmount,
-                'note'      => 'Pembayaran POS: ' . $order['order_number'] . ($order['table_no'] ? ' (' . $order['table_no'] . ')' : '') . ($order['customer_name'] ? ' - ' . $order['customer_name'] : ''),
+                'note'      => $targetNote,
                 'date'      => date('Y-m-d'),
             ]);
         }
@@ -462,14 +469,19 @@ class PosController extends BaseController
     // POST /pos/store-profile — Save Store Name, Slug, Address & QR Settings
     public function saveStoreProfile()
     {
-        $userId    = session()->get('user_id');
-        $storeName = trim($this->request->getPost('store_name') ?? '');
-        $storeSlug = trim($this->request->getPost('store_slug') ?? '');
-        $tagline   = trim($this->request->getPost('store_tagline') ?? '');
-        $address   = trim($this->request->getPost('store_address') ?? '');
-        $phone     = trim($this->request->getPost('store_phone') ?? '');
-        $qrFooter  = trim($this->request->getPost('store_qr_footer') ?? '');
-        $isOpen    = $this->request->getPost('store_is_open') === '1' ? '1' : '0';
+        $userId       = session()->get('user_id');
+        $storeName    = trim($this->request->getPost('store_name') ?? '');
+        $storeSlug    = trim($this->request->getPost('store_slug') ?? '');
+        $tagline      = trim($this->request->getPost('store_tagline') ?? '');
+        $address      = trim($this->request->getPost('store_address') ?? '');
+        $phone        = trim($this->request->getPost('store_phone') ?? '');
+        $qrFooter     = trim($this->request->getPost('store_qr_footer') ?? '');
+        $isOpen       = $this->request->getPost('store_is_open') === '1' ? '1' : '0';
+        $deliveryOn   = $this->request->getPost('store_delivery_enabled') === '1' ? '1' : '0';
+        $deliveryFee  = (float)($this->request->getPost('store_delivery_fee') ?? 0);
+        $pickupOn     = $this->request->getPost('store_pickup_enabled') === '1' ? '1' : '0';
+        $bankInfo     = trim($this->request->getPost('store_bank_info') ?? '');
+        $qrisInfo     = trim($this->request->getPost('store_qris_info') ?? '');
 
         if (!$storeName) {
             return $this->response->setJSON(['success' => false, 'message' => 'Nama toko/pos wajib diisi.']);
@@ -490,7 +502,7 @@ class PosController extends BaseController
         if ($existing) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Alamat slug "' . esc($storeSlug) . '" sudah digunakan oleh toko lain. Silakan pilih nama slug lain.'
+                'message' => 'Alamat URL slug "' . esc($storeSlug) . '" sudah digunakan oleh outlet lain. Gunakan nama/slug unik.'
             ]);
         }
 
@@ -501,12 +513,17 @@ class PosController extends BaseController
         $this->settingModel->setPref($userId, 'store_phone', $phone);
         $this->settingModel->setPref($userId, 'store_qr_footer', $qrFooter);
         $this->settingModel->setPref($userId, 'store_is_open', $isOpen);
+        $this->settingModel->setPref($userId, 'store_delivery_enabled', $deliveryOn);
+        $this->settingModel->setPref($userId, 'store_delivery_fee', (string)$deliveryFee);
+        $this->settingModel->setPref($userId, 'store_pickup_enabled', $pickupOn);
+        $this->settingModel->setPref($userId, 'store_bank_info', $bankInfo);
+        $this->settingModel->setPref($userId, 'store_qris_info', $qrisInfo);
 
         return $this->response->setJSON([
             'success'    => true,
             'store_slug' => $storeSlug,
             'menu_url'   => base_url('/menu/' . $storeSlug),
-            'message'    => 'Pengaturan profil toko & QR menu berhasil disimpan!'
+            'message'    => 'Profil toko & pengaturan online delivery berhasil disimpan!',
         ]);
     }
 }

@@ -96,7 +96,13 @@
             border: 1px solid rgba(59, 130, 246, 0.4);
             color: #60A5FA;
         }
-        .status-served_unpaid {
+        .status-delivering {
+            background: linear-gradient(135deg, rgba(147, 51, 234, 0.2) 0%, rgba(126, 34, 206, 0.3) 100%);
+            border: 2px solid #A855F7;
+            color: #C084FC;
+            animation: pulseDelivering 2s infinite ease-in-out;
+        }
+        .status-served_unpaid, .status-delivered_unpaid {
             background: linear-gradient(135deg, rgba(234, 88, 12, 0.25) 0%, rgba(194, 65, 12, 0.35) 100%);
             border: 2px solid #EA580C;
             color: #FB923C;
@@ -207,11 +213,18 @@
             padding-top: 12px;
             border-top: 2px solid var(--border);
             display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .total-row {
+            display: flex;
             align-items: center;
             justify-content: space-between;
+            font-size: 13px;
+            color: var(--text-muted);
         }
-        .total-label { font-size: 14px; font-weight: 800; color: #fff; }
-        .total-value { font-size: 18px; font-weight: 900; color: #FB923C; }
+        .total-label-final { font-size: 15px; font-weight: 800; color: #fff; }
+        .total-value-final { font-size: 18px; font-weight: 900; color: #FB923C; }
 
         /* Action Buttons */
         .btn-order-more {
@@ -232,9 +245,29 @@
         }
         .btn-order-more:active { background: #475569; }
 
+        .btn-wa-store {
+            background: #15803D;
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 14px;
+            font-size: 13.5px;
+            font-weight: 800;
+            text-align: center;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
         @keyframes pulseServed {
             0%, 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.4); }
             50% { box-shadow: 0 0 20px 6px rgba(234, 88, 12, 0.4); }
+        }
+        @keyframes pulseDelivering {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); }
+            50% { box-shadow: 0 0 20px 6px rgba(168, 85, 247, 0.4); }
         }
     </style>
 </head>
@@ -247,7 +280,13 @@
             <div class="store-name-badge"><?= esc($store['store_name']) ?></div>
             <div class="order-code-title">Pesanan #<?= esc($order['order_number']) ?></div>
             <div class="order-meta-info">
-                <span>🪑 <?= esc($order['table_no'] ?: 'Meja —') ?></span>
+                <?php if (($order['order_type'] ?? '') === 'delivery'): ?>
+                    <span>🛵 Delivery</span>
+                <?php elseif (($order['order_type'] ?? '') === 'takeaway'): ?>
+                    <span>🛍️ Ambil di Toko</span>
+                <?php else: ?>
+                    <span>🪑 <?= esc($order['table_no'] ?: 'Makan di Tempat') ?></span>
+                <?php endif; ?>
                 <span>•</span>
                 <span>👤 <?= esc($order['customer_name'] ?: 'Pelanggan') ?></span>
             </div>
@@ -256,31 +295,44 @@
         <!-- Live Highlight Status Card -->
         <div id="liveStatusCard" class="status-highlight-card status-<?= esc($order['status']) ?>">
             <?php
+                $isDelivery = ($order['order_type'] ?? '') === 'delivery';
+                $isTakeaway = ($order['order_type'] ?? '') === 'takeaway';
+
                 $statusConfig = [
                     'pending' => [
                         'icon' => '🔔',
-                        'label' => 'Menunggu Konfirmasi',
-                        'desc' => 'Pesanan Anda sudah masuk ke sistem kasir dan segera diproses.',
+                        'label' => 'Menunggu Konfirmasi Toko',
+                        'desc' => 'Pesanan Anda sudah masuk ke sistem dan segera disiapkan.',
                     ],
                     'processing' => [
-                        'icon' => '⏳',
-                        'label' => 'Sedang Disiapkan',
-                        'desc' => 'Dapur / Barista sedang meracik dan menyiapkan menu pesanan Anda.',
+                        'icon' => '🍳',
+                        'label' => 'Sedang Disiapkan / Dikemas',
+                        'desc' => 'Toko sedang meracik, memasak, atau mengemas produk pesanan Anda.',
+                    ],
+                    'delivering' => [
+                        'icon' => '🛵',
+                        'label' => 'Sedang Dikirim Kurir',
+                        'desc' => 'Kurir sedang dalam perjalanan menuju alamat Anda. Siapkan uang pas jika bayar COD.',
                     ],
                     'served_unpaid' => [
                         'icon' => '🍽️',
-                        'label' => 'Sudah Dilayani (Belum Bayar)',
-                        'desc' => 'Pesanan sudah disajikan ke meja Anda. Silakan menuju kasir untuk melakukan pembayaran saat selesai bersantap.',
+                        'label' => 'Sudah Disajikan (Belum Bayar)',
+                        'desc' => 'Pesanan sudah disajikan ke meja Anda. Silakan menuju kasir untuk melakukan pembayaran.',
+                    ],
+                    'delivered_unpaid' => [
+                        'icon' => '📦',
+                        'label' => 'Pesanan Telah Sampai (COD)',
+                        'desc' => 'Pesanan sudah diterima. Silakan serahkan pembayaran COD kepada kurir toko.',
                     ],
                     'paid' => [
                         'icon' => '✅',
-                        'label' => 'Selesai & Lunas',
-                        'desc' => 'Terima kasih! Pembayaran telah diterima. Selamat menikmati hidangan Anda.',
+                        'label' => 'Pesanan Selesai & Lunas',
+                        'desc' => 'Terima kasih telah berbelanja di ' . esc($store['store_name']) . '! Selamat menikmati.',
                     ],
                     'cancelled' => [
                         'icon' => '❌',
                         'label' => 'Pesanan Dibatalkan',
-                        'desc' => 'Pesanan ini telah dibatalkan oleh pihak toko/kasir.',
+                        'desc' => 'Pesanan ini telah dibatalkan oleh pihak toko.',
                     ],
                 ];
                 $cur = $statusConfig[$order['status']] ?? $statusConfig['pending'];
@@ -294,49 +346,59 @@
         <div class="timeline-box">
             
             <!-- Step 1: Pending -->
-            <div class="timeline-step <?= in_array($order['status'], ['pending', 'processing', 'served_unpaid', 'paid']) ? ($order['status'] === 'pending' ? 'active' : 'completed') : '' ?>" id="step-pending">
+            <div class="timeline-step <?= in_array($order['status'], ['pending', 'processing', 'delivering', 'served_unpaid', 'delivered_unpaid', 'paid']) ? ($order['status'] === 'pending' ? 'active' : 'completed') : '' ?>" id="step-pending">
                 <div class="step-icon-wrap">1</div>
                 <div class="step-content">
-                    <div class="step-title">Pesanan Diterima</div>
-                    <div class="step-desc">Pesanan tercatat di kasir & dapur</div>
+                    <div class="step-title">Pesanan Diterima Toko</div>
+                    <div class="step-desc">Toko menerima notifikasi pesanan</div>
                 </div>
             </div>
 
             <!-- Step 2: Processing -->
-            <div class="timeline-step <?= in_array($order['status'], ['processing', 'served_unpaid', 'paid']) ? ($order['status'] === 'processing' ? 'active' : 'completed') : '' ?>" id="step-processing">
+            <div class="timeline-step <?= in_array($order['status'], ['processing', 'delivering', 'served_unpaid', 'delivered_unpaid', 'paid']) ? ($order['status'] === 'processing' ? 'active' : 'completed') : '' ?>" id="step-processing">
                 <div class="step-icon-wrap">2</div>
                 <div class="step-content">
-                    <div class="step-title">Sedang Disiapkan</div>
-                    <div class="step-desc">Menu sedang dimasak atau diracik</div>
+                    <div class="step-title">Sedang Disiapkan / Dikemas</div>
+                    <div class="step-desc">Pesanan sedang dimasak / dikemas rapi</div>
                 </div>
             </div>
 
-            <!-- Step 3: Served Unpaid -->
-            <div class="timeline-step <?= in_array($order['status'], ['served_unpaid', 'paid']) ? ($order['status'] === 'served_unpaid' ? 'active' : 'completed') : '' ?>" id="step-served_unpaid">
+            <!-- Step 3: Delivering / Served -->
+            <div class="timeline-step <?= in_array($order['status'], ['delivering', 'served_unpaid', 'delivered_unpaid', 'paid']) ? (in_array($order['status'], ['delivering', 'served_unpaid', 'delivered_unpaid']) ? 'active' : 'completed') : '' ?>" id="step-transit">
                 <div class="step-icon-wrap">3</div>
                 <div class="step-content">
-                    <div class="step-title">Sudah Disajikan / Dilayani</div>
-                    <div class="step-desc">Pesanan diantar ke meja (Menunggu Pembayaran Kasir)</div>
+                    <div class="step-title"><?= $isDelivery ? 'Sedang Dikirim / Antar' : ($isTakeaway ? 'Siap Diambil di Toko' : 'Disajikan ke Meja') ?></div>
+                    <div class="step-desc"><?= $isDelivery ? 'Kurir membawa pesanan ke lokasi Anda' : ($isTakeaway ? 'Pesanan siap diambil di kasir' : 'Pesanan diantar ke meja Anda') ?></div>
                 </div>
             </div>
 
-            <!-- Step 4: Paid -->
+            <!-- Step 4: Paid / Selesai -->
             <div class="timeline-step <?= ($order['status'] === 'paid') ? 'active completed' : '' ?>" id="step-paid">
                 <div class="step-icon-wrap">4</div>
                 <div class="step-content">
-                    <div class="step-title">Lunas & Selesai</div>
-                    <div class="step-desc">Transaksi selesai</div>
+                    <div class="step-title">Selesai & Lunas</div>
+                    <div class="step-desc">Pesanan selesai diterima & lunas</div>
                 </div>
             </div>
 
         </div>
 
-        <!-- Order Items Detail -->
+        <!-- Order Items & Delivery Info Detail -->
         <div class="order-details-card">
             <div class="card-heading">
                 <span>📋 Rincian Pesanan</span>
-                <span style="font-size:12px;color:var(--text-muted);font-weight:600"><?= count($order['items'] ?? []) ?> Menu</span>
+                <span style="font-size:12px;color:var(--text-muted);font-weight:600"><?= count($order['items'] ?? []) ?> Item</span>
             </div>
+
+            <?php if (!empty($order['delivery_address'])): ?>
+                <div style="background:#0F172A;border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px;font-size:12.5px">
+                    <div style="font-weight:800;color:#FB923C;margin-bottom:4px">📍 Alamat Pengiriman:</div>
+                    <div style="color:#F1F5F9"><?= nl2br(esc($order['delivery_address'])) ?></div>
+                    <?php if (!empty($order['delivery_notes'])): ?>
+                        <div style="color:var(--text-muted);margin-top:4px">🏡 Patokan: <?= esc($order['delivery_notes']) ?></div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
 
             <div id="itemsContainer">
                 <?php foreach (($order['items'] ?? []) as $it): ?>
@@ -355,18 +417,40 @@
             </div>
 
             <div class="total-summary-box">
-                <div class="total-label">Total Tagihan</div>
-                <div class="total-value"><?= esc($symbol) ?> <?= number_format($order['total_amount'], 0, ',', '.') ?></div>
+                <?php if ((float)($order['delivery_fee'] ?? 0) > 0): ?>
+                    <div class="total-row">
+                        <span>Ongkos Kirim (Delivery)</span>
+                        <span><?= esc($symbol) ?> <?= number_format((float)$order['delivery_fee'], 0, ',', '.') ?></span>
+                    </div>
+                <?php endif; ?>
+                <div class="total-row" style="margin-top:4px">
+                    <span class="total-label-final">Total Tagihan (<?= strtoupper(esc($order['payment_method'] ?? 'COD')) ?>)</span>
+                    <span class="total-value-final"><?= esc($symbol) ?> <?= number_format($order['total_amount'], 0, ',', '.') ?></span>
+                </div>
             </div>
         </div>
 
+        <!-- Contact Store WhatsApp -->
+        <?php if (!empty($store['store_phone'])): ?>
+            <?php
+                $cleanPhone = preg_replace('/[^0-9]/', '', $store['store_phone']);
+                if (str_starts_with($cleanPhone, '0')) {
+                    $cleanPhone = '62' . substr($cleanPhone, 1);
+                }
+                $waMsg = urlencode("Halo {$store['store_name']}, saya ingin menanyakan status pesanan #{$order['order_number']}. Terima kasih!");
+            ?>
+            <a href="https://wa.me/<?= $cleanPhone ?>?text=<?= $waMsg ?>" target="_blank" class="btn-wa-store">
+                <span>💬</span> Hubungi Toko via WhatsApp
+            </a>
+        <?php endif; ?>
+
         <!-- Actions -->
-        <a href="/menu/<?= urlencode($slug) ?>?table=<?= urlencode($order['table_no'] ?? '') ?>" class="btn-order-more">
-            <span>+</span> Pesan Menu Tambahan
+        <a href="/menu/<?= urlencode($slug) ?>" class="btn-order-more">
+            <span>+</span> Belanja / Pesan Lagi
         </a>
 
         <div style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:8px">
-            Halaman ini otomatis diperbarui secara realtime saat kasir memproses pesanan Anda.
+            Halaman ini otomatis diperbarui secara realtime saat toko memproses pesanan Anda.
         </div>
 
     </div>
@@ -378,88 +462,88 @@
 
         const statusConfig = {
             'pending': {
-                icon: '🔔',
-                label: 'Menunggu Konfirmasi',
-                desc: 'Pesanan Anda sudah masuk ke sistem kasir dan segera diproses.'
+                'icon': '🔔',
+                'label': 'Menunggu Konfirmasi Toko',
+                'desc': 'Pesanan Anda sudah masuk ke sistem dan segera disiapkan.'
             },
             'processing': {
-                icon: '⏳',
-                label: 'Sedang Disiapkan',
-                desc: 'Dapur / Barista sedang meracik dan menyiapkan menu pesanan Anda.'
+                'icon': '🍳',
+                'label': 'Sedang Disiapkan / Dikemas',
+                'desc': 'Toko sedang meracik, memasak, atau mengemas produk pesanan Anda.'
+            },
+            'delivering': {
+                'icon': '🛵',
+                'label': 'Sedang Dikirim Kurir',
+                'desc': 'Kurir sedang dalam perjalanan menuju alamat Anda. Siapkan uang pas jika bayar COD.'
             },
             'served_unpaid': {
-                icon: '🍽️',
-                label: 'Sudah Dilayani (Belum Bayar)',
-                desc: 'Pesanan sudah disajikan ke meja Anda. Silakan menuju kasir untuk melakukan pembayaran saat selesai bersantap.'
+                'icon': '🍽️',
+                'label': 'Sudah Disajikan (Belum Bayar)',
+                'desc': 'Pesanan sudah disajikan ke meja Anda. Silakan menuju kasir untuk melakukan pembayaran.'
+            },
+            'delivered_unpaid': {
+                'icon': '📦',
+                'label': 'Pesanan Telah Sampai (COD)',
+                'desc': 'Pesanan sudah diterima. Silakan serahkan pembayaran COD kepada kurir toko.'
             },
             'paid': {
-                icon: '✅',
-                label: 'Selesai & Lunas',
-                desc: 'Terima kasih! Pembayaran telah diterima. Selamat menikmati hidangan Anda.'
+                'icon': '✅',
+                'label': 'Pesanan Selesai & Lunas',
+                'desc': 'Terima kasih telah berbelanja di <?= addslashes(esc($store['store_name'])) ?>!'
             },
             'cancelled': {
-                icon: '❌',
-                label: 'Pesanan Dibatalkan',
-                desc: 'Pesanan ini telah dibatalkan oleh pihak toko/kasir.'
+                'icon': '❌',
+                'label': 'Pesanan Dibatalkan',
+                'desc': 'Pesanan ini telah dibatalkan oleh pihak toko.'
             }
         };
 
-        async function pollStatus() {
+        // Realtime Polling
+        setInterval(async () => {
             try {
                 const res = await fetch('/menu/' + encodeURIComponent(STORE_SLUG) + '/status-poll/' + encodeURIComponent(ORDER_NUMBER));
                 const data = await res.json();
-                if (data.success && data.order) {
-                    const newStatus = data.order.status;
-                    if (newStatus !== currentStatus) {
-                        currentStatus = newStatus;
-                        updateStatusUI(newStatus);
-                    }
+                if (data.success && data.status !== currentStatus) {
+                    currentStatus = data.status;
+                    updateLiveUI(data.status);
                 }
-            } catch (err) {
-                console.log('Poll error:', err);
+            } catch (e) {
+                console.warn('Polling error:', e);
             }
-        }
+        }, 4000);
 
-        function updateStatusUI(status) {
-            const cfg = statusConfig[status] || statusConfig['pending'];
+        function updateLiveUI(status) {
             const card = document.getElementById('liveStatusCard');
-            
-            // Remove old classes
+            const conf = statusConfig[status] || statusConfig['pending'];
+
             card.className = 'status-highlight-card status-' + status;
-            document.getElementById('statusBigIcon').textContent = cfg.icon;
-            document.getElementById('statusBigLabel').textContent = cfg.label;
-            document.getElementById('statusBigDesc').textContent = cfg.desc;
+            document.getElementById('statusBigIcon').textContent = conf.icon;
+            document.getElementById('statusBigLabel').textContent = conf.label;
+            document.getElementById('statusBigDesc').textContent = conf.desc;
 
-            // Update Timeline steps
-            const stepPending = document.getElementById('step-pending');
-            const stepProc = document.getElementById('step-processing');
-            const stepServed = document.getElementById('step-served_unpaid');
-            const stepPaid = document.getElementById('step-paid');
-
-            // Reset
-            [stepPending, stepProc, stepServed, stepPaid].forEach(s => {
-                if (s) s.className = 'timeline-step';
+            // Update Steps
+            const allSteps = ['pending', 'processing', 'transit', 'paid'];
+            allSteps.forEach(s => {
+                const el = document.getElementById('step-' + s);
+                if (el) el.className = 'timeline-step';
             });
 
             if (status === 'pending') {
-                stepPending.classList.add('active');
+                document.getElementById('step-pending').classList.add('active');
             } else if (status === 'processing') {
-                stepPending.classList.add('completed');
-                stepProc.classList.add('active');
-            } else if (status === 'served_unpaid') {
-                stepPending.classList.add('completed');
-                stepProc.classList.add('completed');
-                stepServed.classList.add('active');
+                document.getElementById('step-pending').classList.add('completed');
+                document.getElementById('step-processing').classList.add('active');
+            } else if (status === 'delivering' || status === 'served_unpaid' || status === 'delivered_unpaid') {
+                document.getElementById('step-pending').classList.add('completed');
+                document.getElementById('step-processing').classList.add('completed');
+                document.getElementById('step-transit').classList.add('active');
             } else if (status === 'paid') {
-                stepPending.classList.add('completed');
-                stepProc.classList.add('completed');
-                stepServed.classList.add('completed');
-                stepPaid.classList.add('active', 'completed');
+                document.getElementById('step-pending').classList.add('completed');
+                document.getElementById('step-processing').classList.add('completed');
+                document.getElementById('step-transit').classList.add('completed');
+                document.getElementById('step-paid').classList.add('active', 'completed');
             }
         }
-
-        // Poll every 4 seconds
-        setInterval(pollStatus, 4000);
     </script>
 </body>
 </html>

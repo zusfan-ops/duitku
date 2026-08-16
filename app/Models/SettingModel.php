@@ -57,12 +57,17 @@ class SettingModel extends Model
             'store_name'      => $all['store_name'] ?? $defaultName,
             'store_slug'      => $all['store_slug'] ?? $defaultSlug,
             'store_tagline'   => $all['store_tagline'] ?? 'Selamat Datang! Silakan pilih menu favorit Anda.',
-            'store_address'   => $all['store_address'] ?? '',
-            'store_phone'     => $all['store_phone'] ?? ($user['phone'] ?? ''),
-            'store_qr_footer' => $all['store_qr_footer'] ?? 'Scan QR untuk melihat daftar menu & memesan langsung dari meja Anda.',
-            'store_is_open'   => ($all['store_is_open'] ?? '1') === '1',
-            'currency_symbol' => $all['currency_symbol'] ?? 'Rp',
-            'currency'        => $all['currency'] ?? 'IDR',
+            'store_address'          => $all['store_address'] ?? '',
+            'store_phone'            => $all['store_phone'] ?? ($user['phone'] ?? ''),
+            'store_qr_footer'        => $all['store_qr_footer'] ?? 'Scan QR untuk melihat daftar menu & memesan langsung dari meja Anda.',
+            'store_is_open'          => ($all['store_is_open'] ?? '1') === '1',
+            'store_delivery_enabled' => ($all['store_delivery_enabled'] ?? '1') === '1',
+            'store_delivery_fee'     => (float)($all['store_delivery_fee'] ?? 0),
+            'store_pickup_enabled'   => ($all['store_pickup_enabled'] ?? '1') === '1',
+            'store_bank_info'        => $all['store_bank_info'] ?? '',
+            'store_qris_info'        => $all['store_qris_info'] ?? '',
+            'currency_symbol'        => $all['currency_symbol'] ?? 'Rp',
+            'currency'               => $all['currency'] ?? 'IDR',
         ];
     }
 

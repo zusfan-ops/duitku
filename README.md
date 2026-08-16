@@ -43,22 +43,133 @@ Bagi pengguna Android yang ingin menginstall aplikasi native DuitKu langsung tan
 
 ---
 
-## ✨ Fitur-Fitur Utama & Fungsinya
+## ✨ Fitur-Fitur Utama & Fungsi
 
-### ☕ 1. Suite Usaha & Kasir Mini (POS) UMKM + Menu Publik QR Self-Ordering
-*Khusus dirancang ramah layar sentuh smartphone (*mobile-first*) untuk pengusaha Coffee Shop, Kedai Kopi, Warung Makan, Toko Kelontong, dan Retail Mini.*
-- **Daftar Menu Konsumen & Self-Ordering Publik:** Pelanggan dapat membuka katalog menu langsung lewat browser di `domain/menu/namatoko` atau scan QR Code di meja makan tanpa perlu download aplikasi/login. Dilengkapi catatan khusus per item (*cth: "Less Sugar", "Pedas level 3"*).
+### 🛍️ 1. Suite Usaha, Kasir Mini POS & Marketplace Online Shop (Delivery / Takeaway / Dine-In)
+*Khusus dirancang ramah layar sentuh smartphone (*mobile-first*) untuk pengusaha Coffee Shop, Kedai Kopi, Warung Makan, Toko Kelontong, Retail, dan UMKM.*
+- **Toko Online & Marketplace Publik UMKM:** Konsumen dapat mengakses toko online dari rumah via tautan web `domain/menu/namatoko` (atau alias `/shop/namatoko` / `/toko/namatoko`) untuk berbelanja produk makanan/sembako kapan saja tanpa perlu login/instal aplikasi.
+- **3 Mode Pemesanan Lengkap (*Fulfillment*):**
+  1. 🛵 **Delivery (Kirim ke Rumah):** Konsumen memasukkan nama, nomor WhatsApp aktif, alamat pengiriman lengkap, patokan kurir, dan otomatis dihitung ongkos kirim flat toko.
+  2. 🛍️ **Takeaway (Ambil di Toko / Pickup):** Konsumen memasukkan nama, nomor WhatsApp, dan estimasi jam pengambilan (*cth: 15 menit lagi / jam 18:30*).
+  3. 🪑 **Dine-In (Makan di Tempat):** Konsumen scan QR meja dan memasukkan nomor meja.
+- **Pilihan Metode Pembayaran Konsumen:** Mendukung **💵 Bayar di Tempat (COD / Kasir)**, **🏦 Transfer Bank Manual** (menampilkan info nomor rekening pemilik toko), dan **📱 QRIS / E-Wallet**.
 - **Cetak Poster & Standee QR Code (PDF):** Cetak kartu nomor meja akrilik/standee siap pasang dengan 3 pilihan bingkai elegan (*Oranye Modern, Klasik Vintage, Dark Minimal*), nama toko, URL link, dan teks instruksi custom.
-- **Manajemen Antrean Pesanan Masuk (Live Orders):** Pantau pesanan masuk secara realtime dengan filter tab status (*🔔 Baru, ⏳ Diproses, ⚠️ Sudah Dilayani [Belum Bayar], ✅ Selesai, ❌ Batal*) disertai notifikasi bunyi bel chime.
-- **Penanda Khusus "Sudah Dilayani tapi Belum Bayar":** Visual border emas kontras dan badge khusus agar kasir/pelayan dapat dengan mudah melihat meja mana yang sudah selesai dilayani/disajikan namun belum melakukan pembayaran kasir.
-- **Live Status Tracking Konsumen:** Pelanggan dapat memantau status pesanannya secara langsung dari layar HP mereka (*Pesanan Diterima ➔ Sedang Diracik ➔ Disajikan ke Meja ➔ Selesai/Lunas*).
+- **Manajemen Antrean Pesanan Masuk (Live Orders POS):** Pantau pesanan masuk secara realtime dengan filter tab status (*🔔 Baru, 🍳 Diproses/Dikemas, 🛵 Sedang Dikirim, ⚠️ Belum Bayar [COD / Meja], ✅ Selesai, ❌ Batal*) disertai notifikasi bunyi bel lonceng (chime bell).
+- **Penanda Khusus Pesanan Belum Bayar (*Served & Delivered Unpaid*):** Visual border emas kontras dan badge khusus agar kasir & kurir dapat dengan mudah membedakan pesanan yang sudah diantar/sampai tapi belum melunasi pembayaran (COD).
+- **Live Status Tracking Konsumen Realtime:** Pelanggan dapat memantau status pesanannya secara langsung dari layar HP mereka (*Pesanan Diterima ➔ Sedang Disiapkan / Dikemas ➔ Sedang Dikirim Kurir / Siap Diambil ➔ Pesanan Sampai / COD ➔ Selesai & Lunas*) lengkap dengan tombol hubungi WhatsApp toko dalam 1 ketukan.
 - **Kasir Kilat (Point of Sale):** Grid produk touch-friendly, filter kategori instan (*Kopi, Minuman, Makanan, Sembako, dll.*), serta pencarian nama & kode produk.
 - **Keranjang Melayang (*Floating Cart Bar*):** Tampilan ringkas total item & harga dengan bottom sheet penyesuaian kuantitas (*stepper +/-*).
-- **Checkout Cepat & Kalkulator Kembalian:** Pilihan metode bayar **Tunai (Cash)** dengan tombol nominal cepat (*Uang Pas, 10rb, 20rb, 50rb, 100rb, 200rb*), **QRIS**, **Transfer Bank**, dan **Kasbon Pelanggan**.
+- **Checkout Cepat & Kalkulator Kembalian:** Pilihan metode bayar **Tunai (Cash / COD)** dengan tombol nominal cepat (*Uang Pas, 10rb, 20rb, 50rb, 100rb, 200rb*), **QRIS**, **Transfer Bank**, dan **Kasbon Pelanggan**.
 - **Struk Thermal & Kirim WhatsApp:** Pratinjau struk digital kasir yang dapat langsung dicetak ke printer thermal Bluetooth atau dikirim ke WhatsApp pelanggan dengan format struk rapi dalam satu ketukan.
 - **Manajemen Katalog, Stok & HPP:** Pengaturan harga jual vs harga modal (HPP), batas minimum stok (*low stock alert*), modal restock cepat, serta otomatisasi potong stok saat checkout pesanan.
 - **Buku Kasbon Pelanggan Terintegrasi:** Pembayaran kasbon otomatis tercatat di modul piutang (`debts`) dengan rincian nama, nomor WhatsApp, dan jatuh tempo penagihan.
 - **Laporan Laba Rugi Usaha (P&L):** Menghitung otomatis $\text{Omset} - \text{HPP (Modal)} = \mathbf{Laba\ Bersih}$, rata-rata per pesanan, rincian metode pembayaran, dan ranking **5 Produk Terlaris (*Top 5 Best Sellers*)**.
+
+---
+
+## 📖 Panduan Penggunaan & Simulasi Skenario
+
+```mermaid
+flowchart TD
+    subgraph KONSUMEN["📱 Konsumen (Web Browser)"]
+        A["Buka Toko Online / Scan QR"] --> B{"Pilih Mode Pemesanan"}
+        B -->|"🛵 Delivery"| C1["Isi Alamat, Patokan, WA & Pilih COD"]
+        B -->|"🪑 Dine-In"| C2["Isi Nomor Meja & Catatan Menu"]
+        B -->|"🛍️ Takeaway"| C3["Isi Jam Ambil & Nama"]
+        C1 --> D["Kirim Pesanan"]
+        C2 --> D
+        C3 --> D
+        D --> E["Live Status Tracking (Realtime)"]
+    end
+
+    subgraph POS["💻 Dapur / Kasir POS (Web & Flutter)"]
+        D --> F["🔔 Notifikasi Lonceng & Kartu Pesanan Baru"]
+        F --> G["🍳 Tombol: Terima & Siapkan / Kemas"]
+        G --> H{"Tipe Pesanan?"}
+        H -->|"🛵 Delivery"| I1["🛵 Tombol: Kirim (Kurir Jalan)\nStatus: Sedang Dikirim"]
+        H -->|"🪑 Dine-In"| I2["🍽️ Tombol: Sajikan (Belum Bayar)\nStatus: Disajikan di Meja"]
+        H -->|"🛍️ Takeaway"| I3["🛍️ Tombol: Siap Diambil\nStatus: Siap Diambil di Kasir"]
+        I1 --> J1["📦 Tombol: Sampai (Belum Setor COD)\nStatus: Delivered Unpaid"]
+        J1 --> K["💳 Tombol: Bayar & Selesaikan (Lunas)"]
+        I2 --> K
+        I3 --> K
+        K --> L["✅ Selesai & Pendapatan Masuk Buku Kas"]
+    end
+```
+
+### 🛠️ A. Panduan Pengaturan Awal (Pemilik Toko):
+1. **Atur Profil Toko, Delivery & Pembayaran:**
+   - Masuk ke menu **Pesanan Masuk** atau **Kasir POS**, klik tombol **⚙️ Profil Toko**.
+   - Masukkan *Nama Toko* (misal: `Dapur Berkah UMKM`), *URL Slug* (misal: `dapur-berkah`), *No. WhatsApp Toko*, *Alamat Outlet*, dan centang **🛵 Aktifkan Layanan Delivery**.
+   - Atur tarif **Ongkos Kirim Flat** (misal: `Rp 5.000`) dan info **Rekening Bank / QRIS** untuk pembayaran transfer.
+   - Link toko online Anda otomatis aktif di: `domain/menu/dapur-berkah` (atau `/shop/dapur-berkah`).
+2. **Cetak Standee QR Code Meja (untuk Dine-In):**
+   - Buka menu **📱 Cetak QR Standee** (`/pos/qr` atau di aplikasi Flutter).
+   - Pilih tema bingkai (*Oranye Modern*, *Vintage Cafe*, atau *Dark Minimal*).
+   - Masukkan nomor meja (misal: `01`, `02`, `Meja VIP`).
+   - Klik **🖨️ Cetak / Simpan PDF** lalu cetak dan letakkan di atas meja makan/akrilik kasir.
+
+---
+
+### 🛵 B. Simulasi Skenario 1: Pesanan Marketplace & Delivery Rumah (COD)
+
+> **Kasus:** *Ibu Rina sedang berada di rumah dan ingin memesan sembako & makanan siap saji dari **"Dapur Berkah"** untuk diantar ke rumahnya.*
+
+1. **Konsumen Memesan dari Rumah:**
+   - Ibu Rina membuka link `domain/menu/dapur-berkah` lewat browser HP-nya.
+   - Memilih tab **🛵 Delivery**.
+   - Memilih produk:
+     - `1x Beras Premium 5kg` (Rp 70.000)
+     - `2x Nasi Ayam Geprek Sambal Bawang` (Rp 30.000) $\rightarrow$ Catatan: *"Sambal dipisah"*.
+   - Mengisi data pengantaran:
+     - Alamat: *Jl. Mawar No. 12, RT 03/RW 02, Kel. Tembalang*
+     - Patokan: *Pagar hitam depan Pos Ronda*
+     - Nama: *Ibu Rina* · No. WA: *081234567890*
+     - Metode Bayar: **💵 Bayar di Tempat (COD)**
+   - Rincian Total: Subtotal Rp 100.000 + Ongkir Rp 5.000 = **Rp 105.000**.
+   - Ibu Rina menekan tombol **"Kirim Pesanan Sekarang"** dan layar HP-nya langsung menampilkan **Live Tracking Pesanan**.
+
+2. **Toko Menerima & Mengemas Pesanan:**
+   - Di aplikasi kasir DuitKu pemilik toko berbunyi notifikasi lonceng dan kartu pesanan baru muncul:
+     - Badge: `🛵 DELIVERY RUMAH` · `#ORD-260816-XXXX` · `Ibu Rina (081234567890)`
+     - Alamat & Patokan tampil jelas di kartu pesanan.
+     - Ada tombol langsung **`[ 💬 WA ]`** untuk konfirmasi chat ke WhatsApp Ibu Rina jika dibutuhkan.
+   - Penjual menekan tombol **`[ 🍳 Terima & Siapkan ]`** $\rightarrow$ Status berubah menjadi `processing`.
+   - Di layar HP Ibu Rina, status live ter-update: *"Pesanan Sedang Disiapkan / Dikemas oleh Toko"*.
+
+3. **Kurir Mengantar Pesanan:**
+   - Setelah makanan dan barang dikemas rapi, kurir toko berangkat mengantar.
+   - Penjual menekan tombol **`[ 🛵 Kirim (Kurir Jalan) ]`** $\rightarrow$ Status berubah menjadi `delivering`.
+   - Di layar HP Ibu Rina, status live ter-update: *"🛵 Kurir Sedang Mengantar ke Alamat Anda. Siapkan Uang Pas Rp 105.000"*.
+
+4. **Pesanan Tiba & Pelunasan COD:**
+   - Kurir tiba di rumah Ibu Rina dan menyerahkan barang.
+   - Kurir/Penjual menekan tombol **`[ 📦 Sampai (Belum Setor COD) ]`** $\rightarrow$ Status kartu menjadi `⚠️ SAMPAI / COD (BELUM BAYAR)` dengan highlight emas.
+   - Ibu Rina menyerahkan uang tunai COD **Rp 105.000** kepada kurir.
+   - Kurir/Kasir membuka aplikasi dan menekan tombol **`[ 💳 Terima Bayar & Selesai ]`**:
+     - Memilih dompet kas masuk: **Kas Utama / Dompet Kurir**.
+     - Status pesanan berubah menjadi **`✅ Selesai & Lunas`**.
+     - Pendapatan **Rp 105.000** otomatis tercatat di mutasi buku kas DuitKu dan stok produk otomatis berkurang.
+     - Di layar HP Ibu Rina, status berubah menjadi *"✅ Pesanan Selesai. Terima kasih telah berbelanja di Dapur Berkah!"*.
+
+---
+
+### ☕ C. Simulasi Skenario 2: Pesanan Dine-In di Meja Cafe / Resto
+
+> **Kasus:** *Budi datang ke Coffee Shop **"Kopi Senja"** dan duduk di **Meja 04**.*
+
+1. **Konsumen Scan QR Meja:**
+   - Budi memindai QR Code di mejanya dan terbuka halaman `domain/menu/kopi-senja?table=04`.
+   - Memilih menu `1x Es Kopi Susu Aren` (Rp 18.000) & `1x Roti Bakar` (Rp 15.000), total **Rp 33.000**.
+   - Klik **"Kirim Pesanan Sekarang"**.
+2. **Dapur Meracik:**
+   - Barista melihat pesanan masuk Meja 04 dan menekan **`[ 🍳 Terima & Siapkan ]`**.
+3. **Disajikan ke Meja (Belum Bayar):**
+   - Setelah kopi jadi, pelayan mengantar ke Meja 04 lalu menekan **`[ 🍽️ Sajikan (Belum Bayar) ]`**.
+   - Status kartu pesanan berubah menjadi **`⚠️ DISAJIKAN (BELUM BAYAR)`** dengan highlight emas.
+4. **Bayar di Kasir:**
+   - Budi menuju kasir dan membayar tunai Rp 50.000.
+   - Kasir menekan **`[ 💳 Terima Bayar & Lunas ]`**, sistem menghitung kembalian Rp 17.000, dan pesanan selesai lunas.
 
 ---
 

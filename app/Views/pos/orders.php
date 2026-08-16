@@ -362,13 +362,17 @@
             <span class="tab-count-badge"><?= $counts['pending'] ?? 0 ?></span>
         </a>
         <a href="/pos/orders?status=processing" class="tab-order-pill <?= $currentTab === 'processing' ? 'active' : '' ?>">
-            <span>⏳ Diproses</span>
+            <span>🍳 Diproses / Dikemas</span>
             <span class="tab-count-badge"><?= $counts['processing'] ?? 0 ?></span>
         </a>
-        <!-- Served Unpaid Tab with distinct highlight -->
-        <a href="/pos/orders?status=served_unpaid" class="tab-order-pill served-tab <?= $currentTab === 'served_unpaid' ? 'active' : '' ?>">
-            <span>⚠️ Sudah Dilayani (Belum Bayar)</span>
-            <span class="tab-count-badge"><?= $counts['served_unpaid'] ?? 0 ?></span>
+        <a href="/pos/orders?status=delivering" class="tab-order-pill <?= $currentTab === 'delivering' ? 'active' : '' ?>">
+            <span>🛵 Sedang Dikirim / Diambil</span>
+            <span class="tab-count-badge"><?= $counts['delivering'] ?? 0 ?></span>
+        </a>
+        <!-- Served Unpaid & Delivered Unpaid Tab with distinct highlight -->
+        <a href="/pos/orders?status=served_unpaid" class="tab-order-pill served-tab <?= ($currentTab === 'served_unpaid' || $currentTab === 'delivered_unpaid') ? 'active' : '' ?>">
+            <span>⚠️ Belum Bayar (COD / Meja)</span>
+            <span class="tab-count-badge"><?= ($counts['served_unpaid'] ?? 0) + ($counts['delivered_unpaid'] ?? 0) ?></span>
         </a>
         <a href="/pos/orders?status=paid" class="tab-order-pill <?= $currentTab === 'paid' ? 'active' : '' ?>">
             <span>✅ Selesai</span>
@@ -384,25 +388,28 @@
     <div class="orders-grid" id="ordersGrid">
         <?php if (empty($orders)): ?>
             <div style="text-align:center;padding:50px 20px;background:var(--bg-card);border:1px dashed var(--border);border-radius:18px">
-                <div style="font-size:40px;margin-bottom:10px">☕</div>
-                <div style="font-size:16px;font-weight:800;color:var(--text-primary);margin-bottom:4px">Belum Ada Pesanan Aktif</div>
-                <div style="font-size:12.5px;color:var(--text-muted);max-width:320px;margin:0 auto 16px">
-                    Konsumen dapat scan QR di meja untuk memesan secara mandiri, atau Anda bisa membuat transaksi lewat Kasir POS.
+                <div style="font-size:40px;margin-bottom:10px">🛒</div>
+                <div style="font-size:16px;font-weight:800;color:var(--text-primary);margin-bottom:4px">Belum Ada Pesanan</div>
+                <div style="font-size:12.5px;color:var(--text-muted);max-width:340px;margin:0 auto 16px">
+                    Konsumen dapat memesan online delivery dari rumah atau scan QR meja untuk dine-in secara mandiri.
                 </div>
                 <a href="/pos/qr" class="btn-top-pos" style="background:#EA580C;color:#fff;border-color:#EA580C;padding:8px 16px">
-                    📱 Cetak QR Code Meja
+                    📱 Bagikan Link Menu / Cetak QR
                 </a>
             </div>
         <?php else: ?>
             <?php foreach ($orders as $ord): 
                 $statusPillClass = 'status-pill-' . str_replace('_', '-', $ord['status']);
                 $cardStatusClass = 'status-' . str_replace('_', '-', $ord['status']);
+                $orderType = $ord['order_type'] ?? 'dine_in';
                 $statusLabels = [
-                    'pending'       => '🔔 Pesanan Baru',
-                    'processing'    => '⏳ Sedang Disiapkan',
-                    'served_unpaid' => '⚠️ DILAYANI (BELUM BAYAR)',
-                    'paid'          => '✅ Selesai & Lunas',
-                    'cancelled'     => '❌ Dibatalkan',
+                    'pending'          => '🔔 Pesanan Baru',
+                    'processing'       => '🍳 Sedang Disiapkan',
+                    'delivering'       => '🛵 Sedang Dikirim',
+                    'served_unpaid'    => '⚠️ DISAJIKAN (BELUM BAYAR)',
+                    'delivered_unpaid' => '⚠️ SAMPAI / COD (BELUM BAYAR)',
+                    'paid'             => '✅ Selesai & Lunas',
+                    'cancelled'        => '❌ Dibatalkan',
                 ];
             ?>
                 <div class="order-manage-card <?= $cardStatusClass ?>" id="order-card-<?= $ord['id'] ?>" data-id="<?= $ord['id'] ?>">
@@ -410,16 +417,34 @@
                     <!-- Card Top -->
                     <div class="order-card-header">
                         <div>
-                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-                                <div class="order-table-badge">
-                                    <span>🪑</span> <?= esc($ord['table_no'] ?: 'Takeaway / Kasir') ?>
-                                </div>
+                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
+                                <?php if ($orderType === 'delivery'): ?>
+                                    <div class="order-table-badge" style="background:linear-gradient(135deg, #9333EA 0%, #C084FC 100%)">
+                                        <span>🛵</span> DELIVERY RUMAH
+                                    </div>
+                                <?php elseif ($orderType === 'takeaway'): ?>
+                                    <div class="order-table-badge" style="background:linear-gradient(135deg, #2563EB 0%, #60A5FA 100%)">
+                                        <span>🛍️</span> TAKEAWAY / AMBIL
+                                    </div>
+                                <?php else: ?>
+                                    <div class="order-table-badge">
+                                        <span>🪑</span> <?= esc($ord['table_no'] ?: 'Makan di Tempat') ?>
+                                    </div>
+                                <?php endif; ?>
+
                                 <span class="order-source-pill">
-                                    <?= $ord['order_source'] === 'public_menu' ? '📱 QR Konsumen' : '💻 Kasir POS' ?>
+                                    <?= $ord['order_source'] === 'public_menu' ? '🌐 Toko Online / QR' : '💻 Kasir POS' ?>
                                 </span>
                             </div>
                             <div style="font-size:12.5px;color:var(--text-muted)">
-                                <strong>#<?= esc($ord['order_number']) ?></strong> • <?= esc($ord['customer_name'] ?: 'Pelanggan') ?>
+                                <strong>#<?= esc($ord['order_number']) ?></strong> • <span style="color:var(--text-primary);font-weight:700"><?= esc($ord['customer_name'] ?: 'Pelanggan') ?></span>
+                                <?php if (!empty($ord['customer_phone'])): ?>
+                                    <?php
+                                        $cleanPhone = preg_replace('/[^0-9]/', '', $ord['customer_phone']);
+                                        if (str_starts_with($cleanPhone, '0')) $cleanPhone = '62' . substr($cleanPhone, 1);
+                                    ?>
+                                    • <a href="https://wa.me/<?= $cleanPhone ?>?text=<?= urlencode("Halo {$ord['customer_name']}, mengenai pesanan #{$ord['order_number']} di {$store['store_name']}...") ?>" target="_blank" style="color:#10B981;text-decoration:none;font-weight:800">💬 WA: <?= esc($ord['customer_phone']) ?></a>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -432,6 +457,23 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Delivery Address Box if Delivery -->
+                    <?php if ($orderType === 'delivery' && !empty($ord['delivery_address'])): ?>
+                        <div style="background:rgba(147, 51, 234, 0.08);border:1px solid rgba(147, 51, 234, 0.3);border-radius:12px;padding:10px 12px;font-size:12.5px">
+                            <div style="font-weight:800;color:#C084FC;display:flex;align-items:center;gap:4px;margin-bottom:2px">
+                                <span>📍</span> Alamat Pengantaran:
+                            </div>
+                            <div style="color:var(--text-primary);line-height:1.4"><?= nl2br(esc($ord['delivery_address'])) ?></div>
+                            <?php if (!empty($ord['delivery_notes'])): ?>
+                                <div style="color:var(--text-muted);font-size:11.5px;margin-top:4px">🏡 Patokan: <?= esc($ord['delivery_notes']) ?></div>
+                            <?php endif; ?>
+                        </div>
+                    <?php elseif ($orderType === 'takeaway' && !empty($ord['pickup_time'])): ?>
+                        <div style="background:rgba(59, 130, 246, 0.08);border:1px solid rgba(59, 130, 246, 0.3);border-radius:12px;padding:8px 12px;font-size:12px;color:#93C5FD">
+                            ⏰ Jam Pengambilan: <strong><?= esc($ord['pickup_time']) ?></strong>
+                        </div>
+                    <?php endif; ?>
 
                     <!-- Items List -->
                     <div class="order-items-box">
@@ -449,43 +491,66 @@
                                 </div>
                             </div>
                         <?php endforeach; ?>
+                        <?php if ((float)($ord['delivery_fee'] ?? 0) > 0): ?>
+                            <div class="order-item-row-pos" style="border-top:1px dashed var(--border);padding-top:4px;color:var(--text-muted)">
+                                <span>🛵 Ongkos Kirim (Delivery)</span>
+                                <span><?= esc($symbol) ?> <?= number_format((float)$ord['delivery_fee'], 0, ',', '.') ?></span>
+                            </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Footer Total & Actions -->
                     <div class="order-footer-row">
                         <div>
-                            <div style="font-size:11px;color:var(--text-muted)">Total Tagihan</div>
+                            <div style="font-size:11px;color:var(--text-muted)">Total (<?= strtoupper(esc($ord['payment_method'] ?? 'COD')) ?>)</div>
                             <div class="order-total-price"><?= esc($symbol) ?> <?= number_format($ord['total_amount'], 0, ',', '.') ?></div>
                         </div>
 
-                        <!-- Action Buttons according to status -->
+                        <!-- Action Buttons according to status & type -->
                         <div style="display:flex;gap:6px;flex-wrap:wrap">
                             <?php if ($ord['status'] === 'pending'): ?>
                                 <button class="btn-action-pos btn-act-process" onclick="updateOrderStatus(<?= $ord['id'] ?>, 'processing')">
-                                    ⏳ Terima & Proses
+                                    🍳 Terima & Siapkan
                                 </button>
                                 <button class="btn-action-pos btn-act-cancel" onclick="updateOrderStatus(<?= $ord['id'] ?>, 'cancelled')">
                                     Tolak
                                 </button>
                             <?php elseif ($ord['status'] === 'processing'): ?>
-                                <!-- Button to mark as SERVED UNPAID -->
-                                <button class="btn-action-pos btn-act-serve" onclick="updateOrderStatus(<?= $ord['id'] ?>, 'served_unpaid')">
-                                    🍽️ Sajikan (Belum Bayar)
-                                </button>
+                                <?php if ($orderType === 'delivery'): ?>
+                                    <button class="btn-action-pos" style="background:#9333EA;color:#fff" onclick="updateOrderStatus(<?= $ord['id'] ?>, 'delivering')">
+                                        🛵 Kirim (Kurir Jalan)
+                                    </button>
+                                <?php elseif ($orderType === 'takeaway'): ?>
+                                    <button class="btn-action-pos" style="background:#2563EB;color:#fff" onclick="updateOrderStatus(<?= $ord['id'] ?>, 'delivering')">
+                                        🛍️ Siap Diambil
+                                    </button>
+                                <?php else: ?>
+                                    <button class="btn-action-pos btn-act-serve" onclick="updateOrderStatus(<?= $ord['id'] ?>, 'served_unpaid')">
+                                        🍽️ Sajikan (Belum Bayar)
+                                    </button>
+                                <?php endif; ?>
                                 <button class="btn-action-pos btn-act-pay" onclick="openSettleModal(<?= $ord['id'] ?>, '<?= esc($ord['order_number']) ?>', <?= (float)$ord['total_amount'] ?>)">
                                     💳 Bayar Kasir
                                 </button>
-                            <?php elseif ($ord['status'] === 'served_unpaid'): ?>
-                                <!-- Explicit Button to Settle Payment -->
+                            <?php elseif ($ord['status'] === 'delivering'): ?>
+                                <?php if ($orderType === 'delivery'): ?>
+                                    <button class="btn-action-pos" style="background:#D97706;color:#fff" onclick="updateOrderStatus(<?= $ord['id'] ?>, 'delivered_unpaid')">
+                                        📦 Sampai (Belum Setor COD)
+                                    </button>
+                                <?php endif; ?>
+                                <button class="btn-action-pos btn-act-pay" style="background:#10B981;color:#fff" onclick="openSettleModal(<?= $ord['id'] ?>, '<?= esc($ord['order_number']) ?>', <?= (float)$ord['total_amount'] ?>)">
+                                    💳 Lunas & Selesai
+                                </button>
+                            <?php elseif ($ord['status'] === 'served_unpaid' || $ord['status'] === 'delivered_unpaid'): ?>
                                 <button class="btn-action-pos btn-act-pay" style="padding:10px 16px;font-size:13px;background:#10B981" onclick="openSettleModal(<?= $ord['id'] ?>, '<?= esc($ord['order_number']) ?>', <?= (float)$ord['total_amount'] ?>)">
-                                    💳 Bayar & Selesaikan
+                                    💳 Terima Bayar & Lunas
                                 </button>
                                 <button class="btn-action-pos btn-act-cancel" onclick="updateOrderStatus(<?= $ord['id'] ?>, 'cancelled')">
                                     Batal
                                 </button>
                             <?php elseif ($ord['status'] === 'paid'): ?>
                                 <div style="font-size:12px;font-weight:800;color:#10B981;display:flex;align-items:center;gap:4px">
-                                    <span>✅</span> Transaksi Lunas
+                                    <span>✅</span> Selesai & Lunas
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -559,9 +624,9 @@
 
 <!-- Store Settings Modal -->
 <div class="modal-settle-overlay" id="storeSettingModal">
-    <div class="settle-dialog" style="max-width:480px">
+    <div class="settle-dialog" style="max-width:520px;max-height:85vh;overflow-y:auto">
         <div class="settle-header">
-            <div style="font-weight:900;font-size:16px;color:var(--text-primary)">⚙️ Profil Toko & URL Menu</div>
+            <div style="font-weight:900;font-size:16px;color:var(--text-primary)">⚙️ Profil Toko, QR & Online Delivery</div>
             <button style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer" onclick="closeStoreSettingModal()">✕</button>
         </div>
         <div class="settle-body">
@@ -571,11 +636,16 @@
             </div>
 
             <div class="input-group">
-                <label style="font-size:12px;font-weight:700;color:var(--text-secondary)">URL Slug Alamat Menu <span style="color:#EF4444">*</span></label>
+                <label style="font-size:12px;font-weight:700;color:var(--text-secondary)">URL Slug Alamat Menu / Toko <span style="color:#EF4444">*</span></label>
                 <div style="display:flex;align-items:center;gap:6px">
                     <span style="font-size:12px;color:var(--text-muted)">/menu/</span>
                     <input type="text" id="cfgStoreSlug" style="flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text-primary);font-size:13.5px;font-family:inherit" value="<?= esc($store['store_slug']) ?>">
                 </div>
+            </div>
+
+            <div class="input-group">
+                <label style="font-size:12px;font-weight:700;color:var(--text-secondary)">No. WhatsApp Toko (untuk dihubungi konsumen)</label>
+                <input type="tel" id="cfgStorePhone" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text-primary);font-size:13px;font-family:inherit" placeholder="08xxxxxxxxxx" value="<?= esc($store['store_phone']) ?>">
             </div>
 
             <div class="input-group">
@@ -584,22 +654,38 @@
             </div>
 
             <div class="input-group">
-                <label style="font-size:12px;font-weight:700;color:var(--text-secondary)">Alamat Outlet</label>
+                <label style="font-size:12px;font-weight:700;color:var(--text-secondary)">Alamat Outlet / Toko</label>
                 <input type="text" id="cfgStoreAddress" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text-primary);font-size:13px;font-family:inherit" value="<?= esc($store['store_address']) ?>">
             </div>
 
+            <!-- Delivery Settings -->
+            <div style="background:rgba(234, 88, 12, 0.08);border:1px dashed var(--primary);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:13px;font-weight:800;color:var(--text-primary)">🛵 Layanan Antar (Delivery)</span>
+                    <input type="checkbox" id="cfgStoreDeliveryEnabled" <?= ($store['store_delivery_enabled'] ?? true) ? 'checked' : '' ?> style="transform:scale(1.2)">
+                </div>
+                <div>
+                    <label style="font-size:12px;font-weight:700;color:var(--text-secondary)">Tarif Ongkos Kirim Flat (Rp)</label>
+                    <input type="number" id="cfgStoreDeliveryFee" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-primary);font-size:13px;outline:none" value="<?= (float)($store['store_delivery_fee'] ?? 0) ?>">
+                </div>
+                <div>
+                    <label style="font-size:12px;font-weight:700;color:var(--text-secondary)">Info Rekening Bank & QRIS (untuk pembayaran transfer)</label>
+                    <textarea id="cfgStoreBankInfo" rows="2" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-primary);font-size:12px;outline:none;resize:none" placeholder="Cth: BCA 1234567890 a/n Toko"><?= esc($store['store_bank_info']) ?></textarea>
+                </div>
+            </div>
+
             <div class="input-group">
-                <label style="font-size:12px;font-weight:700;color:var(--text-secondary)">Teks Keterangan di Bawah QR Code</label>
+                <label style="font-size:12px;font-weight:700;color:var(--text-secondary)">Teks Keterangan di Bawah QR Code Standee</label>
                 <textarea id="cfgStoreQrFooter" rows="2" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text-primary);font-size:13px;font-family:inherit;resize:none"><?= esc($store['store_qr_footer']) ?></textarea>
             </div>
 
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
-                <span style="font-size:13px;font-weight:700;color:var(--text-primary)">Buka Penerimaan Pesanan</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
+                <span style="font-size:13px;font-weight:700;color:var(--text-primary)">Buka Penerimaan Pesanan Online</span>
                 <input type="checkbox" id="cfgStoreIsOpen" <?= $store['store_is_open'] ? 'checked' : '' ?> style="transform:scale(1.3)">
             </div>
 
             <button class="btn-action-pos btn-act-pay" style="width:100%;padding:12px;font-size:13.5px" onclick="saveStoreProfile()">
-                Simpan Profil Toko
+                Simpan Profil & Pengaturan
             </button>
         </div>
     </div>
@@ -732,10 +818,14 @@
     async function saveStoreProfile() {
         const name = document.getElementById('cfgStoreName').value.trim();
         const slug = document.getElementById('cfgStoreSlug').value.trim();
+        const phone = document.getElementById('cfgStorePhone').value.trim();
         const tagline = document.getElementById('cfgStoreTagline').value.trim();
         const address = document.getElementById('cfgStoreAddress').value.trim();
         const qrFooter = document.getElementById('cfgStoreQrFooter').value.trim();
         const isOpen = document.getElementById('cfgStoreIsOpen').checked ? '1' : '0';
+        const deliveryOn = document.getElementById('cfgStoreDeliveryEnabled').checked ? '1' : '0';
+        const deliveryFee = document.getElementById('cfgStoreDeliveryFee').value.trim() || '0';
+        const bankInfo = document.getElementById('cfgStoreBankInfo').value.trim();
 
         if (!name) {
             alert('Nama toko wajib diisi.');
@@ -749,10 +839,14 @@
                 body: new URLSearchParams({
                     store_name: name,
                     store_slug: slug,
+                    store_phone: phone,
                     store_tagline: tagline,
                     store_address: address,
                     store_qr_footer: qrFooter,
-                    store_is_open: isOpen
+                    store_is_open: isOpen,
+                    store_delivery_enabled: deliveryOn,
+                    store_delivery_fee: deliveryFee,
+                    store_bank_info: bankInfo
                 })
             });
             const data = await res.json();

@@ -362,7 +362,7 @@ class PosController extends ApiController
         $orderId = (int)($json['order_id'] ?? 0);
         $status  = trim($json['status'] ?? '');
 
-        $allowedStatuses = ['pending', 'processing', 'served_unpaid', 'paid', 'cancelled'];
+        $allowedStatuses = ['pending', 'processing', 'delivering', 'served_unpaid', 'delivered_unpaid', 'paid', 'cancelled'];
         if (!in_array($status, $allowedStatuses, true)) {
             return $this->fail('Status tidak valid.');
         }
@@ -415,12 +415,17 @@ class PosController extends ApiController
             if (!$walletId) {
                 $walletId = $this->walletModel->getDefaultWalletId($userId);
             }
+            $targetNote = 'Pembayaran POS: ' . $order['order_number'] . ($order['table_no'] ? ' (' . $order['table_no'] . ')' : '') . ($order['customer_name'] ? ' - ' . $order['customer_name'] : '');
+            if (($order['order_type'] ?? '') === 'delivery') {
+                $targetNote = 'Pembayaran Delivery: ' . $order['order_number'] . ' - ' . $order['customer_name'];
+            }
+
             $txId = $this->txModel->insert([
                 'user_id'   => $userId,
                 'wallet_id' => $walletId,
                 'type'      => 'income',
                 'amount'    => $totalAmount,
-                'note'      => 'Pembayaran POS: ' . $order['order_number'] . ($order['table_no'] ? ' (' . $order['table_no'] . ')' : '') . ($order['customer_name'] ? ' - ' . $order['customer_name'] : ''),
+                'note'      => $targetNote,
                 'date'      => date('Y-m-d'),
             ]);
         }
@@ -478,15 +483,20 @@ class PosController extends ApiController
      */
     public function saveStoreProfile()
     {
-        $userId    = $this->uid();
-        $json      = $this->request->getJSON(true) ?? [];
-        $storeName = trim($json['store_name'] ?? '');
-        $storeSlug = trim($json['store_slug'] ?? '');
-        $tagline   = trim($json['store_tagline'] ?? '');
-        $address   = trim($json['store_address'] ?? '');
-        $phone     = trim($json['store_phone'] ?? '');
-        $qrFooter  = trim($json['store_qr_footer'] ?? '');
-        $isOpen    = ($json['store_is_open'] ?? true) ? '1' : '0';
+        $userId      = $this->uid();
+        $json        = $this->request->getJSON(true) ?? [];
+        $storeName   = trim($json['store_name'] ?? '');
+        $storeSlug   = trim($json['store_slug'] ?? '');
+        $tagline     = trim($json['store_tagline'] ?? '');
+        $address     = trim($json['store_address'] ?? '');
+        $phone       = trim($json['store_phone'] ?? '');
+        $qrFooter    = trim($json['store_qr_footer'] ?? '');
+        $isOpen      = ($json['store_is_open'] ?? true) ? '1' : '0';
+        $deliveryOn  = ($json['store_delivery_enabled'] ?? true) ? '1' : '0';
+        $deliveryFee = (float)($json['store_delivery_fee'] ?? 0);
+        $pickupOn    = ($json['store_pickup_enabled'] ?? true) ? '1' : '0';
+        $bankInfo    = trim($json['store_bank_info'] ?? '');
+        $qrisInfo    = trim($json['store_qris_info'] ?? '');
 
         if (!$storeName) {
             return $this->fail('Nama toko/outlet wajib diisi.');
@@ -513,13 +523,18 @@ class PosController extends ApiController
         $this->settingModel->setPref($userId, 'store_phone', $phone);
         $this->settingModel->setPref($userId, 'store_qr_footer', $qrFooter);
         $this->settingModel->setPref($userId, 'store_is_open', $isOpen);
+        $this->settingModel->setPref($userId, 'store_delivery_enabled', $deliveryOn);
+        $this->settingModel->setPref($userId, 'store_delivery_fee', (string)$deliveryFee);
+        $this->settingModel->setPref($userId, 'store_pickup_enabled', $pickupOn);
+        $this->settingModel->setPref($userId, 'store_bank_info', $bankInfo);
+        $this->settingModel->setPref($userId, 'store_qris_info', $qrisInfo);
 
         $store = $this->settingModel->getStoreProfile($userId);
 
         return $this->ok([
             'store'    => $store,
             'menu_url' => base_url('/menu/' . $storeSlug),
-            'message'  => 'Profil toko & QR menu berhasil disimpan!',
+            'message'  => 'Profil toko & pengaturan marketplace delivery berhasil disimpan!',
         ]);
     }
 }

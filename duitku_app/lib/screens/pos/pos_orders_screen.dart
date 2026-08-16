@@ -218,8 +218,9 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
     final tabs = [
       {'key': 'all', 'label': 'Semua', 'count': _counts['all'] ?? 0},
       {'key': 'pending', 'label': '🔔 Baru', 'count': _counts['pending'] ?? 0},
-      {'key': 'processing', 'label': '⏳ Diproses', 'count': _counts['processing'] ?? 0},
-      {'key': 'served_unpaid', 'label': '⚠️ Dilayani (Belum Bayar)', 'count': _counts['served_unpaid'] ?? 0, 'isWarning': true},
+      {'key': 'processing', 'label': '🍳 Diproses', 'count': _counts['processing'] ?? 0},
+      {'key': 'delivering', 'label': '🛵 Dikirim', 'count': _counts['delivering'] ?? 0},
+      {'key': 'served_unpaid', 'label': '⚠️ Belum Bayar (COD/Meja)', 'count': ((_counts['served_unpaid'] as num?)?.toInt() ?? 0) + ((_counts['delivered_unpaid'] as num?)?.toInt() ?? 0), 'isWarning': true},
       {'key': 'paid', 'label': '✅ Selesai', 'count': _counts['paid'] ?? 0},
       {'key': 'cancelled', 'label': '❌ Batal', 'count': _counts['cancelled'] ?? 0},
     ];
@@ -300,7 +301,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
           ),
           SizedBox(height: 4),
           Text(
-            'Pesanan masuk dari QR meja konsumen akan muncul di sini.',
+            'Pesanan masuk dari Online Shop & QR Meja akan muncul di sini.',
             style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
             textAlign: TextAlign.center,
           ),
@@ -311,25 +312,31 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
 
   Widget _buildOrderCard(Map<String, dynamic> order) {
     final status = order['status']?.toString() ?? 'paid';
-    final isServedUnpaid = status == 'served_unpaid';
+    final isUnpaid = status == 'served_unpaid' || status == 'delivered_unpaid';
     final isPending = status == 'pending';
+    final orderType = order['order_type']?.toString() ?? 'dine_in';
     final items = (order['items'] as List?) ?? [];
-    final tableNo = order['table_no']?.toString() ?? 'Kasir';
+    final tableNo = order['table_no']?.toString() ?? '';
     final customerName = order['customer_name']?.toString() ?? 'Pelanggan';
+    final customerPhone = order['customer_phone']?.toString() ?? '';
+    final deliveryAddress = order['delivery_address']?.toString() ?? '';
+    final deliveryNotes = order['delivery_notes']?.toString() ?? '';
+    final pickupTime = order['pickup_time']?.toString() ?? '';
     final orderNum = order['order_number']?.toString() ?? '';
     final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
+    final deliveryFee = (order['delivery_fee'] as num?)?.toDouble() ?? 0.0;
 
     return Container(
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isServedUnpaid
+          color: isUnpaid
               ? const Color(0xFFF59E0B)
               : (isPending ? const Color(0xFFEA580C) : AppColors.border),
-          width: (isServedUnpaid || isPending) ? 2 : 1,
+          width: (isUnpaid || isPending) ? 2 : 1,
         ),
-        boxShadow: isServedUnpaid
+        boxShadow: isUnpaid
             ? [BoxShadow(color: const Color(0xFFF59E0B).withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4))]
             : AppColors.cardShadow,
       ),
@@ -344,17 +351,27 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFFEA580C), Color(0xFFFB923C)]),
+                  gradient: orderType == 'delivery'
+                      ? const LinearGradient(colors: [Color(0xFF9333EA), Color(0xFFC084FC)])
+                      : (orderType == 'takeaway'
+                          ? const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF60A5FA)])
+                          : const LinearGradient(colors: [Color(0xFFEA580C), Color(0xFFFB923C)])),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.table_restaurant_rounded, color: Colors.white, size: 14),
+                    Icon(
+                      orderType == 'delivery'
+                          ? Icons.delivery_dining_rounded
+                          : (orderType == 'takeaway' ? Icons.shopping_bag_rounded : Icons.table_restaurant_rounded),
+                      color: Colors.white,
+                      size: 14,
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      tableNo,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12.5),
+                      orderType == 'delivery' ? 'DELIVERY' : (orderType == 'takeaway' ? 'TAKEAWAY' : (tableNo.isNotEmpty ? 'Meja $tableNo' : 'DINE IN')),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11.5),
                     ),
                   ],
                 ),
@@ -369,7 +386,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                     ),
                     Text(
-                      customerName,
+                      customerName + (customerPhone.isNotEmpty ? ' ($customerPhone)' : ''),
                       style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
                     ),
                   ],
@@ -379,7 +396,39 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
             ],
           ),
 
-          const SizedBox(height: 12),
+          // Delivery Address if delivery
+          if (orderType == 'delivery' && deliveryAddress.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF9333EA).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF9333EA).withValues(alpha: 0.25)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('📍 Alamat Pengantaran:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFFC084FC))),
+                  Text(deliveryAddress, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                  if (deliveryNotes.isNotEmpty)
+                    Text('🏡 Patokan: $deliveryNotes', style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                ],
+              ),
+            ),
+          ] else if (orderType == 'takeaway' && pickupTime.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text('⏰ Jam Ambil: $pickupTime', style: const TextStyle(fontSize: 11, color: Color(0xFF60A5FA), fontWeight: FontWeight.w700)),
+            ),
+          ],
+
+          const SizedBox(height: 10),
 
           // Items Box
           Container(
@@ -389,37 +438,50 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
-              children: items.map((it) {
-                final note = it['notes']?.toString();
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${it['product_name']} x${it['qty']}',
-                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
-                            ),
-                            if (note != null && note.isNotEmpty)
+              children: [
+                ...items.map((it) {
+                  final note = it['notes']?.toString();
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                '📝 $note',
-                                style: const TextStyle(fontSize: 11, color: Color(0xFFEA580C), fontWeight: FontWeight.w600),
+                                '${it['product_name']} x${it['qty']}',
+                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
                               ),
-                          ],
+                              if (note != null && note.isNotEmpty)
+                                Text(
+                                  '📝 $note',
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFFEA580C), fontWeight: FontWeight.w600),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                      Text(
-                        _formatCurrency((it['subtotal'] as num?) ?? 0),
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
-                      ),
-                    ],
+                        Text(
+                          _formatCurrency((it['subtotal'] as num?) ?? 0),
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                if (deliveryFee > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('🛵 Ongkir Delivery', style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
+                        Text(_formatCurrency(deliveryFee), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
                   ),
-                );
-              }).toList(),
+              ],
             ),
           ),
 
@@ -432,7 +494,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Total Tagihan', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                  Text('Total (${(order['payment_method']?.toString() ?? 'COD').toUpperCase()})', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
                   Text(
                     _formatCurrency(totalAmount),
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFFEA580C)),
@@ -461,12 +523,22 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
       case 'processing':
         bg = const Color(0xFFDBEAFE);
         fg = const Color(0xFF2563EB);
-        label = '⏳ Diproses';
+        label = '🍳 Diproses';
+        break;
+      case 'delivering':
+        bg = const Color(0xFFF3E8FF);
+        fg = const Color(0xFF9333EA);
+        label = '🛵 Dikirim';
         break;
       case 'served_unpaid':
         bg = const Color(0xFFFEF3C7);
         fg = const Color(0xFFB45309);
-        label = '⚠️ DILAYANI (BELUM BAYAR)';
+        label = '⚠️ SAJIKAN (BELUM BAYAR)';
+        break;
+      case 'delivered_unpaid':
+        bg = const Color(0xFFFEF3C7);
+        fg = const Color(0xFFB45309);
+        label = '⚠️ SAMPAI / COD';
         break;
       case 'paid':
         bg = const Color(0xFFDCFCE7);
@@ -493,13 +565,14 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
       ),
       child: Text(
         label,
-        style: TextStyle(color: fg, fontSize: 10.5, fontWeight: FontWeight.w800),
+        style: TextStyle(color: fg, fontSize: 10, fontWeight: FontWeight.w800),
       ),
     );
   }
 
   Widget _buildActionButtons(Map<String, dynamic> order) {
     final status = order['status']?.toString() ?? 'paid';
+    final orderType = order['order_type']?.toString() ?? 'dine_in';
     final orderId = (order['id'] as num?)?.toInt() ?? 0;
     final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
     final orderNum = order['order_number']?.toString() ?? '';
@@ -522,7 +595,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
           ElevatedButton.icon(
             onPressed: () => _updateStatus(orderId, 'processing'),
             icon: const Icon(Icons.check_rounded, size: 14),
-            label: const Text('Proses', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
+            label: const Text('Siapkan', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2563EB),
               foregroundColor: Colors.white,
@@ -536,17 +609,42 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ElevatedButton.icon(
-            onPressed: () => _updateStatus(orderId, 'served_unpaid'),
-            icon: const Icon(Icons.room_service_rounded, size: 14),
-            label: const Text('Sajikan (Belum Bayar)', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD97706),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              minimumSize: Size.zero,
+          if (orderType == 'delivery')
+            ElevatedButton.icon(
+              onPressed: () => _updateStatus(orderId, 'delivering'),
+              icon: const Icon(Icons.delivery_dining_rounded, size: 14),
+              label: const Text('Kirim Kurir', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF9333EA),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                minimumSize: Size.zero,
+              ),
+            )
+          else if (orderType == 'takeaway')
+            ElevatedButton.icon(
+              onPressed: () => _updateStatus(orderId, 'delivering'),
+              icon: const Icon(Icons.shopping_bag_rounded, size: 14),
+              label: const Text('Siap Ambil', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2563EB),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                minimumSize: Size.zero,
+              ),
+            )
+          else
+            ElevatedButton.icon(
+              onPressed: () => _updateStatus(orderId, 'served_unpaid'),
+              icon: const Icon(Icons.room_service_rounded, size: 14),
+              label: const Text('Sajikan', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD97706),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                minimumSize: Size.zero,
+              ),
             ),
-          ),
           const SizedBox(width: 6),
           ElevatedButton(
             onPressed: () => _showPaymentDialog(orderId, orderNum, totalAmount),
@@ -560,11 +658,40 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
           ),
         ],
       );
-    } else if (status == 'served_unpaid') {
+    } else if (status == 'delivering') {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (orderType == 'delivery')
+            ElevatedButton(
+              onPressed: () => _updateStatus(orderId, 'delivered_unpaid'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD97706),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                minimumSize: Size.zero,
+              ),
+              child: const Text('Sampai (COD)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+            ),
+          const SizedBox(width: 6),
+          ElevatedButton.icon(
+            onPressed: () => _showPaymentDialog(orderId, orderNum, totalAmount),
+            icon: const Icon(Icons.check_circle_rounded, size: 14),
+            label: const Text('Lunas', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              minimumSize: Size.zero,
+            ),
+          ),
+        ],
+      );
+    } else if (status == 'served_unpaid' || status == 'delivered_unpaid') {
       return ElevatedButton.icon(
         onPressed: () => _showPaymentDialog(orderId, orderNum, totalAmount),
-        icon: const Icon(Icons.payment_rounded, size: 14),
-        label: const Text('Bayar & Selesaikan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+        icon: const Icon(Icons.payments_rounded, size: 16),
+        label: const Text('Terima Bayar & Selesai', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF10B981),
           foregroundColor: Colors.white,

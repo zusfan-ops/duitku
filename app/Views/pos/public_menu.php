@@ -513,6 +513,24 @@
         .btn-submit-order:active { transform: scale(0.98); }
         .btn-submit-order:disabled { opacity: 0.5; cursor: not-allowed; }
 
+        .type-tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            padding: 8px 6px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+        .type-tab-btn.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
+        }
+
         @keyframes slideDrawer {
             from { transform: translateY(100%); }
             to { transform: translateY(0); }
@@ -651,15 +669,74 @@
             </div>
             <div class="drawer-body">
                 
-                <!-- Table & Customer Info -->
-                <div style="background:#0F172A;border:1px solid var(--border);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px">
-                    <div class="input-group">
-                        <label class="input-label">🪑 Nomor Meja / Lokasi <span style="color:#EF4444">*</span></label>
-                        <input type="text" id="orderTableNo" class="input-control" placeholder="Contoh: Meja 03 / VIP 1 / Bar" value="<?= esc($tableQuery) ?>">
+                <!-- Fulfillment Method / Order Type Selector -->
+                <div style="background:#0F172A;border:1px solid var(--border);border-radius:14px;padding:4px;display:grid;grid-template-columns:repeat(3, 1fr);gap:4px">
+                    <button type="button" id="typeTabDelivery" class="type-tab-btn active" onclick="setOrderType('delivery')">
+                        🛵 Delivery
+                    </button>
+                    <button type="button" id="typeTabTakeaway" class="type-tab-btn" onclick="setOrderType('takeaway')">
+                        🛍️ Takeaway
+                    </button>
+                    <button type="button" id="typeTabDineIn" class="type-tab-btn" onclick="setOrderType('dine_in')">
+                        🪑 Di Tempat
+                    </button>
+                </div>
+
+                <!-- Customer Details -->
+                <div style="display:flex;flex-direction:column;gap:10px">
+                    <!-- Delivery Fields -->
+                    <div id="deliveryFieldsGroup">
+                        <div class="input-group">
+                            <label class="input-label">📍 Alamat Pengiriman Lengkap *</label>
+                            <textarea id="orderDeliveryAddress" class="input-control" rows="2" placeholder="Nama Jalan, No. Rumah, RT/RW, Kelurahan, Kecamatan..."></textarea>
+                        </div>
+                        <div class="input-group" style="margin-top:8px">
+                            <label class="input-label">🏡 Patokan / Catatan Kurir <span style="font-weight:400;color:var(--text-muted)">(opsional)</span></label>
+                            <input type="text" id="orderDeliveryNotes" class="input-control" placeholder="Pagar hitam depan pos ronda, titip satpam, dll.">
+                        </div>
                     </div>
+
+                    <!-- Takeaway Field -->
+                    <div id="takeawayFieldsGroup" style="display:none">
+                        <div class="input-group">
+                            <label class="input-label">⏰ Estimasi Waktu Pengambilan</label>
+                            <input type="text" id="orderPickupTime" class="input-control" placeholder="Contoh: 15-20 Menit lagi, Jam 18:30...">
+                        </div>
+                    </div>
+
+                    <!-- Dine-in Field -->
+                    <div id="dineInFieldsGroup" style="display:none">
+                        <div class="input-group">
+                            <label class="input-label">🪑 Nomor Meja *</label>
+                            <input type="text" id="orderTableNo" class="input-control" placeholder="Contoh: 01, Meja 5, VIP..." value="<?= esc($tableQuery) ?>">
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                        <div class="input-group">
+                            <label class="input-label">👤 Nama Pemesan *</label>
+                            <input type="text" id="orderCustomerName" class="input-control" placeholder="Nama Anda (cth: Budi)">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">📱 No. WhatsApp *</label>
+                            <input type="tel" id="orderCustomerPhone" class="input-control" placeholder="08xxxxxxxxxx">
+                        </div>
+                    </div>
+
+                    <!-- Payment Method Option -->
                     <div class="input-group">
-                        <label class="input-label">👤 Nama Pemesan <span style="font-weight:400;color:var(--text-muted)">(opsional)</span></label>
-                        <input type="text" id="orderCustomerName" class="input-control" placeholder="Nama Anda (cth: Budi)">
+                        <label class="input-label">💳 Metode Pembayaran</label>
+                        <select id="orderPaymentMethod" class="input-control" onchange="togglePaymentInfo()">
+                            <option value="cod">💵 Bayar di Tempat (COD / Kasir)</option>
+                            <option value="transfer">🏦 Transfer Bank Manual</option>
+                            <option value="qris">📱 QRIS / E-Wallet</option>
+                        </select>
+                    </div>
+
+                    <!-- Bank / QRIS info box if configured -->
+                    <div id="bankInfoBox" style="display:none;background:#0F172A;border:1px dashed var(--primary);border-radius:12px;padding:10px;font-size:12px;color:#CBD5E1">
+                        <div style="font-weight:800;color:#FB923C;margin-bottom:4px">ℹ️ Informasi Rekening Toko:</div>
+                        <div><?= nl2br(esc($store['store_bank_info'] ?: 'Silakan hubungi kasir/toko untuk nomor rekening transfer.')) ?></div>
                     </div>
                 </div>
 
@@ -674,8 +751,12 @@
                 <!-- Total Bill Breakdown -->
                 <div style="background:#0F172A;border:1px solid var(--border);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px">
                     <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-muted)">
-                        <span>Total Jumlah Item</span>
-                        <span id="drawerTotalQty">0 item</span>
+                        <span>Subtotal Produk (<span id="drawerTotalQty">0</span> item)</span>
+                        <span id="drawerSubtotalAmount"><?= esc($symbol) ?> 0</span>
+                    </div>
+                    <div id="deliveryFeeRow" style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-muted)">
+                        <span>Ongkos Kirim (Delivery)</span>
+                        <span id="drawerDeliveryFee"><?= esc($symbol) ?> <?= number_format((float)($store['store_delivery_fee'] ?? 0), 0, ',', '.') ?></span>
                     </div>
                     <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:900;color:#fff;border-top:1px dashed var(--border);padding-top:6px;margin-top:2px">
                         <span>Total Pembayaran</span>
@@ -684,7 +765,7 @@
                 </div>
 
                 <div style="font-size:11.5px;color:var(--text-muted);line-height:1.4;text-align:center;padding:0 8px">
-                    ℹ️ Pesanan akan langsung dikirim ke kasir / barista. Pembayaran dapat dilakukan setelah pesanan disajikan di kasir.
+                    ℹ️ Pesanan Anda akan langsung dikirim ke toko dan diproses. Anda dapat memantau status pesanan secara langsung.
                 </div>
 
             </div>
@@ -722,12 +803,42 @@
         const STORE_SLUG = "<?= esc($slug) ?>";
         const CURRENCY_SYMBOL = "<?= esc($symbol) ?>";
         const PRODUCTS = <?= json_encode($products) ?>;
+        const DELIVERY_FEE = <?= (float)($store['store_delivery_fee'] ?? 0) ?>;
         
         let cart = {}; // { productId: { id, name, price, qty, notes } }
         let currentTable = "<?= esc($tableQuery) ?>";
+        let currentOrderType = currentTable ? "dine_in" : "delivery";
 
         function formatMoney(num) {
             return CURRENCY_SYMBOL + ' ' + Number(num).toLocaleString('id-ID');
+        }
+
+        function setOrderType(type) {
+            currentOrderType = type;
+            document.querySelectorAll('.type-tab-btn').forEach(b => b.classList.remove('active'));
+
+            document.getElementById('deliveryFieldsGroup').style.display = (type === 'delivery') ? 'block' : 'none';
+            document.getElementById('takeawayFieldsGroup').style.display = (type === 'takeaway') ? 'block' : 'none';
+            document.getElementById('dineInFieldsGroup').style.display = (type === 'dine_in') ? 'block' : 'none';
+            document.getElementById('deliveryFeeRow').style.display = (type === 'delivery') ? 'flex' : 'none';
+
+            if (type === 'delivery') {
+                document.getElementById('typeTabDelivery').classList.add('active');
+            } else if (type === 'takeaway') {
+                document.getElementById('typeTabTakeaway').classList.add('active');
+            } else {
+                document.getElementById('typeTabDineIn').classList.add('active');
+            }
+
+            updateUI();
+        }
+
+        function togglePaymentInfo() {
+            const method = document.getElementById('orderPaymentMethod').value;
+            const box = document.getElementById('bankInfoBox');
+            if (box) {
+                box.style.display = (method === 'transfer' || method === 'qris') ? 'block' : 'none';
+            }
         }
 
         function addToCart(productId) {
@@ -788,26 +899,30 @@
 
             // Calculate Totals
             let totalQty = 0;
-            let totalPrice = 0;
+            let subtotalPrice = 0;
             Object.values(cart).forEach(item => {
                 totalQty += item.qty;
-                totalPrice += (item.price * item.qty);
+                subtotalPrice += (item.price * item.qty);
             });
+
+            const currentDeliveryFee = (currentOrderType === 'delivery') ? DELIVERY_FEE : 0;
+            const finalTotal = subtotalPrice + currentDeliveryFee;
 
             // Update Bottom Bar
             const bar = document.getElementById('bottomCartBar');
             if (totalQty > 0) {
                 bar.style.display = 'flex';
                 document.getElementById('cartTotalItems').textContent = totalQty + ' item';
-                document.getElementById('cartTotalPrice').textContent = formatMoney(totalPrice);
+                document.getElementById('cartTotalPrice').textContent = formatMoney(finalTotal);
             } else {
                 bar.style.display = 'none';
                 closeCartModal();
             }
 
             // Update Drawer
-            document.getElementById('drawerTotalQty').textContent = totalQty + ' item';
-            document.getElementById('drawerTotalAmount').textContent = formatMoney(totalPrice);
+            document.getElementById('drawerTotalQty').textContent = totalQty;
+            document.getElementById('drawerSubtotalAmount').textContent = formatMoney(subtotalPrice);
+            document.getElementById('drawerTotalAmount').textContent = formatMoney(finalTotal);
             renderDrawerItems();
         }
 
@@ -866,6 +981,7 @@
                 currentTable = val;
                 document.getElementById('orderTableNo').value = val;
                 document.getElementById('displayTableText').textContent = 'Meja ' + val;
+                setOrderType('dine_in');
             }
             closeTableModal();
         }
@@ -903,20 +1019,51 @@
             });
         }
 
+        // Initialize state on load
+        if (currentTable) {
+            setOrderType('dine_in');
+        } else {
+            setOrderType('delivery');
+        }
+
         async function submitOrder() {
             const items = Object.values(cart);
             if (items.length === 0) {
-                alert('Pilih minimal satu menu.');
+                alert('Pilih minimal satu produk / menu untuk memesan.');
                 return;
             }
 
-            const tableNo = document.getElementById('orderTableNo').value.trim();
             const customerName = document.getElementById('orderCustomerName').value.trim();
+            const customerPhone = document.getElementById('orderCustomerPhone').value.trim();
+            const deliveryAddress = document.getElementById('orderDeliveryAddress').value.trim();
+            const deliveryNotes = document.getElementById('orderDeliveryNotes').value.trim();
+            const pickupTime = document.getElementById('orderPickupTime').value.trim();
+            const tableNo = document.getElementById('orderTableNo').value.trim();
+            const paymentMethod = document.getElementById('orderPaymentMethod').value;
 
-            if (!tableNo) {
-                alert('Silakan masukkan Nomor Meja Anda.');
-                document.getElementById('orderTableNo').focus();
-                return;
+            if (currentOrderType === 'delivery') {
+                if (!deliveryAddress) {
+                    alert('Mohon masukkan Alamat Pengiriman Lengkap.');
+                    document.getElementById('orderDeliveryAddress').focus();
+                    return;
+                }
+                if (!customerPhone) {
+                    alert('Mohon masukkan No. WhatsApp aktif agar kurir dapat mengonfirmasi pengiriman.');
+                    document.getElementById('orderCustomerPhone').focus();
+                    return;
+                }
+            } else if (currentOrderType === 'dine_in') {
+                if (!tableNo) {
+                    alert('Mohon masukkan Nomor Meja tempat Anda duduk.');
+                    document.getElementById('orderTableNo').focus();
+                    return;
+                }
+            } else if (currentOrderType === 'takeaway') {
+                if (!customerName && !customerPhone) {
+                    alert('Mohon masukkan Nama atau No. WhatsApp pemesan.');
+                    document.getElementById('orderCustomerName').focus();
+                    return;
+                }
             }
 
             const btn = document.getElementById('btnSubmitOrder');
@@ -928,15 +1075,21 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        table_no: tableNo,
+                        order_type: currentOrderType,
                         customer_name: customerName,
+                        customer_phone: customerPhone,
+                        delivery_address: deliveryAddress,
+                        delivery_notes: deliveryNotes,
+                        pickup_time: pickupTime,
+                        table_no: tableNo,
+                        payment_method: paymentMethod,
                         items: items
                     })
                 });
 
                 const data = await res.json();
                 if (data.success) {
-                    // Redirect to status page
+                    // Redirect to status tracking page
                     window.location.href = data.status_url;
                 } else {
                     alert('Gagal mengirim pesanan: ' + (data.message || 'Terjadi kesalahan'));
@@ -945,7 +1098,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                alert('Terjadi kendala jaringan saat mengirim pesanan. Silakan coba lagi.');
+                alert('Terjadi kendala jaringan saat mengirim pesanan. Silakan periksa koneksi Anda dan coba lagi.');
                 btn.disabled = false;
                 btn.innerHTML = '<span>🚀</span> Kirim Pesanan Sekarang';
             }

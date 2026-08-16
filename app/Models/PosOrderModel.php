@@ -16,7 +16,8 @@ class PosOrderModel extends Model
         'user_id', 'order_number', 'total_amount', 'total_cost',
         'profit', 'payment_method', 'wallet_id', 'cash_received',
         'change_amount', 'customer_name', 'customer_phone',
-        'table_no', 'status', 'order_source',
+        'table_no', 'status', 'order_source', 'order_type',
+        'delivery_address', 'delivery_notes', 'delivery_fee', 'pickup_time',
         'debt_id', 'transaction_id', 'notes', 'date',
     ];
 
@@ -58,15 +59,21 @@ class PosOrderModel extends Model
         $builder = $this->where('user_id', $userId);
 
         if ($status && $status !== 'all') {
-            $builder->where('status', $status);
+            if ($status === 'unpaid_active') {
+                $builder->whereIn('status', ['served_unpaid', 'delivered_unpaid']);
+            } else {
+                $builder->where('status', $status);
+            }
         }
 
         $orders = $builder->orderBy("CASE 
             WHEN status = 'pending' THEN 1 
             WHEN status = 'processing' THEN 2 
-            WHEN status = 'served_unpaid' THEN 3 
-            WHEN status = 'paid' THEN 4 
-            ELSE 5 END", 'ASC')
+            WHEN status = 'delivering' THEN 3 
+            WHEN status = 'served_unpaid' THEN 4 
+            WHEN status = 'delivered_unpaid' THEN 5 
+            WHEN status = 'paid' THEN 6 
+            ELSE 7 END", 'ASC')
             ->orderBy('id', 'DESC')
             ->limit($limit)
             ->findAll();
@@ -103,12 +110,14 @@ class PosOrderModel extends Model
                      ->findAll();
 
         $counts = [
-            'all'           => 0,
-            'pending'       => 0,
-            'processing'    => 0,
-            'served_unpaid' => 0,
-            'paid'          => 0,
-            'cancelled'     => 0,
+            'all'              => 0,
+            'pending'          => 0,
+            'processing'       => 0,
+            'delivering'       => 0,
+            'served_unpaid'    => 0,
+            'delivered_unpaid' => 0,
+            'paid'             => 0,
+            'cancelled'        => 0,
         ];
 
         foreach ($rows as $r) {

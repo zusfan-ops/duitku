@@ -182,7 +182,10 @@ class _PosQrScreenState extends State<PosQrScreen> {
     final addressCtrl = TextEditingController(text: _store['store_address'] ?? '');
     final phoneCtrl = TextEditingController(text: _store['store_phone'] ?? '');
     final footerCtrl = TextEditingController(text: _store['store_qr_footer'] ?? '');
+    final deliveryFeeCtrl = TextEditingController(text: '${_store['store_delivery_fee'] ?? 0}');
+    final bankInfoCtrl = TextEditingController(text: _store['store_bank_info'] ?? '');
     bool isOpen = _store['store_is_open'] == true;
+    bool isDeliveryOn = _store['store_delivery_enabled'] ?? true;
 
     showModalBottomSheet(
       context: context,
@@ -202,7 +205,7 @@ class _PosQrScreenState extends State<PosQrScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('⚙️ Profil Toko & QR Menu', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                        const Text('⚙️ Profil Toko & Online Delivery', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                         IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                       ],
                     ),
@@ -228,6 +231,15 @@ class _PosQrScreenState extends State<PosQrScreen> {
                     const SizedBox(height: 10),
 
                     TextField(
+                      controller: phoneCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Nomor WhatsApp Toko',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    TextField(
                       controller: taglineCtrl,
                       decoration: const InputDecoration(
                         labelText: 'Slogan / Keterangan Toko',
@@ -245,13 +257,46 @@ class _PosQrScreenState extends State<PosQrScreen> {
                     ),
                     const SizedBox(height: 10),
 
-                    TextField(
-                      controller: phoneCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Nomor Telepon / WA',
-                        border: OutlineInputBorder(),
+                    // Delivery Box
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEA580C).withValues(alpha: 0.08),
+                        border: Border.all(color: const Color(0xFFEA580C).withValues(alpha: 0.3)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('🛵 Aktifkan Layanan Delivery', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+                            value: isDeliveryOn,
+                            activeThumbColor: const Color(0xFFEA580C),
+                            onChanged: (val) => setModalState(() => isDeliveryOn = val),
+                          ),
+                          TextField(
+                            controller: deliveryFeeCtrl,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Tarif Ongkir Flat (Rp)',
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: bankInfoCtrl,
+                            maxLines: 2,
+                            decoration: const InputDecoration(
+                              labelText: 'Info Rekening Bank / QRIS',
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+
                     const SizedBox(height: 10),
 
                     TextField(
@@ -287,6 +332,9 @@ class _PosQrScreenState extends State<PosQrScreen> {
                               'store_phone': phoneCtrl.text.trim(),
                               'store_qr_footer': footerCtrl.text.trim(),
                               'store_is_open': isOpen,
+                              'store_delivery_enabled': isDeliveryOn,
+                              'store_delivery_fee': double.tryParse(deliveryFeeCtrl.text.trim()) ?? 0,
+                              'store_bank_info': bankInfoCtrl.text.trim(),
                             });
                             _loadProfile();
                             if (mounted) {
