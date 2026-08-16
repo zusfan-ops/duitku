@@ -1177,16 +1177,16 @@
                 <div style="background:rgba(255,255,255,0.15);padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800"><?= $biz['today_orders'] ?? 0 ?> Order</div>
             </div>
             <div style="font-size:32px;font-weight:900;letter-spacing:-1px;line-height:1;margin-bottom:12px">
-                <?= esc($symbol) ?> <?= number_format($biz['today_sales'] ?? 0, 0, ',', '.') ?>
+                <?= esc($symbol) ?> <?= number_format((float)($biz['today_sales'] ?? 0), 0, ',', '.') ?>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                 <div style="background:rgba(255,255,255,0.08);padding:10px 12px;border-radius:12px">
                     <div style="font-size:10.5px;color:rgba(255,255,255,0.7)">Laba Bersih Hari Ini</div>
-                    <div style="font-size:14px;font-weight:900;color:#34D399"><?= esc($symbol) ?> <?= number_format($biz['today_profit'] ?? 0, 0, ',', '.') ?></div>
+                    <div style="font-size:14px;font-weight:900;color:#34D399"><?= esc($symbol) ?> <?= number_format((float)($biz['today_profit'] ?? 0), 0, ',', '.') ?></div>
                 </div>
                 <div style="background:rgba(255,255,255,0.08);padding:10px 12px;border-radius:12px">
                     <div style="font-size:10.5px;color:rgba(255,255,255,0.7)">Omset Bulan Ini</div>
-                    <div style="font-size:14px;font-weight:900;color:#FDE047"><?= esc($symbol) ?> <?= number_format($biz['month_sales'] ?? 0, 0, ',', '.') ?></div>
+                    <div style="font-size:14px;font-weight:900;color:#FDE047"><?= esc($symbol) ?> <?= number_format((float)($biz['month_sales'] ?? 0), 0, ',', '.') ?></div>
                 </div>
             </div>
         </div>
@@ -1248,13 +1248,13 @@
                     <?php foreach ($biz['best_sellers'] as $idx => $bs): ?>
                     <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg);padding:8px 12px;border-radius:10px">
                         <div style="display:flex;align-items:center;gap:10px">
-                            <span style="font-size:12px;font-weight:900;width:20px;height:20px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center"><?= $idx + 1 ?></span>
+                            <span style="font-size:12px;font-weight:900;width:20px;height:20px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center"><?= (int)$idx + 1 ?></span>
                             <div>
-                                <div style="font-size:13px;font-weight:700;color:var(--text-primary)"><?= esc($bs['product_name']) ?></div>
-                                <div style="font-size:11px;color:var(--text-muted)"><?= $bs['total_qty'] ?> terjual</div>
+                                <div style="font-size:13px;font-weight:700;color:var(--text-primary)"><?= esc($bs['product_name'] ?? '') ?></div>
+                                <div style="font-size:11px;color:var(--text-muted)"><?= (int)($bs['total_qty'] ?? 0) ?> terjual</div>
                             </div>
                         </div>
-                        <div style="font-size:13px;font-weight:800;color:#EA580C"><?= esc($symbol) ?> <?= number_format($bs['total_revenue'], 0, ',', '.') ?></div>
+                        <div style="font-size:13px;font-weight:800;color:#EA580C"><?= esc($symbol) ?> <?= number_format((float)($bs['total_revenue'] ?? 0), 0, ',', '.') ?></div>
                     </div>
                     <?php endforeach; ?>
                 </div>
