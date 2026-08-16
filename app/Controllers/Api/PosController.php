@@ -658,6 +658,51 @@ class PosController extends ApiController
     }
 
     /**
+     * GET api/pos/shifts
+     */
+    public function getShifts()
+    {
+        $userId = $this->uid();
+        $shiftModel = new \App\Models\PosShiftModel();
+        $activeShift = $shiftModel->getActiveShift($userId);
+        $shiftHistory = $shiftModel->getShiftHistory($userId, 20);
+        $symbol = $this->settingModel->get($userId, 'currency_symbol', 'Rp');
+
+        $currentCashSales = 0.0;
+        $currentTrxCount = 0;
+        $currentExpectedCash = 0.0;
+
+        if ($activeShift) {
+            $db = \Config\Database::connect();
+            $salesRow = $db->query("
+                SELECT 
+                    COUNT(*) AS total_trx,
+                    COALESCE(SUM(CASE WHEN payment_method = 'cash' OR payment_method = 'cod' THEN total_amount ELSE 0 END), 0) AS total_cash
+                FROM pos_orders
+                WHERE user_id = ? AND status = 'paid' AND created_at >= ?
+            ", [$userId, $activeShift['opened_at']])->getRowArray();
+
+            $currentCashSales = (float)($salesRow['total_cash'] ?? 0);
+            $currentTrxCount = (int)($salesRow['total_trx'] ?? 0);
+            $currentExpectedCash = (float)$activeShift['starting_cash'] + $currentCashSales;
+        }
+
+        return $this->ok([
+            'active_shift'        => $activeShift,
+            'shift_history'       => $shiftHistory,
+            'current_cash_sales'  => $currentCashSales,
+            'current_trx_count'   => $currentTrxCount,
+            'current_expected_cash' => $currentExpectedCash,
+            'symbol'              => $symbol,
+        ]);
+    }
+
+    public function shifts()
+    {
+        return $this->getShifts();
+    }
+
+    /**
      * GET api/pos/shifts/active
      */
     public function getActiveShift()

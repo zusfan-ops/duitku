@@ -408,7 +408,41 @@
             </div>
         </a>
 
-        <!-- 5. Laporan Laba Rugi -->
+        <!-- 5. Stok Bahan Baku & Resep (BOM) -->
+        <a href="/pos/ingredients" class="feature-card feat-stats">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+            <div class="feature-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                </svg>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Bahan Baku & BOM</div>
+                <div class="feature-card-desc">Stok bahan mentah & resep</div>
+            </div>
+        </a>
+
+        <!-- 6. Shift Kasir & Laci Kas -->
+        <a href="/pos/shifts" class="feature-card feat-vehicle">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+            <div class="feature-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                </svg>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Shift Kasir & Laci</div>
+                <div class="feature-card-desc">Rekonsiliasi kas & modal awal</div>
+            </div>
+        </a>
+
+        <!-- 7. Laporan Laba Rugi -->
         <a href="/pos/reports" class="feature-card feat-pos-report" style="grid-column: span 2">
             <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <line x1="18" y1="20" x2="18" y2="10"></line>

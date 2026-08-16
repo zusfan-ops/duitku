@@ -25,6 +25,7 @@ import 'recurring/recurring_screen.dart';
 import 'pos/pos_cashier_screen.dart';
 import 'pos/pos_products_screen.dart';
 import 'pos/pos_reports_screen.dart';
+import 'scan/ocr_receipt_screen.dart';
 import 'search/universal_search_screen.dart';
 import 'stats_screen.dart';
 import 'transaction_sheet.dart';
@@ -94,6 +95,30 @@ class DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<void> _handleOcrScan() async {
+    final sym = (_data?['dashboard'] as dynamic)?.symbol?.toString() ?? 'Rp';
+    final nav = Navigator.of(context);
+    final res = await nav.push<OcrReceiptResult>(
+      MaterialPageRoute(builder: (_) => OcrReceiptScreen(symbol: sym)),
+    );
+    if (res == null || !mounted) return;
+    final appData = context.read<AppDataProvider>();
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => TransactionSheet(
+        categories: appData.categories,
+        wallets: appData.wallets,
+        initialAmount: res.amount,
+        initialNote: res.note,
+        initialDate: res.date,
+      ),
+    );
+    if (!mounted) return;
+    refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -101,6 +126,11 @@ class DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: Text('Halo, ${auth.user?.name.split(' ').first ?? ''} 👋'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.document_scanner_rounded),
+            tooltip: 'Smart Scan Struk (OCR)',
+            onPressed: _handleOcrScan,
+          ),
           IconButton(
             icon: const Icon(Icons.search_rounded),
             tooltip: 'Cari Data (Universal)',

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/api_service.dart';
 import '../../theme.dart';
 import 'pos_qr_screen.dart';
+import 'pos_shifts_screen.dart';
 
 class PosOrdersScreen extends StatefulWidget {
   const PosOrdersScreen({super.key});
@@ -1061,107 +1062,11 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
     );
   }
 
-  Future<void> _openShiftDialog() async {
-    try {
-      final res = await _api.getActivePosShift();
-      final active = res['active_shift'];
-
-      if (!mounted) return;
-
-      if (active != null) {
-        // Active shift dialog
-        final cashier = active['cashier_name']?.toString() ?? 'Kasir';
-        final startCash = (active['starting_cash'] as num?)?.toDouble() ?? 0.0;
-        final actualCtrl = TextEditingController();
-
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: Text('💼 Shift Aktif: $cashier'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Modal Awal: ${_formatCurrency(startCash)}'),
-                const SizedBox(height: 12),
-                const Text('Tutup Shift & Rekonsiliasi Kas:', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: actualCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Hitungan Uang Fisik (Rp)',
-                    hintText: '0',
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
-              FilledButton(
-                onPressed: () async {
-                  final actual = double.tryParse(actualCtrl.text.replaceAll(RegExp(r'[^\d]'), '')) ?? 0.0;
-                  Navigator.pop(ctx);
-                  await _api.closePosShift(shiftId: (active['id'] as num).toInt(), actualCash: actual);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Shift kasir berhasil ditutup dan direkonsiliasi.')),
-                    );
-                  }
-                },
-                child: const Text('Tutup Shift'),
-              ),
-            ],
-          ),
-        );
-      } else {
-        // Open shift dialog
-        final nameCtrl = TextEditingController(text: 'Kasir');
-        final startCtrl = TextEditingController(text: '100000');
-
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('🔓 Buka Shift Kasir Baru'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Nama Kasir'),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: startCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Modal Awal Kas (Rp)'),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
-              FilledButton(
-                onPressed: () async {
-                  final startCash = double.tryParse(startCtrl.text.replaceAll(RegExp(r'[^\d]'), '')) ?? 0.0;
-                  Navigator.pop(ctx);
-                  await _api.openPosShift(cashierName: nameCtrl.text.trim(), startingCash: startCash);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Shift kasir berhasil dibuka!')),
-                    );
-                  }
-                },
-                child: const Text('Mulai Shift'),
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memeriksa shift: $e')),
-      );
-    }
+  void _openShiftDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PosShiftsScreen()),
+    ).then((_) => _loadData());
   }
 }
 

@@ -18,6 +18,9 @@ class TransactionSheet extends StatefulWidget {
   final List<Wallet> wallets;
   final Transaction? transaction;
   final bool isRecurring;
+  final double? initialAmount;
+  final String? initialNote;
+  final String? initialDate;
 
   const TransactionSheet({
     super.key,
@@ -25,6 +28,9 @@ class TransactionSheet extends StatefulWidget {
     required this.wallets,
     this.transaction,
     this.isRecurring = false,
+    this.initialAmount,
+    this.initialNote,
+    this.initialDate,
   });
 
   @override
@@ -55,6 +61,15 @@ class _TransactionSheetState extends State<TransactionSheet> {
       _amountCtrl.text = Fmt.money0(t.amount);
       _recurring = widget.isRecurring;
     } else {
+      if (widget.initialAmount != null && widget.initialAmount! > 0) {
+        _amountCtrl.text = Fmt.money0(widget.initialAmount);
+      }
+      if (widget.initialNote != null && widget.initialNote!.isNotEmpty) {
+        _noteCtrl.text = widget.initialNote!;
+      }
+      if (widget.initialDate != null && widget.initialDate!.isNotEmpty) {
+        _date = widget.initialDate!;
+      }
       _categoryId = widget.categories.isEmpty ? null : widget.categories.first.id;
       _walletId = widget.wallets.isEmpty
           ? null

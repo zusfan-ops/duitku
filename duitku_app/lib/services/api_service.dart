@@ -654,14 +654,14 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> closePosShift({
-    required int shiftId,
+    int? shiftId,
     required double actualCash,
     String? notes,
   }) async {
     final body = <String, dynamic>{
-      'shift_id': shiftId,
       'actual_cash': actualCash,
     };
+    if (shiftId != null && shiftId > 0) body['shift_id'] = shiftId;
     if (notes != null) body['notes'] = notes;
     return post('pos/shifts/close', body);
   }

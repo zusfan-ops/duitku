@@ -8,13 +8,17 @@ import 'bills_screen.dart';
 import 'debt_screen.dart';
 import 'export/export_screen.dart';
 import 'pos/pos_cashier_screen.dart';
+import 'pos/pos_ingredients_screen.dart';
 import 'pos/pos_orders_screen.dart';
 import 'pos/pos_products_screen.dart';
 import 'pos/pos_qr_screen.dart';
 import 'pos/pos_reports_screen.dart';
+import 'pos/pos_shifts_screen.dart';
 import 'recurring/recurring_screen.dart';
 import 'savings/savings_screen.dart';
+import 'scan/ocr_receipt_screen.dart';
 import 'stats_screen.dart';
+import 'traveling/currency_converter_sheet.dart';
 import 'traveling/traveling_screen.dart';
 import 'vehicle/vehicle_screen.dart';
 import 'wallet_screen.dart';
@@ -37,6 +41,28 @@ class FeaturesScreen extends StatelessWidget {
           _buildSectionHeader('MANAJEMEN KEUANGAN'),
           const SizedBox(height: 8),
           _buildFeatureGrid(context, [
+            _FeatureItem(
+              title: 'Smart Scan Struk',
+              subtitle: 'OCR otomatis foto nota',
+              icon: Icons.document_scanner_rounded,
+              gradient: const [Color(0xFF0284C7), Color(0xFF38BDF8)],
+              shadowColor: const Color(0xFF38BDF8),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const OcrReceiptScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Dompet Bersama',
+              subtitle: 'Kelola kas & anggota',
+              icon: Icons.people_alt_rounded,
+              gradient: const [Color(0xFF6D28D9), Color(0xFF8B5CF6)],
+              shadowColor: const Color(0xFF8B5CF6),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const WalletScreen()),
+              ),
+            ),
             _FeatureItem(
               title: 'Statistik & Analisis',
               subtitle: 'Grafik tren & kategori',
@@ -68,17 +94,6 @@ class FeaturesScreen extends StatelessWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const DebtScreen()),
-              ),
-            ),
-            _FeatureItem(
-              title: 'Kelola Rekening',
-              subtitle: 'Bank, e-wallet & dompet',
-              icon: Icons.account_balance_rounded,
-              gradient: const [Color(0xFF6D28D9), Color(0xFF8B5CF6)],
-              shadowColor: const Color(0xFF8B5CF6),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const WalletScreen()),
               ),
             ),
             _FeatureItem(
@@ -122,6 +137,19 @@ class FeaturesScreen extends StatelessWidget {
           _buildSectionHeader('GAYA HIDUP & BELANJA'),
           const SizedBox(height: 8),
           _buildFeatureGrid(context, [
+            _FeatureItem(
+              title: 'Kalkulator Valas',
+              subtitle: 'Kurs USD, SGD, SAR real-time',
+              icon: Icons.currency_exchange_rounded,
+              gradient: const [Color(0xFF059669), Color(0xFF34D399)],
+              shadowColor: const Color(0xFF34D399),
+              onTap: () => showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => const CurrencyConverterSheet(),
+              ),
+            ),
             _FeatureItem(
               title: 'Daftar Belanja',
               subtitle: 'Checklist & budget belanja',
@@ -216,6 +244,28 @@ class FeaturesScreen extends StatelessWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const PosProductsScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Bahan Baku & BOM',
+              subtitle: 'Stok mentah & resep porsi',
+              icon: Icons.grain_rounded,
+              gradient: const [Color(0xFF10B981), Color(0xFF34D399)],
+              shadowColor: const Color(0xFF34D399),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PosIngredientsScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Shift Kasir & Laci',
+              subtitle: 'Modal awal & rekonsiliasi',
+              icon: Icons.work_history_rounded,
+              gradient: const [Color(0xFF0284C7), Color(0xFF38BDF8)],
+              shadowColor: const Color(0xFF38BDF8),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PosShiftsScreen()),
               ),
             ),
             _FeatureItem(
