@@ -539,6 +539,49 @@ class ApiService {
     await post('vehicles/logs/delete/$id');
   }
 
+  // ── POS (Point of Sale) & Bisnis UMKM ───────────────────────
+  Future<Map<String, dynamic>> posCashier({String? category, String? search}) async {
+    final Map<String, String> query = {};
+    if (category != null && category != 'Semua') query['category'] = category;
+    if (search != null && search.isNotEmpty) query['search'] = search;
+    return get('pos', query: query.isNotEmpty ? query : null);
+  }
+
+  Future<Map<String, dynamic>> posCheckout(Map<String, dynamic> data) async {
+    return post('pos/checkout', data);
+  }
+
+  Future<Map<String, dynamic>> posProducts() async {
+    return get('pos/products');
+  }
+
+  Future<Map<String, dynamic>> storePosProduct(Map<String, dynamic> data) async {
+    return post('pos/products/store', data);
+  }
+
+  Future<Map<String, dynamic>> adjustPosStock(int productId, int stock) async {
+    return post('pos/products/adjust-stock', {
+      'product_id': productId,
+      'stock': stock,
+    });
+  }
+
+  Future<void> deletePosProduct(int id) async {
+    await post('pos/products/delete/$id');
+  }
+
+  Future<Map<String, dynamic>> posHistory() async {
+    return get('pos/history');
+  }
+
+  Future<Map<String, dynamic>> posOrderDetail(int id) async {
+    return get('pos/order/$id');
+  }
+
+  Future<Map<String, dynamic>> posReports({String? month}) async {
+    return get('pos/reports', query: month != null ? {'month': month} : null);
+  }
+
   // ── Upload helpers ───────────────────────────────────────────
   Future<String?> base64FromFile(String path) async {
     final file = File(path);

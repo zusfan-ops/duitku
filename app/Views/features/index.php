@@ -116,13 +116,29 @@
     background: linear-gradient(135deg, #047857 0%, #10B981 100%);
     box-shadow: 0 6px 18px rgba(16, 185, 129, 0.25);
 }
-.feat-bills {
-    background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%);
-    box-shadow: 0 6px 18px rgba(59, 130, 246, 0.25);
+.feat-vehicle {
+    background: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%);
+    box-shadow: 0 6px 18px rgba(56, 189, 248, 0.25);
+}
+.feat-pos {
+    background: linear-gradient(135deg, #EA580C 0%, #FB923C 100%);
+    box-shadow: 0 6px 18px rgba(249, 115, 22, 0.25);
+}
+.feat-pos-stock {
+    background: linear-gradient(135deg, #059669 0%, #34D399 100%);
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.25);
+}
+.feat-pos-report {
+    background: linear-gradient(135deg, #4F46E5 0%, #818CF8 100%);
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.25);
 }
 .feat-debt {
     background: linear-gradient(135deg, #B45309 0%, #F59E0B 100%);
     box-shadow: 0 6px 18px rgba(245, 158, 11, 0.25);
+}
+.feat-bills {
+    background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%);
+    box-shadow: 0 6px 18px rgba(59, 130, 246, 0.25);
 }
 .feat-wallets {
     background: linear-gradient(135deg, #6D28D9 0%, #8B5CF6 100%);
@@ -143,10 +159,6 @@
 .feat-activity {
     background: linear-gradient(135deg, #334155 0%, #64748B 100%);
     box-shadow: 0 6px 18px rgba(100, 116, 139, 0.25);
-}
-.feat-vehicle {
-    background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
-    box-shadow: 0 6px 18px rgba(245, 158, 11, 0.25);
 }
 </style>
 <?= $this->endSection() ?>
@@ -302,10 +314,76 @@
             </div>
             <div class="feature-card-info">
                 <div class="feature-card-title">Kendaraan & Servis</div>
-                <div class="feature-card-desc">Oli, servis & pajak armada</div>
+                <div class="feature-card-desc">Servis, oli & pajak STNK</div>
+            </div>
+        </a>
+    </div>
+
+    <!-- ── BISNIS & USAHA (KASIR UMKM) ── -->
+    <div class="features-section-title">Bisnis & Usaha (Kasir POS)</div>
+    <div class="features-grid">
+        <!-- Kasir Mini POS -->
+        <a href="/pos" class="feature-card feat-pos">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            <div class="feature-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Kasir Mini (POS)</div>
+                <div class="feature-card-desc">Kasir cepat & cetak struk</div>
             </div>
         </a>
 
+        <!-- Stok & HPP Produk -->
+        <a href="/pos/products" class="feature-card feat-pos-stock">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
+            <div class="feature-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                </svg>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Katalog & Stok</div>
+                <div class="feature-card-desc">Kelola menu, HPP & stok</div>
+            </div>
+        </a>
+
+        <!-- Laporan Laba Rugi -->
+        <a href="/pos/reports" class="feature-card feat-pos-report" style="grid-column: span 2">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            <div class="feature-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Laporan Laba Rugi & Best Seller</div>
+                <div class="feature-card-desc">Omset penjualan, total modal HPP & laba bersih usaha</div>
+            </div>
+        </a>
+    </div>
+
+    <div class="features-grid">
         <!-- 9. Semua Mutasi -->
         <a href="/activity" class="feature-card feat-activity">
             <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">

@@ -117,6 +117,15 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/kendaraan/delete/(:num)',   'VehicleController::delete/$1');
     $routes->post('/kendaraan/log/store',       'VehicleController::storeLog');
     $routes->post('/kendaraan/log/delete/(:num)','VehicleController::deleteLog/$1');
+
+    // Kasir Mini POS & Bisnis UMKM
+    $routes->get('/pos',                        'PosController::index');
+    $routes->post('/pos/checkout',              'PosController::checkout');
+    $routes->get('/pos/products',               'PosController::products');
+    $routes->post('/pos/products/store',        'PosController::storeProduct');
+    $routes->post('/pos/products/adjust-stock', 'PosController::adjustStock');
+    $routes->post('/pos/products/delete/(:num)','PosController::deleteProduct/$1');
+    $routes->get('/pos/reports',                'PosController::reports');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -207,5 +216,16 @@ $routes->group('api', function ($routes) {
         $routes->get('vehicles/logs',               'Api\VehicleController::logs');
         $routes->post('vehicles/logs/store',        'Api\VehicleController::storeLog');
         $routes->post('vehicles/logs/delete/(:num)','Api\VehicleController::deleteLog/$1');
+
+        // Kasir Mini POS & Bisnis UMKM
+        $routes->get('pos',                         'Api\PosController::index');
+        $routes->post('pos/checkout',               'Api\PosController::checkout');
+        $routes->get('pos/products',                'Api\PosController::products');
+        $routes->post('pos/products/store',         'Api\PosController::storeProduct');
+        $routes->post('pos/products/adjust-stock',  'Api\PosController::adjustStock');
+        $routes->post('pos/products/delete/(:num)', 'Api\PosController::deleteProduct/$1');
+        $routes->get('pos/history',                 'Api\PosController::history');
+        $routes->get('pos/order/(:num)',            'Api\PosController::orderDetail/$1');
+        $routes->get('pos/reports',                 'Api\PosController::reports');
     });
 });

@@ -7,6 +7,9 @@ import 'belanja/belanja_screen.dart';
 import 'bills_screen.dart';
 import 'debt_screen.dart';
 import 'export/export_screen.dart';
+import 'pos/pos_cashier_screen.dart';
+import 'pos/pos_products_screen.dart';
+import 'pos/pos_reports_screen.dart';
 import 'recurring/recurring_screen.dart';
 import 'savings/savings_screen.dart';
 import 'stats_screen.dart';
@@ -154,11 +157,52 @@ class FeaturesScreen extends StatelessWidget {
               title: 'Kendaraan & Servis',
               subtitle: 'Oli, servis & pajak armada',
               icon: Icons.directions_car_filled_rounded,
-              gradient: const [Color(0xFFD97706), Color(0xFFF59E0B)],
-              shadowColor: const Color(0xFFF59E0B),
+              gradient: const [Color(0xFF0284C7), Color(0xFF38BDF8)],
+              shadowColor: const Color(0xFF38BDF8),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const VehicleScreen()),
+              ),
+            ),
+          ]),
+
+          const SizedBox(height: 18),
+
+          // Section: Bisnis & Usaha (Kasir POS)
+          _buildSectionHeader('BISNIS & USAHA (KASIR UMKM)'),
+          const SizedBox(height: 8),
+          _buildFeatureGrid(context, [
+            _FeatureItem(
+              title: 'Kasir Mini (POS)',
+              subtitle: 'Kasir cepat & cetak struk',
+              icon: Icons.point_of_sale_rounded,
+              gradient: const [Color(0xFFEA580C), Color(0xFFFB923C)],
+              shadowColor: const Color(0xFFFB923C),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PosCashierScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Katalog & Stok',
+              subtitle: 'Kelola menu, HPP & stok',
+              icon: Icons.inventory_rounded,
+              gradient: const [Color(0xFF059669), Color(0xFF34D399)],
+              shadowColor: const Color(0xFF34D399),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PosProductsScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Laporan Laba Rugi',
+              subtitle: 'Omset, HPP & Best Seller',
+              icon: Icons.analytics_rounded,
+              gradient: const [Color(0xFF4F46E5), Color(0xFF818CF8)],
+              shadowColor: const Color(0xFF818CF8),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PosReportsScreen()),
               ),
             ),
             _FeatureItem(
