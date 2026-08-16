@@ -567,6 +567,19 @@
 
 <div class="home-page">
 
+    <!-- ── WORKSPACE MODE SWITCHER ─────────────────────────────── -->
+    <div style="display:flex;background:var(--bg-card);padding:4px;border-radius:16px;border:1px solid var(--border);margin-bottom:14px;box-shadow:var(--shadow-sm);gap:4px">
+        <button type="button" id="btnModePersonal" class="workspace-tab-btn active" style="flex:1;padding:8px 12px;border-radius:12px;font-size:12px;font-weight:800;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s ease">
+            <span>👤</span> Mode Personal
+        </button>
+        <button type="button" id="btnModeBusiness" class="workspace-tab-btn" style="flex:1;padding:8px 12px;border-radius:12px;font-size:12px;font-weight:800;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s ease">
+            <span>☕</span> Mode Usaha (POS)
+        </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ PERSONAL WORKSPACE CONTAINER -->
+    <div id="workspacePersonal">
+
     <!-- ── HERO BALANCE ──────────────────────────────────────── -->
     <div class="hb-hero">
         <div class="hb-greeting">
@@ -1148,10 +1161,106 @@
                 <button type="button" id="hsBtnCancelForm" class="hs-outline-btn" style="flex:1">Batal</button>
                 <button type="submit" class="hs-save-btn" style="flex:2">Simpan</button>
             </div>
-        </form>
     </div>
-</div>
+    <!-- END PERSONAL WORKSPACE CONTAINER -->
 
+    <!-- ═══════════════════════════════════════════════════════════ BUSINESS WORKSPACE CONTAINER -->
+    <div id="workspaceBusiness" style="display:none">
+        <?php $biz = $business ?? []; ?>
+        <!-- Hero Business Card -->
+        <div style="background:linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #4338CA 100%);border-radius:24px;padding:22px 20px;color:#fff;margin-bottom:16px;box-shadow:0 8px 28px rgba(49,46,129,.35);position:relative;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <div style="font-size:11px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:rgba(255,255,255,0.65)">OMSET HARI INI (<?= date('d M Y') ?>)</div>
+                <div style="background:rgba(255,255,255,0.15);padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800"><?= $biz['today_orders'] ?? 0 ?> Order</div>
+            </div>
+            <div style="font-size:32px;font-weight:900;letter-spacing:-1px;line-height:1;margin-bottom:12px">
+                <?= esc($symbol) ?> <?= number_format($biz['today_sales'] ?? 0, 0, ',', '.') ?>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div style="background:rgba(255,255,255,0.08);padding:10px 12px;border-radius:12px">
+                    <div style="font-size:10.5px;color:rgba(255,255,255,0.7)">Laba Bersih Hari Ini</div>
+                    <div style="font-size:14px;font-weight:900;color:#34D399"><?= esc($symbol) ?> <?= number_format($biz['today_profit'] ?? 0, 0, ',', '.') ?></div>
+                </div>
+                <div style="background:rgba(255,255,255,0.08);padding:10px 12px;border-radius:12px">
+                    <div style="font-size:10.5px;color:rgba(255,255,255,0.7)">Omset Bulan Ini</div>
+                    <div style="font-size:14px;font-weight:900;color:#FDE047"><?= esc($symbol) ?> <?= number_format($biz['month_sales'] ?? 0, 0, ',', '.') ?></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick POS Navigation -->
+        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;margin-bottom:16px">
+            <a href="/pos" style="background:linear-gradient(135deg,#EA580C,#FB923C);color:#fff;border-radius:16px;padding:14px 10px;text-align:center;text-decoration:none;box-shadow:0 4px 14px rgba(234,88,12,.25);display:flex;flex-direction:column;align-items:center;gap:6px">
+                <span style="font-size:24px">☕</span>
+                <span style="font-size:12px;font-weight:800;white-space:nowrap">Kasir POS</span>
+            </a>
+            <a href="/pos/products" style="background:linear-gradient(135deg,#059669,#34D399);color:#fff;border-radius:16px;padding:14px 10px;text-align:center;text-decoration:none;box-shadow:0 4px 14px rgba(5,150,105,.25);display:flex;flex-direction:column;align-items:center;gap:6px">
+                <span style="font-size:24px">📦</span>
+                <span style="font-size:12px;font-weight:800;white-space:nowrap">Stok Produk</span>
+            </a>
+            <a href="/pos/reports" style="background:linear-gradient(135deg,#4F46E5,#818CF8);color:#fff;border-radius:16px;padding:14px 10px;text-align:center;text-decoration:none;box-shadow:0 4px 14px rgba(79,70,229,.25);display:flex;flex-direction:column;align-items:center;gap:6px">
+                <span style="font-size:24px">📊</span>
+                <span style="font-size:12px;font-weight:800;white-space:nowrap">Laba Rugi</span>
+            </a>
+        </div>
+
+        <!-- Low Stock Alert -->
+        <?php if (!empty($biz['low_stock_count']) && $biz['low_stock_count'] > 0): ?>
+        <div style="background:#FEF2F2;border:1px solid #FCA5A5;border-radius:14px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:20px">⚠️</span>
+                <div>
+                    <div style="font-size:13px;font-weight:800;color:#DC2626"><?= $biz['low_stock_count'] ?> Produk Stok Menipis</div>
+                    <div style="font-size:11px;color:#7F1D1D">Segera lakukan restock barang dagangan.</div>
+                </div>
+            </div>
+            <a href="/pos/products" style="background:#DC2626;color:#fff;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:800;text-decoration:none">Restock</a>
+        </div>
+        <?php endif; ?>
+
+        <!-- Unpaid Kasbon Alert -->
+        <?php if (!empty($biz['kasbon_unsettled_count']) && $biz['kasbon_unsettled_count'] > 0): ?>
+        <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:14px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:20px">📒</span>
+                <div>
+                    <div style="font-size:13px;font-weight:800;color:#D97706"><?= $biz['kasbon_unsettled_count'] ?> Kasbon Belum Lunas</div>
+                    <div style="font-size:11px;color:#78350F">Total: <?= esc($symbol) ?> <?= number_format($biz['kasbon_unsettled_total'] ?? 0, 0, ',', '.') ?></div>
+                </div>
+            </div>
+            <a href="/hutang" style="background:#D97706;color:#fff;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:800;text-decoration:none">Tagih</a>
+        </div>
+        <?php endif; ?>
+
+        <!-- Best Sellers -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow-sm)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                <div style="font-size:13.5px;font-weight:800;color:var(--text-primary)">🏆 4 Produk Terlaris Bulan Ini</div>
+                <a href="/pos/reports" style="font-size:11.5px;color:var(--primary);font-weight:700;text-decoration:none">Laporan Lengkap →</a>
+            </div>
+            <?php if (empty($biz['best_sellers'])): ?>
+                <div style="text-align:center;padding:16px 0;font-size:12px;color:var(--text-muted)">Belum ada transaksi kasir pada bulan ini.</div>
+            <?php else: ?>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                    <?php foreach ($biz['best_sellers'] as $idx => $bs): ?>
+                    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg);padding:8px 12px;border-radius:10px">
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <span style="font-size:12px;font-weight:900;width:20px;height:20px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center"><?= $idx + 1 ?></span>
+                            <div>
+                                <div style="font-size:13px;font-weight:700;color:var(--text-primary)"><?= esc($bs['product_name']) ?></div>
+                                <div style="font-size:11px;color:var(--text-muted)"><?= $bs['total_qty'] ?> terjual</div>
+                            </div>
+                        </div>
+                        <div style="font-size:13px;font-weight:800;color:#EA580C"><?= esc($symbol) ?> <?= number_format($bs['total_revenue'], 0, ',', '.') ?></div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+    <!-- END BUSINESS WORKSPACE CONTAINER -->
+
+</div>
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
@@ -2103,6 +2212,47 @@
         if (name) txNote.value = 'Bayar tagihan: ' + name;
     });
 
+})();
+
+/* ════════════════════════════════════════════════════════════════
+   WORKSPACE SWITCHER (Personal vs Business Mode)
+   ════════════════════════════════════════════════════════════════ */
+(function() {
+    const btnPersonal = document.getElementById('btnModePersonal');
+    const btnBusiness = document.getElementById('btnModeBusiness');
+    const wsPersonal  = document.getElementById('workspacePersonal');
+    const wsBusiness  = document.getElementById('workspaceBusiness');
+
+    function setMode(mode) {
+        if (mode === 'business') {
+            btnBusiness?.classList.add('active');
+            btnBusiness.style.background = '#312E81';
+            btnBusiness.style.color = '#FFFFFF';
+            btnPersonal?.classList.remove('active');
+            btnPersonal.style.background = 'transparent';
+            btnPersonal.style.color = 'var(--text-secondary)';
+            if (wsPersonal) wsPersonal.style.display = 'none';
+            if (wsBusiness) wsBusiness.style.display = 'block';
+            localStorage.setItem('duitku_mode', 'business');
+        } else {
+            btnPersonal?.classList.add('active');
+            btnPersonal.style.background = 'var(--primary)';
+            btnPersonal.style.color = '#FFFFFF';
+            btnBusiness?.classList.remove('active');
+            btnBusiness.style.background = 'transparent';
+            btnBusiness.style.color = 'var(--text-secondary)';
+            if (wsPersonal) wsPersonal.style.display = 'block';
+            if (wsBusiness) wsBusiness.style.display = 'none';
+            localStorage.setItem('duitku_mode', 'personal');
+        }
+    }
+
+    btnPersonal?.addEventListener('click', () => setMode('personal'));
+    btnBusiness?.addEventListener('click', () => setMode('business'));
+
+    // Init from localStorage
+    const saved = localStorage.getItem('duitku_mode') || 'personal';
+    setMode(saved);
 })();
 </script>
 <?= $this->endSection() ?>

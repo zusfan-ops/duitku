@@ -74,6 +74,13 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     // Import
     $routes->post('/import/csv', 'ImportController::csv');
 
+    // Global Universal Search
+    $routes->get('/search', 'SearchController::index');
+
+    // Backup & Restore
+    $routes->get('/backup/export',   'BackupController::export');
+    $routes->post('/backup/restore', 'BackupController::restore');
+
     // Savings goal
     $routes->post('/settings/savings',        'SettingsController::saveSavings');
     $routes->post('/settings/savings/delete', 'SettingsController::deleteSavings');
@@ -227,5 +234,12 @@ $routes->group('api', function ($routes) {
         $routes->get('pos/history',                 'Api\PosController::history');
         $routes->get('pos/order/(:num)',            'Api\PosController::orderDetail/$1');
         $routes->get('pos/reports',                 'Api\PosController::reports');
+
+        // Global Universal Search
+        $routes->get('search',                      'Api\SearchController::index');
+
+        // Backup & Restore
+        $routes->get('backup/export',               'Api\BackupController::export');
+        $routes->post('backup/restore',             'Api\BackupController::restore');
     });
 });

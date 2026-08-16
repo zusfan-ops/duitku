@@ -582,6 +582,20 @@ class ApiService {
     return get('pos/reports', query: month != null ? {'month': month} : null);
   }
 
+  // ── Universal Global Search ──────────────────────────────────
+  Future<Map<String, dynamic>> searchGlobal(String query) async {
+    return get('search', query: {'q': query});
+  }
+
+  // ── Backup & Restore ─────────────────────────────────────────
+  Future<Map<String, dynamic>> exportBackup() async {
+    return get('backup/export');
+  }
+
+  Future<Map<String, dynamic>> restoreBackup(Map<String, dynamic> backupData) async {
+    return post('backup/restore', {'backup': backupData});
+  }
+
   // ── Upload helpers ───────────────────────────────────────────
   Future<String?> base64FromFile(String path) async {
     final file = File(path);

@@ -302,7 +302,38 @@
         </div>
     </div>
 
-    <!-- Developer -->
+    <!-- Backup & Restore -->
+    <div class="settings-section">
+        <div class="settings-section-label">CADANGAN & PEMULIHAN DATA</div>
+        <div class="settings-list">
+            <a href="/backup/export" class="settings-item" style="text-decoration:none;cursor:pointer">
+                <div class="settings-item-left">
+                    <div class="settings-item-icon" style="background:#DBEAFE;color:#2563EB">💾</div>
+                    <div>
+                        <div class="settings-item-label">Ekspor Cadangan (JSON)</div>
+                        <div style="font-size:11px;color:var(--text-muted)">Unduh seluruh data keuangan, produk POS & kendaraan</div>
+                    </div>
+                </div>
+                <div class="settings-item-right">
+                    <span style="font-size:12px;color:var(--primary);font-weight:700">Unduh</span>
+                </div>
+            </a>
+            <div class="settings-item" id="btnRestoreJson" style="cursor:pointer">
+                <div class="settings-item-left">
+                    <div class="settings-item-icon" style="background:#FEF3C7;color:#D97706">📥</div>
+                    <div>
+                        <div class="settings-item-label">Pulihkan Data (Restore)</div>
+                        <div style="font-size:11px;color:var(--text-muted)">Unggah file cadangan .json untuk memulihkan data</div>
+                    </div>
+                </div>
+                <div class="settings-item-right">
+                    <span style="font-size:12px;color:var(--text-secondary);font-weight:700">Pilih File</span>
+                </div>
+            </div>
+        </div>
+        <input type="file" id="restoreFileInput" accept=".json" style="display:none">
+    </div>
+
     <!-- Developer -->
     <div class="settings-section">
         <div class="settings-section-label">TENTANG DEVELOPER</div>
@@ -493,21 +524,37 @@
 
 
 
-    // ── Recurring delete ──────────────────────────────────────────────────────
-    document.querySelectorAll('.recurring-delete-btn').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const id = this.dataset.id;
-            if (!confirm('Hapus transaksi berulang ini?')) return;
-            const res  = await fetch('/recurring/delete/' + id, { method: 'POST', headers: csrfHeaders(), body: csrfBody() });
-            const data = await res.json();
-            if (data.success) {
-                this.closest('[data-recurring-id]').remove();
-                showToast('Transaksi berulang dihapus.');
-            } else {
-                showToast(data.message || 'Gagal.', 'error');
+    // ── Restore File Upload ──────────────────────────────────────────────────
+    const btnRestore = $('btnRestoreJson');
+    const restoreInput = $('restoreFileInput');
+    if (btnRestore && restoreInput) {
+        btnRestore.addEventListener('click', () => restoreInput.click());
+        restoreInput.addEventListener('change', async function() {
+            const file = this.files[0];
+            if (!file) return;
+            if (!confirm('Pulihkan data dari file "' + file.name + '"? Data yang ada akan disinkronkan.')) {
+                this.value = '';
+                return;
             }
+            const fd = new FormData();
+            fd.append(window.DUITKU.csrfName, window.DUITKU.csrfToken);
+            fd.append('backup_file', file);
+            showToast('Memproses pemulihan data...');
+            try {
+                const res = await fetch('/backup/restore', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Data berhasil dipulihkan!');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.message || 'Gagal restore.', 'error');
+                }
+            } catch (e) {
+                showToast('Terjadi kesalahan saat memulihkan data.', 'error');
+            }
+            restoreInput.value = '';
         });
-    });
+    }
 })();
 </script>
 <?= $this->endSection() ?>

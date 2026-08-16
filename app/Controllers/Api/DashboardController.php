@@ -162,6 +162,40 @@ class DashboardController extends ApiController
 
         usort($notifications, fn($a, $b) => $a['days_left'] <=> $b['days_left']);
 
+        // Business / POS Workspace Summary
+        $todayStr = date('Y-m-d');
+        $posOrderModel = new \App\Models\PosOrderModel();
+        $posProductModel = new \App\Models\PosProductModel();
+        $todaySummary = $posOrderModel->getSummary($userId, $todayStr, $todayStr);
+        $monthSummary = $posOrderModel->getMonthlySummary($userId, $now);
+        $lowStockProducts = $posProductModel->getLowStock($userId);
+        $bestSellers = $posOrderModel->getBestSellers($userId, $now, 4);
+        $recentOrders = $posOrderModel->getRecent($userId, 5);
+
+        $db = \Config\Database::connect();
+        $kasbonSummary = $db->query("
+            SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total
+            FROM debts
+            WHERE user_id = ? AND type = 'piutang' AND is_settled = 0
+        ", [$userId])->getRowArray() ?: ['count' => 0, 'total' => 0];
+
+        $businessSummary = [
+            'today_sales'   => (float)($todaySummary['total_sales'] ?? 0),
+            'today_cost'    => (float)($todaySummary['total_cost'] ?? 0),
+            'today_profit'  => (float)($todaySummary['total_profit'] ?? 0),
+            'today_orders'  => (int)($todaySummary['total_orders'] ?? 0),
+            'month_sales'   => (float)($monthSummary['total_sales'] ?? 0),
+            'month_cost'    => (float)($monthSummary['total_cost'] ?? 0),
+            'month_profit'  => (float)($monthSummary['total_profit'] ?? 0),
+            'month_orders'  => (int)($monthSummary['total_orders'] ?? 0),
+            'low_stock_count' => count($lowStockProducts),
+            'low_stock_products' => array_slice($lowStockProducts, 0, 4),
+            'kasbon_unsettled_count' => (int)($kasbonSummary['count'] ?? 0),
+            'kasbon_unsettled_total' => (float)($kasbonSummary['total'] ?? 0),
+            'best_sellers'  => $bestSellers,
+            'recent_orders' => $recentOrders,
+        ];
+
         return $this->ok([
             'balance'        => $balance,
             'monthly'        => $monthly,
@@ -187,6 +221,7 @@ class DashboardController extends ApiController
             'upcomingTaxes'      => $upcomingTaxes,
             'upcomingRecurring'  => $upcomingRecurring,
             'notifications'      => $notifications,
+            'business'           => $businessSummary,
             'unreadCount'        => count($notifications),
             'user'               => [
                 'name'  => session()->get('user_name') ?: '',

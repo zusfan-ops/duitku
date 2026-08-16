@@ -11,6 +11,7 @@ import '../services/widget_helper.dart';
 import '../theme.dart';
 import '../utils/format.dart';
 import '../widgets/category_icon.dart';
+import 'scan/ocr_receipt_screen.dart';
 
 class TransactionSheet extends StatefulWidget {
   final List<Category> categories;
@@ -180,11 +181,42 @@ class _TransactionSheetState extends State<TransactionSheet> {
                   widget.transaction == null ? 'Catat Transaksi' : 'Edit Transaksi',
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary, letterSpacing: -0.3),
                 ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 22),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed: () async {
+                        final res = await Navigator.push<OcrReceiptResult>(
+                          context,
+                          MaterialPageRoute(builder: (_) => const OcrReceiptScreen()),
+                        );
+                        if (res != null) {
+                          setState(() {
+                            _amountCtrl.text = Fmt.money0(res.amount);
+                            _noteCtrl.text = res.note;
+                            _date = res.date;
+                            _type = 'expense';
+                            if (res.imagePath != null) _image = File(res.imagePath!);
+                          });
+                        }
+                      },
+                      icon: const Icon(Icons.camera_alt_rounded, size: 16, color: AppColors.primary),
+                      label: const Text('Scan Nota', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primary)),
+                      style: TextButton.styleFrom(
+                        backgroundColor: AppColors.primarySubtle,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 22),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
                 ),
               ],
             ),

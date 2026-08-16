@@ -22,6 +22,10 @@ import 'bills_screen.dart';
 import 'debt_screen.dart';
 import 'note_sheet.dart';
 import 'recurring/recurring_screen.dart';
+import 'pos/pos_cashier_screen.dart';
+import 'pos/pos_products_screen.dart';
+import 'pos/pos_reports_screen.dart';
+import 'search/universal_search_screen.dart';
 import 'stats_screen.dart';
 import 'transaction_sheet.dart';
 import 'vehicle/vehicle_screen.dart';
@@ -40,6 +44,7 @@ class DashboardScreenState extends State<DashboardScreen> {
   String? _error;
   int _recentPage = 1;
   static const int _recentPerPage = 5;
+  String _workspaceMode = 'personal'; // 'personal' or 'business'
 
   @override
   void initState() {
@@ -96,6 +101,17 @@ class DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: Text('Halo, ${auth.user?.name.split(' ').first ?? ''} 👋'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search_rounded),
+            tooltip: 'Cari Data (Universal)',
+            onPressed: () {
+              final sym = (_data?['dashboard'] as dynamic)?.symbol?.toString() ?? 'Rp';
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => UniversalSearchScreen(symbol: sym)),
+              );
+            },
+          ),
           if (_data?['dashboard'] != null)
             _NotificationBell(
               data: _data!['dashboard'],
@@ -138,105 +154,189 @@ class DashboardScreenState extends State<DashboardScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
-        if (urgentCount > 0)
-          _UrgentAlertBanner(
-            count: urgentCount,
-            onTap: () => _showNotificationsSheet(context, data, refresh),
-          ),
-        _HeroCard(data: data),
-        const _BelanjaHomeCard(),
-        if ((data.wallets as List).isNotEmpty) _WalletStrip(wallets: data.wallets as List<Wallet>),
-        if ((data.dailyBalance as List).length > 1)
-          _DailyChart(data: data),
-        _ReminderCard(data: data, onRefresh: _load),
-        if (data.budget > 0) _BudgetCard(data: data),
-        if ((data.topCategories as List).isNotEmpty) _TopCategoriesCard(data: data),
-        _QuickActions(data: data),
-        if (data.savingsTarget > 0) _SavingsCard(data: data),
-        if ((data.monthNote ?? '').isNotEmpty) _NotePreview(data: data),
-        if ((data.debtSummary.activeCount as int) > 0) _DebtSummaryCard(data: data),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Aktivitas Terbaru',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-            Text('${recent.length} total',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
-          ],
-        ),
-        const SizedBox(height: 6),
-        if (recent.isEmpty)
-          const _EmptyRecent()
-        else ...[
-          ...() {
-            final totalRecent = recent.length;
-            final totalPages = (totalRecent / _recentPerPage).ceil().clamp(1, 999);
-            final curPage = _recentPage.clamp(1, totalPages);
-            final startIndex = (curPage - 1) * _recentPerPage;
-            final pageItems = recent.skip(startIndex).take(_recentPerPage).toList();
+        // Mode Switcher Pill
+        _buildWorkspaceSwitcher(),
+        const SizedBox(height: 10),
 
-            return [
-              ...pageItems.map((tx) => TransactionTile(
-                    tx: tx,
-                    symbol: data.symbol as String,
-                    onTap: () => _editTransaction(context, tx),
-                  )),
-              if (totalPages > 1)
-                Container(
-                  margin: const EdgeInsets.only(top: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.card,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.borderLight),
-                    boxShadow: AppColors.cardShadow,
+        if (_workspaceMode == 'business') ...[
+          _BusinessWorkspace(data: data, onRefresh: refresh),
+        ] else ...[
+          if (urgentCount > 0)
+            _UrgentAlertBanner(
+              count: urgentCount,
+              onTap: () => _showNotificationsSheet(context, data, refresh),
+            ),
+          _HeroCard(data: data),
+          const _BelanjaHomeCard(),
+          if ((data.wallets as List).isNotEmpty) _WalletStrip(wallets: data.wallets as List<Wallet>),
+          if ((data.dailyBalance as List).length > 1)
+            _DailyChart(data: data),
+          _ReminderCard(data: data, onRefresh: _load),
+          if (data.budget > 0) _BudgetCard(data: data),
+          if ((data.topCategories as List).isNotEmpty) _TopCategoriesCard(data: data),
+          _QuickActions(data: data),
+          if (data.savingsTarget > 0) _SavingsCard(data: data),
+          if ((data.monthNote ?? '').isNotEmpty) _NotePreview(data: data),
+          if ((data.debtSummary.activeCount as int) > 0) _DebtSummaryCard(data: data),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Aktivitas Terbaru',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+              Text('${recent.length} total',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          if (recent.isEmpty)
+            const _EmptyRecent()
+          else ...[
+            ...() {
+              final totalRecent = recent.length;
+              final totalPages = (totalRecent / _recentPerPage).ceil().clamp(1, 999);
+              final curPage = _recentPage.clamp(1, totalPages);
+              final startIndex = (curPage - 1) * _recentPerPage;
+              final pageItems = recent.skip(startIndex).take(_recentPerPage).toList();
+
+              return [
+                ...pageItems.map((tx) => TransactionTile(
+                      tx: tx,
+                      symbol: data.symbol as String,
+                      onTap: () => _editTransaction(context, tx),
+                    )),
+                if (totalPages > 1)
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.card,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.borderLight),
+                      boxShadow: AppColors.cardShadow,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: curPage > 1 ? () => setState(() => _recentPage = curPage - 1) : null,
+                          icon: const Icon(Icons.chevron_left_rounded, size: 18),
+                          label: const Text('Sebelumnya', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            visualDensity: VisualDensity.compact,
+                            side: BorderSide(color: curPage > 1 ? AppColors.primary : AppColors.border),
+                            foregroundColor: curPage > 1 ? AppColors.primary : AppColors.textMuted,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.bg,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '$curPage / $totalPages',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: curPage < totalPages ? () => setState(() => _recentPage = curPage + 1) : null,
+                          label: const Text('Selanjutnya', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                          icon: const Icon(Icons.chevron_right_rounded, size: 18),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            visualDensity: VisualDensity.compact,
+                            side: BorderSide(color: curPage < totalPages ? AppColors.primary : AppColors.border),
+                            foregroundColor: curPage < totalPages ? AppColors.primary : AppColors.textMuted,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: curPage > 1 ? () => setState(() => _recentPage = curPage - 1) : null,
-                        icon: const Icon(Icons.chevron_left_rounded, size: 18),
-                        label: const Text('Sebelumnya', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          visualDensity: VisualDensity.compact,
-                          side: BorderSide(color: curPage > 1 ? AppColors.primary : AppColors.border),
-                          foregroundColor: curPage > 1 ? AppColors.primary : AppColors.textMuted,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.bg,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '$curPage / $totalPages',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-                        ),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: curPage < totalPages ? () => setState(() => _recentPage = curPage + 1) : null,
-                        label: const Text('Selanjutnya', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-                        icon: const Icon(Icons.chevron_right_rounded, size: 18),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          visualDensity: VisualDensity.compact,
-                          side: BorderSide(color: curPage < totalPages ? AppColors.primary : AppColors.border),
-                          foregroundColor: curPage < totalPages ? AppColors.primary : AppColors.textMuted,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ];
-          }(),
+              ];
+            }(),
+          ],
         ],
       ],
+    );
+  }
+
+  Widget _buildWorkspaceSwitcher() {
+    final isPersonal = _workspaceMode == 'personal';
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: () => setState(() => _workspaceMode = 'personal'),
+              borderRadius: BorderRadius.circular(12),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: isPersonal ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('👤', style: TextStyle(fontSize: 13)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Mode Pribadi',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: isPersonal ? Colors.white : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: InkWell(
+              onTap: () => setState(() => _workspaceMode = 'business'),
+              borderRadius: BorderRadius.circular(12),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: !isPersonal ? const Color(0xFF312E81) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('☕', style: TextStyle(fontSize: 13)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Mode Usaha POS',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: !isPersonal ? Colors.white : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1909,5 +2009,432 @@ void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback on
       );
     },
   );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// BUSINESS WORKSPACE WIDGET
+// ═════════════════════════════════════════════════════════════════════════════
+class _BusinessWorkspace extends StatelessWidget {
+  final dynamic data;
+  final VoidCallback onRefresh;
+
+  const _BusinessWorkspace({
+    required this.data,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final symbol = data.symbol?.toString() ?? 'Rp';
+    final biz = (data.business as Map<String, dynamic>?) ?? {};
+    final todaySales = Fmt.toDouble(biz['today_sales']);
+    final todayProfit = Fmt.toDouble(biz['today_profit']);
+    final todayOrders = (biz['today_orders'] as num?)?.toInt() ?? 0;
+    final monthSales = Fmt.toDouble(biz['month_sales']);
+    final lowStockCount = (biz['low_stock_count'] as num?)?.toInt() ?? 0;
+    final kasbonCount = (biz['kasbon_unsettled_count'] as num?)?.toInt() ?? 0;
+    final kasbonTotal = Fmt.toDouble(biz['kasbon_unsettled_total']);
+    final bestSellers = (biz['best_sellers'] as List<dynamic>?) ?? [];
+    final recentOrders = (biz['recent_orders'] as List<dynamic>?) ?? [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 1. Hero Business Card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1E1B4B), Color(0xFF312E81), Color(0xFF4338CA)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF312E81).withValues(alpha: 0.35),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'OMSET HARI INI',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white70, letterSpacing: 0.8),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '$todayOrders Order',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                Fmt.money(todaySales, symbol: symbol),
+                style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.8),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Laba Bersih Hari Ini', style: TextStyle(fontSize: 10.5, color: Colors.white70)),
+                          const SizedBox(height: 2),
+                          Text(
+                            Fmt.money(todayProfit, symbol: symbol),
+                            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, color: Color(0xFF34D399)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Omset Bulan Ini', style: TextStyle(fontSize: 10.5, color: Colors.white70)),
+                          const SizedBox(height: 2),
+                          Text(
+                            Fmt.money(monthSales, symbol: symbol),
+                            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, color: Color(0xFFFDE047)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // 2. Quick POS Actions Grid (3 Cards)
+        Row(
+          children: [
+            Expanded(
+              child: _buildPosActionCard(
+                context,
+                title: 'Kasir POS',
+                icon: '☕',
+                gradient: const [Color(0xFFEA580C), Color(0xFFFB923C)],
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosCashierScreen())).then((_) => onRefresh()),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildPosActionCard(
+                context,
+                title: 'Stok Produk',
+                icon: '📦',
+                gradient: const [Color(0xFF059669), Color(0xFF34D399)],
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosProductsScreen())).then((_) => onRefresh()),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildPosActionCard(
+                context,
+                title: 'Laba Rugi',
+                icon: '📊',
+                gradient: const [Color(0xFF4F46E5), Color(0xFF818CF8)],
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosReportsScreen())).then((_) => onRefresh()),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+
+        // 3. Low Stock Alert
+        if (lowStockCount > 0)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF2F2),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFFCA5A5)),
+            ),
+            child: Row(
+              children: [
+                const Text('⚠️', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$lowStockCount Produk Stok Menipis',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFFDC2626)),
+                      ),
+                      const Text(
+                        'Segera lakukan restock stok barang dagangan.',
+                        style: TextStyle(fontSize: 11, color: Color(0xFF7F1D1D)),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosProductsScreen())).then((_) => onRefresh()),
+                  style: TextButton.styleFrom(
+                    backgroundColor: const Color(0xFFDC2626),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    minimumSize: Size.zero,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Restock', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                ),
+              ],
+            ),
+          ),
+
+        // 4. Unpaid Kasbon Alert
+        if (kasbonCount > 0)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBEB),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFFDE68A)),
+            ),
+            child: Row(
+              children: [
+                const Text('📒', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$kasbonCount Kasbon Belum Lunas',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFFD97706)),
+                      ),
+                      Text(
+                        'Total piutang: ${Fmt.money(kasbonTotal, symbol: symbol)}',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF78350F)),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DebtScreen())).then((_) => onRefresh()),
+                  style: TextButton.styleFrom(
+                    backgroundColor: const Color(0xFFD97706),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    minimumSize: Size.zero,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Tagih', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                ),
+              ],
+            ),
+          ),
+
+        // 5. Best Sellers Ranking Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppColors.cardShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('🏆 4 Menu Terlaris Bulan Ini', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800)),
+                  GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosReportsScreen())),
+                    child: const Text('Laporan →', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (bestSellers.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Text('Belum ada transaksi kasir bulan ini.', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                  ),
+                )
+              else
+                ...bestSellers.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final item = entry.value as Map<String, dynamic>;
+                  final revenue = Fmt.toDouble(item['total_revenue']);
+                  final qty = item['total_qty'] ?? 0;
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.bg,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${idx + 1}',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item['product_name']?.toString() ?? '', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                              Text('$qty terjual', style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          Fmt.money(revenue, symbol: symbol),
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Color(0xFFEA580C)),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // 6. Recent POS Orders Card
+        if (recentOrders.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.border),
+              boxShadow: AppColors.cardShadow,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('📋 Transaksi Kasir Terakhir', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800)),
+                    GestureDetector(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosReportsScreen())),
+                      child: const Text('Semua →', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...recentOrders.map((o) {
+                  final order = o as Map<String, dynamic>;
+                  final orderNo = order['order_number']?.toString() ?? '-';
+                  final total = Fmt.toDouble(order['total_amount']);
+                  final date = order['created_at']?.toString() ?? '-';
+                  final method = (order['payment_method']?.toString() ?? 'cash').toUpperCase();
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.bg,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('#$orderNo · $method', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                            Text(date, style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                          ],
+                        ),
+                        Text(
+                          Fmt.money(total, symbol: symbol),
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.primary),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildPosActionCard(
+    BuildContext context, {
+    required String title,
+    required String icon,
+    required List<Color> gradient,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(color: gradient.first.withValues(alpha: 0.25), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Column(
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 22)),
+            const SizedBox(height: 4),
+            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white)),
+          ],
+        ),
+      ),
+    );
+  }
 }
 

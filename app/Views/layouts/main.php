@@ -190,8 +190,14 @@
                     $_layoutNotifs = [];
                 }
             ?>
+            <button class="topbar-btn-notif" id="btnOpenSearch" title="Cari Data (Ctrl+K)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </button>
             <button class="topbar-btn-notif" id="btnOpenNotif" title="Notifikasi Pengingat">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
@@ -441,6 +447,29 @@
                 </div>
                 <?php endforeach; ?>
             <?php endif; ?>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ UNIVERSAL SEARCH MODAL -->
+<div class="modal-sheet-overlay" id="searchModalOverlay">
+    <div class="modal-sheet" style="max-height:85vh;display:flex;flex-direction:column">
+        <div class="modal-sheet-handle"></div>
+        <div style="padding:16px 20px 10px;border-bottom:1px solid var(--border)">
+            <div style="position:relative">
+                <input type="text" id="globalSearchInput" placeholder="Cari transaksi, produk POS, barang, kendaraan, kasbon..." 
+                       style="width:100%;padding:12px 14px 12px 38px;border-radius:14px;border:1.5px solid var(--border);font-size:14px;background:var(--bg);color:var(--text-primary);outline:none">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"
+                     style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted)">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <button id="searchModalClose" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text-muted);padding:4px">✕</button>
+            </div>
+        </div>
+        <div id="globalSearchResults" style="flex:1;overflow-y:auto;padding:14px 20px;display:flex;flex-direction:column;gap:14px">
+            <div style="text-align:center;padding:30px 10px;color:var(--text-muted)">
+                <div style="font-size:32px;margin-bottom:8px">🔍</div>
+                <div style="font-size:13px">Ketik kata kunci untuk mencari seluruh data.</div>
+            </div>
         </div>
     </div>
 </div>
@@ -456,18 +485,167 @@
         csrfName:      '<?= csrf_token() ?>',
     };
 
-    document.addEventListener('DOMContentLoaded', () => {
-        // Notif Sheet
-        const notifOverlay = document.getElementById('notifModalOverlay');
-        document.getElementById('btnOpenNotif')?.addEventListener('click', () => {
-            notifOverlay?.classList.add('open');
+        // Universal Search Modal
+        const searchOverlay = document.getElementById('searchModalOverlay');
+        const searchInput   = document.getElementById('globalSearchInput');
+        const searchResults = document.getElementById('globalSearchResults');
+
+        function openGlobalSearch() {
+            searchOverlay?.classList.add('open');
+            setTimeout(() => searchInput?.focus(), 150);
+        }
+
+        document.getElementById('btnOpenSearch')?.addEventListener('click', openGlobalSearch);
+        document.getElementById('searchModalClose')?.addEventListener('click', () => searchOverlay?.classList.remove('open'));
+        searchOverlay?.addEventListener('click', (e) => {
+            if (e.target === searchOverlay) searchOverlay.classList.remove('open');
         });
-        document.getElementById('notifModalClose')?.addEventListener('click', () => {
-            notifOverlay?.classList.remove('open');
+
+        // Shortcut Ctrl+K / Cmd+K
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                openGlobalSearch();
+            }
         });
-        notifOverlay?.addEventListener('click', (e) => {
-            if (e.target === notifOverlay) notifOverlay.classList.remove('open');
+
+        let searchDebounce = null;
+        searchInput?.addEventListener('input', () => {
+            clearTimeout(searchDebounce);
+            const q = searchInput.value.trim();
+            if (q.length < 2) {
+                searchResults.innerHTML = `
+                    <div style="text-align:center;padding:30px 10px;color:var(--text-muted)">
+                        <div style="font-size:32px;margin-bottom:8px">🔍</div>
+                        <div style="font-size:13px">Ketik minimal 2 karakter untuk mencari.</div>
+                    </div>`;
+                return;
+            }
+
+            searchResults.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted)">Mencari data...</div>';
+
+            searchDebounce = setTimeout(async () => {
+                try {
+                    const res = await fetch('/search?q=' + encodeURIComponent(q), { credentials: 'same-origin' });
+                    const data = await res.json();
+                    renderSearchResults(data);
+                } catch (e) {
+                    searchResults.innerHTML = '<div style="text-align:center;padding:24px;color:var(--expense)">Gagal memuat pencarian.</div>';
+                }
+            }, 300);
         });
+
+        function renderSearchResults(data) {
+            const { results, total } = data;
+            if (total === 0) {
+                searchResults.innerHTML = `
+                    <div style="text-align:center;padding:30px 10px;color:var(--text-muted)">
+                        <div style="font-size:32px;margin-bottom:8px">❌</div>
+                        <div style="font-size:13px;font-weight:700">Tidak ada data yang cocok.</div>
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            const sym = window.DUITKU.symbol;
+
+            // 1. Transactions
+            if (results.transactions?.length > 0) {
+                html += `<div>
+                    <div style="font-size:11px;font-weight:800;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:8px">TRANSAKSI (${results.transactions.length})</div>
+                    <div style="display:flex;flex-direction:column;gap:6px">`;
+                results.transactions.forEach(t => {
+                    const isIncome = t.type === 'income';
+                    const color = isIncome ? '#16A34A' : '#DC2626';
+                    html += `
+                        <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between">
+                            <div>
+                                <div style="font-size:13px;font-weight:700;color:var(--text-primary)">${t.description || t.category_name || 'Transaksi'}</div>
+                                <div style="font-size:11px;color:var(--text-muted)">${t.date} · ${t.wallet_name || 'Dompet'}</div>
+                            </div>
+                            <div style="font-size:13px;font-weight:800;color:${color}">${isIncome ? '+' : '-'}${sym} ${Number(t.amount).toLocaleString('id-ID')}</div>
+                        </div>`;
+                });
+                html += `</div></div>`;
+            }
+
+            // 2. POS Products
+            if (results.pos_products?.length > 0) {
+                html += `<div>
+                    <div style="font-size:11px;font-weight:800;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:8px">PRODUK POS (${results.pos_products.length})</div>
+                    <div style="display:flex;flex-direction:column;gap:6px">`;
+                results.pos_products.forEach(p => {
+                    html += `
+                        <a href="/pos/products" style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;text-decoration:none">
+                            <div style="display:flex;align-items:center;gap:10px">
+                                <div style="font-size:20px">📦</div>
+                                <div>
+                                    <div style="font-size:13px;font-weight:700;color:var(--text-primary)">${p.name}</div>
+                                    <div style="font-size:11px;color:var(--text-muted)">${p.category || 'Menu'} · Stok: <strong>${p.stock}</strong> ${p.unit || 'pcs'}</div>
+                                </div>
+                            </div>
+                            <div style="font-size:13px;font-weight:800;color:#EA580C">${sym} ${Number(p.selling_price).toLocaleString('id-ID')}</div>
+                        </a>`;
+                });
+                html += `</div></div>`;
+            }
+
+            // 3. Debts
+            if (results.debts?.length > 0) {
+                html += `<div>
+                    <div style="font-size:11px;font-weight:800;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:8px">HUTANG & KASBON (${results.debts.length})</div>
+                    <div style="display:flex;flex-direction:column;gap:6px">`;
+                results.debts.forEach(d => {
+                    html += `
+                        <a href="/hutang" style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;text-decoration:none">
+                            <div>
+                                <div style="font-size:13px;font-weight:700;color:var(--text-primary)">${d.type === 'hutang' ? '🔴 Hutang ke: ' : '🟢 Kasbon: '}${d.person}</div>
+                                <div style="font-size:11px;color:var(--text-muted)">Tempo: ${d.due_date || '-'} · ${d.is_settled == 1 ? 'Lunas' : 'Belum Lunas'}</div>
+                            </div>
+                            <div style="font-size:13px;font-weight:800;color:var(--text-primary)">${sym} ${Number(d.amount).toLocaleString('id-ID')}</div>
+                        </a>`;
+                });
+                html += `</div></div>`;
+            }
+
+            // 4. Vehicles
+            if (results.vehicles?.length > 0) {
+                html += `<div>
+                    <div style="font-size:11px;font-weight:800;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:8px">KENDARAAN (${results.vehicles.length})</div>
+                    <div style="display:flex;flex-direction:column;gap:6px">`;
+                results.vehicles.forEach(v => {
+                    html += `
+                        <a href="/kendaraan/${v.id}" style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;text-decoration:none">
+                            <div>
+                                <div style="font-size:13px;font-weight:700;color:var(--text-primary)">🚗 ${v.name}</div>
+                                <div style="font-size:11px;color:var(--text-muted)">${v.plate_number} · ${v.odometer_km || 0} KM</div>
+                            </div>
+                            <span style="font-size:11.5px;color:var(--primary);font-weight:700">Lihat →</span>
+                        </a>`;
+                });
+                html += `</div></div>`;
+            }
+
+            // 5. Barang
+            if (results.barang?.length > 0) {
+                html += `<div>
+                    <div style="font-size:11px;font-weight:800;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:8px">ASET BARANG (${results.barang.length})</div>
+                    <div style="display:flex;flex-direction:column;gap:6px">`;
+                results.barang.forEach(b => {
+                    html += `
+                        <a href="/barang" style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;text-decoration:none">
+                            <div>
+                                <div style="font-size:13px;font-weight:700;color:var(--text-primary)">📍 ${b.nama || b.name}</div>
+                                <div style="font-size:11px;color:var(--text-muted)">Lokasi: ${b.lokasi || b.location || 'Rumah'}</div>
+                            </div>
+                            <span style="font-size:11.5px;color:var(--primary);font-weight:700">Buka →</span>
+                        </a>`;
+                });
+                html += `</div></div>`;
+            }
+
+            searchResults.innerHTML = html;
+        }
 
         // Browser Web Notifications
         const promptEl = document.getElementById('webNotifPrompt');

@@ -10,6 +10,7 @@ import '../services/api_service.dart';
 import '../theme.dart';
 import '../utils/format.dart';
 import '../widgets/category_icon.dart';
+import 'backup/backup_restore_screen.dart';
 import 'developer_screen.dart';
 import 'export/export_screen.dart';
 import 'recurring/recurring_screen.dart';
@@ -649,9 +650,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
 
                   const SizedBox(height: 16),
-                  const Text('INFORMASI APLIKASI & DEVELOPER',
+                  const Text('CADANGAN & INFORMASI',
                       style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .5, color: AppColors.textMuted)),
                   const SizedBox(height: 8),
+                  _card(
+                    ListTile(
+                      leading: _icon(Icons.backup_rounded, color: const Color(0xFF2563EB)),
+                      title: const Text('Cadangan & Pemulihan (JSON)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: const Text('Ekspor & impor data cadangan', style: TextStyle(fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                      onTap: () async {
+                        final ok = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const BackupRestoreScreen()));
+                        if (ok == true) _load();
+                      },
+                    ),
+                  ),
                   _card(
                     ListTile(
                       leading: _icon(Icons.person_pin_rounded, color: AppColors.primary),
