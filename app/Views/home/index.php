@@ -1487,40 +1487,41 @@ try {
         window.DuitkuUnlockScroll();
     }
 
-    btnOpen.addEventListener('click', openCalc);
-    btnClose.addEventListener('click', closeCalc);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeCalc(); });
+    btnOpen?.addEventListener('click', openCalc);
+    btnClose?.addEventListener('click', closeCalc);
+    overlay?.addEventListener('click', (e) => { if (e.target === overlay) closeCalc(); });
 
     // ── Tab switching ──────────────────────────────────────────────
     document.querySelectorAll('.hc-tab').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn?.addEventListener('click', () => {
             document.querySelectorAll('.hc-tab').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.hc-tab-content').forEach(c => c.classList.add('hidden'));
             btn.classList.add('active');
-            document.getElementById('htab-' + btn.dataset.tab).classList.remove('hidden');
+            document.getElementById('htab-' + btn.dataset.tab)?.classList.remove('hidden');
         });
     });
 
     // ── Discount % ─────────────────────────────────────────────────
     function updateDiscount() {
+        if (!hcPrice || !hcPercent) return;
         const price   = parseFloat(hcPrice.value)   || 0;
         const percent = parseFloat(hcPercent.value) || 0;
         if (price > 0 && percent > 0) {
             const savings = price * percent / 100;
-            hcSavings.textContent = fmtRp(savings);
-            hcFinal.textContent   = fmtRp(price - savings);
-            discResult.classList.remove('hidden');
+            if (hcSavings) hcSavings.textContent = fmtRp(savings);
+            if (hcFinal) hcFinal.textContent   = fmtRp(price - savings);
+            discResult?.classList.remove('hidden');
         } else {
-            discResult.classList.add('hidden');
+            discResult?.classList.add('hidden');
         }
     }
-    hcPrice.addEventListener('input', updateDiscount);
-    hcPercent.addEventListener('input', updateDiscount);
+    hcPrice?.addEventListener('input', updateDiscount);
+    hcPercent?.addEventListener('input', updateDiscount);
     document.querySelectorAll('.hc-pct-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn?.addEventListener('click', () => {
             document.querySelectorAll('.hc-pct-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            hcPercent.value = btn.dataset.v;
+            if (hcPercent) hcPercent.value = btn.dataset.v;
             updateDiscount();
         });
     });
@@ -1560,29 +1561,29 @@ try {
 
     // ── Kembalian ──────────────────────────────────────────────────
     function updateChange() {
+        if (!hcTotal || !hcPaid) return;
         const total = parseFloat(hcTotal.value) || 0;
         const paid  = parseFloat(hcPaid.value)  || 0;
         if (total > 0 && paid > 0) {
             const diff = paid - total;
             if (diff >= 0) {
-                chgLabel.textContent = 'Kembalian:';
-                chgVal.className = 'hc-green';
-                chgVal.textContent = fmtRp(diff);
+                if (chgLabel) chgLabel.textContent = 'Kembalian:';
+                if (chgVal) { chgVal.className = 'hc-green'; chgVal.textContent = fmtRp(diff); }
             } else {
-                chgLabel.textContent = 'Kurang bayar:';
-                chgVal.className = 'hc-red';
-                chgVal.textContent = fmtRp(Math.abs(diff));
+                if (chgLabel) chgLabel.textContent = 'Kurang bayar:';
+                if (chgVal) { chgVal.className = 'hc-red'; chgVal.textContent = fmtRp(Math.abs(diff)); }
             }
-            chgResult.classList.remove('hidden');
+            chgResult?.classList.remove('hidden');
         } else {
-            chgResult.classList.add('hidden');
+            chgResult?.classList.add('hidden');
         }
     }
-    hcTotal.addEventListener('input', updateChange);
-    hcPaid.addEventListener('input', updateChange);
+    hcTotal?.addEventListener('input', updateChange);
+    hcPaid?.addEventListener('input', updateChange);
 
     // ── Banding Harga ──────────────────────────────────────────────
     function updateCompare() {
+        if (!cmpAPrice || !cmpAQty || !cmpBPrice || !cmpBQty) return;
         const aP = parseFloat(cmpAPrice.value) || 0;
         const aQ = parseFloat(cmpAQty.value)   || 0;
         const bP = parseFloat(cmpBPrice.value) || 0;
@@ -1590,24 +1591,26 @@ try {
         if (aP > 0 && aQ > 0 && bP > 0 && bQ > 0) {
             const aUnit = aP / aQ;
             const bUnit = bP / bQ;
-            cmpAUnit.textContent = fmtRp(aUnit) + '/satuan';
-            cmpBUnit.textContent = fmtRp(bUnit) + '/satuan';
-            if (aUnit < bUnit) {
-                cmpWinner.textContent = 'Produk A lebih hemat';
-                cmpWinner.className = 'hc-green';
-            } else if (bUnit < aUnit) {
-                cmpWinner.textContent = 'Produk B lebih hemat';
-                cmpWinner.className = 'hc-green';
-            } else {
-                cmpWinner.textContent = 'Harga sama';
-                cmpWinner.className = '';
+            if (cmpAUnit) cmpAUnit.textContent = fmtRp(aUnit) + '/satuan';
+            if (cmpBUnit) cmpBUnit.textContent = fmtRp(bUnit) + '/satuan';
+            if (cmpWinner) {
+                if (aUnit < bUnit) {
+                    cmpWinner.textContent = 'Produk A lebih hemat';
+                    cmpWinner.className = 'hc-green';
+                } else if (bUnit < aUnit) {
+                    cmpWinner.textContent = 'Produk B lebih hemat';
+                    cmpWinner.className = 'hc-green';
+                } else {
+                    cmpWinner.textContent = 'Harga sama';
+                    cmpWinner.className = '';
+                }
             }
-            cmpResult.classList.remove('hidden');
+            cmpResult?.classList.remove('hidden');
         } else {
-            cmpResult.classList.add('hidden');
+            cmpResult?.classList.add('hidden');
         }
     }
-    [cmpAPrice, cmpAQty, cmpBPrice, cmpBQty].forEach(el => el.addEventListener('input', updateCompare));
+    [cmpAPrice, cmpAQty, cmpBPrice, cmpBQty].forEach(el => el?.addEventListener('input', updateCompare));
 
 })();
 
@@ -1746,54 +1749,54 @@ try {
         load();
         render();
         updateBadge();
-        listOverlay.classList.add('open');
-        window.DuitkuLockScroll();
+        listOverlay?.classList.add('open');
+        window.DuitkuLockScroll?.();
     }
     function closeList() {
-        listOverlay.classList.remove('open');
-        window.DuitkuUnlockScroll();
+        listOverlay?.classList.remove('open');
+        window.DuitkuUnlockScroll?.();
     }
     function openForm(item = null) {
         editId = item ? item.id : null;
-        formTitle.textContent = item ? 'Edit Simpanan' : 'Tambah Simpanan';
-        idInput.value       = item ? item.id : '';
-        nameInput.value     = item ? item.name : '';
-        locInput.value      = item ? item.location : '';
-        notesInput.value    = item ? (item.notes || '') : '';
+        if (formTitle) formTitle.textContent = item ? 'Edit Simpanan' : 'Tambah Simpanan';
+        if (idInput) idInput.value       = item ? item.id : '';
+        if (nameInput) nameInput.value     = item ? item.name : '';
+        if (locInput) locInput.value      = item ? item.location : '';
+        if (notesInput) notesInput.value    = item ? (item.notes || '') : '';
 
         // Photo
         currentBase64 = item?.image || null;
         if (currentBase64) {
-            previewImg.src = currentBase64;
-            imagePreview.style.display = 'block';
-            btnPhoto.style.display = 'none';
+            if (previewImg) previewImg.src = currentBase64;
+            if (imagePreview) imagePreview.style.display = 'block';
+            if (btnPhoto) btnPhoto.style.display = 'none';
         } else {
-            imagePreview.style.display = 'none';
-            btnPhoto.style.display = 'flex';
+            if (imagePreview) imagePreview.style.display = 'none';
+            if (btnPhoto) btnPhoto.style.display = 'flex';
         }
-        imageInput.value = '';
+        if (imageInput) imageInput.value = '';
 
         // GPS
         currentCoords = (item?.lat && item?.lng) ? { lat: item.lat, lng: item.lng, accuracy: item.accuracy } : null;
         showGpsPreview();
 
-        formOverlay.classList.add('open');
-        setTimeout(() => nameInput.focus(), 80);
+        formOverlay?.classList.add('open');
+        setTimeout(() => nameInput?.focus(), 80);
     }
     function closeForm() {
-        formOverlay.classList.remove('open');
+        formOverlay?.classList.remove('open');
     }
 
     // ── GPS ───────────────────────────────────────────────────────
     function showGpsPreview() {
         if (currentCoords) {
             const acc = currentCoords.accuracy ? ` (±${Math.round(currentCoords.accuracy)}m)` : '';
-            gpsText.textContent = `${currentCoords.lat.toFixed(5)}, ${currentCoords.lng.toFixed(5)}${acc}`;
-            gpsPreview.style.display = 'flex';
-            btnGps.style.display = 'none';
+            if (gpsText) gpsText.textContent = `${currentCoords.lat.toFixed(5)}, ${currentCoords.lng.toFixed(5)}${acc}`;
+            if (gpsPreview) gpsPreview.style.display = 'flex';
+            if (btnGps) btnGps.style.display = 'none';
         } else {
-            gpsPreview.style.display = 'none';
-            btnGps.style.display = 'flex';
+            if (gpsPreview) gpsPreview.style.display = 'none';
+            if (btnGps) btnGps.style.display = 'flex';
         }
     }
 
@@ -1841,47 +1844,46 @@ try {
     };
 
     // ── events ────────────────────────────────────────────────────
-    btnOpenSt.addEventListener('click', openList);
-    listClose.addEventListener('click', closeList);
-    listOverlay.addEventListener('click', e => { if (e.target === listOverlay) closeList(); });
+    btnOpenSt?.addEventListener('click', openList);
+    listClose?.addEventListener('click', closeList);
+    listOverlay?.addEventListener('click', e => { if (e.target === listOverlay) closeList(); });
 
-    btnAdd.addEventListener('click', () => { closeList(); openForm(); });
-    formClose.addEventListener('click', closeForm);
-    cancelBtn.addEventListener('click', closeForm);
-    formOverlay.addEventListener('click', e => { if (e.target === formOverlay) closeForm(); });
+    btnAdd?.addEventListener('click', () => { closeList(); openForm(); });
+    formClose?.addEventListener('click', closeForm);
+    cancelBtn?.addEventListener('click', closeForm);
+    formOverlay?.addEventListener('click', e => { if (e.target === formOverlay) closeForm(); });
 
-    searchInput.addEventListener('input', () => {
-        searchTerm = searchInput.value.trim();
+    searchInput?.addEventListener('input', () => {
+        searchTerm = searchInput ? searchInput.value.trim() : '';
         render();
     });
 
-    form.addEventListener('submit', saveItem);
+    form?.addEventListener('submit', saveItem);
 
     // Photo
-    btnPhoto.addEventListener('click', () => imageInput.click());
-    imageInput.addEventListener('change', e => {
+    btnPhoto?.addEventListener('click', () => imageInput?.click());
+    imageInput?.addEventListener('change', e => {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = ev => {
             currentBase64 = ev.target.result;
-            previewImg.src = currentBase64;
-            imagePreview.style.display = 'block';
-            btnPhoto.style.display = 'none';
+            if (previewImg) previewImg.src = currentBase64;
+            if (imagePreview) imagePreview.style.display = 'block';
+            if (btnPhoto) btnPhoto.style.display = 'none';
         };
         reader.readAsDataURL(file);
     });
-    btnRemPhoto.addEventListener('click', () => {
+    btnRemPhoto?.addEventListener('click', () => {
         currentBase64 = null;
-        imageInput.value = '';
-        imagePreview.style.display = 'none';
-        btnPhoto.style.display = 'flex';
+        if (imageInput) imageInput.value = '';
+        if (imagePreview) imagePreview.style.display = 'none';
+        if (btnPhoto) btnPhoto.style.display = 'flex';
     });
 
     // GPS
-    btnGps.addEventListener('click', () => {
+    btnGps?.addEventListener('click', () => {
         if (!navigator.geolocation) { alert('Perangkat tidak mendukung GPS.'); return; }
-        const span = btnGps.querySelector('svg + *') || btnGps;
         btnGps.disabled = true;
         btnGps.style.opacity = '.6';
         navigator.geolocation.getCurrentPosition(
@@ -1901,7 +1903,7 @@ try {
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     });
-    btnRemGps.addEventListener('click', () => {
+    btnRemGps?.addEventListener('click', () => {
         currentCoords = null;
         showGpsPreview();
     });

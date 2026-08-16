@@ -464,7 +464,7 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ UNIVERSAL SEARCH MODAL -->
-<div class="modal-sheet-overlay" id="searchModalOverlay">
+<div class="modal-overlay" id="searchModalOverlay">
     <div class="modal-sheet" style="max-height:85vh;display:flex;flex-direction:column">
         <div class="modal-sheet-handle"></div>
         <div style="padding:16px 20px 10px;border-bottom:1px solid var(--border)">
