@@ -560,6 +560,59 @@
 
 /* Form modal */
 .hs-form-modal { max-height: 90dvh; overflow-y: auto; max-width: 420px; }
+
+/* ── Workspace Mode Switcher ──────────────────────────────── */
+.ws-switcher-wrap {
+    display: flex;
+    background: var(--bg-card);
+    padding: 5px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+    gap: 6px;
+}
+.ws-tab-btn {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 12.5px;
+    font-weight: 800;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
+    background: transparent;
+    color: var(--text-secondary);
+}
+.ws-tab-btn:active { transform: scale(0.98); }
+.ws-tab-btn.active.personal {
+    background: var(--primary) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba(10,169,86,0.3);
+}
+.ws-tab-btn.active.business {
+    background: #4F46E5 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba(79,70,229,0.35);
+}
+[data-theme="dark"] .ws-tab-btn {
+    color: #94A3B8;
+}
+[data-theme="dark"] .ws-tab-btn:hover {
+    color: #F1F5F9;
+}
+[data-theme="dark"] .ws-tab-btn.active.personal {
+    color: #FFFFFF !important;
+    background: var(--primary) !important;
+}
+[data-theme="dark"] .ws-tab-btn.active.business {
+    color: #FFFFFF !important;
+    background: #6366F1 !important;
+}
 </style>
 <?= $this->endSection() ?>
 
@@ -568,12 +621,12 @@
 <div class="home-page">
 
     <!-- ── WORKSPACE MODE SWITCHER ─────────────────────────────── -->
-    <div style="display:flex;background:var(--bg-card);padding:4px;border-radius:16px;border:1px solid var(--border);margin-bottom:14px;box-shadow:var(--shadow-sm);gap:4px">
-        <button type="button" id="btnModePersonal" class="workspace-tab-btn active" style="flex:1;padding:8px 12px;border-radius:12px;font-size:12px;font-weight:800;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s ease">
-            <span>👤</span> Mode Personal
+    <div class="ws-switcher-wrap">
+        <button type="button" id="btnModePersonal" class="ws-tab-btn active personal" onclick="window.switchWorkspace('personal')">
+            <span style="font-size:15px">👤</span> <span>Mode Personal</span>
         </button>
-        <button type="button" id="btnModeBusiness" class="workspace-tab-btn" style="flex:1;padding:8px 12px;border-radius:12px;font-size:12px;font-weight:800;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s ease">
-            <span>☕</span> Mode Usaha (POS)
+        <button type="button" id="btnModeBusiness" class="ws-tab-btn business" onclick="window.switchWorkspace('business')">
+            <span style="font-size:15px">☕</span> <span>Mode Usaha (POS)</span>
         </button>
     </div>
 
@@ -2220,42 +2273,30 @@
 /* ════════════════════════════════════════════════════════════════
    WORKSPACE SWITCHER (Personal vs Business Mode)
    ════════════════════════════════════════════════════════════════ */
-(function() {
+window.switchWorkspace = function(mode) {
     const btnPersonal = document.getElementById('btnModePersonal');
     const btnBusiness = document.getElementById('btnModeBusiness');
     const wsPersonal  = document.getElementById('workspacePersonal');
     const wsBusiness  = document.getElementById('workspaceBusiness');
 
-    function setMode(mode) {
-        if (mode === 'business') {
-            btnBusiness?.classList.add('active');
-            btnBusiness.style.background = '#312E81';
-            btnBusiness.style.color = '#FFFFFF';
-            btnPersonal?.classList.remove('active');
-            btnPersonal.style.background = 'transparent';
-            btnPersonal.style.color = 'var(--text-secondary)';
-            if (wsPersonal) wsPersonal.style.display = 'none';
-            if (wsBusiness) wsBusiness.style.display = 'block';
-            localStorage.setItem('duitku_mode', 'business');
-        } else {
-            btnPersonal?.classList.add('active');
-            btnPersonal.style.background = 'var(--primary)';
-            btnPersonal.style.color = '#FFFFFF';
-            btnBusiness?.classList.remove('active');
-            btnBusiness.style.background = 'transparent';
-            btnBusiness.style.color = 'var(--text-secondary)';
-            if (wsPersonal) wsPersonal.style.display = 'block';
-            if (wsBusiness) wsBusiness.style.display = 'none';
-            localStorage.setItem('duitku_mode', 'personal');
-        }
+    if (mode === 'business') {
+        btnBusiness?.classList.add('active', 'business');
+        btnPersonal?.classList.remove('active', 'personal');
+        if (wsPersonal) wsPersonal.style.display = 'none';
+        if (wsBusiness) wsBusiness.style.display = 'block';
+        localStorage.setItem('duitku_mode', 'business');
+    } else {
+        btnPersonal?.classList.add('active', 'personal');
+        btnBusiness?.classList.remove('active', 'business');
+        if (wsPersonal) wsPersonal.style.display = 'block';
+        if (wsBusiness) wsBusiness.style.display = 'none';
+        localStorage.setItem('duitku_mode', 'personal');
     }
+};
 
-    btnPersonal?.addEventListener('click', () => setMode('personal'));
-    btnBusiness?.addEventListener('click', () => setMode('business'));
-
-    // Init from localStorage
+(function() {
     const saved = localStorage.getItem('duitku_mode') || 'personal';
-    setMode(saved);
+    window.switchWorkspace(saved);
 })();
 </script>
 <?= $this->endSection() ?>
