@@ -125,14 +125,6 @@ _modules/*
 # Visual Studio Code
 .vscode/
 
-# Claude AI / Assistant Configs
-.claude/
-.claude*
-
-# Reference Assets & Mockups
-_refs/
-*_refs/
-
 /results/
 /phpunit.xml
 
