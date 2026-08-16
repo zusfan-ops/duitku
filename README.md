@@ -1,6 +1,8 @@
-# DuitKu — Aplikasi Pencatat Keuangan Pribadi
+# DuitKu — Aplikasi Manajemen Keuangan Pribadi & Usaha UMKM (POS)
 
-**DuitKu** adalah sistem pencatatan keuangan pribadi yang terdiri dari **backend API berbasis CodeIgniter 4** dan **aplikasi mobile Flutter**. Dirancang untuk membantu user mencatat pemasukan & pengeluaran harian, mengelola dompet/rekening, memantau tagihan & hutang, menyusun daftar belanja, serta mencatat lokasi penyimpanan barang agar tidak lupa.
+**DuitKu** adalah ekosistem manajemen finansial all-in-one yang terdiri dari **Backend API berbasis CodeIgniter 4**, **Progressive Web App (PWA)**, dan **Aplikasi Mobile Native Flutter (Android)**. 
+
+Dirancang secara modern, cepat, dan mobile-friendly untuk mencatat keuangan pribadi, mengelola multi-rekening dompet, memantau tagihan & hutang, melacak perawatan kendaraan, hingga mengelola **Kasir Cepat Mini (POS), Stok Barang & Laporan Laba Rugi untuk Coffee Shop, Toko Kelontong, dan UMKM**.
 
 <p align="center">
   <img alt="CodeIgniter 4" src="https://img.shields.io/badge/CodeIgniter-4-EF4223?logo=codeigniter&logoColor=white">
@@ -9,166 +11,134 @@
   <img alt="Flutter" src="https://img.shields.io/badge/Flutter-3.44+-02569B?logo=flutter&logoColor=white">
   <img alt="Dart" src="https://img.shields.io/badge/Dart-3.12+-0175C2?logo=dart&logoColor=white">
   <img alt="Android" src="https://img.shields.io/badge/Android-APK-3DDC84?logo=android&logoColor=white">
+  <img alt="PWA" src="https://img.shields.io/badge/PWA-Ready-5A0FC8?logo=pwa&logoColor=white">
 </p>
 
-> 💰 Domain: personal finance tracking — multi-wallet, transaction logging, bill & debt reminders, shopping list, dan item storage tracker.
+---
+
+## 📥 Panduan Unduh & Install APK dari Menu Release GitHub
+
+Bagi pengguna Android yang ingin menginstall aplikasi native DuitKu langsung tanpa build sendiri dari source code:
+
+### 1. Buka Halaman Releases
+* Buka tab **[Releases](https://github.com/zusfan-ops/duitku/releases)** pada repository GitHub DuitKu.
+* Pilih versi rilis terbaru (Latest Release).
+
+### 2. Pilih File APK yang Sesuai dengan Perangkat Anda
+
+| Nama File APK | Arsitektur CPU | Rekomendasi Penggunaan | Ukuran |
+|---|---|---|---|
+| **`app-arm64-v8a-release.apk`** | **ARM 64-bit** | ⭐ **Sangat Direkomendasikan** untuk 95%+ smartphone Android modern (keluaran 2018 ke atas: Samsung, Xiaomi, Oppo, Vivo, Realme, dll). Ukuran aplikasi jauh lebih ringan dan performa maksimal. | **~35 MB** |
+| **`app-armeabi-v7a-release.apk`** | **ARM 32-bit** | Untuk smartphone Android tipe lama atau entry-level 32-bit. | **~32 MB** |
+| **`app-x86_64-release.apk`** | **x86 64-bit** | Untuk emulator Android di PC (NoxPlayer, BlueStacks, LDPlayer, Android Studio Emulator). | **~38 MB** |
+| **`app-release.apk`** | **Universal** | Berisi seluruh pustaka arsitektur gabungan (kompatibel untuk segala jenis perangkat Android). | **~82 MB** |
+
+### 3. Langkah-Langkah Pemasangan (Install):
+1. **Unduh APK:** Klik salah satu file APK di atas (direkomendasikan `app-arm64-v8a-release.apk`) untuk mulai mengunduh ke ponsel Anda.
+2. **Izinkan Instalasi dari Sumber Tak Dikenal:**
+   - Buka file APK yang telah diunduh via notifikasi atau File Manager.
+   - Jika muncul peringatan keamanan *"Demi keamanan, ponsel Anda tidak diizinkan memasang aplikasi yang tidak dikenal dari sumber ini"*, klik **Setelan (Settings)** $\rightarrow$ aktifkan toggle **"Izinkan dari sumber ini" (Allow from this source)**.
+3. **Pasang Aplikasi:** Klik tombol **Install / Pasang**, tunggu proses instalasi selesai, lalu klik **Buka (Open)**.
+4. **Login / Registrasi:** Masuk dengan akun yang telah dibuat atau daftar akun baru untuk mulai mencatat.
 
 ---
 
-## ✨ Fitur Utama
+## ✨ Fitur-Fitur Utama & Fungsinya
 
-### 💵 Pencatatan Transaksi
-- Tambah transaksi **pemasukan** & **pengeluaran** dengan kategori, dompet, tanggal, dan catatan.
-- Edit & hapus transaksi.
-- Dashboard menampilkan total saldo, pemasukan & pengeluaran bulan ini, serta grafik harian.
-
-### 👛 Manajemen Dompet / Rekening
-- Kelola banyak dompet (contoh: Cash, Bank, E-Wallet).
-- Pergerakan saldo real-time berdasarkan transaksi.
-
-### 📊 Statistik & Laporan
-- Grafik perbandingan pemasukan vs pengeluaran.
-- Kategori pengeluaran terbesar.
-- Ringkasan bulanan.
-
-### 🔔 Tagihan & Hutang
-- Catat tagihan yang akan jatuh tempo.
-- Pantau hutang piutang pribadi.
-
-### 🛒 Daftar Belanja
-- Buat daftar belanja per lokasi (pasar, supermarket, warung).
-- Tambah barang beserta estimasi harga.
-- Tandai barang yang sudah dibeli.
-- Sinkronisasi data belanja antara perangkat dan server.
-
-### 📦 Manajemen Barang *(baru)*
-- Catat barang yang disimpan beserta **lokasi penyimpanannya**.
-- Lampirkan **foto barang** dan **foto lokasi**.
-- Penyimpanan foto offline di perangkat.
-- Fitur ini berguna agar user tidak lupa saat menyimpan barang.
-
-### 🔐 Autentikasi
-- Login & register user.
-- Profil user dengan avatar.
-- Sesi dikelola melalui API token.
+### ☕ 1. Suite Usaha & Kasir Mini (POS) UMKM
+*Khusus dirancang ramah layar sentuh smartphone (*mobile-first*) untuk pengusaha Coffee Shop, Kedai Kopi, Warung Makan, Toko Kelontong, dan Retail Mini.*
+- **Kasir Kilat (Point of Sale):** Grid produk touch-friendly, filter kategori instan (*Kopi, Minuman, Makanan, Sembako, dll.*), serta pencarian nama & kode produk.
+- **Keranjang Melayang (*Floating Cart Bar*):** Tampilan ringkas total item & harga dengan bottom sheet penyesuaian kuantitas (*stepper +/-*).
+- **Checkout Cepat & Kalkulator Kembalian:** Pilihan metode bayar **Tunai (Cash)** dengan tombol nominal cepat (*Uang Pas, 10rb, 20rb, 50rb, 100rb, 200rb*), **QRIS**, **Transfer Bank**, dan **Kasbon Pelanggan**.
+- **Struk Thermal & Kirim WhatsApp:** Pratinjau struk digital kasir yang dapat langsung dicetak ke printer thermal Bluetooth atau dikirim ke WhatsApp pelanggan dengan format struk rapi dalam satu ketukan.
+- **Manajemen Katalog, Stok & HPP:** Pengaturan harga jual vs harga modal (HPP), batas minimum stok (*low stock alert*), modal restock cepat, serta otomatisasi potong stok saat checkout pesanan.
+- **Buku Kasbon Pelanggan Terintegrasi:** Pembayaran kasbon otomatis tercatat di modul piutang (`debts`) dengan rincian nama, nomor WhatsApp, dan jatuh tempo penagihan.
+- **Laporan Laba Rugi Usaha (P&L):** Menghitung otomatis $\text{Omset} - \text{HPP (Modal)} = \mathbf{Laba\ Bersih}$, rata-rata per pesanan, rincian metode pembayaran, dan ranking **5 Produk Terlaris (*Top 5 Best Sellers*)**.
 
 ---
 
-## 🏗️ Arsitektur Sistem
-
-DuitKu terdiri dari dua komponen utama yang saling terhubung melalui REST API:
-
-| Komponen | Teknologi | Fungsi |
-|---|---|---|
-| **Backend API** | CodeIgniter 4, PHP 8.2+ | REST API, autentikasi, bisnis logic, sinkronisasi data. |
-| **Database** | MySQL 8 | Menyimpan user, transaksi, dompet, kategori, tagihan, hutang, belanja. |
-| **Mobile App** | Flutter 3.44+, Dart 3.12+ | Antarmuka utama untuk user. |
-| **Offline Storage** | SharedPreferences | Menyimpan data belanja & barang secara lokal di perangkat. |
-| **Image Storage** | Direktori aplikasi | Menyimpan foto barang & lokasi di perangkat. |
+### 🚗 2. Pencatat Armada & Kendaraan Pribadi
+- **Multi-Armada:** Kelola mobil, sepeda motor, truk/pickup barang, dan sepeda listrik lengkap dengan nomor plat, merk/tipe, tahun, dan odometer (KM).
+- **Riwayat Servis & Ganti Oli:** Catatan servis berkala, ganti oli mesin/gardan, penggantian sparepart, cuci, ban, dan BBM dengan rincian biaya & bengkel.
+- **Pengingat Pajak STNK:** Pemantauan tanggal jatuh tempo Pajak Tahunan & Pajak 5 Tahunan (Plat Kaleng) dengan notifikasi otomatis.
 
 ---
 
-## 📁 Struktur Folder
-
-```
-duitku/                          # backend CodeIgniter 4
-├── app/
-│   ├── Config/                  # konfigurasi aplikasi
-│   ├── Controllers/             # controller web & API
-│   │   ├── Api/                 # REST API untuk Flutter
-│   │   └── ...                  # controller halaman web
-│   ├── Filters/                 # middleware autentikasi API
-│   ├── Libraries/               # library custom (ApiAuth)
-│   ├── Models/                  # model database
-│   └── Database/Migrations/     # skema database
-├── public/                      # document root
-├── writable/                    # cache, logs, uploads
-└── .env                         # konfigurasi environment
-
-duitku_app/                      # aplikasi Flutter
-├── android/                     # konfigurasi Android
-├── lib/
-│   ├── config/                  # konfigurasi API base URL
-│   ├── models/                  # model data
-│   ├── providers/               # state management (Provider)
-│   ├── screens/                 # halaman aplikasi
-│   │   ├── barang/              # manajemen barang
-│   │   ├── belanja/             # daftar belanja
-│   │   └── auth/                # login & register
-│   ├── services/                # API service & local storage
-│   ├── utils/                   # helper formatting
-│   ├── widgets/                 # komponen UI reusable
-│   └── main.dart                # entry point
-├── pubspec.yaml                 # dependencies Flutter
-└── test/                        # unit/widget test
-```
+### 🔔 3. Notifikasi Pengingat Jatuh Tempo Cerdas
+- **Agregasi Multi-Sumber:** Sistem memindai 4 jenis kewajiban yang mendekati jatuh tempo:
+  1. 📋 **Daftar Tagihan Rutin** (Listrik, Air, Wifi, Kontrakan).
+  2. 💸 **Hutang & Piutang** (Pinjaman & penagihan kasbon).
+  3. 🚗 **Pajak Kendaraan & Servis** (Jatuh tempo pajak STNK).
+  4. 🔄 **Transaksi Berulang** (Langganan & tagihan berkala).
+- **Badge Counter & Alarm:** Ikon lonceng notifikasi dengan badge merah di topbar PWA & Flutter, banner darurat jika ada tagihan jatuh tempo hari ini/lewat, serta Web Browser Notification API.
 
 ---
 
-## 🚀 Instalasi Backend (Lokal)
-
-Prasyarat: **PHP 8.2+, Composer, MySQL 8** (misal via Laragon).
-
-```bash
-# 1. Clone repo
-git clone https://github.com/zusfan-ops/duitku.git
-cd duitku
-
-# 2. Install dependency PHP
-composer install
-
-# 3. Salin environment
-cp env .env
-
-# 4. Sesuaikan konfigurasi database di .env
-# DB_HOST=localhost
-# DB_DATABASE=duitku
-# DB_USERNAME=root
-# DB_PASSWORD=
-
-# 5. Jalankan migrasi
-php spark migrate
-
-# 6. Jalankan server lokal
-php spark serve
-```
-
-Backend akan berjalan di `http://localhost:8080`.
+### 🔄 4. Transaksi Rutin & Eksekusi Otomatis
+- Penjadwalan transaksi berulang harian, mingguan, bulanan, atau tahunan.
+- **Tombol "Bayar Sekarang":** Memungkinkan pengguna langsung membayar tagihan berulang dalam 1 klik — otomatis memotong saldo rekening yang dipilih, mencatat mutasi pengeluaran, dan memajukan tanggal jatuh tempo berikutnya.
 
 ---
 
-## 📱 Menjalankan Aplikasi Flutter
+### 🎯 5. Target Tabungan Multi-Goal
+- Buat berbagai target impian finansial (*Beli Rumah, Dana Darurat, Beli Gadget, Qurban, dll.*).
+- Visual progress bar pencapaian, sisa hari, dan setor dana tabungan kapan saja.
 
-Prasyarat: **Flutter SDK 3.44+, Android SDK / emulator / perangkat**.
+---
 
-```bash
-cd duitku_app
+### 🧳 6. Traveling & Itinerary Trip Planner
+- Penyusunan anggaran liburan/perjalanan dinas, pencatat tiket transportasi & voucher hotel digital, serta checklist barang bawaan.
 
-# 1. Install dependency
-flutter pub get
+---
 
-# 2. Pastikan base URL API sesuai
-# Edit: lib/config/api_config.dart
+### 📦 7. Inventaris & Lokasi Penyimpanan Barang
+- Pencatatan barang fisik berharga beserta **lokasi penyimpanan spesifik** (lemari, rak, box gudang) dan foto dokumentasi offline agar tidak lupa letak barang.
 
-# 3. Jalankan di emulator / perangkat
-flutter run
+---
+
+### 👛 8. Manajemen Multi-Dompet & Mutasi Saldo
+- Kelola dompet tunai, rekening bank (BCA, Mandiri, BRI, BNI), dan e-wallet (GoPay, OVO, Dana, ShopeePay).
+- Fitur transfer antar-dompet dengan penyesuaian saldo otomatis.
+
+---
+
+### 📊 9. Analisis Statistik & Export Laporan
+- Grafik visual arus kas pemasukan vs pengeluaran dan kategori pengeluaran terbesar.
+- **Export Laporan:** Cetak dokumen laporan keuangan ke format **PDF** dan unduh data spreadsheet **CSV / Excel**.
+
+---
+
+### 👨‍💻 10. Informasi Profil Pengembang
+- Halaman informasi developer terintegrasi di PWA dan Native App yang menampilkan profil, pencapaian, rekam jejak inovasi teknologi, dan tautan kontak langsung WhatsApp.
+
+---
+
+## 📖 Panduan Penggunaan Singkat
+
+### Cara Menggunakan Kasir Mini POS:
+1. Buka menu **Layanan & Fitur** $\rightarrow$ pilih **Kasir Mini (POS)**.
+2. Tambahkan produk menu usaha Anda terlebih dahulu melalui menu **Katalog & Stok** (isi nama, harga modal HPP, harga jual, dan stok awal).
+3. Di layar Kasir, ketuk kartu menu untuk memasukkan ke keranjang pesanan.
+4. Ketuk bilah hijau di bawah (*Keranjang*) untuk memeriksa pesanan, lalu klik **Bayar Sekarang**.
+5. Pilih metode pembayaran (Tunai, QRIS, Transfer, atau Kasbon):
+   - Jika *Tunai*, pilih tombol uang pas atau nominal bayar pelanggan untuk menghitung kembalian otomatis.
+   - Jika *Kasbon*, isi nama pelanggan dan nomor WhatsApp.
+6. Klik **Konfirmasi Pembayaran** $\rightarrow$ struk digital muncul $\rightarrow$ klik **Kirim Struk via WhatsApp** atau **Cetak Struk**.
+
+---
+
+## 🏗️ Arsitektur & Teknologi
+
 ```
-
-### Build APK Release
-
-```bash
-cd duitku_app
-flutter build apk --release
-```
-
-Output APK:
-```
-build/app/outputs/flutter-apk/app-release.apk
+DuitKu Ecosystem
+├── Backend REST API : CodeIgniter 4 (PHP 8.2+, MySQL 8, Token-based Auth)
+├── Web / PWA Client : HTML5 Semantic, Modern Vanilla CSS Design Tokens, JavaScript ES6+
+└── Native Mobile App: Flutter 3.44+, Dart 3.12+, Provider State Management, Material 3
 ```
 
 ---
 
-## 👨‍💻 Developer
+## 👨‍💻 Profil Developer
 
 <table>
   <tr>
@@ -186,14 +156,17 @@ build/app/outputs/flutter-apk/app-release.apk
         dan pemberdayaan UMKM & komunitas melalui teknologi.
       </p>
       <p>
+        <a href="https://wa.me/628998813000" target="_blank">
+          <img alt="WhatsApp" src="https://img.shields.io/badge/WhatsApp-+62_899_8813_000-25D366?logo=whatsapp&logoColor=white">
+        </a>
         <a href="https://zusfan.hallosemarang.com/" target="_blank">
           <img alt="Digital Card" src="https://img.shields.io/badge/Digital_Card-zusfan.hallosemarang.com-2D5A27?logo=internetexplorer&logoColor=white">
         </a>
         <a href="https://hallosemarang.com" target="_blank">
           <img alt="Website" src="https://img.shields.io/badge/Website-hallosemarang.com-0AA956?logo=googlechrome&logoColor=white">
         </a>
-        <a href="https://wa.me/628998813000" target="_blank">
-          <img alt="WhatsApp" src="https://img.shields.io/badge/WhatsApp-+62_899_8813_000-25D366?logo=whatsapp&logoColor=white">
+        <a href="https://zusfan.hallosemarang.com/resume.html" target="_blank">
+          <img alt="Resume" src="https://img.shields.io/badge/Resume-CV-4F46E5?logo=readme&logoColor=white">
         </a>
       </p>
     </td>
@@ -201,55 +174,10 @@ build/app/outputs/flutter-apk/app-release.apk
 </table>
 
 ### 🎯 Pencapaian Highlight
-
 - 🚀 Mengembangkan platform berita digital **Hallo Semarang** dengan **100,000+ pembaca bulanan** dan pertumbuhan traffic organik **200% dalam 6 bulan**.
 - 🌐 Implementasi **WiFi gratis di 50+ lokasi publik** sebagai bagian program Smart City Semarang.
-- 📡 Membangun infrastruktur **TV streaming (GETTV)** di Lombok, **videotron advertising centralized** di Alun-Alun Klaten, dan **sistem VoIP** untuk organisasi.
-- 🤝 Memfasilitasi pemberdayaan digital UMKM di Banjarmasin dan pengembangan komunitas melalui teknologi.
-
-### 💼 Pengalaman Profesional
-
-| Peran | Organisasi | Periode |
-|---|---|---|
-| Marketing & IT Director | Hallo Semarang | 2020 - Sekarang |
-| Pemberdayaan Digital UMKM | Gang SMP 14 Banua Anyar | 2019 |
-| IT Solutions Consultant | NTB & Bali Region | 2012 - 2015 |
-
-### 🛠️ Keahlian Teknis
-
-<p>
-  <img alt="HTML5" src="https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white">
-  <img alt="CSS3" src="https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white">
-  <img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black">
-  <img alt="React.js" src="https://img.shields.io/badge/React.js-61DAFB?logo=react&logoColor=black">
-  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white">
-  <img alt="PHP" src="https://img.shields.io/badge/PHP-777BB4?logo=php&logoColor=white">
-  <img alt="MySQL" src="https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white">
-  <img alt="WordPress" src="https://img.shields.io/badge/WordPress-21759B?logo=wordpress&logoColor=white">
-  <img alt="AWS" src="https://img.shields.io/badge/AWS-232F3E?logo=amazonaws&logoColor=white">
-  <img alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white">
-  <img alt="SEO" src="https://img.shields.io/badge/SEO-0F9D58?logo=google&logoColor=white">
-  <img alt="Social Media Marketing" src="https://img.shields.io/badge/Social_Media_Marketing-1877F2?logo=meta&logoColor=white">
-</p>
-
-### 🔗 Tautan Profil
-
-- 🌐 [Digital Business Card](https://zusfan.hallosemarang.com/)
-- 📄 [Resume](https://zusfan.hallosemarang.com/resume.html)
-- 🎓 [Pendidikan](https://zusfan.hallosemarang.com/education.html)
-- 💼 [Portofolio](https://zusfan.hallosemarang.com/projects.html)
-- 🏢 [Pengalaman](https://zusfan.hallosemarang.com/experience.html)
-- 🧠 [Keahlian](https://zusfan.hallosemarang.com/skills.html)
-- 🖼️ [Gallery](https://zusfan.hallosemarang.com/gallery.html)
-
----
-
-## 🔒 Keamanan
-
-- API menggunakan filter autentikasi berbasis token (`ApiAuthFilter`).
-- Password user di-hash sebelum disimpan.
-- File upload (avatar) disimpan di direktori privat dengan akses ber-otorisasi.
-- Sebelum produksi: set `CI_ENVIRONMENT=production`, matikan `display_errors`, dan ganti semua kredensial default.
+- 📡 Membangun infrastruktur **TV streaming (GETTV)** di Lombok, **videotron advertising centralized** di Alun-Alun Klaten, dan **sistem VoIP** organisasi.
+- 🤝 Memfasilitasi digitalisasi dan pemberdayaan ratusan pelaku UMKM melalui solusi teknologi praktis.
 
 ---
 
@@ -259,8 +187,4 @@ Perangkat lunak **proprietary/internal**. Dibangun di atas:
 - [CodeIgniter 4](https://codeigniter.com) (lisensi MIT)
 - [Flutter](https://flutter.dev) (lisensi BSD-3-Clause)
 
-Penggunaan, distribusi, atau modifikasi di luar pemilik repo memerlukan izin tertulis.
-
----
-
-<p align="center"><sub>DuitKu · Personal Finance Tracker · Built with Flutter & CodeIgniter 4</sub></p>
+<p align="center"><sub>DuitKu · Personal & Business Finance Suite · Developed by Zusfan Mashuri</sub></p>
