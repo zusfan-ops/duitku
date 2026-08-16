@@ -640,5 +640,85 @@ class PosController extends ApiController
             'message'  => 'Profil toko & pengaturan marketplace delivery berhasil disimpan!',
         ]);
     }
+
+    /**
+     * GET api/pos/shifts
+     */
+    public function getShifts()
+    {
+        $userId     = $this->uid();
+        $shiftModel = new \App\Models\PosShiftModel();
+        $active     = $shiftModel->getActiveShift($userId);
+        $history    = $shiftModel->getShiftHistory($userId, 20);
+
+        return $this->ok([
+            'active_shift' => $active,
+            'history'      => $history,
+        ]);
+    }
+
+    /**
+     * GET api/pos/shifts/active
+     */
+    public function getActiveShift()
+    {
+        $userId     = $this->uid();
+        $shiftModel = new \App\Models\PosShiftModel();
+        $active     = $shiftModel->getActiveShift($userId);
+
+        return $this->ok([
+            'active_shift' => $active,
+        ]);
+    }
+
+    /**
+     * POST api/pos/shifts/open
+     */
+    public function openShift()
+    {
+        $userId       = $this->uid();
+        $json         = $this->request->getJSON(true) ?? [];
+        $cashierName  = trim($json['cashier_name'] ?? 'Kasir');
+        $startingCash = (float)($json['starting_cash'] ?? 0);
+        $notes        = trim($json['notes'] ?? '') ?: null;
+
+        $shiftModel = new \App\Models\PosShiftModel();
+        $id = $shiftModel->openShift($userId, $cashierName, $startingCash, $notes);
+
+        return $this->ok([
+            'id'      => $id,
+            'message' => 'Shift kasir berhasil dibuka.',
+        ]);
+    }
+
+    /**
+     * POST api/pos/shifts/close
+     */
+    public function closeShift()
+    {
+        $userId     = $this->uid();
+        $json       = $this->request->getJSON(true) ?? [];
+        $shiftId    = (int)($json['shift_id'] ?? 0);
+        $actualCash = (float)($json['actual_cash'] ?? 0);
+        $notes      = trim($json['notes'] ?? '') ?: null;
+
+        $shiftModel = new \App\Models\PosShiftModel();
+        if (!$shiftId) {
+            $active = $shiftModel->getActiveShift($userId);
+            $shiftId = $active ? (int)$active['id'] : 0;
+        }
+
+        if (!$shiftId) {
+            return $this->fail('Tidak ada shift aktif untuk ditutup.');
+        }
+
+        $ok = $shiftModel->closeShift($shiftId, $userId, $actualCash, $notes);
+
+        return $this->ok([
+            'success' => $ok,
+            'message' => 'Shift berhasil ditutup dan direkonsiliasi.',
+        ]);
+    }
 }
+
 

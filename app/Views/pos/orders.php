@@ -337,6 +337,9 @@
         </div>
 
         <div class="top-action-group">
+            <a href="/pos/shifts" class="btn-top-pos">
+                <span>💼</span> Shift
+            </a>
             <a href="/pos/kds" target="_blank" class="btn-top-pos" style="background:#1E293B;color:#38BDF8;border-color:#38BDF8">
                 <span>👨‍🍳</span> KDS Dapur
             </a>
@@ -583,9 +586,13 @@
                                 <button class="btn-action-pos btn-act-cancel" onclick="updateOrderStatus(<?= $ord['id'] ?>, 'cancelled')">
                                     Batal
                                 </button>
-                            <?php elseif ($ord['status'] === 'paid'): ?>
+                            <a href="/pos/order/receipt/<?= $ord['id'] ?>?autoprint=1" target="_blank" class="btn-action-pos" style="background:#0284C7;color:#fff;text-decoration:none" title="Cetak Struk Thermal 58mm/80mm">
+                                🖨️ Struk
+                            </a>
+
+                            <?php if ($ord['status'] === 'paid'): ?>
                                 <div style="font-size:12px;font-weight:800;color:#10B981;display:flex;align-items:center;gap:4px">
-                                    <span>✅</span> Selesai & Lunas
+                                    <span>✅</span> Selesai
                                 </div>
                             <?php endif; ?>
                         </div>

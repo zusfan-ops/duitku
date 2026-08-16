@@ -6,6 +6,7 @@ use App\Models\DebtModel;
 use App\Models\PosOrderItemModel;
 use App\Models\PosOrderModel;
 use App\Models\PosProductModel;
+use App\Models\PosShiftModel;
 use App\Models\SettingModel;
 use App\Models\TransactionModel;
 use App\Models\WalletModel;
@@ -15,6 +16,7 @@ class PosController extends BaseController
     protected PosProductModel   $productModel;
     protected PosOrderModel     $orderModel;
     protected PosOrderItemModel $orderItemModel;
+    protected PosShiftModel     $shiftModel;
     protected SettingModel      $settingModel;
     protected WalletModel       $walletModel;
     protected TransactionModel  $txModel;
@@ -25,6 +27,7 @@ class PosController extends BaseController
         $this->productModel   = new PosProductModel();
         $this->orderModel     = new PosOrderModel();
         $this->orderItemModel = new PosOrderItemModel();
+        $this->shiftModel     = new PosShiftModel();
         $this->settingModel   = new SettingModel();
         $this->walletModel    = new WalletModel();
         $this->txModel        = new TransactionModel();
@@ -677,5 +680,129 @@ class PosController extends BaseController
             'message'    => 'Profil toko & pengaturan online delivery berhasil disimpan!',
         ]);
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // THERMAL RECEIPT PRINTING (58mm / 80mm)
+    // ─────────────────────────────────────────────────────────────────────────
+    public function receipt(int $orderId)
+    {
+        $userId = session()->get('user_id');
+        $order = $this->orderModel->getWithItems($orderId, $userId);
+
+        if (!$order) {
+            return redirect()->to('/pos/orders')->with('error', 'Pesanan tidak ditemukan.');
+        }
+
+        $storeInfo = [
+            'store_name'    => $this->settingModel->get($userId, 'store_name', session()->get('user_name') . ' Store'),
+            'store_tagline' => $this->settingModel->get($userId, 'store_tagline', ''),
+            'store_address' => $this->settingModel->get($userId, 'store_address', ''),
+            'store_phone'   => $this->settingModel->get($userId, 'store_phone', ''),
+        ];
+
+        $activeShift = $this->shiftModel->getActiveShift($userId);
+        $cashierName = $activeShift ? $activeShift['cashier_name'] : session()->get('user_name');
+        $symbol = $this->settingModel->get($userId, 'currency_symbol', 'Rp');
+
+        return view('pos/receipt', [
+            'order'       => $order,
+            'store'       => $storeInfo,
+            'cashierName' => $cashierName,
+            'symbol'      => $symbol,
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CASHIER SHIFT & CASH DRAWER RECONCILIATION
+    // ─────────────────────────────────────────────────────────────────────────
+    public function shifts()
+    {
+        $userId = session()->get('user_id');
+        $activeShift = $this->shiftModel->getActiveShift($userId);
+        $shiftHistory = $this->shiftModel->getShiftHistory($userId, 20);
+        $symbol = $this->settingModel->get($userId, 'currency_symbol', 'Rp');
+
+        $currentCashSales = 0.0;
+        $currentTrxCount = 0;
+        $currentExpectedCash = 0.0;
+
+        if ($activeShift) {
+            $db = \Config\Database::connect();
+            $salesRow = $db->query("
+                SELECT 
+                    COUNT(*) AS total_trx,
+                    COALESCE(SUM(CASE WHEN payment_method = 'cash' OR payment_method = 'cod' THEN total_amount ELSE 0 END), 0) AS total_cash
+                FROM pos_orders
+                WHERE user_id = ? AND status = 'paid' AND created_at >= ?
+            ", [$userId, $activeShift['opened_at']])->getRowArray();
+
+            $currentCashSales = (float)($salesRow['total_cash'] ?? 0);
+            $currentTrxCount = (int)($salesRow['total_trx'] ?? 0);
+            $currentExpectedCash = (float)$activeShift['starting_cash'] + $currentCashSales;
+        }
+
+        return view('pos/shifts', [
+            'pageTitle'           => 'Shift Kasir & Laci Uang',
+            'activeShift'         => $activeShift,
+            'shiftHistory'        => $shiftHistory,
+            'symbol'              => $symbol,
+            'currentUserName'     => session()->get('user_name'),
+            'currentCashSales'    => $currentCashSales,
+            'currentTrxCount'     => $currentTrxCount,
+            'currentExpectedCash' => $currentExpectedCash,
+        ]);
+    }
+
+    public function openShift()
+    {
+        $userId       = session()->get('user_id');
+        $cashierName  = trim($this->request->getPost('cashier_name') ?? 'Kasir');
+        $startingCash = (float)($this->request->getPost('starting_cash') ?? 0);
+        $notes        = trim($this->request->getPost('notes') ?? '') ?: null;
+
+        $id = $this->shiftModel->openShift($userId, $cashierName, $startingCash, $notes);
+
+        return $this->response->setJSON([
+            'success' => $id > 0,
+            'id'      => $id,
+            'message' => 'Shift kasir berhasil dibuka dengan modal awal ' . number_format($startingCash, 0, ',', '.'),
+        ]);
+    }
+
+    public function closeShift()
+    {
+        $userId     = session()->get('user_id');
+        $shiftId    = (int)($this->request->getPost('shift_id') ?? 0);
+        $actualCash = (float)($this->request->getPost('actual_cash') ?? 0);
+        $notes      = trim($this->request->getPost('notes') ?? '') ?: null;
+
+        if (!$shiftId) {
+            $active = $this->shiftModel->getActiveShift($userId);
+            $shiftId = $active ? (int)$active['id'] : 0;
+        }
+
+        if (!$shiftId) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Tidak ada shift aktif yang dapat ditutup.']);
+        }
+
+        $ok = $this->shiftModel->closeShift($shiftId, $userId, $actualCash, $notes);
+
+        return $this->response->setJSON([
+            'success' => $ok,
+            'message' => $ok ? 'Shift kasir berhasil ditutup dan direkonsiliasi.' : 'Gagal menutup shift.',
+        ]);
+    }
+
+    public function activeShift()
+    {
+        $userId = session()->get('user_id');
+        $activeShift = $this->shiftModel->getActiveShift($userId);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'shift'   => $activeShift,
+        ]);
+    }
 }
+
 

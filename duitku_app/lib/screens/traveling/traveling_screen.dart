@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/travel_provider.dart';
 import '../../theme.dart';
 import '../../utils/format.dart';
+import 'currency_converter_sheet.dart';
 import 'travel_trip_detail_screen.dart';
 import 'travel_trip_sheet.dart';
 
@@ -23,11 +24,27 @@ class _TravelingScreenState extends State<TravelingScreen> {
     });
   }
 
+  void _openCurrencyConverter() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const CurrencyConverterSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Traveling'),
+        actions: [
+          IconButton(
+            tooltip: 'Kalkulator Kurs Valas',
+            icon: const Icon(Icons.currency_exchange_rounded),
+            onPressed: _openCurrencyConverter,
+          ),
+        ],
       ),
       body: Consumer<TravelProvider>(
         builder: (context, travel, _) {

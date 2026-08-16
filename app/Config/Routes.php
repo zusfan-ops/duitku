@@ -125,6 +125,10 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/kendaraan/log/store',       'VehicleController::storeLog');
     $routes->post('/kendaraan/log/delete/(:num)','VehicleController::deleteLog/$1');
 
+    $routes->post('/transaction/ocr-scan',     'TransactionController::ocrScan');
+    $routes->get('/currency/rates',             'TravelingController::currencyRates');
+    $routes->get('/currency/convert',           'TravelingController::currencyConvert');
+
     // Kasir Mini POS & Bisnis UMKM
     $routes->get('/pos',                        'PosController::index');
     $routes->post('/pos/checkout',              'PosController::checkout');
@@ -132,6 +136,11 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('/pos/orders/poll',            'PosController::pollOrders');
     $routes->post('/pos/orders/update-status',  'PosController::updateOrderStatus');
     $routes->post('/pos/orders/pay',            'PosController::payOrder');
+    $routes->get('/pos/order/receipt/(:num)',   'PosController::receipt/$1');
+    $routes->get('/pos/shifts',                 'PosController::shifts');
+    $routes->post('/pos/shifts/open',           'PosController::openShift');
+    $routes->post('/pos/shifts/close',          'PosController::closeShift');
+    $routes->get('/pos/shifts/active',          'PosController::activeShift');
     $routes->get('/pos/qr',                     'PosController::qrPrint');
     $routes->post('/pos/store-profile',         'PosController::saveStoreProfile');
     $routes->get('/pos/kds',                    'PosController::kds');
@@ -204,6 +213,7 @@ $routes->group('api', function ($routes) {
         $routes->post('transaction/store', 'Api\TransactionController::store');
         $routes->post('transaction/update/(:num)', 'Api\TransactionController::update/$1');
         $routes->post('transaction/delete/(:num)', 'Api\TransactionController::delete/$1');
+        $routes->post('transaction/ocr-scan', 'Api\TransactionController::ocrScan');
         $routes->post('recurring/delete/(:num)', 'Api\TransactionController::deleteRecurring/$1');
         $routes->get('recurring', 'Api\RecurringController::index');
         $routes->post('recurring/store', 'Api\RecurringController::store');
@@ -268,6 +278,10 @@ $routes->group('api', function ($routes) {
         $routes->get('pos/orders',                  'Api\PosController::orders');
         $routes->post('pos/orders/update-status',   'Api\PosController::updateOrderStatus');
         $routes->post('pos/orders/pay',             'Api\PosController::payOrder');
+        $routes->get('pos/shifts',                  'Api\PosController::getShifts');
+        $routes->get('pos/shifts/active',           'Api\PosController::getActiveShift');
+        $routes->post('pos/shifts/open',            'Api\PosController::openShift');
+        $routes->post('pos/shifts/close',           'Api\PosController::closeShift');
         $routes->get('pos/store-profile',           'Api\PosController::getStoreProfile');
         $routes->post('pos/store-profile',          'Api\PosController::saveStoreProfile');
         $routes->get('pos/vouchers',                'Api\PosController::getVouchers');
@@ -281,6 +295,10 @@ $routes->group('api', function ($routes) {
         $routes->get('pos/history',                 'Api\PosController::history');
         $routes->get('pos/order/(:num)',            'Api\PosController::orderDetail/$1');
         $routes->get('pos/reports',                 'Api\PosController::reports');
+
+        // Currency converter
+        $routes->get('currency/rates',              'Api\TravelingController::currencyRates');
+        $routes->get('currency/convert',            'Api\TravelingController::currencyConvert');
 
         // Global Universal Search
         $routes->get('search',                      'Api\SearchController::index');

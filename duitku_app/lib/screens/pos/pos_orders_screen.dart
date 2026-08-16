@@ -125,6 +125,11 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.work_history_rounded, color: Color(0xFF38BDF8)),
+            tooltip: 'Shift Kasir & Laci Kas',
+            onPressed: _openShiftDialog,
+          ),
+          IconButton(
             icon: const Icon(Icons.qr_code_2_rounded, color: Color(0xFFEA580C)),
             tooltip: 'Cetak QR Standee Toko',
             onPressed: () {
@@ -600,6 +605,18 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        IconButton(
+          onPressed: () => _showReceiptDialog(order),
+          icon: const Icon(Icons.receipt_long_rounded, size: 18, color: Color(0xFF0284C7)),
+          tooltip: 'Cetak Struk Thermal',
+          padding: const EdgeInsets.all(6),
+          constraints: const BoxConstraints(),
+          style: IconButton.styleFrom(
+            backgroundColor: const Color(0xFF0284C7).withValues(alpha: 0.12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+        const SizedBox(width: 6),
         if (customerPhone.isNotEmpty) ...[
           IconButton(
             onPressed: () => _sendWhatsAppNotification(order),
@@ -921,4 +938,230 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
       },
     );
   }
+
+  void _showReceiptDialog(Map<String, dynamic> order) {
+    final items = (order['items'] as List?) ?? [];
+    final storeName = _store['store_name']?.toString() ?? 'Toko DuitKu';
+    final storeTagline = _store['store_tagline']?.toString() ?? '';
+    final orderNum = order['order_number']?.toString() ?? '';
+    final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
+    final discount = (order['discount_amount'] as num?)?.toDouble() ?? 0.0;
+    final deliveryFee = (order['delivery_fee'] as num?)?.toDouble() ?? 0.0;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  storeName.toUpperCase(),
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.black, fontFamily: 'monospace'),
+                ),
+                if (storeTagline.isNotEmpty)
+                  Text(
+                    storeTagline,
+                    style: const TextStyle(fontSize: 11, color: Colors.black87, fontFamily: 'monospace'),
+                  ),
+                const Divider(color: Colors.black, thickness: 1, height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Nota: #$orderNum', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black, fontFamily: 'monospace')),
+                    Text(order['created_at']?.toString().substring(0, 16) ?? '', style: const TextStyle(fontSize: 11, color: Colors.black87, fontFamily: 'monospace')),
+                  ],
+                ),
+                const Divider(color: Colors.black, thickness: 1, height: 16),
+                ...items.map((it) {
+                  final name = it['product_name']?.toString() ?? '';
+                  final qty = (it['qty'] as num?)?.toInt() ?? 1;
+                  final price = (it['price'] as num?)?.toDouble() ?? 0.0;
+                  final subtotal = (it['subtotal'] as num?)?.toDouble() ?? 0.0;
+                  final vars = it['selected_variants']?.toString();
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black, fontFamily: 'monospace'))),
+                            Text(_formatCurrency(subtotal), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black, fontFamily: 'monospace')),
+                          ],
+                        ),
+                        Text('$qty x ${_formatCurrency(price)}', style: const TextStyle(fontSize: 10.5, color: Colors.black54, fontFamily: 'monospace')),
+                        if (vars != null && vars.isNotEmpty)
+                          Text('+ $vars', style: const TextStyle(fontSize: 10, color: Colors.black87, fontFamily: 'monospace')),
+                      ],
+                    ),
+                  );
+                }),
+                const Divider(color: Colors.black, thickness: 1, height: 16),
+                if (discount > 0)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Diskon Kupon', style: TextStyle(fontSize: 11.5, color: Colors.black, fontFamily: 'monospace')),
+                      Text('-${_formatCurrency(discount)}', style: const TextStyle(fontSize: 11.5, color: Colors.black, fontFamily: 'monospace')),
+                    ],
+                  ),
+                if (deliveryFee > 0)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Ongkir', style: TextStyle(fontSize: 11.5, color: Colors.black, fontFamily: 'monospace')),
+                      Text(_formatCurrency(deliveryFee), style: const TextStyle(fontSize: 11.5, color: Colors.black, fontFamily: 'monospace')),
+                    ],
+                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('TOTAL', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.black, fontFamily: 'monospace')),
+                    Text(_formatCurrency(totalAmount), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.black, fontFamily: 'monospace')),
+                  ],
+                ),
+                const Divider(color: Colors.black, thickness: 1, height: 16),
+                const Text('*** TERIMA KASIH ***', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black, fontFamily: 'monospace')),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('🖨️ Struk siap dicetak ke printer Bluetooth thermal!')),
+                          );
+                        },
+                        icon: const Icon(Icons.print_rounded),
+                        label: const Text('Cetak Struk Thermal'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEA580C),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openShiftDialog() async {
+    try {
+      final res = await _api.getActivePosShift();
+      final active = res['active_shift'];
+
+      if (!mounted) return;
+
+      if (active != null) {
+        // Active shift dialog
+        final cashier = active['cashier_name']?.toString() ?? 'Kasir';
+        final startCash = (active['starting_cash'] as num?)?.toDouble() ?? 0.0;
+        final actualCtrl = TextEditingController();
+
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text('💼 Shift Aktif: $cashier'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Modal Awal: ${_formatCurrency(startCash)}'),
+                const SizedBox(height: 12),
+                const Text('Tutup Shift & Rekonsiliasi Kas:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: actualCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Hitungan Uang Fisik (Rp)',
+                    hintText: '0',
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+              FilledButton(
+                onPressed: () async {
+                  final actual = double.tryParse(actualCtrl.text.replaceAll(RegExp(r'[^\d]'), '')) ?? 0.0;
+                  Navigator.pop(ctx);
+                  await _api.closePosShift(shiftId: (active['id'] as num).toInt(), actualCash: actual);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Shift kasir berhasil ditutup dan direkonsiliasi.')),
+                    );
+                  }
+                },
+                child: const Text('Tutup Shift'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // Open shift dialog
+        final nameCtrl = TextEditingController(text: 'Kasir');
+        final startCtrl = TextEditingController(text: '100000');
+
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('🔓 Buka Shift Kasir Baru'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Nama Kasir'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: startCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Modal Awal Kas (Rp)'),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+              FilledButton(
+                onPressed: () async {
+                  final startCash = double.tryParse(startCtrl.text.replaceAll(RegExp(r'[^\d]'), '')) ?? 0.0;
+                  Navigator.pop(ctx);
+                  await _api.openPosShift(cashierName: nameCtrl.text.trim(), startingCash: startCash);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Shift kasir berhasil dibuka!')),
+                    );
+                  }
+                },
+                child: const Text('Mulai Shift'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memeriksa shift: $e')),
+      );
+    }
+  }
 }
+

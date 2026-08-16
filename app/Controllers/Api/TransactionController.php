@@ -194,4 +194,29 @@ class TransactionController extends ApiController
         file_put_contents($dir . '/' . $name, $data);
         return $name;
     }
+
+    /**
+     * POST api/transaction/ocr-scan
+     */
+    public function ocrScan()
+    {
+        $json = $this->request->getJSON(true) ?? [];
+        $text = trim($json['receipt_text'] ?? '');
+        $base64 = $json['image_base64'] ?? '';
+
+        $ocrService = new \App\Libraries\ReceiptOcrService();
+        $parsed = $ocrService->parseReceiptText($text);
+
+        $savedImage = null;
+        if (!empty($base64)) {
+            $savedImage = $this->saveBase64Image($base64);
+        }
+
+        return $this->ok([
+            'parsed'    => $parsed,
+            'image'     => $savedImage,
+            'image_url' => $savedImage ? base_url('uploads/transactions/' . $savedImage) : null,
+        ]);
+    }
 }
+

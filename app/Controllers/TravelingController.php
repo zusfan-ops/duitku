@@ -328,4 +328,32 @@ class TravelingController extends BaseController
 
         return $this->response->setJSON(['success' => false, 'message' => 'Aksi tidak dikenali.']);
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // MULTI-CURRENCY CONVERTER & RATES
+    // ─────────────────────────────────────────────────────────────────────────
+    public function currencyRates()
+    {
+        $currencyService = new \App\Libraries\CurrencyService();
+        return $this->response->setJSON([
+            'success'    => true,
+            'currencies' => $currencyService->getCurrencies(),
+        ]);
+    }
+
+    public function currencyConvert()
+    {
+        $amount = (float)($this->request->getVar('amount') ?? 1);
+        $from   = trim($this->request->getVar('from') ?? 'USD');
+        $to     = trim($this->request->getVar('to') ?? 'IDR');
+
+        $currencyService = new \App\Libraries\CurrencyService();
+        $result = $currencyService->convert($amount, $from, $to);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'data'    => $result,
+        ]);
+    }
 }
+

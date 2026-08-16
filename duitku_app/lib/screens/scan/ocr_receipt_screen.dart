@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../services/api_service.dart';
 import '../../theme.dart';
 import '../../utils/format.dart';
 
@@ -59,14 +60,28 @@ class _OcrReceiptScreenState extends State<OcrReceiptScreen> {
       _scanning = true;
     });
 
-    // Simulate OCR smart extraction (or parse from OCR text recognition)
-    await Future.delayed(const Duration(milliseconds: 600));
-
-    // Smart default extraction
-    final nowStr = DateTime.now().toIso8601String().substring(0, 10);
-    _dateCtrl.text = nowStr;
-    if (_merchantCtrl.text.isEmpty) {
-      _merchantCtrl.text = 'Belanja Swalayan / Nota';
+    try {
+      final base64 = await ApiService.instance.base64FromFile(img.path);
+      final res = await ApiService.instance.ocrScanReceipt(imageBase64: base64);
+      if (res['success'] == true && res['parsed'] != null) {
+        final p = res['parsed'];
+        if (p['amount'] != null && (p['amount'] as num) > 0) {
+          _amountCtrl.text = Fmt.money0((p['amount'] as num).toDouble());
+        }
+        if (p['merchant'] != null && p['merchant'].toString().isNotEmpty) {
+          _merchantCtrl.text = p['merchant'].toString();
+        }
+        if (p['date'] != null && p['date'].toString().isNotEmpty) {
+          _dateCtrl.text = p['date'].toString();
+        }
+      }
+    } catch (_) {
+      // Fallback default
+      final nowStr = DateTime.now().toIso8601String().substring(0, 10);
+      _dateCtrl.text = nowStr;
+      if (_merchantCtrl.text.isEmpty) {
+        _merchantCtrl.text = 'Belanja Swalayan / Nota';
+      }
     }
 
     setState(() {
@@ -74,10 +89,27 @@ class _OcrReceiptScreenState extends State<OcrReceiptScreen> {
     });
   }
 
-  void _parseManualText(String text) {
+  Future<void> _parseManualText(String text) async {
     if (text.isEmpty) return;
 
-    // Search for currency/amount patterns
+    try {
+      final res = await ApiService.instance.ocrScanReceipt(receiptText: text);
+      if (res['success'] == true && res['parsed'] != null) {
+        final p = res['parsed'];
+        if (p['amount'] != null && (p['amount'] as num) > 0) {
+          _amountCtrl.text = Fmt.money0((p['amount'] as num).toDouble());
+        }
+        if (p['merchant'] != null && p['merchant'].toString().isNotEmpty) {
+          _merchantCtrl.text = p['merchant'].toString();
+        }
+        if (p['date'] != null && p['date'].toString().isNotEmpty) {
+          _dateCtrl.text = p['date'].toString();
+        }
+        return;
+      }
+    } catch (_) {}
+
+    // Local Regex Fallback
     final lines = text.split('\n');
     String detectedMerchant = '';
     double detectedAmount = 0;

@@ -201,4 +201,34 @@ class TransactionController extends BaseController
         $this->recurringModel->delete($id);
         return $this->response->setJSON(['success' => true]);
     }
+
+    // -------------------------------------------------------------------------
+    // POST /transaction/ocr-scan (Smart Receipt Scanner)
+    // -------------------------------------------------------------------------
+    public function ocrScan()
+    {
+        $text = trim($this->request->getPost('receipt_text') ?? '');
+        $file = $this->request->getFile('receipt_image');
+
+        $ocrService = new \App\Libraries\ReceiptOcrService();
+        $parsed = $ocrService->parseReceiptText($text);
+
+        // If an image was uploaded, save it as a pending transaction receipt
+        $savedImage = null;
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (in_array($file->getMimeType(), $allowedMimes) && $file->getSize() <= 3 * 1024 * 1024) {
+                $savedImage = $file->getRandomName();
+                $file->move(FCPATH . 'uploads/transactions', $savedImage);
+            }
+        }
+
+        return $this->response->setJSON([
+            'success'     => true,
+            'data'        => $parsed,
+            'image'       => $savedImage,
+            'image_url'   => $savedImage ? base_url('uploads/transactions/' . $savedImage) : null,
+        ]);
+    }
 }
+

@@ -631,6 +631,69 @@ class ApiService {
     return get('pos/loyalty');
   }
 
+  // ── POS Shifts & Cash Drawer ─────────────────────────────────
+  Future<Map<String, dynamic>> getPosShifts() async {
+    return get('pos/shifts');
+  }
+
+  Future<Map<String, dynamic>> getActivePosShift() async {
+    return get('pos/shifts/active');
+  }
+
+  Future<Map<String, dynamic>> openPosShift({
+    required String cashierName,
+    required double startingCash,
+    String? notes,
+  }) async {
+    final body = <String, dynamic>{
+      'cashier_name': cashierName,
+      'starting_cash': startingCash,
+    };
+    if (notes != null) body['notes'] = notes;
+    return post('pos/shifts/open', body);
+  }
+
+  Future<Map<String, dynamic>> closePosShift({
+    required int shiftId,
+    required double actualCash,
+    String? notes,
+  }) async {
+    final body = <String, dynamic>{
+      'shift_id': shiftId,
+      'actual_cash': actualCash,
+    };
+    if (notes != null) body['notes'] = notes;
+    return post('pos/shifts/close', body);
+  }
+
+  // ── Smart OCR Receipt Scanner ────────────────────────────────
+  Future<Map<String, dynamic>> ocrScanReceipt({
+    String? receiptText,
+    String? imageBase64,
+  }) async {
+    final body = <String, dynamic>{};
+    if (receiptText != null) body['receipt_text'] = receiptText;
+    if (imageBase64 != null) body['image_base64'] = imageBase64;
+    return post('transaction/ocr-scan', body);
+  }
+
+  // ── Multi-Currency Converter ─────────────────────────────────
+  Future<Map<String, dynamic>> getCurrencyRates() async {
+    return get('currency/rates');
+  }
+
+  Future<Map<String, dynamic>> convertCurrency({
+    required double amount,
+    required String from,
+    String to = 'IDR',
+  }) async {
+    return get('currency/convert', query: {
+      'amount': amount.toString(),
+      'from': from,
+      'to': to,
+    });
+  }
+
   // ── Universal Global Search ──────────────────────────────────
   Future<Map<String, dynamic>> searchGlobal(String query) async {
     return get('search', query: {'q': query});
@@ -653,3 +716,4 @@ class ApiService {
     return base64Encode(bytes);
   }
 }
+
