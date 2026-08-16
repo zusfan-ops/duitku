@@ -284,30 +284,6 @@
         </div>
     </div>
 
-    <!-- Savings Modal (settings page copy) -->
-    <div class="mini-modal-overlay" id="savingsSettingOverlay">
-        <div class="mini-modal">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-                <h3 style="font-size:16px;font-weight:700">🎯 Target Menabung</h3>
-                <button class="modal-close" id="savingsSettingClose">✕</button>
-            </div>
-            <div class="form-group">
-                <label class="form-label">NAMA TARGET</label>
-                <input type="text" id="settingSavingsName" class="form-input" placeholder="Beli motor, Liburan…" value="<?= esc($savingsName) ?>">
-            </div>
-            <div class="form-group">
-                <label class="form-label">TARGET NOMINAL (<?= esc($symbol) ?>)</label>
-                <input type="text" id="settingSavingsTarget" class="form-input" placeholder="0" inputmode="numeric" value="<?= $savingsTarget > 0 ? number_format($savingsTarget, 0, ',', '.') : '' ?>">
-            </div>
-            <div class="form-group">
-                <label class="form-label">SUDAH TERSIMPAN (<?= esc($symbol) ?>)</label>
-                <input type="text" id="settingSavingsSaved" class="form-input" placeholder="0" inputmode="numeric" value="<?= $savingsSaved > 0 ? number_format($savingsSaved, 0, ',', '.') : '' ?>">
-            </div>
-            <div style="display:flex;gap:8px;margin-top:4px">
-                <button type="button" id="savingsSettingCancel" class="btn-cancel-small" style="flex:1">Batal</button>
-                <button type="button" id="savingsSettingSave" class="btn-save-small" style="flex:2">Simpan</button>
-            </div>
-        </div>
     </div>
 
     <!-- App Info -->
@@ -515,56 +491,7 @@
         });
     }
 
-    // ── Savings Goal (settings page) ────────────────────────────────────────
-    const savingsSettingOverlay = $('savingsSettingOverlay');
-    const savingsSettingClose   = $('savingsSettingClose');
-    const savingsSettingCancel  = $('savingsSettingCancel');
-    const savingsSettingSave    = $('savingsSettingSave');
-    const btnOpenSavingsSetting = $('btnOpenSavingsSetting');
 
-    if (btnOpenSavingsSetting) {
-        btnOpenSavingsSetting.addEventListener('click', () => {
-            savingsSettingOverlay.classList.add('open');
-        });
-    }
-    if (savingsSettingClose)  savingsSettingClose.addEventListener('click',  () => savingsSettingOverlay.classList.remove('open'));
-    if (savingsSettingCancel) savingsSettingCancel.addEventListener('click', () => savingsSettingOverlay.classList.remove('open'));
-    if (savingsSettingOverlay) savingsSettingOverlay.addEventListener('click', e => { if (e.target === savingsSettingOverlay) savingsSettingOverlay.classList.remove('open'); });
-
-    ['settingSavingsTarget','settingSavingsSaved'].forEach(id => {
-        const el = $(id);
-        if (!el) return;
-        el.addEventListener('input', function() {
-            const raw = this.value.replace(/\D/g, '');
-            this.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-        });
-    });
-
-    if (savingsSettingSave) {
-        savingsSettingSave.addEventListener('click', async () => {
-            const name   = ($('settingSavingsName').value || '').trim();
-            const target = parseFloat(($('settingSavingsTarget').value || '0').replace(/\./g, '').replace(',', '.')) || 0;
-            const saved  = parseFloat(($('settingSavingsSaved').value  || '0').replace(/\./g, '').replace(',', '.')) || 0;
-            if (!name || target <= 0) { showToast('Nama dan target wajib diisi.', 'error'); return; }
-
-            savingsSettingSave.disabled = true;
-            const fd = new FormData();
-            fd.append(window.DUITKU.csrfName, window.DUITKU.csrfToken);
-            fd.append('savings_name', name);
-            fd.append('savings_target', target);
-            fd.append('savings_saved', saved);
-            const res  = await fetch('/settings/savings', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd });
-            const data = await res.json();
-            savingsSettingSave.disabled = false;
-            if (data.success) {
-                savingsSettingOverlay.classList.remove('open');
-                showToast('Target disimpan!');
-                setTimeout(() => location.reload(), 600);
-            } else {
-                showToast(data.message || 'Gagal.', 'error');
-            }
-        });
-    }
 
     // ── Recurring delete ──────────────────────────────────────────────────────
     document.querySelectorAll('.recurring-delete-btn').forEach(btn => {

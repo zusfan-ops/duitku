@@ -91,16 +91,31 @@ img { max-width: 100%; display: block; }
 
 .topbar-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; }
 .topbar-brand { display: flex; align-items: center; gap: 10px; }
-.topbar-actions { position: relative; }
+.topbar-actions {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
 .user-avatar {
-    width: 36px; height: 36px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     overflow: hidden;
     cursor: pointer;
-    transition: transform var(--transition);
+    border: 1.5px solid var(--border);
+    flex-shrink: 0;
+    transition: transform var(--transition), border-color var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
 }
-.user-avatar:hover { transform: scale(1.05); }
+.user-avatar:hover {
+    transform: scale(1.05);
+    border-color: var(--primary);
+}
 .user-avatar span {
     width: 100%; height: 100%;
     display: flex; align-items: center; justify-content: center;

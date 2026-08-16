@@ -24,16 +24,20 @@
         background: var(--bg);
         border: 1px solid var(--border);
         color: var(--text-primary);
-        width: 38px;
-        height: 38px;
-        border-radius: 12px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: transform 0.15s ease, background 0.15s ease;
+        flex-shrink: 0;
+        transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
     }
-    .topbar-btn-notif:hover { background: var(--border); }
+    .topbar-btn-notif:hover {
+        background: var(--border-light);
+        border-color: var(--primary);
+    }
     .topbar-btn-notif:active { transform: scale(0.92); }
     .notif-badge {
         position: absolute;
