@@ -328,7 +328,7 @@
             <div class="form-group">
                 <label class="form-label">DIBAYAR DARI REKENING</label>
                 <select id="ocrWallet" name="wallet_id" class="form-input">
-                    <?php foreach ($wallets as $w): ?>
+                    <?php foreach (($wallets ?? []) as $w): ?>
                         <option value="<?= $w['id'] ?>" <?= !empty($w['is_default']) ? 'selected' : '' ?>>
                             <?= $w['icon'] ?? '💳' ?> <?= esc($w['name']) ?> — <?= esc($symbol ?? 'Rp') ?> <?= number_format($w['balance'] ?? 0, 0, ',', '.') ?>
                         </option>
@@ -341,7 +341,7 @@
                 <label class="form-label">KATEGORI PENGELUARAN</label>
                 <select id="ocrCategory" name="category_id" class="form-input">
                     <option value="">— Pilih Kategori —</option>
-                    <?php foreach ($categories as $c): ?>
+                    <?php foreach (($categories ?? []) as $c): ?>
                         <?php if ($c['type'] === 'expense'): ?>
                             <option value="<?= $c['id'] ?>"><?= esc($c['name']) ?></option>
                         <?php endif; ?>
