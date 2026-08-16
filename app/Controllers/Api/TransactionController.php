@@ -60,14 +60,22 @@ class TransactionController extends ApiController
         }
 
         if (!empty($json['is_recurring'])) {
-            $nextDate = date('Y-m-d', strtotime($data['date'] . ' +1 month'));
+            $freq     = in_array($json['frequency'] ?? '', ['weekly', 'monthly', 'yearly'])
+                        ? $json['frequency'] : 'monthly';
+            $nextDate = date('Y-m-d', strtotime($data['date'] . match($freq) {
+                'weekly' => ' +1 week',
+                'yearly' => ' +1 year',
+                default  => ' +1 month',
+            }));
             $this->recurringModel->insert([
                 'user_id'     => $userId,
+                'wallet_id'   => $data['wallet_id'],
                 'category_id' => $data['category_id'],
                 'type'        => $data['type'],
                 'amount'      => $data['amount'],
                 'note'        => $data['note'],
                 'next_date'   => $nextDate,
+                'frequency'   => $freq,
             ]);
         }
 

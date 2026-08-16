@@ -3,20 +3,23 @@
 namespace App\Controllers\Api;
 
 use App\Models\CategoryModel;
+use App\Models\SavingsGoalModel;
 use App\Models\SettingModel;
 use App\Models\UserModel;
 
 class SettingController extends ApiController
 {
-    protected SettingModel  $settingModel;
-    protected CategoryModel $catModel;
-    protected UserModel     $userModel;
+    protected SettingModel    $settingModel;
+    protected CategoryModel   $catModel;
+    protected UserModel       $userModel;
+    protected SavingsGoalModel $goalModel;
 
     public function __construct()
     {
         $this->settingModel = new SettingModel();
         $this->catModel     = new CategoryModel();
         $this->userModel    = new UserModel();
+        $this->goalModel    = new SavingsGoalModel();
     }
 
     public function index()
@@ -64,6 +67,7 @@ class SettingController extends ApiController
                 'target' => (float) ($settings['savings_target'] ?? 0),
                 'saved'  => (float) ($settings['savings_saved'] ?? 0),
             ],
+            'savings_goals' => $this->goalModel->getForUser($userId),
         ]);
     }
 

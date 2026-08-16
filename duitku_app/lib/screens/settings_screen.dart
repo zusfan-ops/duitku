@@ -10,6 +10,9 @@ import '../services/api_service.dart';
 import '../theme.dart';
 import '../utils/format.dart';
 import '../widgets/category_icon.dart';
+import 'export/export_screen.dart';
+import 'recurring/recurring_screen.dart';
+import 'savings/savings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -30,8 +33,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       .map((e) => Category.fromJson(e as Map<String, dynamic>))
       .toList();
   List<dynamic> get _recurring => _data?['recurring'] as List<dynamic>? ?? [];
-  Map<String, dynamic> get _savings =>
-      (_data?['savings'] as Map<String, dynamic>?) ?? {};
 
   @override
   void initState() {
@@ -262,89 +263,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (ok == true) _load();
   }
 
-  Future<void> _editSavings() async {
-    final nameCtrl = TextEditingController(text: _savings['name']?.toString() ?? '');
-    final targetCtrl = TextEditingController(
-        text: Fmt.toDouble(_savings['target']) > 0 ? Fmt.money0(Fmt.toDouble(_savings['target'])) : '');
-    final savedCtrl = TextEditingController(
-        text: Fmt.toDouble(_savings['saved']) > 0 ? Fmt.money0(Fmt.toDouble(_savings['saved'])) : '');
 
-    final ok = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text('Target Menabung',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-              const SizedBox(height: 16),
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'NAMA TABUNGAN', hintText: 'contoh: Liburan')),
-              const SizedBox(height: 14),
-              TextField(
-                controller: targetCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'TARGET', prefixText: 'Rp '),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: savedCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'SUDAH TERKUMPUL (OPSIONAL)', prefixText: 'Rp '),
-              ),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: () async {
-                  final name = nameCtrl.text.trim();
-                  final target = double.tryParse(Fmt.parseAmount(targetCtrl.text)) ?? 0;
-                  final saved = double.tryParse(Fmt.parseAmount(savedCtrl.text)) ?? 0;
-                  if (name.isEmpty || target <= 0) return;
-                  try {
-                    await ApiService.instance.saveSavings(name: name, target: target, saved: saved);
-                    if (ctx.mounted) Navigator.pop(ctx, true);
-                  } on ApiException catch (e) {
-                    if (ctx.mounted) {
-                      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(e.message)));
-                    }
-                  }
-                },
-                child: const Text('Simpan'),
-              ),
-              const SizedBox(height: 6),
-              TextButton(
-                onPressed: () async {
-                  await ApiService.instance.deleteSavings();
-                  if (ctx.mounted) Navigator.pop(ctx, true);
-                },
-                child: const Text('Hapus Target', style: TextStyle(color: AppColors.expense)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (ok == true) _load();
-  }
 
   Future<void> _addCategory() async {
     final nameCtrl = TextEditingController();
@@ -518,30 +437,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _deleteRecurring(int id) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Hentikan transaksi berulang?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.expense),
-            child: const Text('Hentikan'),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    try {
-      await ApiService.instance.deleteRecurring(id);
-      _load();
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
-    }
-  }
+
 
   void _confirmLogout() {
     showDialog<void>(
@@ -664,16 +560,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   _card(
                     ListTile(
-                      leading: _icon(Icons.savings_outlined),
+                      leading: _icon(Icons.savings_outlined, color: const Color(0xFFC026D3)),
                       title: const Text('Target Menabung', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: const Text('Multi-goal · Setor tabungan berkala', style: TextStyle(fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                      onTap: () async {
+                        await Navigator.push(context, MaterialPageRoute(builder: (_) => const SavingsScreen()));
+                        _load();
+                      },
+                    ),
+                  ),
+                  _card(
+                    ListTile(
+                      leading: _icon(Icons.sync_rounded, color: const Color(0xFF0F766E)),
+                      title: const Text('Transaksi Rutin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                       subtitle: Text(
-                        (_savings['name']?.toString() ?? '').isEmpty
-                            ? 'Belum diatur'
-                            : '${_savings['name']} · ${Fmt.money0(Fmt.toDouble(_savings['saved']))} / ${Fmt.money0(Fmt.toDouble(_savings['target']))}',
+                        _recurring.isNotEmpty
+                            ? '${_recurring.length} transaksi aktif'
+                            : 'Kelola transaksi otomatis',
                         style: const TextStyle(fontSize: 12),
                       ),
                       trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
-                      onTap: _editSavings,
+                      onTap: () async {
+                        await Navigator.push(context, MaterialPageRoute(builder: (_) => const RecurringScreen()));
+                        _load();
+                      },
+                    ),
+                  ),
+                  _card(
+                    ListTile(
+                      leading: _icon(Icons.description_outlined, color: const Color(0xFFE11D48)),
+                      title: const Text('Export Laporan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: const Text('Cetak PDF & unduh CSV Excel', style: TextStyle(fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ExportScreen()));
+                      },
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -724,27 +646,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onTap: _addCategory,
                     ),
                   ),
-                  if (_recurring.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    const Text('TRANSAKSI BERULANG',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .5, color: AppColors.textMuted)),
-                    const SizedBox(height: 8),
-                    ..._recurring.map((r) => _card(
-                          ListTile(
-                            leading: _icon(Icons.repeat),
-                            title: Text(r['category_name']?.toString() ?? 'Transaksi',
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                            subtitle: Text(
-                              '${r['type']?.toString() == 'income' ? '+' : '-'} ${Fmt.money0(Fmt.toDouble(r['amount']))} · lanjut ${Fmt.dateDay(r['next_date']?.toString() ?? '')}',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            trailing: IconButton(
-                              onPressed: () => _deleteRecurring(int.tryParse('${r['id']}') ?? 0),
-                              icon: const Icon(Icons.stop_circle_outlined, color: AppColors.expense, size: 22),
-                            ),
-                          ),
-                        )),
-                  ],
+
                   const SizedBox(height: 24),
                   OutlinedButton.icon(
                     onPressed: _confirmLogout,

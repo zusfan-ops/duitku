@@ -6,6 +6,9 @@ import 'barang/barang_screen.dart';
 import 'belanja/belanja_screen.dart';
 import 'bills_screen.dart';
 import 'debt_screen.dart';
+import 'export/export_screen.dart';
+import 'recurring/recurring_screen.dart';
+import 'savings/savings_screen.dart';
 import 'stats_screen.dart';
 import 'traveling/traveling_screen.dart';
 import 'wallet_screen.dart';
@@ -70,6 +73,39 @@ class FeaturesScreen extends StatelessWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const WalletScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Transaksi Rutin',
+              subtitle: 'Otomatisasi berkala',
+              icon: Icons.sync_rounded,
+              gradient: const [Color(0xFF0F766E), Color(0xFF14B8A6)],
+              shadowColor: const Color(0xFF14B8A6),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RecurringScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Target Tabungan',
+              subtitle: 'Multi-goal & progres',
+              icon: Icons.savings_rounded,
+              gradient: const [Color(0xFFC026D3), Color(0xFFE879F9)],
+              shadowColor: const Color(0xFFE879F9),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SavingsScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Export Laporan',
+              subtitle: 'Cetak PDF & CSV Excel',
+              icon: Icons.description_rounded,
+              gradient: const [Color(0xFFE11D48), Color(0xFFFB7185)],
+              shadowColor: const Color(0xFFFB7185),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ExportScreen()),
               ),
             ),
           ]),

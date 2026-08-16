@@ -376,6 +376,74 @@ class ApiService {
     await post('settings/note', {'note': note});
   }
 
+  // ── Recurring Transactions ───────────────────────────────────
+  Future<Map<String, dynamic>> recurringList() async {
+    return get('recurring');
+  }
+
+  Future<Map<String, dynamic>> storeRecurring({
+    required String type,
+    required double amount,
+    required String frequency,
+    required String startDate,
+    int? categoryId,
+    int? walletId,
+    String? note,
+  }) async {
+    return post('recurring/store', {
+      'type': type,
+      'amount': amount,
+      'frequency': frequency,
+      'start_date': startDate,
+      'category_id': ?categoryId,
+      'wallet_id': ?walletId,
+      if (note != null && note.isNotEmpty) 'note': note,
+    });
+  }
+
+  Future<Map<String, dynamic>> processRecurring() async {
+    return post('recurring/process');
+  }
+
+  // ── Savings Goals ────────────────────────────────────────────
+  Future<Map<String, dynamic>> savingsGoals() async {
+    return get('savings');
+  }
+
+  Future<Map<String, dynamic>> storeSavingsGoal({
+    int? id,
+    required String name,
+    required double targetAmount,
+    double savedAmount = 0,
+    String icon = '🎯',
+    String color = '#0AA956',
+    String? deadline,
+  }) async {
+    return post('savings/store', {
+      'id': ?id,
+      'name': name,
+      'target_amount': targetAmount,
+      'saved_amount': savedAmount,
+      'icon': icon,
+      'color': color,
+      if (deadline != null && deadline.isNotEmpty) 'deadline': deadline,
+    });
+  }
+
+  Future<Map<String, dynamic>> topUpSavingsGoal(int id, double amount) async {
+    return post('savings/topup/$id', {'amount': amount});
+  }
+
+  Future<void> deleteSavingsGoal(int id) async {
+    await post('savings/delete/$id');
+  }
+
+  // ── Export ───────────────────────────────────────────────────
+  /// Returns the full URL to the PDF report page for the given month.
+  String exportPdfUrl(String month) {
+    return '${ApiConfig.baseUrl}/export/pdf?month=$month';
+  }
+
   Future<Map<String, dynamic>> storeCategory({
     required String name,
     required String type,

@@ -68,14 +68,22 @@ class TransactionController extends BaseController
         // Handle recurring
         $isRecurring = $this->request->getPost('is_recurring') === '1';
         if ($isRecurring) {
-            $nextDate = date('Y-m-d', strtotime($data['date'] . ' +1 month'));
+            $freq     = $this->request->getPost('frequency') ?: 'monthly';
+            if (!in_array($freq, ['weekly', 'monthly', 'yearly'])) $freq = 'monthly';
+            $nextDate = date('Y-m-d', strtotime($data['date'] . match($freq) {
+                'weekly' => ' +1 week',
+                'yearly' => ' +1 year',
+                default  => ' +1 month',
+            }));
             $this->recurringModel->insert([
                 'user_id'     => $userId,
+                'wallet_id'   => $walletId,
                 'category_id' => $data['category_id'],
                 'type'        => $data['type'],
                 'amount'      => $data['amount'],
                 'note'        => $data['note'],
                 'next_date'   => $nextDate,
+                'frequency'   => $freq,
             ]);
         }
 

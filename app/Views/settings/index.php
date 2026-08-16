@@ -245,74 +245,42 @@
     </div>
 
     <!-- RECURRING TRANSACTIONS -->
-    <?php if (!empty($recurring)): ?>
     <div class="settings-section">
         <div class="settings-section-label">TRANSAKSI BERULANG</div>
-        <div class="settings-list" id="recurringList">
-            <?php foreach ($recurring as $r): ?>
-            <div class="settings-item" data-recurring-id="<?= $r['id'] ?>">
+        <div class="settings-list">
+            <a href="/recurring" class="settings-item" style="text-decoration:none;cursor:pointer">
                 <div class="settings-item-left">
-                    <div class="settings-item-icon"
-                         style="background:<?= esc($r['category_color'] ?? '#6B7280') ?>20;color:<?= esc($r['category_color'] ?? '#6B7280') ?>">
-                        <?= categoryIcon($r['category_icon'] ?? 'other') ?>
+                    <div class="settings-item-icon" style="background:#DBEAFE;color:#2563EB">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
                     </div>
                     <div>
-                        <div class="settings-item-label"><?= esc($r['category_name'] ?? 'Tanpa Kategori') ?></div>
-                        <div style="font-size:11px;color:var(--text-muted)">
-                            <?= $r['type'] === 'income' ? '+' : '-' ?> <?= esc($symbol) ?> <?= number_format($r['amount'], 0, ',', '.') ?>
-                            · Berikutnya <?= date('d M Y', strtotime($r['next_date'])) ?>
-                        </div>
+                        <div class="settings-item-label">Kelola Transaksi Berulang</div>
+                        <div style="font-size:11px;color:var(--text-muted)"><?= count($recurring) ?> transaksi aktif</div>
                     </div>
                 </div>
-                <button class="cat-delete-btn recurring-delete-btn" data-id="<?= $r['id'] ?>" title="Hapus">✕</button>
-            </div>
-            <?php endforeach; ?>
+                <div class="settings-item-right">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+            </a>
         </div>
     </div>
-    <?php endif; ?>
 
     <!-- Savings Goal Section -->
     <div class="settings-section">
         <div class="settings-section-label">TARGET MENABUNG</div>
-        <?php
-            $savingsName   = $settings['savings_name']   ?? '';
-            $savingsTarget = (float)($settings['savings_target'] ?? 0);
-            $savingsSaved  = (float)($settings['savings_saved']  ?? 0);
-            $savingsPct    = ($savingsTarget > 0) ? min(($savingsSaved / $savingsTarget) * 100, 100) : 0;
-        ?>
-        <div class="settings-list" id="savingsSettingBox">
-            <?php if ($savingsTarget > 0): ?>
-            <div class="savings-card" id="savingsSettingCard" style="margin-bottom:0;border-radius:0;border:none;border-bottom:1px solid var(--border)">
-                <div class="savings-header">
-                    <span class="savings-icon">🎯</span>
-                    <div class="savings-info">
-                        <div class="savings-title"><?= esc($savingsName ?: 'Target Menabung') ?></div>
-                        <div class="savings-amounts">
-                            <strong><?= esc($symbol) ?> <?= number_format($savingsSaved, 0, ',', '.') ?></strong>
-                            / <?= esc($symbol) ?> <?= number_format($savingsTarget, 0, ',', '.') ?>
-                        </div>
+        <div class="settings-list">
+            <a href="/savings" class="settings-item" style="text-decoration:none;cursor:pointer">
+                <div class="settings-item-left">
+                    <div class="settings-item-icon" style="background:#DCFCE7;color:#16A34A">🎯</div>
+                    <div>
+                        <div class="settings-item-label">Kelola Target Menabung</div>
+                        <div style="font-size:11px;color:var(--text-muted)">Multi-goal · Setor tabungan berkala</div>
                     </div>
                 </div>
-                <div class="savings-bar-wrap">
-                    <div class="savings-bar" style="width:<?= number_format(min($savingsPct, 100), 1) ?>%"></div>
-                </div>
-                <div class="savings-footer">
-                    <span><?= $savingsPct >= 100 ? '🎉 Target tercapai!' : 'Sisa ' . esc($symbol) . ' ' . number_format(max($savingsTarget - $savingsSaved, 0), 0, ',', '.') ?></span>
-                    <span class="savings-pct"><?= number_format($savingsPct, 0) ?>%</span>
-                </div>
-            </div>
-            <?php endif; ?>
-            <div class="settings-item" id="btnOpenSavingsSetting" style="cursor:pointer">
-                <div class="settings-item-left">
-                    <div class="settings-item-icon" style="background:var(--primary-dim);color:var(--primary)">🎯</div>
-                    <span class="settings-item-label"><?= $savingsTarget > 0 ? 'Edit Target Menabung' : 'Set Target Menabung' ?></span>
-                </div>
                 <div class="settings-item-right">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <polyline points="9 18 15 12 9 6"/>
-                    </svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
-            </div>
+            </a>
         </div>
     </div>
 

@@ -50,6 +50,16 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // Recurring
     $routes->post('/recurring/delete/(:num)', 'TransactionController::deleteRecurring/$1');
+    $routes->get('/recurring',                'RecurringController::index');
+    $routes->post('/recurring/store',         'RecurringController::store');
+    $routes->post('/recurring/process',       'RecurringController::process');
+    $routes->post('/recurring/drop/(:num)',   'RecurringController::delete/$1');
+
+    // Savings Goals
+    $routes->get('/savings',                  'SavingsController::index');
+    $routes->post('/savings/store',           'SavingsController::store');
+    $routes->post('/savings/topup/(:num)',     'SavingsController::topup/$1');
+    $routes->post('/savings/delete/(:num)',    'SavingsController::delete/$1');
 
     // Export
     $routes->get('/export/csv', 'ExportController::csv');
@@ -132,6 +142,9 @@ $routes->group('api', function ($routes) {
         $routes->post('transaction/update/(:num)', 'Api\TransactionController::update/$1');
         $routes->post('transaction/delete/(:num)', 'Api\TransactionController::delete/$1');
         $routes->post('recurring/delete/(:num)', 'Api\TransactionController::deleteRecurring/$1');
+        $routes->get('recurring', 'Api\RecurringController::index');
+        $routes->post('recurring/store', 'Api\RecurringController::store');
+        $routes->post('recurring/process', 'Api\RecurringController::process');
 
         // Belanja (offline-first sync)
         $routes->get('belanja',  'Api\BelanjaController::index');
@@ -169,5 +182,11 @@ $routes->group('api', function ($routes) {
         $routes->post('settings/savings', 'Api\SettingController::saveSavings');
         $routes->post('settings/savings/delete', 'Api\SettingController::deleteSavings');
         $routes->post('settings/note', 'Api\SettingController::saveNote');
+
+        // Savings Goals
+        $routes->get('savings', 'Api\SavingsController::index');
+        $routes->post('savings/store', 'Api\SavingsController::store');
+        $routes->post('savings/topup/(:num)', 'Api\SavingsController::topup/$1');
+        $routes->post('savings/delete/(:num)', 'Api\SavingsController::delete/$1');
     });
 });
