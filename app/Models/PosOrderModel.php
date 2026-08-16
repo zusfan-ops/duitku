@@ -130,4 +130,16 @@ class PosOrderModel extends Model
             'daily'       => $daily,
         ];
     }
+
+    /**
+     * Get recent POS orders
+     */
+    public function getRecent(int $userId, int $limit = 5): array
+    {
+        return $this->where('user_id', $userId)
+                    ->orderBy('id', 'DESC')
+                    ->limit($limit)
+                    ->findAll();
+    }
 }
+

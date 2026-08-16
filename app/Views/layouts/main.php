@@ -447,6 +447,8 @@
                 </div>
                 <?php endforeach; ?>
             <?php endif; ?>
+        </div>
+    </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ UNIVERSAL SEARCH MODAL -->
@@ -484,6 +486,19 @@
         csrfToken:     '<?= csrf_hash() ?>',
         csrfName:      '<?= csrf_token() ?>',
     };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Notif Sheet
+        const notifOverlay = document.getElementById('notifModalOverlay');
+        document.getElementById('btnOpenNotif')?.addEventListener('click', () => {
+            notifOverlay?.classList.add('open');
+        });
+        document.getElementById('notifModalClose')?.addEventListener('click', () => {
+            notifOverlay?.classList.remove('open');
+        });
+        notifOverlay?.addEventListener('click', (e) => {
+            if (e.target === notifOverlay) notifOverlay.classList.remove('open');
+        });
 
         // Universal Search Modal
         const searchOverlay = document.getElementById('searchModalOverlay');

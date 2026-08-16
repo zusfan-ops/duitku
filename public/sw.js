@@ -1,10 +1,9 @@
-const CACHE_NAME = 'duitku-v3';
+const CACHE_NAME = 'duitku-v4';
 const ASSETS = [
   '/',
   '/css/app.css',
   '/js/app.js',
-  '/images/logo.svg',
-  '/images/icon.svg',
+  '/images/logo.png',
   '/manifest.json'
 ];
 
@@ -55,26 +54,38 @@ self.addEventListener('notificationclick', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
-  // Skip caching for belanja assets — biar versioning ?v= yang handle
-  // Skip caching for API/sync endpoints
-  const url = event.request.url;
-  if (url.includes('/belanja_assets/') || url.includes('/belanja/sync')) {
-    event.respondWith(fetch(event.request).catch(() => caches.match(event.request).then(m => m || Response.error())));
+  const url = new URL(event.request.url);
+
+  // Only handle http and https requests from the same origin
+  if (!url.protocol.startsWith('http')) return;
+  if (url.origin !== self.location.origin) return;
+
+  // Skip dynamic API/sync endpoints, backups, and exports
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/backup/') ||
+    url.pathname.startsWith('/export/') ||
+    url.pathname.includes('/belanja_assets/') ||
+    url.pathname.includes('/belanja/sync')
+  ) {
     return;
   }
 
-  // Network-First Strategy for dynamic content
+  // Network-First Strategy for app shell and assets
   event.respondWith(
     fetch(event.request)
       .then(fetchRes => {
-        return caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request.url, fetchRes.clone());
-          return fetchRes;
-        });
+        if (fetchRes && fetchRes.status === 200 && fetchRes.type === 'basic') {
+          const resClone = fetchRes.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, resClone).catch(() => {});
+          });
+        }
+        return fetchRes;
       })
       .catch(() => {
         return caches.match(event.request).then(match => {
-            return match || Response.error();
+          return match || Response.error();
         });
       })
   );

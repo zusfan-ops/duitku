@@ -163,13 +163,13 @@ class DashboardController extends ApiController
         usort($notifications, fn($a, $b) => $a['days_left'] <=> $b['days_left']);
 
         // Business / POS Workspace Summary
-        $todayStr = date('Y-m-d');
         $posOrderModel = new \App\Models\PosOrderModel();
         $posProductModel = new \App\Models\PosProductModel();
-        $todaySummary = $posOrderModel->getSummary($userId, $todayStr, $todayStr);
-        $monthSummary = $posOrderModel->getMonthlySummary($userId, $now);
+        $todaySummary = $posOrderModel->getTodaySummary($userId);
+        $monthReport = $posOrderModel->getMonthlyReport($userId, $now);
+        $monthSummary = $monthReport['summary'] ?? [];
+        $bestSellers = array_slice($monthReport['bestSellers'] ?? [], 0, 4);
         $lowStockProducts = $posProductModel->getLowStock($userId);
-        $bestSellers = $posOrderModel->getBestSellers($userId, $now, 4);
         $recentOrders = $posOrderModel->getRecent($userId, 5);
 
         $db = \Config\Database::connect();

@@ -1161,6 +1161,9 @@
                 <button type="button" id="hsBtnCancelForm" class="hs-outline-btn" style="flex:1">Batal</button>
                 <button type="submit" class="hs-save-btn" style="flex:2">Simpan</button>
             </div>
+        </form>
+    </div>
+</div>
     </div>
     <!-- END PERSONAL WORKSPACE CONTAINER -->
 
