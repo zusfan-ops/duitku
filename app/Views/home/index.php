@@ -210,8 +210,8 @@
 /* ── Quick Actions (icon grid) ────────────────────────────────── */
 .home-quick-actions {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
     margin-bottom: 16px;
 }
 .home-qa-btn {
@@ -785,6 +785,12 @@
 
     <!-- QUICK ACTIONS -->
     <div class="home-quick-actions">
+        <a href="/scan" class="home-qa-btn">
+            <div class="home-qa-icon" style="background:rgba(5,150,105,0.15)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" width="18" height="18" style="color:var(--primary)"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </div>
+            <span class="home-qa-label">Scan Nota</span>
+        </a>
         <button class="home-qa-btn" id="btnOpenCalc">
             <div class="home-qa-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="12" y1="10" x2="14" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="12" y1="14" x2="14" y2="14"/><line x1="16" y1="14" x2="16" y2="18"/><line x1="14" y1="16" x2="18" y2="16"/></svg>

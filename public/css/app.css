@@ -39,13 +39,21 @@
     --transition:     0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ─── RESET ──────────────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ─── RESET & VIEWPORT LOCK ──────────────────────────────────────────────── */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
 html {
     font-size: 16px;
     -webkit-tap-highlight-color: transparent;
     scroll-behavior: smooth;
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    position: relative;
 }
 
 body {
@@ -54,13 +62,20 @@ body {
     color: var(--text-primary);
     min-height: 100vh;
     min-height: 100dvh;
-    overflow-x: hidden;
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    position: relative;
+    overscroll-behavior-x: none !important;
+    overscroll-behavior-y: auto;
+    touch-action: pan-y;
 }
 
 a { text-decoration: none; color: inherit; }
 button { cursor: pointer; border: none; background: none; font-family: var(--font); }
 input, select, textarea { font-family: var(--font); }
-img { max-width: 100%; display: block; }
+img, svg, video, canvas, audio, iframe, embed, object { max-width: 100%; display: block; }
+table { max-width: 100%; }
 
 /* ─── APP SHELL ──────────────────────────────────────────────────────────── */
 #app {
@@ -68,8 +83,10 @@ img { max-width: 100%; display: block; }
     flex-direction: column;
     min-height: 100dvh;
     max-width: 480px;
+    width: 100%;
     margin: 0 auto;
     position: relative;
+    overflow-x: hidden !important;
 }
 
 /* ─── TOPBAR ─────────────────────────────────────────────────────────────── */
@@ -161,8 +178,24 @@ img { max-width: 100%; display: block; }
 .page-content {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden !important;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     padding: 14px 16px calc(var(--nav-height) + 20px);
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: auto;
+    overscroll-behavior-x: none;
+}
+
+/* Horizontal scroll containers containment */
+.wallet-strip,
+.filter-tabs,
+.category-chips,
+.color-picker-row,
+.horizontal-scroll-area {
+    overscroll-behavior-x: contain;
+    touch-action: pan-x pan-y;
 }
 
 /* ─── BOTTOM NAV (Native Docked 4 Tabs + Center Elevated FAB) ───────────── */
@@ -1504,3 +1537,173 @@ img { max-width: 100%; display: block; }
     background: none; border: none; color: #94A3B8;
     font-size: 16px; padding: 4px; cursor: pointer;
 }
+
+/* ─── SMART OCR RECEIPT SCANNER ─────────────────────────────────────────── */
+.ocr-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 30px;
+}
+
+.ocr-hero-card {
+    background: var(--bg-card);
+    border: 1.5px dashed var(--primary);
+    border-radius: var(--radius-xl);
+    padding: 24px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition);
+}
+
+.ocr-hero-card.has-image {
+    padding: 0;
+    border-style: solid;
+    border-color: var(--border);
+    max-height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+}
+
+.ocr-preview-img {
+    width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+    display: block;
+}
+
+/* Laser Scanning Beam Animation */
+.ocr-scanner-beam {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #10B981, #34D399, #10B981, transparent);
+    box-shadow: 0 0 16px 4px rgba(16, 185, 129, 0.85);
+    z-index: 10;
+    top: 0;
+    animation: ocrScanLaser 2s ease-in-out infinite alternate;
+}
+
+@keyframes ocrScanLaser {
+    0%   { top: 2%; opacity: 0.9; }
+    50%  { opacity: 1; }
+    100% { top: 96%; opacity: 0.9; }
+}
+
+.ocr-scan-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    z-index: 15;
+    color: #ffffff;
+}
+
+.ocr-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(255,255,255,0.2);
+    border-top-color: #10B981;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.ocr-actions-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.ocr-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 14px;
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    font-weight: 700;
+    transition: all var(--transition);
+    cursor: pointer;
+}
+
+.ocr-action-btn.primary {
+    background: var(--primary);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+}
+.ocr-action-btn.primary:hover {
+    background: var(--primary-light);
+}
+
+.ocr-action-btn.secondary {
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    color: var(--text-primary);
+}
+.ocr-action-btn.secondary:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.ocr-result-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+}
+
+.ocr-badge-success {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--income-bg);
+    color: var(--income);
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.ocr-quick-modal-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.12) 0%, rgba(16, 185, 129, 0.18) 100%);
+    border: 1.5px dashed var(--primary);
+    border-radius: var(--radius-md);
+    color: var(--primary-dark);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+[data-theme="dark"] .ocr-quick-modal-btn {
+    color: #34D399;
+}
+.ocr-quick-modal-btn:hover {
+    background: var(--primary-dim);
+    transform: translateY(-1px);
+}
+

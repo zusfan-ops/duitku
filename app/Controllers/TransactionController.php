@@ -64,6 +64,11 @@ class TransactionController extends BaseController
             $newName = $file->getRandomName();
             $file->move(FCPATH . 'uploads/transactions', $newName);
             $data['image'] = $newName;
+        } elseif ($this->request->getPost('existing_image')) {
+            $existing = basename($this->request->getPost('existing_image'));
+            if (file_exists(FCPATH . 'uploads/transactions/' . $existing)) {
+                $data['image'] = $existing;
+            }
         }
 
         $id = $this->txModel->insert($data);
@@ -228,6 +233,24 @@ class TransactionController extends BaseController
             'data'        => $parsed,
             'image'       => $savedImage,
             'image_url'   => $savedImage ? base_url('uploads/transactions/' . $savedImage) : null,
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // GET /scan & /scan-ocr — Smart OCR Receipt Scan View
+    // -------------------------------------------------------------------------
+    public function ocrPage()
+    {
+        $userId = session()->get('user_id');
+        $walletsData = $this->walletModel->getWithBalances($userId);
+        $categories  = $this->catModel->getForUser($userId);
+        $symbol      = $this->settingModel->get($userId, 'currency_symbol', 'Rp');
+
+        return view('scan/ocr', [
+            'pageTitle'  => 'Scan Struk / Nota (OCR)',
+            'wallets'    => $walletsData['wallets'] ?? [],
+            'categories' => $categories,
+            'symbol'     => $symbol,
         ]);
     }
 }

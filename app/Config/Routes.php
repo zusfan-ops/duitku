@@ -128,6 +128,8 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/kendaraan/log/store',       'VehicleController::storeLog');
     $routes->post('/kendaraan/log/delete/(:num)','VehicleController::deleteLog/$1');
 
+    $routes->get('/scan',                      'TransactionController::ocrPage');
+    $routes->get('/scan-ocr',                  'TransactionController::ocrPage');
     $routes->post('/transaction/ocr-scan',     'TransactionController::ocrScan');
     $routes->get('/currency/rates',             'TravelingController::currencyRates');
     $routes->get('/currency/convert',           'TravelingController::currencyConvert');

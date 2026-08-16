@@ -112,6 +112,10 @@
 }
 
 /* Theme Gradients matching Flutter */
+.feat-ocr {
+    background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.25);
+}
 .feat-stats {
     background: linear-gradient(135deg, #047857 0%, #10B981 100%);
     box-shadow: 0 6px 18px rgba(16, 185, 129, 0.25);
@@ -235,6 +239,24 @@
             <div class="feature-card-info">
                 <div class="feature-card-title">Kelola Rekening</div>
                 <div class="feature-card-desc">Bank, e-wallet & dompet</div>
+            </div>
+        </a>
+
+        <!-- 5. Smart Scan Struk / Nota (OCR) -->
+        <a href="/scan" class="feature-card feat-ocr">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+            </svg>
+            <div class="feature-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                </svg>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Scan Nota (OCR)</div>
+                <div class="feature-card-desc">Scan otomatis foto struk</div>
             </div>
         </a>
 

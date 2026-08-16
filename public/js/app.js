@@ -150,6 +150,7 @@
         $('txType').value  = 'expense';
         $('txAmount').value = '';
         $('txNote').value  = '';
+        if ($('txExistingImage')) $('txExistingImage').value = '';
         if ($('txImage')) $('txImage').value = '';
         if ($('txImagePreviewContainer')) {
             $('txImagePreviewContainer').style.display = 'none';
@@ -355,6 +356,8 @@
 
             if (txImage && txImage.files[0]) {
                 formData.append('image', txImage.files[0]);
+            } else if ($('txExistingImage') && $('txExistingImage').value) {
+                formData.append('existing_image', $('txExistingImage').value);
             }
 
             const url = state.editingTxId
