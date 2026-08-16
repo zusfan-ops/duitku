@@ -89,17 +89,22 @@ class DashboardController extends ApiController
         unset($d);
 
         // Vehicle tax reminders (within 30 days)
-        $upcomingTaxes = $this->vehicleModel->getUpcomingTaxes($userId, 30);
+        $upcomingTaxes = [];
+        try {
+            $upcomingTaxes = $this->vehicleModel->getUpcomingTaxes($userId, 30);
+        } catch (\Throwable $e) {}
 
         // Recurring due reminders (within 3 days)
-        $allRecurring = $this->recurringModel->getForUser($userId);
         $upcomingRecurring = [];
-        foreach ($allRecurring as $rec) {
-            $recDays = (int) floor((strtotime($rec['next_date']) - strtotime($todayDate)) / 86400);
-            if ($recDays <= 3) {
-                $upcomingRecurring[] = array_merge($rec, ['daysLeft' => $recDays]);
+        try {
+            $allRecurring = $this->recurringModel->getForUser($userId);
+            foreach ($allRecurring as $rec) {
+                $recDays = (int) floor((strtotime($rec['next_date']) - strtotime($todayDate)) / 86400);
+                if ($recDays <= 3) {
+                    $upcomingRecurring[] = array_merge($rec, ['daysLeft' => $recDays]);
+                }
             }
-        }
+        } catch (\Throwable $e) {}
 
         // Consolidated Notifications Array
         $notifications = [];
@@ -163,38 +168,57 @@ class DashboardController extends ApiController
         usort($notifications, fn($a, $b) => $a['days_left'] <=> $b['days_left']);
 
         // Business / POS Workspace Summary
-        $posOrderModel = new \App\Models\PosOrderModel();
-        $posProductModel = new \App\Models\PosProductModel();
-        $todaySummary = $posOrderModel->getTodaySummary($userId);
-        $monthReport = $posOrderModel->getMonthlyReport($userId, $now);
-        $monthSummary = $monthReport['summary'] ?? [];
-        $bestSellers = array_slice($monthReport['bestSellers'] ?? [], 0, 4);
-        $lowStockProducts = $posProductModel->getLowStock($userId);
-        $recentOrders = $posOrderModel->getRecent($userId, 5);
-
-        $db = \Config\Database::connect();
-        $kasbonSummary = $db->query("
-            SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total
-            FROM debts
-            WHERE user_id = ? AND type = 'piutang' AND is_settled = 0
-        ", [$userId])->getRowArray() ?: ['count' => 0, 'total' => 0];
-
         $businessSummary = [
-            'today_sales'   => (float)($todaySummary['total_sales'] ?? 0),
-            'today_cost'    => (float)($todaySummary['total_cost'] ?? 0),
-            'today_profit'  => (float)($todaySummary['total_profit'] ?? 0),
-            'today_orders'  => (int)($todaySummary['total_orders'] ?? 0),
-            'month_sales'   => (float)($monthSummary['total_sales'] ?? 0),
-            'month_cost'    => (float)($monthSummary['total_cost'] ?? 0),
-            'month_profit'  => (float)($monthSummary['total_profit'] ?? 0),
-            'month_orders'  => (int)($monthSummary['total_orders'] ?? 0),
-            'low_stock_count' => count($lowStockProducts),
-            'low_stock_products' => array_slice($lowStockProducts, 0, 4),
-            'kasbon_unsettled_count' => (int)($kasbonSummary['count'] ?? 0),
-            'kasbon_unsettled_total' => (float)($kasbonSummary['total'] ?? 0),
-            'best_sellers'  => $bestSellers,
-            'recent_orders' => $recentOrders,
+            'today_sales'   => 0.0,
+            'today_cost'    => 0.0,
+            'today_profit'  => 0.0,
+            'today_orders'  => 0,
+            'month_sales'   => 0.0,
+            'month_cost'    => 0.0,
+            'month_profit'  => 0.0,
+            'month_orders'  => 0,
+            'low_stock_count' => 0,
+            'low_stock_products' => [],
+            'kasbon_unsettled_count' => 0,
+            'kasbon_unsettled_total' => 0.0,
+            'best_sellers'  => [],
+            'recent_orders' => [],
         ];
+
+        try {
+            $posOrderModel = new \App\Models\PosOrderModel();
+            $posProductModel = new \App\Models\PosProductModel();
+            $todaySummary = $posOrderModel->getTodaySummary($userId);
+            $monthReport = $posOrderModel->getMonthlyReport($userId, $now);
+            $monthSummary = $monthReport['summary'] ?? [];
+            $bestSellers = array_slice($monthReport['bestSellers'] ?? [], 0, 4);
+            $lowStockProducts = $posProductModel->getLowStock($userId);
+            $recentOrders = $posOrderModel->getRecent($userId, 5);
+
+            $db = \Config\Database::connect();
+            $kasbonSummary = $db->query("
+                SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total
+                FROM debts
+                WHERE user_id = ? AND type = 'piutang' AND is_settled = 0
+            ", [$userId])->getRowArray() ?: ['count' => 0, 'total' => 0];
+
+            $businessSummary = [
+                'today_sales'   => (float)($todaySummary['total_sales'] ?? 0),
+                'today_cost'    => (float)($todaySummary['total_cost'] ?? 0),
+                'today_profit'  => (float)($todaySummary['total_profit'] ?? 0),
+                'today_orders'  => (int)($todaySummary['total_orders'] ?? 0),
+                'month_sales'   => (float)($monthSummary['total_sales'] ?? 0),
+                'month_cost'    => (float)($monthSummary['total_cost'] ?? 0),
+                'month_profit'  => (float)($monthSummary['total_profit'] ?? 0),
+                'month_orders'  => (int)($monthSummary['total_orders'] ?? 0),
+                'low_stock_count' => count($lowStockProducts),
+                'low_stock_products' => array_slice($lowStockProducts, 0, 4),
+                'kasbon_unsettled_count' => (int)($kasbonSummary['count'] ?? 0),
+                'kasbon_unsettled_total' => (float)($kasbonSummary['total'] ?? 0),
+                'best_sellers'  => $bestSellers,
+                'recent_orders' => $recentOrders,
+            ];
+        } catch (\Throwable $e) {}
 
         return $this->ok([
             'balance'        => $balance,
