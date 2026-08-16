@@ -1321,6 +1321,36 @@
 
 <?= $this->section('scripts') ?>
 <script>
+/* ════════════════════════════════════════════════════════════════
+   WORKSPACE SWITCHER (Personal vs Business Mode)
+   ════════════════════════════════════════════════════════════════ */
+window.switchWorkspace = function(mode) {
+    const btnPersonal = document.getElementById('btnModePersonal');
+    const btnBusiness = document.getElementById('btnModeBusiness');
+    const wsPersonal  = document.getElementById('workspacePersonal');
+    const wsBusiness  = document.getElementById('workspaceBusiness');
+
+    if (mode === 'business') {
+        btnBusiness?.classList.add('active', 'business');
+        btnPersonal?.classList.remove('active', 'personal');
+        if (wsPersonal) wsPersonal.style.display = 'none';
+        if (wsBusiness) wsBusiness.style.display = 'block';
+        try { localStorage.setItem('duitku_mode', 'business'); } catch(e){}
+    } else {
+        btnPersonal?.classList.add('active', 'personal');
+        btnBusiness?.classList.remove('active', 'business');
+        if (wsPersonal) wsPersonal.style.display = 'block';
+        if (wsBusiness) wsBusiness.style.display = 'none';
+        try { localStorage.setItem('duitku_mode', 'personal'); } catch(e){}
+    }
+};
+
+// Auto-run on load
+try {
+    const saved = localStorage.getItem('duitku_mode') || 'personal';
+    window.switchWorkspace(saved);
+} catch(e){}
+
 /* ── Daily Balance Sparkline ──────────────────────────────────── */
 (function() {
     const dailyData = <?= json_encode($dailyBalance ?? []) ?>;
@@ -2072,13 +2102,13 @@
     };
 
     // ── Events ───────────────────────────────────────────────────────
-    btnOpenBills.addEventListener('click', openBillsModal);
-    billsClose.addEventListener('click', closeBillsModal);
-    billsOverlay.addEventListener('click', e => { if (e.target === billsOverlay) closeBillsModal(); });
-    btnAddBill.addEventListener('click', () => openForm(null));
-    formClose.addEventListener('click', closeForm);
-    cancelBtn.addEventListener('click', closeForm);
-    formOverlay.addEventListener('click', e => { if (e.target === formOverlay) closeForm(); });
+    btnOpenBills?.addEventListener('click', openBillsModal);
+    billsClose?.addEventListener('click', closeBillsModal);
+    billsOverlay?.addEventListener('click', e => { if (e.target === billsOverlay) closeBillsModal(); });
+    btnAddBill?.addEventListener('click', () => openForm(null));
+    formClose?.addEventListener('click', closeForm);
+    cancelBtn?.addEventListener('click', closeForm);
+    formOverlay?.addEventListener('click', e => { if (e.target === formOverlay) closeForm(); });
 
     // ── Init: load bills on page load for badge + banner ─────────────
     loadBills().then(() => { updateBadge(); checkDue(); });
@@ -2133,14 +2163,16 @@
         });
     });
 
-    saveBtn.addEventListener('click', async () => {
-        const name   = nameInput.value.trim();
-        const target = numVal(targetInput);
-        const saved  = numVal(savedInput);
+    saveBtn?.addEventListener('click', async () => {
+        const name   = nameInput ? nameInput.value.trim() : '';
+        const target = targetInput ? numVal(targetInput) : 0;
+        const saved  = savedInput ? numVal(savedInput) : 0;
         if (!name || target <= 0) { alert('Isi nama target dan nominal target terlebih dahulu.'); return; }
 
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'Menyimpan…';
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Menyimpan…';
+        }
 
         const fd = new FormData();
         fd.append(window.DUITKU.csrfName, window.DUITKU.csrfToken);
@@ -2156,14 +2188,16 @@
         } catch(e) {
             alert('Terjadi kesalahan koneksi.');
         } finally {
-            saveBtn.disabled = false;
-            saveBtn.textContent = 'Simpan';
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Simpan';
+            }
         }
     });
 
-    closeBtn.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
-    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+    overlay?.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
 
 })();
 
@@ -2180,24 +2214,28 @@
     const textarea  = document.getElementById('noteTextarea');
     const btnOpen   = document.getElementById('btnOpenNote');
 
-    btnOpen.addEventListener('click', openModal);
+    btnOpen?.addEventListener('click', openModal);
     function openModal() {
+        if (!overlay) return;
         overlay.classList.add('open');
         window.DuitkuLockScroll();
-        setTimeout(() => textarea.focus(), 80);
+        setTimeout(() => textarea?.focus(), 80);
     }
     function closeModal() {
+        if (!overlay) return;
         overlay.classList.remove('open');
         window.DuitkuUnlockScroll();
     }
 
-    saveBtn.addEventListener('click', async () => {
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'Menyimpan…';
+    saveBtn?.addEventListener('click', async () => {
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Menyimpan…';
+        }
 
         const fd = new FormData();
         fd.append(window.DUITKU.csrfName, window.DUITKU.csrfToken);
-        fd.append('note', textarea.value);
+        fd.append('note', textarea ? textarea.value : '');
 
         try {
             const res  = await fetch('/settings/note', { method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd });
@@ -2207,14 +2245,16 @@
         } catch(e) {
             alert('Terjadi kesalahan koneksi.');
         } finally {
-            saveBtn.disabled = false;
-            saveBtn.textContent = 'Simpan';
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Simpan';
+            }
         }
     });
 
-    closeBtn.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
-    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+    overlay?.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
 
 })();
 
@@ -2259,44 +2299,15 @@
     });
 
     // Pre-fill amount + note when bill selected
-    billPicker.addEventListener('change', function() {
+    billPicker?.addEventListener('change', function() {
         const opt = this.options[this.selectedIndex];
         if (!opt || !opt.value) return;
         const amount = parseFloat(opt.dataset.amount || '0');
         const name   = opt.dataset.name || '';
-        if (amount > 0) txAmount.value = amount.toLocaleString('id-ID');
-        if (name) txNote.value = 'Bayar tagihan: ' + name;
+        if (amount > 0 && txAmount) txAmount.value = amount.toLocaleString('id-ID');
+        if (name && txNote) txNote.value = 'Bayar tagihan: ' + name;
     });
 
-})();
-
-/* ════════════════════════════════════════════════════════════════
-   WORKSPACE SWITCHER (Personal vs Business Mode)
-   ════════════════════════════════════════════════════════════════ */
-window.switchWorkspace = function(mode) {
-    const btnPersonal = document.getElementById('btnModePersonal');
-    const btnBusiness = document.getElementById('btnModeBusiness');
-    const wsPersonal  = document.getElementById('workspacePersonal');
-    const wsBusiness  = document.getElementById('workspaceBusiness');
-
-    if (mode === 'business') {
-        btnBusiness?.classList.add('active', 'business');
-        btnPersonal?.classList.remove('active', 'personal');
-        if (wsPersonal) wsPersonal.style.display = 'none';
-        if (wsBusiness) wsBusiness.style.display = 'block';
-        localStorage.setItem('duitku_mode', 'business');
-    } else {
-        btnPersonal?.classList.add('active', 'personal');
-        btnBusiness?.classList.remove('active', 'business');
-        if (wsPersonal) wsPersonal.style.display = 'block';
-        if (wsBusiness) wsBusiness.style.display = 'none';
-        localStorage.setItem('duitku_mode', 'personal');
-    }
-};
-
-(function() {
-    const saved = localStorage.getItem('duitku_mode') || 'personal';
-    window.switchWorkspace(saved);
 })();
 </script>
 <?= $this->endSection() ?>
