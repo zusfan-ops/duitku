@@ -327,45 +327,60 @@
     </div>
 
     <!-- Developer -->
+    <!-- Developer -->
     <div class="settings-section">
-        <div class="settings-section-label">DEVELOPER</div>
-        <div class="dev-card">
-            <div class="dev-card-top">
+        <div class="settings-section-label">TENTANG DEVELOPER</div>
+        <div class="dev-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow-sm)">
+            <div class="dev-card-top" style="display:flex;gap:14px;align-items:flex-start">
                 <img src="https://zusfan.hallosemarang.com/DSC00218.jpg"
                      class="dev-photo" alt="Zusfan Mashuri"
+                     style="width:68px;height:68px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);flex-shrink:0"
                      onerror="this.style.display='none'">
-                <div class="dev-info">
-                    <div class="dev-name">Zusfan Mashuri</div>
-                    <div class="dev-roles">
-                        <span class="dev-role-pill">Marketing Strategist</span>
-                        <span class="dev-role-pill">IT Builder</span>
-                        <span class="dev-role-pill">Public Service Innovator</span>
+                <div class="dev-info" style="flex:1">
+                    <div class="dev-name" style="font-size:16px;font-weight:900;color:var(--text-primary)">Zusfan Mashuri</div>
+                    <div style="font-size:11.5px;font-weight:700;color:var(--primary);margin:2px 0 6px">
+                        Marketing Strategist · IT Builder · Public Service Innovator
                     </div>
-                    <div class="dev-tagline">Made with ❤️ in Indonesia</div>
+                    <div class="dev-roles" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">
+                        <span class="dev-role-pill" style="font-size:10px;font-weight:700;background:var(--primary-dim);color:var(--primary);padding:2px 8px;border-radius:10px">Founder & IT Director</span>
+                        <span class="dev-role-pill" style="font-size:10px;font-weight:700;background:var(--bg);color:var(--text-secondary);padding:2px 8px;border-radius:10px;border:1px solid var(--border)">Hallo Semarang</span>
+                    </div>
                 </div>
             </div>
-            <div class="dev-links">
-                <a href="https://wa.me/628998813000" class="dev-link" target="_blank" rel="noopener noreferrer">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.87a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-                    </svg>
-                    WhatsApp
+
+            <p style="font-size:12px;color:var(--text-secondary);line-height:1.45;margin:12px 0 14px">
+                Pengembang sistem digital dengan pengalaman di marketing strategi, infrastruktur IT, smart city, dan pemberdayaan UMKM & komunitas melalui teknologi.
+            </p>
+
+            <!-- Achievements -->
+            <div style="background:var(--bg);border-radius:12px;padding:12px;margin-bottom:14px;border:1px solid var(--border)">
+                <div style="font-size:11.5px;font-weight:800;color:var(--text-primary);margin-bottom:8px">🎯 Pencapaian Highlight</div>
+                <div style="font-size:11px;color:var(--text-secondary);display:flex;flex-direction:column;gap:6px">
+                    <div>🚀 <strong>Hallo Semarang:</strong> 100,000+ pembaca bulanan & traffic naik 200%</div>
+                    <div>🌐 <strong>Smart City:</strong> WiFi gratis di 50+ lokasi publik Semarang</div>
+                    <div>📡 <strong>Media:</strong> TV streaming (GETTV) & Videotron Centralized</div>
+                    <div>🤝 <strong>UMKM:</strong> Pemberdayaan digital UMKM & komunitas</div>
+                </div>
+            </div>
+
+            <!-- Links & Contacts -->
+            <div class="dev-links" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+                <a href="https://wa.me/628998813000" class="dev-link" target="_blank" rel="noopener noreferrer" style="background:#25D366;color:#fff;text-decoration:none;padding:8px 10px;border-radius:10px;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px">
+                    💬 WhatsApp
                 </a>
-                <a href="https://zusfan.hallosemarang.com" class="dev-link" target="_blank" rel="noopener noreferrer">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="2" y1="12" x2="22" y2="12"/>
-                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                    </svg>
-                    Portfolio
+                <a href="https://zusfan.hallosemarang.com" class="dev-link" target="_blank" rel="noopener noreferrer" style="background:#1E293B;color:#fff;text-decoration:none;padding:8px 10px;border-radius:10px;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px">
+                    🌐 Digital Card
                 </a>
-                <a href="https://www.hallosemarang.com" class="dev-link" target="_blank" rel="noopener noreferrer">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                        <polyline points="9 22 9 12 15 12 15 22"/>
-                    </svg>
-                    Hallo Semarang
+                <a href="https://hallosemarang.com" class="dev-link" target="_blank" rel="noopener noreferrer" style="background:var(--bg);color:var(--text-primary);border:1px solid var(--border);text-decoration:none;padding:8px 10px;border-radius:10px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px">
+                    📰 Hallo Semarang
                 </a>
+                <a href="https://zusfan.hallosemarang.com/resume.html" class="dev-link" target="_blank" rel="noopener noreferrer" style="background:var(--bg);color:var(--text-primary);border:1px solid var(--border);text-decoration:none;padding:8px 10px;border-radius:10px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px">
+                    📄 Resume & CV
+                </a>
+            </div>
+
+            <div style="text-align:center;font-size:10.5px;color:var(--text-muted);margin-top:14px">
+                DuitKu · Made with ❤️ in Indonesia
             </div>
         </div>
     </div>

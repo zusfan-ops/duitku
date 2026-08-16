@@ -10,6 +10,7 @@ import '../services/api_service.dart';
 import '../theme.dart';
 import '../utils/format.dart';
 import '../widgets/category_icon.dart';
+import 'developer_screen.dart';
 import 'export/export_screen.dart';
 import 'recurring/recurring_screen.dart';
 import 'savings/savings_screen.dart';
@@ -644,6 +645,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: const Text('Tambah Kategori',
                           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary)),
                       onTap: _addCategory,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+                  const Text('INFORMASI APLIKASI & DEVELOPER',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .5, color: AppColors.textMuted)),
+                  const SizedBox(height: 8),
+                  _card(
+                    ListTile(
+                      leading: _icon(Icons.person_pin_rounded, color: AppColors.primary),
+                      title: const Text('Tentang Developer', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: const Text('Zusfan Mashuri · Profil & Kontak', style: TextStyle(fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperScreen()));
+                      },
                     ),
                   ),
 
