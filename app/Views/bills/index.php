@@ -389,7 +389,7 @@
                     <?php if (!empty($wallets)): ?>
                         <?php foreach ($wallets as $w): ?>
                             <option value="<?= $w['id'] ?>" <?= !empty($w['is_default']) ? 'selected' : '' ?>>
-                                <?= esc($w['name']) ?> (<?= esc($symbol) ?> <?= number_format((float)$w['balance'], 0, ',', '.') ?>)
+                                <?= esc($w['name']) ?> (<?= esc($symbol) ?> <?= number_format((float)($w['balance'] ?? $w['initial_balance'] ?? 0), 0, ',', '.') ?>)
                             </option>
                         <?php endforeach; ?>
                     <?php else: ?>

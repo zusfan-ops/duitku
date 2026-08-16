@@ -42,7 +42,8 @@ class BillController extends BaseController
         }
 
         $symbol     = $this->settingModel->get($userId, 'currency_symbol', 'Rp');
-        $wallets    = $this->walletModel->getForUser($userId);
+        $walletData = $this->walletModel->getWithBalances($userId);
+        $wallets    = $walletData['wallets'] ?? [];
         $categories = $this->catModel->getForUser($userId);
 
         return view('bills/index', [
