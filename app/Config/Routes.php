@@ -242,6 +242,11 @@ $routes->group('api', function ($routes) {
         // Kasir Mini POS & Bisnis UMKM
         $routes->get('pos',                         'Api\PosController::index');
         $routes->post('pos/checkout',               'Api\PosController::checkout');
+        $routes->get('pos/orders',                  'Api\PosController::orders');
+        $routes->post('pos/orders/update-status',   'Api\PosController::updateOrderStatus');
+        $routes->post('pos/orders/pay',             'Api\PosController::payOrder');
+        $routes->get('pos/store-profile',           'Api\PosController::getStoreProfile');
+        $routes->post('pos/store-profile',          'Api\PosController::saveStoreProfile');
         $routes->get('pos/products',                'Api\PosController::products');
         $routes->post('pos/products/store',         'Api\PosController::storeProduct');
         $routes->post('pos/products/adjust-stock',  'Api\PosController::adjustStock');

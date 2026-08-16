@@ -582,6 +582,39 @@ class ApiService {
     return get('pos/reports', query: month != null ? {'month': month} : null);
   }
 
+  Future<Map<String, dynamic>> posOrders({String status = 'all'}) async {
+    return get('pos/orders', query: status != 'all' ? {'status': status} : null);
+  }
+
+  Future<Map<String, dynamic>> updatePosOrderStatus(int orderId, String status) async {
+    return post('pos/orders/update-status', {
+      'order_id': orderId,
+      'status': status,
+    });
+  }
+
+  Future<Map<String, dynamic>> payPosOrder({
+    required int orderId,
+    required String paymentMethod,
+    int? walletId,
+    double cashReceived = 0,
+  }) async {
+    return post('pos/orders/pay', {
+      'order_id': orderId,
+      'payment_method': paymentMethod,
+      'wallet_id': ?walletId,
+      'cash_received': cashReceived,
+    });
+  }
+
+  Future<Map<String, dynamic>> getPosStoreProfile() async {
+    return get('pos/store-profile');
+  }
+
+  Future<Map<String, dynamic>> savePosStoreProfile(Map<String, dynamic> data) async {
+    return post('pos/store-profile', data);
+  }
+
   // ── Universal Global Search ──────────────────────────────────
   Future<Map<String, dynamic>> searchGlobal(String query) async {
     return get('search', query: {'q': query});

@@ -4,7 +4,9 @@ import '../../models/pos_product.dart';
 import '../../services/api_service.dart';
 import '../../theme.dart';
 import '../../utils/format.dart';
+import 'pos_orders_screen.dart';
 import 'pos_products_screen.dart';
+import 'pos_qr_screen.dart';
 import 'pos_receipt_sheet.dart';
 import 'pos_reports_screen.dart';
 
@@ -546,6 +548,16 @@ class _PosCashierScreenState extends State<PosCashierScreen> {
       appBar: AppBar(
         title: const Text('☕ Kasir Mini POS'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.receipt_long_rounded),
+            tooltip: 'Pesanan Masuk (Live)',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosOrdersScreen())).then((_) => _load()),
+          ),
+          IconButton(
+            icon: const Icon(Icons.qr_code_2_rounded),
+            tooltip: 'QR Menu Standee',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosQrScreen())),
+          ),
           IconButton(
             icon: const Icon(Icons.inventory_2_outlined),
             tooltip: 'Katalog & Stok',

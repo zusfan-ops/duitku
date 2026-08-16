@@ -8,7 +8,9 @@ import 'bills_screen.dart';
 import 'debt_screen.dart';
 import 'export/export_screen.dart';
 import 'pos/pos_cashier_screen.dart';
+import 'pos/pos_orders_screen.dart';
 import 'pos/pos_products_screen.dart';
+import 'pos/pos_qr_screen.dart';
 import 'pos/pos_reports_screen.dart';
 import 'recurring/recurring_screen.dart';
 import 'savings/savings_screen.dart';
@@ -173,11 +175,33 @@ class FeaturesScreen extends StatelessWidget {
           const SizedBox(height: 8),
           _buildFeatureGrid(context, [
             _FeatureItem(
+              title: 'Pesanan Masuk (Live)',
+              subtitle: 'Antrean meja & status saji',
+              icon: Icons.receipt_long_rounded,
+              gradient: const [Color(0xFFEA580C), Color(0xFFFB923C)],
+              shadowColor: const Color(0xFFFB923C),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PosOrdersScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Cetak QR Standee',
+              subtitle: 'Poster menu meja PDF',
+              icon: Icons.qr_code_2_rounded,
+              gradient: const [Color(0xFF6D28D9), Color(0xFF8B5CF6)],
+              shadowColor: const Color(0xFF8B5CF6),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PosQrScreen()),
+              ),
+            ),
+            _FeatureItem(
               title: 'Kasir Mini (POS)',
               subtitle: 'Kasir cepat & cetak struk',
               icon: Icons.point_of_sale_rounded,
-              gradient: const [Color(0xFFEA580C), Color(0xFFFB923C)],
-              shadowColor: const Color(0xFFFB923C),
+              gradient: const [Color(0xFF0284C7), Color(0xFF38BDF8)],
+              shadowColor: const Color(0xFF38BDF8),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const PosCashierScreen()),
