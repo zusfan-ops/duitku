@@ -15,7 +15,7 @@ class PosQrScreen extends StatefulWidget {
 }
 
 class _PosQrScreenState extends State<PosQrScreen> {
-  final ApiService _api = ApiService();
+  final ApiService _api = ApiService.instance;
   bool _loading = true;
 
   Map<String, dynamic> _store = {};
@@ -82,7 +82,7 @@ class _PosQrScreenState extends State<PosQrScreen> {
               ),
               child: pw.Column(
                 mainAxisSize: pw.MainAxisSize.min,
-                crossAxisAlignment: pw.CrossAlignment.center,
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
                   pw.Container(
                     padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -147,7 +147,7 @@ class _PosQrScreenState extends State<PosQrScreen> {
                     ),
                     child: pw.Text(
                       targetUrl,
-                      style: pw.TextStyle(fontSize: 9, color: PdfColors.grey800),
+                      style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey800),
                     ),
                   ),
                   pw.SizedBox(height: 8),
@@ -187,7 +187,7 @@ class _PosQrScreenState extends State<PosQrScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) {
         return StatefulBuilder(
@@ -267,7 +267,7 @@ class _PosQrScreenState extends State<PosQrScreen> {
                     SwitchListTile(
                       title: const Text('Buka Penerimaan Pesanan', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700)),
                       value: isOpen,
-                      activeColor: AppColors.primary,
+                      activeThumbColor: const Color(0xFFEA580C),
                       onChanged: (val) => setModalState(() => isOpen = val),
                     ),
 
@@ -276,6 +276,7 @@ class _PosQrScreenState extends State<PosQrScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
                           Navigator.pop(ctx);
                           try {
                             await _api.savePosStoreProfile({
@@ -289,20 +290,20 @@ class _PosQrScreenState extends State<PosQrScreen> {
                             });
                             _loadProfile();
                             if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              messenger.showSnackBar(
                                 const SnackBar(content: Text('Profil toko berhasil disimpan!'), backgroundColor: Color(0xFF10B981)),
                               );
                             }
                           } catch (e) {
                             if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              messenger.showSnackBar(
                                 SnackBar(content: Text('Gagal menyimpan: $e'), backgroundColor: Colors.red),
                               );
                             }
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: const Color(0xFFEA580C),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -323,10 +324,10 @@ class _PosQrScreenState extends State<PosQrScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
         title: const Text('Standee QR Menu Meja', style: TextStyle(fontWeight: FontWeight.w800)),
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.bg,
         elevation: 0,
         actions: [
           IconButton(
@@ -355,7 +356,7 @@ class _PosQrScreenState extends State<PosQrScreen> {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: AppColors.card,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppColors.border),
                     ),
@@ -422,7 +423,7 @@ class _PosQrScreenState extends State<PosQrScreen> {
                     onPressed: _openStoreSettingsDialog,
                     icon: const Icon(Icons.edit_note_rounded, size: 18),
                     label: const Text('Edit Nama Toko & Keterangan QR'),
-                    style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+                    style: TextButton.styleFrom(foregroundColor: const Color(0xFFEA580C)),
                   ),
                 ],
               ),
@@ -438,8 +439,8 @@ class _PosQrScreenState extends State<PosQrScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: sel ? AppColors.primary.withValues(alpha: 0.15) : AppColors.surfaceVariant,
-          border: Border.all(color: sel ? AppColors.primary : AppColors.border),
+          color: sel ? const Color(0xFFEA580C).withValues(alpha: 0.15) : AppColors.borderLight,
+          border: Border.all(color: sel ? const Color(0xFFEA580C) : AppColors.border),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
@@ -447,7 +448,7 @@ class _PosQrScreenState extends State<PosQrScreen> {
           style: TextStyle(
             fontSize: 11.5,
             fontWeight: FontWeight.w700,
-            color: sel ? AppColors.primary : AppColors.textSecondary,
+            color: sel ? const Color(0xFFEA580C) : AppColors.textSecondary,
           ),
         ),
       ),

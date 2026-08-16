@@ -13,7 +13,7 @@ class PosOrdersScreen extends StatefulWidget {
 }
 
 class _PosOrdersScreenState extends State<PosOrdersScreen> {
-  final ApiService _api = ApiService();
+  final ApiService _api = ApiService.instance;
   bool _loading = true;
   String _selectedTab = 'all'; // all, pending, processing, served_unpaid, paid, cancelled
 
@@ -117,14 +117,14 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
         title: const Text('Pesanan Masuk (Live)', style: TextStyle(fontWeight: FontWeight.w800)),
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.bg,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.qr_code_2_rounded, color: AppColors.primary),
+            icon: const Icon(Icons.qr_code_2_rounded, color: Color(0xFFEA580C)),
             tooltip: 'Cetak QR Standee Toko',
             onPressed: () {
               Navigator.push(
@@ -149,13 +149,13 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                 margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: AppColors.card,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.border),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.storefront_rounded, color: AppColors.primary, size: 20),
+                    const Icon(Icons.storefront_rounded, color: Color(0xFFEA580C), size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
@@ -182,7 +182,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                       icon: const Icon(Icons.qr_code_rounded, size: 16),
                       label: const Text('QR Meja', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
                       style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primary,
+                        foregroundColor: const Color(0xFFEA580C),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       ),
                     ),
@@ -202,7 +202,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                       : ListView.separated(
                           padding: const EdgeInsets.all(16),
                           itemCount: _orders.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          separatorBuilder: (_, _) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             return _buildOrderCard(_orders[index]);
                           },
@@ -244,10 +244,10 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                   _loadData();
                 }
               },
-              backgroundColor: AppColors.surface,
-              selectedColor: isWarning ? const Color(0xFFD97706) : AppColors.primary,
+              backgroundColor: AppColors.card,
+              selectedColor: isWarning ? const Color(0xFFD97706) : const Color(0xFFEA580C),
               side: BorderSide(
-                color: isWarning ? const Color(0xFFF59E0B) : (isSelected ? AppColors.primary : AppColors.border),
+                color: isWarning ? const Color(0xFFF59E0B) : (isSelected ? const Color(0xFFEA580C) : AppColors.border),
                 width: isWarning ? 1.5 : 1,
               ),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -266,7 +266,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.black26 : AppColors.surfaceVariant,
+                      color: isSelected ? Colors.black26 : AppColors.borderLight,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -288,18 +288,18 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.receipt_long_rounded, size: 56, color: AppColors.textMuted),
-          const SizedBox(height: 12),
-          const Text(
+          Icon(Icons.receipt_long_rounded, size: 56, color: AppColors.textMuted),
+          SizedBox(height: 12),
+          Text(
             'Tidak ada pesanan aktif',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
           ),
-          const SizedBox(height: 4),
-          const Text(
+          SizedBox(height: 4),
+          Text(
             'Pesanan masuk dari QR meja konsumen akan muncul di sini.',
             style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
             textAlign: TextAlign.center,
@@ -321,17 +321,17 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isServedUnpaid
               ? const Color(0xFFF59E0B)
-              : (isPending ? AppColors.primary : AppColors.border),
+              : (isPending ? const Color(0xFFEA580C) : AppColors.border),
           width: (isServedUnpaid || isPending) ? 2 : 1,
         ),
         boxShadow: isServedUnpaid
             ? [BoxShadow(color: const Color(0xFFF59E0B).withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4))]
-            : null,
+            : AppColors.cardShadow,
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -385,7 +385,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
+              color: AppColors.borderLight,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -407,7 +407,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                             if (note != null && note.isNotEmpty)
                               Text(
                                 '📝 $note',
-                                style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600),
+                                style: const TextStyle(fontSize: 11, color: Color(0xFFEA580C), fontWeight: FontWeight.w600),
                               ),
                           ],
                         ),
@@ -435,7 +435,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                   const Text('Total Tagihan', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                   Text(
                     _formatCurrency(totalAmount),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.primary),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFFEA580C)),
                   ),
                 ],
               ),
@@ -479,7 +479,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
         label = '❌ Batal';
         break;
       default:
-        bg = AppColors.surfaceVariant;
+        bg = AppColors.borderLight;
         fg = AppColors.textSecondary;
         label = status;
     }
@@ -586,7 +586,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) {
         return StatefulBuilder(
@@ -612,7 +612,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceVariant,
+                      color: AppColors.borderLight,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Column(
@@ -620,7 +620,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                         const Text('Total Tagihan', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                         Text(
                           _formatCurrency(totalAmount),
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.primary),
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFFEA580C)),
                         ),
                       ],
                     ),
@@ -643,8 +643,8 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                       return ChoiceChip(
                         label: Text(m['label']!),
                         selected: sel,
-                        selectedColor: AppColors.primary,
-                        backgroundColor: AppColors.surfaceVariant,
+                        selectedColor: const Color(0xFFEA580C),
+                        backgroundColor: AppColors.borderLight,
                         onSelected: (s) {
                           if (s) setModalState(() => selectedMethod = m['key']!);
                         },
@@ -681,7 +681,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                     const Text('Masuk ke Rekening / Kas', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 4),
                     DropdownButtonFormField<int>(
-                      value: selectedWalletId,
+                      initialValue: selectedWalletId,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -701,6 +701,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () async {
+                        final messenger = ScaffoldMessenger.of(context);
                         Navigator.pop(ctx);
                         try {
                           await _api.payPosOrder(
@@ -710,7 +711,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                             cashReceived: selectedMethod == 'cash' ? cashReceived : totalAmount,
                           );
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               const SnackBar(
                                 content: Text('Pembayaran berhasil disimpan! Pesanan selesai.'),
                                 backgroundColor: Color(0xFF10B981),
@@ -720,7 +721,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                           }
                         } catch (e) {
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               SnackBar(content: Text('Gagal: $e'), backgroundColor: Colors.red),
                             );
                           }
