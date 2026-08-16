@@ -109,80 +109,92 @@
             <?php
                 $userId     = session()->get('user_id');
                 $avatarJson = session()->get('user_avatar');
-                $avatar     = $avatarJson ? json_decode($avatarJson, true) : ['initials' => 'U', 'color' => '#2D5A27'];
+                $avatar     = $avatarJson ? json_decode($avatarJson, true) : null;
+                $avatar     = (is_array($avatar) && !empty($avatar['initials'])) ? $avatar : ['initials' => 'U', 'color' => '#2D5A27'];
                 $avatarImg  = null;
                 $_layoutWallets = [];
+                $_layoutNotifs = [];
                 if ($userId) {
-                    $settingModel = new \App\Models\SettingModel();
-                    $avatarImgFile = $settingModel->get($userId, 'avatar_image');
-                    if ($avatarImgFile && file_exists(FCPATH . 'uploads/avatars/' . $avatarImgFile)) {
-                        $avatarImg = '/uploads/avatars/' . $avatarImgFile;
-                    }
+                    try {
+                        $settingModel = new \App\Models\SettingModel();
+                        $avatarImgFile = $settingModel->get($userId, 'avatar_image');
+                        if ($avatarImgFile && file_exists(FCPATH . 'uploads/avatars/' . $avatarImgFile)) {
+                            $avatarImg = '/uploads/avatars/' . $avatarImgFile;
+                        }
+                    } catch (\Throwable $e) {}
+
                     // Load wallet list for transaction modal (available on every page)
                     if (!isset($wallets)) {
-                        $wm = new \App\Models\WalletModel();
-                        $wd = $wm->getWithBalances($userId);
-                        $_layoutWallets = $wd['wallets'];
+                        try {
+                            $wm = new \App\Models\WalletModel();
+                            $wd = $wm->getWithBalances($userId);
+                            $_layoutWallets = $wd['wallets'] ?? [];
+                        } catch (\Throwable $e) {
+                            $_layoutWallets = [];
+                        }
                     } else {
                         $_layoutWallets = $wallets;
                     }
 
                     // Compute notifications if not already provided
                     if (!isset($notifications)) {
-                        $bm = new \App\Models\SettingModel();
-                        $dm = new \App\Models\DebtModel();
-                        $vm = new \App\Models\VehicleModel();
-                        $rm = new \App\Models\RecurringTransactionModel();
-                        
-                        $billsRaw = $bm->get($userId, 'bills', '[]');
-                        $billsAll = json_decode($billsRaw, true) ?: [];
-                        $todayDay = (int)date('j');
-                        $todayDate = date('Y-m-d');
-                        $_layoutNotifs = [];
-                        foreach ($billsAll as $b) {
-                            $dueDay = (int)($b['dueDay'] ?? 0);
-                            $daysLeft = $dueDay - $todayDay;
-                            if ($daysLeft >= -3 && $daysLeft <= 3) {
+                        try {
+                            $bm = new \App\Models\SettingModel();
+                            $dm = new \App\Models\DebtModel();
+                            $vm = new \App\Models\VehicleModel();
+                            
+                            $billsRaw = $bm->get($userId, 'bills', '[]');
+                            $billsAll = json_decode($billsRaw, true) ?: [];
+                            $todayDay = (int)date('j');
+                            $todayDate = date('Y-m-d');
+                            $_layoutNotifs = [];
+                            foreach ($billsAll as $b) {
+                                $dueDay = (int)($b['dueDay'] ?? 0);
+                                $daysLeft = $dueDay - $todayDay;
+                                if ($daysLeft >= -3 && $daysLeft <= 3) {
+                                    $_layoutNotifs[] = [
+                                        'id' => 'b_' . ($b['id'] ?? uniqid()),
+                                        'type' => 'bill',
+                                        'title' => $b['name'] ?? 'Tagihan',
+                                        'subtitle' => ($daysLeft <= 0 ? ($daysLeft == 0 ? 'Jatuh tempo Hari Ini!' : 'Lewat ' . abs($daysLeft) . ' hari') : 'Jatuh tempo ' . $daysLeft . ' hari lagi'),
+                                        'amount' => (float)($b['amount'] ?? 0),
+                                        'days_left' => $daysLeft,
+                                        'icon' => '📋',
+                                        'action_url' => '/bills',
+                                    ];
+                                }
+                            }
+                            $debts = $dm->getUpcoming($userId, 7);
+                            foreach ($debts as $d) {
+                                $daysLeft = (int)floor((strtotime($d['due_date']) - strtotime($todayDate)) / 86400);
                                 $_layoutNotifs[] = [
-                                    'id' => 'b_' . ($b['id'] ?? uniqid()),
-                                    'type' => 'bill',
-                                    'title' => $b['name'],
+                                    'id' => 'd_' . $d['id'],
+                                    'type' => 'debt',
+                                    'title' => ($d['type'] === 'hutang' ? 'Bayar Hutang: ' : 'Tagih Piutang: ') . ($d['person'] ?? ''),
                                     'subtitle' => ($daysLeft <= 0 ? ($daysLeft == 0 ? 'Jatuh tempo Hari Ini!' : 'Lewat ' . abs($daysLeft) . ' hari') : 'Jatuh tempo ' . $daysLeft . ' hari lagi'),
-                                    'amount' => (float)($b['amount'] ?? 0),
+                                    'amount' => (float)($d['amount'] ?? 0),
                                     'days_left' => $daysLeft,
-                                    'icon' => '📋',
-                                    'action_url' => '/bills',
+                                    'icon' => $d['type'] === 'hutang' ? '💸' : '💰',
+                                    'action_url' => '/hutang',
                                 ];
                             }
+                            $taxes = $vm->getUpcomingTaxes($userId, 30);
+                            foreach ($taxes as $t) {
+                                $_layoutNotifs[] = [
+                                    'id' => 't_' . $t['vehicle_id'] . '_' . md5($t['type']),
+                                    'type' => 'tax',
+                                    'title' => $t['type'] . ' · ' . ($t['vehicle_name'] ?? 'Kendaraan'),
+                                    'subtitle' => ($t['days_left'] <= 0 ? ($t['days_left'] == 0 ? 'Jatuh tempo Hari Ini!' : 'Lewat ' . abs($t['days_left']) . ' hari') : 'Jatuh tempo ' . $t['days_left'] . ' hari lagi'),
+                                    'amount' => 0,
+                                    'days_left' => $t['days_left'],
+                                    'icon' => '🚗',
+                                    'action_url' => '/kendaraan/' . $t['vehicle_id'],
+                                ];
+                            }
+                            usort($_layoutNotifs, fn($a, $b) => $a['days_left'] <=> $b['days_left']);
+                        } catch (\Throwable $e) {
+                            $_layoutNotifs = [];
                         }
-                        $debts = $dm->getUpcoming($userId, 7);
-                        foreach ($debts as $d) {
-                            $daysLeft = (int)floor((strtotime($d['due_date']) - strtotime($todayDate)) / 86400);
-                            $_layoutNotifs[] = [
-                                'id' => 'd_' . $d['id'],
-                                'type' => 'debt',
-                                'title' => ($d['type'] === 'hutang' ? 'Bayar Hutang: ' : 'Tagih Piutang: ') . $d['person'],
-                                'subtitle' => ($daysLeft <= 0 ? ($daysLeft == 0 ? 'Jatuh tempo Hari Ini!' : 'Lewat ' . abs($daysLeft) . ' hari') : 'Jatuh tempo ' . $daysLeft . ' hari lagi'),
-                                'amount' => (float)($d['amount'] ?? 0),
-                                'days_left' => $daysLeft,
-                                'icon' => $d['type'] === 'hutang' ? '💸' : '💰',
-                                'action_url' => '/hutang',
-                            ];
-                        }
-                        $taxes = $vm->getUpcomingTaxes($userId, 30);
-                        foreach ($taxes as $t) {
-                            $_layoutNotifs[] = [
-                                'id' => 't_' . $t['vehicle_id'] . '_' . md5($t['type']),
-                                'type' => 'tax',
-                                'title' => $t['type'] . ' · ' . $t['vehicle_name'],
-                                'subtitle' => ($t['days_left'] <= 0 ? ($t['days_left'] == 0 ? 'Jatuh tempo Hari Ini!' : 'Lewat ' . abs($t['days_left']) . ' hari') : 'Jatuh tempo ' . $t['days_left'] . ' hari lagi'),
-                                'amount' => 0,
-                                'days_left' => $t['days_left'],
-                                'icon' => '🚗',
-                                'action_url' => '/kendaraan/' . $t['vehicle_id'],
-                            ];
-                        }
-                        usort($_layoutNotifs, fn($a, $b) => $a['days_left'] <=> $b['days_left']);
                     } else {
                         $_layoutNotifs = $notifications;
                     }
