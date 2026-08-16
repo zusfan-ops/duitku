@@ -16,6 +16,7 @@ class PosOrderModel extends Model
         'user_id', 'order_number', 'total_amount', 'total_cost',
         'profit', 'payment_method', 'wallet_id', 'cash_received',
         'change_amount', 'customer_name', 'customer_phone',
+        'table_no', 'status', 'order_source',
         'debt_id', 'transaction_id', 'notes', 'date',
     ];
 
@@ -34,6 +35,89 @@ class PosOrderModel extends Model
         $itemModel = new PosOrderItemModel();
         $order['items'] = $itemModel->where('order_id', $orderId)->findAll();
         return $order;
+    }
+
+    /**
+     * Get order details by order number (for public tracking or cashier lookup)
+     */
+    public function getByOrderNumber(string $orderNumber): ?array
+    {
+        $order = $this->where('order_number', $orderNumber)->first();
+        if (!$order) return null;
+
+        $itemModel = new PosOrderItemModel();
+        $order['items'] = $itemModel->where('order_id', $order['id'])->findAll();
+        return $order;
+    }
+
+    /**
+     * Get active/recent orders with items for the POS live orders dashboard
+     */
+    public function getOrdersList(int $userId, ?string $status = null, int $limit = 50): array
+    {
+        $builder = $this->where('user_id', $userId);
+
+        if ($status && $status !== 'all') {
+            $builder->where('status', $status);
+        }
+
+        $orders = $builder->orderBy("CASE 
+            WHEN status = 'pending' THEN 1 
+            WHEN status = 'processing' THEN 2 
+            WHEN status = 'served_unpaid' THEN 3 
+            WHEN status = 'paid' THEN 4 
+            ELSE 5 END", 'ASC')
+            ->orderBy('id', 'DESC')
+            ->limit($limit)
+            ->findAll();
+
+        if (empty($orders)) return [];
+
+        $orderIds = array_column($orders, 'id');
+        $itemModel = new PosOrderItemModel();
+        $allItems = $itemModel->whereIn('order_id', $orderIds)->findAll();
+
+        $itemsByOrder = [];
+        foreach ($allItems as $it) {
+            $itemsByOrder[$it['order_id']][] = $it;
+        }
+
+        foreach ($orders as &$ord) {
+            $ord['items'] = $itemsByOrder[$ord['id']] ?? [];
+        }
+        unset($ord);
+
+        return $orders;
+    }
+
+    /**
+     * Get counts for live badges in POS
+     */
+    public function getStatusCounts(int $userId): array
+    {
+        $today = date('Y-m-d');
+        $rows = $this->select('status, COUNT(id) as count')
+                     ->where('user_id', $userId)
+                     ->where('date', $today)
+                     ->groupBy('status')
+                     ->findAll();
+
+        $counts = [
+            'all'           => 0,
+            'pending'       => 0,
+            'processing'    => 0,
+            'served_unpaid' => 0,
+            'paid'          => 0,
+            'cancelled'     => 0,
+        ];
+
+        foreach ($rows as $r) {
+            $st = $r['status'] ?? 'paid';
+            $counts[$st] = (int)$r['count'];
+            $counts['all'] += (int)$r['count'];
+        }
+
+        return $counts;
     }
 
     /**

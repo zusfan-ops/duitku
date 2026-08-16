@@ -264,11 +264,17 @@
     </div>
 
     <!-- Actions Row -->
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <div class="pos-search-bar" style="flex:1">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap">
+        <div class="pos-search-bar" style="flex:1;min-width:140px">
             <span class="pos-search-icon">🔍</span>
-            <input type="text" id="posSearchInput" class="pos-search-input" placeholder="Cari menu / produk...">
+            <input type="text" id="posSearchInput" class="pos-search-input" placeholder="Cari menu...">
         </div>
+        <a href="/pos/orders" style="background:linear-gradient(135deg, #EA580C 0%, #FB923C 100%);color:#fff;padding:9px 12px;border-radius:12px;font-size:12px;font-weight:800;text-decoration:none;display:flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 3px 8px rgba(234,88,12,0.3)">
+            📋 Pesanan
+        </a>
+        <a href="/pos/qr" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary);padding:9px 12px;border-radius:12px;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:4px;white-space:nowrap">
+            📱 QR Menu
+        </a>
         <a href="/pos/products" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary);padding:9px 12px;border-radius:12px;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:4px;white-space:nowrap">
             📦 Produk
         </a>

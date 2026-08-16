@@ -39,4 +39,70 @@ class SettingModel extends Model
         }
         return $result;
     }
+
+    /**
+     * Get full store profile for POS & Public Menu
+     */
+    public function getStoreProfile(int $userId): array
+    {
+        $all = $this->getAll($userId);
+        $userModel = new UserModel();
+        $user = $userModel->find($userId);
+        $defaultName = $user['name'] ? ('Toko ' . $user['name']) : 'Toko POS';
+        $defaultSlug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $defaultName), '-')) ?: ('toko-' . $userId);
+
+        return [
+            'user_id'         => $userId,
+            'owner_name'      => $user['name'] ?? 'Pemilik',
+            'store_name'      => $all['store_name'] ?? $defaultName,
+            'store_slug'      => $all['store_slug'] ?? $defaultSlug,
+            'store_tagline'   => $all['store_tagline'] ?? 'Selamat Datang! Silakan pilih menu favorit Anda.',
+            'store_address'   => $all['store_address'] ?? '',
+            'store_phone'     => $all['store_phone'] ?? ($user['phone'] ?? ''),
+            'store_qr_footer' => $all['store_qr_footer'] ?? 'Scan QR untuk melihat daftar menu & memesan langsung dari meja Anda.',
+            'store_is_open'   => ($all['store_is_open'] ?? '1') === '1',
+            'currency_symbol' => $all['currency_symbol'] ?? 'Rp',
+            'currency'        => $all['currency'] ?? 'IDR',
+        ];
+    }
+
+    /**
+     * Find user ID from store slug (or ID)
+     */
+    public function findUserByStoreSlug(string $slug): ?array
+    {
+        $slug = trim(strtolower($slug));
+        if (!$slug) return null;
+
+        // 1. Direct match on store_slug setting
+        $row = $this->where('key', 'store_slug')
+                    ->where('LOWER(value)', $slug)
+                    ->first();
+        if ($row) {
+            return $this->getStoreProfile((int)$row['user_id']);
+        }
+
+        // 2. Check if slug matches user id (e.g. 'toko-1' or '1')
+        if (preg_match('/^(?:toko-)?(\d+)$/', $slug, $m)) {
+            $uId = (int)$m[1];
+            $userModel = new UserModel();
+            if ($userModel->find($uId)) {
+                return $this->getStoreProfile($uId);
+            }
+        }
+
+        // 3. Check if slug matches slugified user name
+        $userModel = new UserModel();
+        $users = $userModel->findAll();
+        foreach ($users as $u) {
+            $userSlug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', 'toko ' . $u['name']), '-'));
+            $userDirectSlug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $u['name']), '-'));
+            if ($userSlug === $slug || $userDirectSlug === $slug) {
+                return $this->getStoreProfile((int)$u['id']);
+            }
+        }
+
+        return null;
+    }
 }
+

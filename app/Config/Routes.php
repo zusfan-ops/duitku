@@ -128,12 +128,27 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     // Kasir Mini POS & Bisnis UMKM
     $routes->get('/pos',                        'PosController::index');
     $routes->post('/pos/checkout',              'PosController::checkout');
+    $routes->get('/pos/orders',                 'PosController::orders');
+    $routes->get('/pos/orders/poll',            'PosController::pollOrders');
+    $routes->post('/pos/orders/update-status',  'PosController::updateOrderStatus');
+    $routes->post('/pos/orders/pay',            'PosController::payOrder');
+    $routes->get('/pos/qr',                     'PosController::qrPrint');
+    $routes->post('/pos/store-profile',         'PosController::saveStoreProfile');
     $routes->get('/pos/products',               'PosController::products');
     $routes->post('/pos/products/store',        'PosController::storeProduct');
     $routes->post('/pos/products/adjust-stock', 'PosController::adjustStock');
     $routes->post('/pos/products/delete/(:num)','PosController::deleteProduct/$1');
     $routes->get('/pos/reports',                'PosController::reports');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUBLIC MENU & SELF-ORDERING (Accessible by consumers via QR Code / URL)
+// ─────────────────────────────────────────────────────────────────────────────
+$routes->get('/menu/(:segment)',                           'PublicMenuController::index/$1');
+$routes->get('/menu/(:segment)/status/(:segment)',          'PublicMenuController::orderStatus/$1/$2');
+$routes->get('/menu/(:segment)/status-poll/(:segment)',     'PublicMenuController::pollStatus/$1/$2');
+$routes->post('/menu/(:segment)/order',                     'PublicMenuController::placeOrder/$1');
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API (mobile app — Bearer token auth)

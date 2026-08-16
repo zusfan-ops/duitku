@@ -13,9 +13,9 @@ class PosProductModel extends Model
     protected $protectFields    = true;
 
     protected $allowedFields = [
-        'user_id', 'name', 'category', 'sku', 'cost_price',
+        'user_id', 'name', 'description', 'category', 'sku', 'cost_price',
         'selling_price', 'stock', 'min_stock_alert', 'unit',
-        'icon', 'image', 'is_active',
+        'icon', 'image', 'is_available', 'is_active',
     ];
 
     protected $useTimestamps = true;
@@ -42,6 +42,29 @@ class PosProductModel extends Model
         }
 
         return $builder->orderBy('name', 'ASC')->findAll();
+    }
+
+    /**
+     * Get all products for Public Menu catalog (active & is_available = 1)
+     */
+    public function getForPublicMenu(int $userId, ?string $category = null, ?string $search = null): array
+    {
+        $builder = $this->where('user_id', $userId)
+                        ->where('is_active', 1)
+                        ->where('is_available', 1);
+
+        if ($category && $category !== 'Semua') {
+            $builder->where('category', $category);
+        }
+
+        if ($search) {
+            $builder->groupStart()
+                    ->like('name', $search)
+                    ->orLike('description', $search)
+                    ->groupEnd();
+        }
+
+        return $builder->orderBy('category', 'ASC')->orderBy('name', 'ASC')->findAll();
     }
 
     /**

@@ -286,4 +286,228 @@ class PosController extends BaseController
             'symbol'    => $symbol,
         ]);
     }
+
+    // GET /pos/orders — Live Order Screen & Table Management
+    public function orders()
+    {
+        $userId    = session()->get('user_id');
+        $status    = $this->request->getGet('status') ?: 'all';
+        $orders    = $this->orderModel->getOrdersList($userId, $status);
+        $counts    = $this->orderModel->getStatusCounts($userId);
+        $store     = $this->settingModel->getStoreProfile($userId);
+        $walletData= $this->walletModel->getWithBalances($userId);
+        $symbol    = $this->settingModel->get($userId, 'currency_symbol', 'Rp');
+
+        return view('pos/orders', [
+            'pageTitle'  => 'Daftar Pesanan Masuk (Live Orders)',
+            'orders'     => $orders,
+            'counts'     => $counts,
+            'currentTab' => $status,
+            'store'      => $store,
+            'wallets'    => $walletData['wallets'] ?? [],
+            'symbol'     => $symbol,
+        ]);
+    }
+
+    // GET /pos/orders/poll — Realtime AJAX polling for orders
+    public function pollOrders()
+    {
+        $userId = session()->get('user_id');
+        $status = $this->request->getGet('status') ?: 'all';
+        $orders = $this->orderModel->getOrdersList($userId, $status);
+        $counts = $this->orderModel->getStatusCounts($userId);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'orders'  => $orders,
+            'counts'  => $counts,
+        ]);
+    }
+
+    // POST /pos/orders/update-status
+    public function updateOrderStatus()
+    {
+        $userId  = session()->get('user_id');
+        $orderId = (int)($this->request->getPost('order_id') ?? 0);
+        $status  = trim($this->request->getPost('status') ?? '');
+
+        $allowedStatuses = ['pending', 'processing', 'served_unpaid', 'paid', 'cancelled'];
+        if (!in_array($status, $allowedStatuses, true)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Status tidak valid.']);
+        }
+
+        $order = $this->orderModel->where('id', $orderId)->where('user_id', $userId)->first();
+        if (!$order) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Pesanan tidak ditemukan.']);
+        }
+
+        // If cancelling, restore stocks
+        if ($status === 'cancelled' && $order['status'] !== 'cancelled') {
+            $items = $this->orderItemModel->where('order_id', $orderId)->findAll();
+            foreach ($items as $item) {
+                if (!empty($item['product_id'])) {
+                    $this->productModel->addStock((int)$item['product_id'], (int)$item['qty']);
+                }
+            }
+        }
+
+        $this->orderModel->update($orderId, ['status' => $status]);
+
+        $statusLabels = [
+            'pending'       => 'Pesanan Baru (Pending)',
+            'processing'    => 'Sedang Disiapkan / Diproses',
+            'served_unpaid' => 'Sudah Dilayani (Belum Bayar)',
+            'paid'          => 'Selesai & Lunas',
+            'cancelled'     => 'Dibatalkan',
+        ];
+
+        return $this->response->setJSON([
+            'success' => true,
+            'status'  => $status,
+            'message' => 'Status pesanan diubah menjadi: ' . ($statusLabels[$status] ?? $status),
+        ]);
+    }
+
+    // POST /pos/orders/pay — Settle payment for served_unpaid / pending orders
+    public function payOrder()
+    {
+        $userId        = session()->get('user_id');
+        $orderId       = (int)($this->request->getPost('order_id') ?? 0);
+        $paymentMethod = $this->request->getPost('payment_method') ?? 'cash';
+        $walletId      = (int)($this->request->getPost('wallet_id') ?? 0) ?: null;
+        $cashReceived  = (float)($this->request->getPost('cash_received') ?? 0);
+
+        $order = $this->orderModel->where('id', $orderId)->where('user_id', $userId)->first();
+        if (!$order) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Pesanan tidak ditemukan.']);
+        }
+
+        $totalAmount  = (float)$order['total_amount'];
+        $changeAmount = ($paymentMethod === 'cash' && $cashReceived > $totalAmount) ? ($cashReceived - $totalAmount) : 0.0;
+
+        // Record income transaction if not kasbon
+        $txId = $order['transaction_id'];
+        if ($paymentMethod !== 'kasbon' && !$txId) {
+            if (!$walletId) {
+                $walletId = $this->walletModel->getDefaultWalletId($userId);
+            }
+            $txId = $this->txModel->insert([
+                'user_id'   => $userId,
+                'wallet_id' => $walletId,
+                'type'      => 'income',
+                'amount'    => $totalAmount,
+                'note'      => 'Pembayaran POS: ' . $order['order_number'] . ($order['table_no'] ? ' (' . $order['table_no'] . ')' : '') . ($order['customer_name'] ? ' - ' . $order['customer_name'] : ''),
+                'date'      => date('Y-m-d'),
+            ]);
+        }
+
+        // If Kasbon (Piutang)
+        $debtId = $order['debt_id'];
+        if ($paymentMethod === 'kasbon' && !$debtId) {
+            $debtPerson = $order['customer_name'] ?: ('Pelanggan POS (' . $order['order_number'] . ')');
+            $debtId = $this->debtModel->insert([
+                'user_id'   => $userId,
+                'type'      => 'piutang',
+                'person'    => $debtPerson,
+                'amount'    => $totalAmount,
+                'paid'      => 0,
+                'due_date'  => date('Y-m-d', strtotime('+7 days')),
+                'notes'     => 'Kasbon POS ' . $order['order_number'] . ($order['customer_phone'] ? ' (WA: ' . $order['customer_phone'] . ')' : ''),
+                'is_settled'=> 0,
+            ]);
+        }
+
+        $this->orderModel->update($orderId, [
+            'status'         => 'paid',
+            'payment_method' => $paymentMethod,
+            'wallet_id'      => $walletId,
+            'cash_received'  => $cashReceived,
+            'change_amount'  => $changeAmount,
+            'debt_id'        => $debtId,
+            'transaction_id' => $txId,
+        ]);
+
+        return $this->response->setJSON([
+            'success'       => true,
+            'change_amount' => $changeAmount,
+            'message'       => 'Pembayaran berhasil disimpan! Pesanan selesai.',
+        ]);
+    }
+
+    // GET /pos/qr — Printable PDF Standee & Poster QR Code
+    public function qrPrint()
+    {
+        $userId   = session()->get('user_id');
+        $store    = $this->settingModel->getStoreProfile($userId);
+        $tableNo  = trim($this->request->getGet('table') ?? '');
+        $template = trim($this->request->getGet('template') ?? 'modern'); // 'modern', 'vintage', 'dark'
+
+        // Build target URL
+        $baseUrl = base_url();
+        $targetUrl = rtrim($baseUrl, '/') . '/menu/' . urlencode($store['store_slug']);
+        if ($tableNo) {
+            $targetUrl .= '?table=' . urlencode($tableNo);
+        }
+
+        return view('pos/qr_print', [
+            'pageTitle' => 'Cetak QR Code Menu & Standee Meja',
+            'store'     => $store,
+            'tableNo'   => $tableNo,
+            'targetUrl' => $targetUrl,
+            'template'  => $template,
+            'symbol'    => $store['currency_symbol'] ?? 'Rp',
+        ]);
+    }
+
+    // POST /pos/store-profile — Save Store Name, Slug, Address & QR Settings
+    public function saveStoreProfile()
+    {
+        $userId    = session()->get('user_id');
+        $storeName = trim($this->request->getPost('store_name') ?? '');
+        $storeSlug = trim($this->request->getPost('store_slug') ?? '');
+        $tagline   = trim($this->request->getPost('store_tagline') ?? '');
+        $address   = trim($this->request->getPost('store_address') ?? '');
+        $phone     = trim($this->request->getPost('store_phone') ?? '');
+        $qrFooter  = trim($this->request->getPost('store_qr_footer') ?? '');
+        $isOpen    = $this->request->getPost('store_is_open') === '1' ? '1' : '0';
+
+        if (!$storeName) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Nama toko/pos wajib diisi.']);
+        }
+
+        // Slugify if empty or clean up
+        if (!$storeSlug) {
+            $storeSlug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $storeName), '-'));
+        } else {
+            $storeSlug = strtolower(trim(preg_replace('/[^a-zA-Z0-9\-]+/', '', $storeSlug), '-'));
+        }
+
+        // Check if slug is used by other user
+        $existing = $this->settingModel->where('key', 'store_slug')
+                                       ->where('LOWER(value)', strtolower($storeSlug))
+                                       ->where('user_id !=', $userId)
+                                       ->first();
+        if ($existing) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Alamat slug "' . esc($storeSlug) . '" sudah digunakan oleh toko lain. Silakan pilih nama slug lain.'
+            ]);
+        }
+
+        $this->settingModel->setPref($userId, 'store_name', $storeName);
+        $this->settingModel->setPref($userId, 'store_slug', $storeSlug);
+        $this->settingModel->setPref($userId, 'store_tagline', $tagline);
+        $this->settingModel->setPref($userId, 'store_address', $address);
+        $this->settingModel->setPref($userId, 'store_phone', $phone);
+        $this->settingModel->setPref($userId, 'store_qr_footer', $qrFooter);
+        $this->settingModel->setPref($userId, 'store_is_open', $isOpen);
+
+        return $this->response->setJSON([
+            'success'    => true,
+            'store_slug' => $storeSlug,
+            'menu_url'   => base_url('/menu/' . $storeSlug),
+            'message'    => 'Pengaturan profil toko & QR menu berhasil disimpan!'
+        ]);
+    }
 }
+

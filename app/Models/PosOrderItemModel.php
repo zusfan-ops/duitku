@@ -13,7 +13,7 @@ class PosOrderItemModel extends Model
     protected $protectFields    = true;
 
     protected $allowedFields = [
-        'order_id', 'product_id', 'product_name',
+        'order_id', 'product_id', 'product_name', 'notes',
         'qty', 'price', 'cost_price', 'subtotal',
     ];
 
