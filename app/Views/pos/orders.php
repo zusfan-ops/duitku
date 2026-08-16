@@ -586,6 +586,8 @@
                                 <button class="btn-action-pos btn-act-cancel" onclick="updateOrderStatus(<?= $ord['id'] ?>, 'cancelled')">
                                     Batal
                                 </button>
+                            <?php endif; ?>
+
                             <a href="/pos/order/receipt/<?= $ord['id'] ?>?autoprint=1" target="_blank" class="btn-action-pos" style="background:#0284C7;color:#fff;text-decoration:none" title="Cetak Struk Thermal 58mm/80mm">
                                 🖨️ Struk
                             </a>

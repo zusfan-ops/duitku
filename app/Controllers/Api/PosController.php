@@ -646,22 +646,6 @@ class PosController extends ApiController
      */
     public function getShifts()
     {
-        $userId     = $this->uid();
-        $shiftModel = new \App\Models\PosShiftModel();
-        $active     = $shiftModel->getActiveShift($userId);
-        $history    = $shiftModel->getShiftHistory($userId, 20);
-
-        return $this->ok([
-            'active_shift' => $active,
-            'history'      => $history,
-        ]);
-    }
-
-    /**
-     * GET api/pos/shifts
-     */
-    public function getShifts()
-    {
         $userId = $this->uid();
         $shiftModel = new \App\Models\PosShiftModel();
         $activeShift = $shiftModel->getActiveShift($userId);
