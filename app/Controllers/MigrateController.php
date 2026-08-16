@@ -8,14 +8,15 @@ class MigrateController extends Controller
 {
     public function index()
     {
+        // Only allow in development or for logged in users
+        if (ENVIRONMENT === 'production' && !session()->get('user_id')) {
+            return $this->response->setStatusCode(403)->setBody('Access Denied: Migration endpoint is restricted.');
+        }
+
         try {
             $migrate = \Config\Services::migrations();
             $migrate->latest();
-            $db     = \Config\Database::connect();
-            $tables = $db->listTables();
-            return "✅ Database berhasil di-update ke versi terbaru!<br><br>"
-                 . "Tabel yang ada: <strong>" . implode(', ', $tables) . "</strong><br><br>"
-                 . "<em>Anda sudah bisa menghapus MigrateController setelah selesai.</em>";
+            return "✅ Database berhasil di-update ke versi terbaru!";
         } catch (\Throwable $e) {
             return "❌ Gagal update database: " . $e->getMessage();
         }

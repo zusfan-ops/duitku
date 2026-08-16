@@ -49,6 +49,9 @@ class AuthController extends BaseController
             return redirect()->back()->withInput()->with('error', 'Email atau password salah.');
         }
 
+        // Prevent Session Fixation
+        session()->regenerate(true);
+
         session()->set([
             'user_id'   => $user['id'],
             'user_name' => $user['name'],
@@ -104,6 +107,9 @@ class AuthController extends BaseController
         // Default settings
         $this->settingModel->setPref($userId, 'currency', 'IDR');
         $this->settingModel->setPref($userId, 'currency_symbol', 'Rp');
+
+        // Prevent Session Fixation
+        session()->regenerate(true);
 
         session()->set([
             'user_id'    => $userId,

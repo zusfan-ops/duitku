@@ -36,20 +36,11 @@ class Filters extends BaseFilters
         'performance'   => PerformanceMetrics::class,
         'auth'          => \App\Filters\AuthFilter::class,
         'api_auth'      => \App\Filters\ApiAuthFilter::class,
+        'throttle'      => \App\Filters\RateLimitFilter::class,
     ];
 
     /**
      * List of special required filters.
-     *
-     * The filters listed here are special. They are applied before and after
-     * other kinds of filters, and always applied even if a route does not exist.
-     *
-     * Filters set by default provide framework functionality. If removed,
-     * those functions will no longer work.
-     *
-     * @see https://codeigniter.com/user_guide/incoming/filters.html#provided-filters
-     *
-     * @var array{before: list<string>, after: list<string>}
      */
     public array $required = [
         'before' => [
@@ -66,47 +57,45 @@ class Filters extends BaseFilters
     /**
      * List of filter aliases that are always
      * applied before and after every request.
-     *
-     * @var array{
-     *     before: array<string, array{except: list<string>|string}>|list<string>,
-     *     after: array<string, array{except: list<string>|string}>|list<string>
-     * }
      */
     public array $globals = [
         'before' => [
-            // 'honeypot',
-            // 'csrf',
-            // 'invalidchars',
+            'csrf' => [
+                'except' => [
+                    'api/*',
+                    'menu/*/order',
+                    'menu/*/verify-voucher',
+                    'shop/*/order',
+                    'shop/*/verify-voucher',
+                    'toko/*/order',
+                    'toko/*/verify-voucher',
+                ]
+            ],
+            'invalidchars',
         ],
         'after' => [
-            // 'honeypot',
-            // 'secureheaders',
+            'secureheaders',
         ],
     ];
 
     /**
      * List of filter aliases that works on a
      * particular HTTP method (GET, POST, etc.).
-     *
-     * Example:
-     * 'POST' => ['foo', 'bar']
-     *
-     * If you use this, you should disable auto-routing because auto-routing
-     * permits any HTTP method to access a controller. Accessing the controller
-     * with a method you don't expect could bypass the filter.
-     *
-     * @var array<string, list<string>>
      */
     public array $methods = [];
 
     /**
      * List of filter aliases that should run on any
      * before or after URI patterns.
-     *
-     * Example:
-     * 'isLoggedIn' => ['before' => ['account/*', 'profiles/*']]
-     *
-     * @var array<string, array<string, list<string>>>
      */
-    public array $filters = [];
+    public array $filters = [
+        'throttle' => [
+            'before' => [
+                'login',
+                'register',
+                'api/login',
+                'api/register',
+            ],
+        ],
+    ];
 }

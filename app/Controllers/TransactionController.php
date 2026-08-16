@@ -51,9 +51,16 @@ class TransactionController extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Data tidak valid.']);
         }
 
-        // Handle Image Upload
+        // Handle Image Upload with Strict Validation
         $file = $this->request->getFile('image');
         if ($file && $file->isValid() && !$file->hasMoved()) {
+            $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!in_array($file->getMimeType(), $allowedMimes)) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Format file gambar harus JPG, PNG, atau WebP.']);
+            }
+            if ($file->getSize() > 3 * 1024 * 1024) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Ukuran file gambar maksimal 3MB.']);
+            }
             $newName = $file->getRandomName();
             $file->move(FCPATH . 'uploads/transactions', $newName);
             $data['image'] = $newName;
@@ -120,9 +127,16 @@ class TransactionController extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Data tidak valid.']);
         }
 
-        // Handle Image Upload
+        // Handle Image Upload with Strict Validation
         $file = $this->request->getFile('image');
         if ($file && $file->isValid() && !$file->hasMoved()) {
+            $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!in_array($file->getMimeType(), $allowedMimes)) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Format file gambar harus JPG, PNG, atau WebP.']);
+            }
+            if ($file->getSize() > 3 * 1024 * 1024) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Ukuran file gambar maksimal 3MB.']);
+            }
             $newName = $file->getRandomName();
             $file->move(FCPATH . 'uploads/transactions', $newName);
             $data['image'] = $newName;
