@@ -6,6 +6,11 @@ class AppColors {
   static const Color primaryLight = Color(0xFF10B981);
   static const Color primarySubtle = Color(0xFFECFDF5);
 
+  static const Color royalBlue = Color(0xFF2563EB); // Modern Royal / Cobalt Blue
+  static const Color royalBlueDark = Color(0xFF1E3A8A);
+  static const Color royalBlueLight = Color(0xFF3B82F6);
+  static const Color royalBlueSubtle = Color(0xFFEFF6FF);
+
   static const Color income = Color(0xFF16A34A);
   static const Color incomeSubtle = Color(0xFFDCFCE7);
   static const Color expense = Color(0xFFDC2626);
@@ -27,7 +32,11 @@ class AppColors {
   ];
 
   static const List<BoxShadow> fabShadow = [
-    BoxShadow(color: Color(0x40059669), blurRadius: 16, offset: Offset(0, 6)),
+    BoxShadow(color: Color(0x402563EB), blurRadius: 18, offset: Offset(0, 6)),
+  ];
+
+  static const List<BoxShadow> blueGlowShadow = [
+    BoxShadow(color: Color(0x352563EB), blurRadius: 20, offset: Offset(0, 8)),
   ];
 }
 

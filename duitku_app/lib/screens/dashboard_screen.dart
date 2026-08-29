@@ -124,15 +124,36 @@ class DashboardScreenState extends State<DashboardScreen> {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
       appBar: AppBar(
-        title: Text('Halo, ${auth.user?.name.split(' ').first ?? ''} 👋'),
+        titleSpacing: 16,
+        toolbarHeight: 68,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              Fmt.dateFull(DateTime.now().toIso8601String().substring(0, 10)),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textMuted,
+                letterSpacing: -0.1,
+              ),
+            ),
+            const SizedBox(height: 2),
+            const Text(
+              'Dashboard',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: AppColors.textPrimary,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.document_scanner_rounded),
-            tooltip: 'Smart Scan Struk (OCR)',
-            onPressed: _handleOcrScan,
-          ),
-          IconButton(
-            icon: const Icon(Icons.search_rounded),
+            icon: const Icon(Icons.search_rounded, size: 22),
             tooltip: 'Cari Data (Universal)',
             onPressed: () {
               final sym = (_data?['dashboard'] as dynamic)?.symbol?.toString() ?? 'Rp';
@@ -141,6 +162,11 @@ class DashboardScreenState extends State<DashboardScreen> {
                 MaterialPageRoute(builder: (_) => UniversalSearchScreen(symbol: sym)),
               );
             },
+          ),
+          IconButton(
+            icon: const Icon(Icons.document_scanner_rounded, size: 22),
+            tooltip: 'Smart Scan Struk (OCR)',
+            onPressed: _handleOcrScan,
           ),
           if (_data?['dashboard'] != null)
             _NotificationBell(
@@ -155,7 +181,7 @@ class DashboardScreenState extends State<DashboardScreen> {
               const PopupMenuItem(value: 'logout', child: Text('Keluar')),
             ],
             child: Padding(
-              padding: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.only(right: 16, left: 4),
               child: _Avatar(),
             ),
           ),
@@ -196,7 +222,17 @@ class DashboardScreenState extends State<DashboardScreen> {
               count: urgentCount,
               onTap: () => _showNotificationsSheet(context, data, refresh),
             ),
-          _HeroCard(data: data),
+          _HeroCard(
+            data: data,
+            onScanOcr: _handleOcrScan,
+            onOpenStats: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const StatsScreen()),
+              );
+            },
+          ),
+          _ThreeColumnStatsCard(data: data, recentCount: recent.length),
           const _BelanjaHomeCard(),
           if ((data.wallets as List).isNotEmpty) _WalletStrip(wallets: data.wallets as List<Wallet>),
           if ((data.dailyBalance as List).length > 1)
@@ -390,91 +426,280 @@ class DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// ── Hero balance card ──────────────────────────────────────────
-class _HeroCard extends StatelessWidget {
+// ── Hero balance card (Card-in-Pocket style) ───────────────────
+class _HeroCard extends StatefulWidget {
   final dynamic data;
-  const _HeroCard({required this.data});
+  final VoidCallback onScanOcr;
+  final VoidCallback onOpenStats;
+
+  const _HeroCard({
+    required this.data,
+    required this.onScanOcr,
+    required this.onOpenStats,
+  });
+
+  @override
+  State<_HeroCard> createState() => _HeroCardState();
+}
+
+class _HeroCardState extends State<_HeroCard> {
+  bool _hideBalance = false;
 
   @override
   Widget build(BuildContext context) {
+    final data = widget.data;
     final symbol = data.symbol as String;
+    final wallets = (data.wallets as List?) ?? [];
+    final primaryWalletName = wallets.isNotEmpty
+        ? (wallets.firstWhere((w) => (w as Wallet).isDefault, orElse: () => wallets.first) as Wallet).name
+        : 'Dompet Utama';
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(top: 4, bottom: 4),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF064E3B), Color(0xFF047857), Color(0xFF059669)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(color: const Color(0xFF059669).withValues(alpha: .28), blurRadius: 20, offset: const Offset(0, 8)),
-        ],
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: AppColors.blueGlowShadow,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('TOTAL SALDO KEUANGAN',
-                  style: TextStyle(
-                      fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: .7,
-                      color: Colors.white70)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
+          // ── Layer 1: Background Card popping out from top pocket ──
+          Positioned(
+            top: 0,
+            left: 16,
+            right: 16,
+            child: Container(
+              height: 70,
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                child: Text(
-                  (data.month as String).toUpperCase(),
-                  style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.3),
-                ),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1D4ED8).withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              Fmt.money(data.balance as double, symbol: symbol),
-              style: const TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-                letterSpacing: -0.8,
-                height: 1.1,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    primaryWalletName,
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'CASH',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 16),
+
+          // ── Layer 2: Main Wallet Pocket (Foreground) ───────────────
           Container(
-            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(top: 36),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(16),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1E3A8A), Color(0xFF1D4ED8), Color(0xFF2563EB)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _Stat(
-                  icon: Icons.arrow_downward_rounded,
-                  color: const Color(0xFF4ADE80),
-                  label: 'Pemasukan',
-                  value: Fmt.money(data.monthlyIncome as double, symbol: symbol),
+                // Top header inside pocket
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'TOTAL BALANCE',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
+                        color: Colors.white70,
+                      ),
+                    ),
+                    // Month / trend tag
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        (data.month as String).toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                Container(
-                  width: 1,
-                  height: 32,
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  color: Colors.white12,
+                const SizedBox(height: 10),
+
+                // Balance display with trend indicator
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _hideBalance ? 'Rp •••••••••' : Fmt.money(data.balance as double, symbol: symbol),
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: -1,
+                            height: 1.1,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.trending_up_rounded, size: 14, color: Color(0xFF6EE7B7)),
+                          const SizedBox(width: 4),
+                          Text(
+                            '+${Fmt.money0(data.monthlyIncome as double)}',
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF6EE7B7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                _Stat(
-                  icon: Icons.arrow_upward_rounded,
-                  color: const Color(0xFFF87171),
-                  label: 'Pengeluaran',
-                  value: Fmt.money(data.monthlyExpense as double, symbol: symbol),
+                const SizedBox(height: 20),
+
+                // ── Translucent Quick Action Glass Pills ────────────
+                Row(
+                  children: [
+                    // View Reports Pill Button
+                    Expanded(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: widget.onOpenStats,
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.16),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.bar_chart_rounded, size: 18, color: Colors.white),
+                                SizedBox(width: 8),
+                                Text(
+                                  'View Reports',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Scan Receipt Circular Glass Button
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: widget.onScanOcr,
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                          ),
+                          child: const Icon(Icons.document_scanner_rounded, size: 18, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Privacy Eye Toggle Circular Glass Button
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => setState(() => _hideBalance = !_hideBalance),
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                          ),
+                          child: Icon(
+                            _hideBalance ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -485,50 +710,110 @@ class _HeroCard extends StatelessWidget {
   }
 }
 
-class _Stat extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String label;
-  final String value;
-  const _Stat({required this.icon, required this.color, required this.label, required this.value});
+// ── 3-Column Floating Summary Card ─────────────────────────────
+class _ThreeColumnStatsCard extends StatelessWidget {
+  final dynamic data;
+  final int recentCount;
+
+  const _ThreeColumnStatsCard({
+    required this.data,
+    required this.recentCount,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    final income = data.monthlyIncome as double;
+    final expense = data.monthlyExpense as double;
+    final budget = data.budget as double;
+    final remainingBudget = budget > 0 ? (budget - expense) : 0.0;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 10, bottom: 8),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.8)),
+        boxShadow: AppColors.cardShadow,
+      ),
       child: Row(
         children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(color: color.withValues(alpha: .2), borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, size: 15, color: color),
-          ),
-          const SizedBox(width: 8),
+          // Column 1: Sales / Pemasukan
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white70),
-                ),
-                const SizedBox(height: 1),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    value,
-                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Colors.white),
-                  ),
-                ),
-              ],
+            child: _buildCol(
+              title: Fmt.money0(income),
+              label: 'Pemasukan',
+              subLabel: 'Bulan ini',
+              color: AppColors.income,
+            ),
+          ),
+          Container(width: 1, height: 38, color: AppColors.borderLight),
+
+          // Column 2: Items / Pengeluaran
+          Expanded(
+            child: _buildCol(
+              title: Fmt.money0(expense),
+              label: 'Pengeluaran',
+              subLabel: '$recentCount transaksi',
+              color: AppColors.textPrimary,
+            ),
+          ),
+          Container(width: 1, height: 38, color: AppColors.borderLight),
+
+          // Column 3: Sisa Budget / Status
+          Expanded(
+            child: _buildCol(
+              title: budget > 0 ? Fmt.money0(remainingBudget) : '${(data.wallets as List).length} Dompet',
+              label: budget > 0 ? 'Sisa Budget' : 'Akun Dompet',
+              subLabel: budget > 0 ? 'Limit bulanan' : 'Aktif',
+              color: const Color(0xFF2563EB),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCol({
+    required String title,
+    required String label,
+    required String subLabel,
+    required Color color,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: color,
+              letterSpacing: -0.3,
+            ),
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 1),
+        Text(
+          subLabel,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textMuted,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1401,36 +1686,48 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-// ── Avatar ─────────────────────────────────────────────────────
+// ── Glowing Profile Avatar ─────────────────────────────────────
 class _Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
     if (user == null) return const SizedBox.shrink();
+
     return Container(
-      width: 36,
-      height: 36,
+      width: 38,
+      height: 38,
       decoration: BoxDecoration(
-        color: parseColor(user.color),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2563EB).withValues(alpha: 0.45),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: user.avatarImage != null
           ? ClipOval(
               child: Image.network(
                 '${ApiConfig.baseUrl}${user.avatarImage}',
                 fit: BoxFit.cover,
-                width: 36,
-                height: 36,
+                width: 38,
+                height: 38,
                 errorBuilder: (_, _, _) => Center(
                   child: Text(user.initials,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
                 ),
               ),
             )
           : Center(
               child: Text(user.initials,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
             ),
     );
   }

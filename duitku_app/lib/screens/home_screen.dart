@@ -90,15 +90,22 @@ class _HomeScreenState extends State<HomeScreen> {
           margin: const EdgeInsets.only(top: 24),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             boxShadow: AppColors.fabShadow,
           ),
-          child: FloatingActionButton(
-            elevation: 0,
-            highlightElevation: 0,
-            onPressed: _openTransactionSheet,
-            backgroundColor: AppColors.primary,
-            shape: const CircleBorder(),
-            child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _openTransactionSheet,
+              customBorder: const CircleBorder(),
+              child: const Center(
+                child: Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 26),
+              ),
+            ),
           ),
         ),
         bottomNavigationBar: Container(
@@ -119,10 +126,10 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 64,
               child: Row(
                 children: [
-                  _navItem(0, Icons.home_rounded, Icons.home_outlined, 'Beranda'),
+                  _navItem(0, Icons.grid_view_rounded, Icons.grid_view_outlined, 'Dashboard'),
                   _navItem(1, Icons.receipt_long_rounded, Icons.receipt_long_outlined, 'Aktivitas'),
                   const SizedBox(width: 56), // Spacing for centered FAB
-                  _navItem(2, Icons.grid_view_rounded, Icons.grid_view_outlined, 'Fitur'),
+                  _navItem(2, Icons.widgets_rounded, Icons.widgets_outlined, 'Fitur'),
                   _navItem(3, Icons.person_rounded, Icons.person_outline_rounded, 'Akun'),
                 ],
               ),
@@ -140,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _onTabSelected(index),
-          splashColor: AppColors.primaryLight.withValues(alpha: 0.1),
+          splashColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
           highlightColor: Colors.transparent,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -149,13 +156,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
                 decoration: BoxDecoration(
-                  color: active ? AppColors.primarySubtle : Colors.transparent,
+                  color: active ? const Color(0xFFEFF6FF) : Colors.transparent,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
                   active ? activeIcon : inactiveIcon,
                   size: 22,
-                  color: active ? AppColors.primary : AppColors.textMuted,
+                  color: active ? const Color(0xFF2563EB) : AppColors.textMuted,
                 ),
               ),
               const SizedBox(height: 3),
@@ -165,8 +172,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 11,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                  color: active ? AppColors.primary : AppColors.textSecondary,
+                  fontWeight: active ? FontWeight.w800 : FontWeight.w500,
+                  color: active ? const Color(0xFF2563EB) : AppColors.textSecondary,
                   letterSpacing: -0.1,
                 ),
               ),

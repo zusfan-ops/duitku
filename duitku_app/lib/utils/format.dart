@@ -43,6 +43,17 @@ class Fmt {
     return DateFormat('d MMM', 'id_ID').format(d);
   }
 
+  static String dateFull(dynamic date) {
+    DateTime? d;
+    if (date is DateTime) {
+      d = date;
+    } else if (date is String) {
+      d = DateTime.tryParse(date);
+    }
+    if (d == null) return date?.toString() ?? '';
+    return DateFormat('EEEE, d MMM yyyy', 'id_ID').format(d);
+  }
+
   static String parseAmount(String input) {
     // Hapus semua karakter selain digit (dari format "1.234" / "Rp 1.000")
     return input.replaceAll(RegExp(r'[^0-9]'), '');

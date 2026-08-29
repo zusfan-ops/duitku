@@ -21,6 +21,7 @@ class TransactionSheet extends StatefulWidget {
   final double? initialAmount;
   final String? initialNote;
   final String? initialDate;
+  final String? initialImagePath;
 
   const TransactionSheet({
     super.key,
@@ -31,6 +32,7 @@ class TransactionSheet extends StatefulWidget {
     this.initialAmount,
     this.initialNote,
     this.initialDate,
+    this.initialImagePath,
   });
 
   @override
@@ -69,6 +71,12 @@ class _TransactionSheetState extends State<TransactionSheet> {
       }
       if (widget.initialDate != null && widget.initialDate!.isNotEmpty) {
         _date = widget.initialDate!;
+      }
+      if (widget.initialImagePath != null && widget.initialImagePath!.isNotEmpty) {
+        final f = File(widget.initialImagePath!);
+        if (f.existsSync()) {
+          _image = f;
+        }
       }
       _categoryId = widget.categories.isEmpty ? null : widget.categories.first.id;
       _walletId = widget.wallets.isEmpty
