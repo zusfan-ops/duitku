@@ -16,12 +16,14 @@ import 'pos/pos_reports_screen.dart';
 import 'pos/pos_shifts_screen.dart';
 import 'recurring/recurring_screen.dart';
 import 'savings/savings_screen.dart';
+import 'scan/notification_detector_screen.dart';
 import 'scan/ocr_receipt_screen.dart';
 import 'stats_screen.dart';
 import 'traveling/currency_converter_sheet.dart';
 import 'traveling/traveling_screen.dart';
 import 'vehicle/vehicle_screen.dart';
 import 'wallet_screen.dart';
+import 'zakat_pajak/zakat_pajak_screen.dart';
 
 class FeaturesScreen extends StatelessWidget {
   const FeaturesScreen({super.key});
@@ -38,9 +40,20 @@ class FeaturesScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(14, 6, 14, 110),
         children: [
           // Section: Transaksi & Pengeluaran
-          _buildSectionHeader('MANAJEMEN KEUANGAN'),
+          _buildSectionHeader('MANAJEMEN KEUANGAN & OTOMATISASI'),
           const SizedBox(height: 8),
           _buildFeatureGrid(context, [
+            _FeatureItem(
+              title: 'Auto-Detect Bank',
+              subtitle: 'Deteksi SMS & notifikasi',
+              icon: Icons.auto_awesome_rounded,
+              gradient: const [Color(0xFF2563EB), Color(0xFF60A5FA)],
+              shadowColor: const Color(0xFF60A5FA),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationDetectorScreen()),
+              ),
+            ),
             _FeatureItem(
               title: 'Smart Scan Struk',
               subtitle: 'OCR otomatis foto nota',
@@ -50,6 +63,17 @@ class FeaturesScreen extends StatelessWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const OcrReceiptScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Kalkulator Zakat & Pajak',
+              subtitle: 'Maal, profesi, fitrah & PPh',
+              icon: Icons.calculate_rounded,
+              gradient: const [Color(0xFF059669), Color(0xFF34D399)],
+              shadowColor: const Color(0xFF34D399),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ZakatPajakScreen()),
               ),
             ),
             _FeatureItem(

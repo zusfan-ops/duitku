@@ -22,6 +22,9 @@ class TransactionSheet extends StatefulWidget {
   final String? initialNote;
   final String? initialDate;
   final String? initialImagePath;
+  final String? initialType;
+  final int? initialWalletId;
+  final int? initialCategoryId;
 
   const TransactionSheet({
     super.key,
@@ -33,6 +36,9 @@ class TransactionSheet extends StatefulWidget {
     this.initialNote,
     this.initialDate,
     this.initialImagePath,
+    this.initialType,
+    this.initialWalletId,
+    this.initialCategoryId,
   });
 
   @override
@@ -63,6 +69,15 @@ class _TransactionSheetState extends State<TransactionSheet> {
       _amountCtrl.text = Fmt.money0(t.amount);
       _recurring = widget.isRecurring;
     } else {
+      if (widget.initialType != null && widget.initialType!.isNotEmpty) {
+        _type = widget.initialType!;
+      }
+      if (widget.initialWalletId != null) {
+        _walletId = widget.initialWalletId;
+      }
+      if (widget.initialCategoryId != null) {
+        _categoryId = widget.initialCategoryId;
+      }
       if (widget.initialAmount != null && widget.initialAmount! > 0) {
         _amountCtrl.text = Fmt.money0(widget.initialAmount);
       }
@@ -78,8 +93,8 @@ class _TransactionSheetState extends State<TransactionSheet> {
           _image = f;
         }
       }
-      _categoryId = widget.categories.isEmpty ? null : widget.categories.first.id;
-      _walletId = widget.wallets.isEmpty
+      _categoryId ??= widget.categories.isEmpty ? null : widget.categories.first.id;
+      _walletId ??= widget.wallets.isEmpty
           ? null
           : (widget.wallets.any((w) => w.isDefault) ? widget.wallets.firstWhere((w) => w.isDefault).id : widget.wallets.first.id);
     }

@@ -16,7 +16,6 @@ import '../utils/format.dart';
 import '../widgets/calculator_sheet.dart';
 import '../widgets/category_icon.dart';
 import '../widgets/transaction_tile.dart';
-import 'barang/barang_screen.dart';
 import 'belanja/belanja_screen.dart';
 import 'bills_screen.dart';
 import 'debt_screen.dart';
@@ -25,12 +24,14 @@ import 'recurring/recurring_screen.dart';
 import 'pos/pos_cashier_screen.dart';
 import 'pos/pos_products_screen.dart';
 import 'pos/pos_reports_screen.dart';
+import 'scan/notification_detector_screen.dart';
 import 'scan/ocr_receipt_screen.dart';
 import 'search/universal_search_screen.dart';
 import 'stats_screen.dart';
 import 'transaction_sheet.dart';
 import 'vehicle/vehicle_screen.dart';
 import 'wallet_screen.dart';
+import 'zakat_pajak/zakat_pajak_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -1363,10 +1364,10 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final symbol = data.symbol as String;
+    final symbol = '${data.symbol ?? "Rp"}';
     return Container(
       margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(18),
@@ -1376,9 +1377,23 @@ class _QuickActions extends StatelessWidget {
       child: Row(
         children: [
           _QaBtn(
-            icon: Icons.calculate_outlined,
-            label: 'Kalkulator',
-            onTap: () => _openCalculator(context),
+            icon: Icons.auto_awesome_rounded,
+            label: 'Deteksi SMS',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationDetectorScreen())),
+          ),
+          _QaBtn(
+            icon: Icons.volunteer_activism_rounded,
+            label: 'Zakat & Pajak',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ZakatPajakScreen(
+                  initialBalance: Fmt.toDouble(data.balance),
+                  initialMonthlyIncome: Fmt.toDouble(data.monthlyIncome),
+                  symbol: symbol,
+                ),
+              ),
+            ),
           ),
           _QaBtn(
             icon: Icons.receipt_long_outlined,
@@ -1386,14 +1401,9 @@ class _QuickActions extends StatelessWidget {
             onTap: () => _openBills(context, symbol),
           ),
           _QaBtn(
-            icon: Icons.inventory_2_outlined,
-            label: 'Barang',
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BarangScreen())),
-          ),
-          _QaBtn(
-            icon: Icons.edit_note_rounded,
-            label: 'Catatan',
-            onTap: () => _openNote(context),
+            icon: Icons.calculate_outlined,
+            label: 'Kalkulator',
+            onTap: () => _openCalculator(context),
           ),
           _QaBtn(
             icon: Icons.account_balance_wallet_outlined,
