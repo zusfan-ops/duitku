@@ -128,3 +128,9 @@ _modules/*
 /results/
 /phpunit.xml
 
+# App Releases and Binaries
+*.apk
+*.aab
+*.sha1
+/duitku_app/releases/
+/releases/

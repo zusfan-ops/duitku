@@ -1,6 +1,7 @@
 param (
     [string]$BumpType = "patch", # patch | minor | major | none
-    [string]$CustomVersion = ""
+    [string]$CustomVersion = "",
+    [switch]$IncludeAppBundle
 )
 
 $ErrorActionPreference = "Stop"
@@ -11,7 +12,7 @@ $AppDir = Resolve-Path "$ScriptDir\.."
 Set-Location $AppDir
 
 Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host " [DuitKu Mobile] Auto Release Builder     " -ForegroundColor Green
+Write-Host " [DuitKu Mobile] Auto Release & Split APK " -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Cyan
 
 # 1. Bump Versi
@@ -48,13 +49,6 @@ Write-Host "`n[Target Versi] v$VersionName (Build $BuildNumber)" -ForegroundColo
 Write-Host "`n[2/4] Menjalankan flutter pub get..." -ForegroundColor Yellow
 flutter pub get
 
-# 3. Build APK Release (Split per ABI & Universal)
-Write-Host "`n[3/4] Melakukan build APK release..." -ForegroundColor Yellow
-flutter build apk --release --split-per-abi
-flutter build apk --release
-
-# 4. Merapikan file APK ke folder releases
-Write-Host "`n[4/4] Mengorganisir file rilis APK..." -ForegroundColor Yellow
 $ReleaseDir = "$AppDir\releases\v$VersionName"
 if (-not (Test-Path $ReleaseDir)) {
     New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null
@@ -62,32 +56,56 @@ if (-not (Test-Path $ReleaseDir)) {
 
 $ApkSourceDir = "$AppDir\build\app\outputs\flutter-apk"
 
-# Copy Universal APK
-if (Test-Path "$ApkSourceDir\app-release.apk") {
-    Copy-Item "$ApkSourceDir\app-release.apk" "$ReleaseDir\DuitKu-v$VersionName-universal.apk" -Force
-    Write-Host "  -> Universal APK: $ReleaseDir\DuitKu-v$VersionName-universal.apk" -ForegroundColor Green
-}
+# 3. Build APK Split per ABI (Ukuran kecil, hemat kuota pengguna)
+Write-Host "`n[3/4] Melakukan build APK SPLIT per ABI (ARM64, ARMv7, x86_64)..." -ForegroundColor Yellow
+flutter build apk --release --split-per-abi
 
-# Copy arm64-v8a APK (Rekomendasi untuk sebagian besar HP modern)
 if (Test-Path "$ApkSourceDir\app-arm64-v8a-release.apk") {
     Copy-Item "$ApkSourceDir\app-arm64-v8a-release.apk" "$ReleaseDir\DuitKu-v$VersionName-arm64-v8a.apk" -Force
-    Write-Host "  -> ARM64 APK:     $ReleaseDir\DuitKu-v$VersionName-arm64-v8a.apk" -ForegroundColor Green
+    Write-Host "  -> [SPLIT] ARM64-v8a APK: $ReleaseDir\DuitKu-v$VersionName-arm64-v8a.apk" -ForegroundColor Green
 }
-
-# Copy armeabi-v7a APK (HP 32-bit lama)
 if (Test-Path "$ApkSourceDir\app-armeabi-v7a-release.apk") {
     Copy-Item "$ApkSourceDir\app-armeabi-v7a-release.apk" "$ReleaseDir\DuitKu-v$VersionName-armeabi-v7a.apk" -Force
-    Write-Host "  -> ARMv7 APK:     $ReleaseDir\DuitKu-v$VersionName-armeabi-v7a.apk" -ForegroundColor Green
+    Write-Host "  -> [SPLIT] ARMv7-a APK:   $ReleaseDir\DuitKu-v$VersionName-armeabi-v7a.apk" -ForegroundColor Green
+}
+if (Test-Path "$ApkSourceDir\app-x86_64-release.apk") {
+    Copy-Item "$ApkSourceDir\app-x86_64-release.apk" "$ReleaseDir\DuitKu-v$VersionName-x86_64.apk" -Force
+    Write-Host "  -> [SPLIT] x86_64 APK:    $ReleaseDir\DuitKu-v$VersionName-x86_64.apk" -ForegroundColor Green
+}
+
+# 4. Build APK Universal (Mendukung semua arsitektur sekaligus)
+Write-Host "`n[4/4] Melakukan build APK UNIVERSAL (All-in-one)..." -ForegroundColor Yellow
+flutter build apk --release
+
+if (Test-Path "$ApkSourceDir\app-release.apk") {
+    Copy-Item "$ApkSourceDir\app-release.apk" "$ReleaseDir\DuitKu-v$VersionName-universal.apk" -Force
+    Write-Host "  -> [UNIVERSAL] Full APK:  $ReleaseDir\DuitKu-v$VersionName-universal.apk" -ForegroundColor Green
+}
+
+# Optional: Build App Bundle jika ada flag -IncludeAppBundle
+if ($IncludeAppBundle) {
+    Write-Host "`n[BONUS] Melakukan build Android App Bundle (.aab)..." -ForegroundColor Yellow
+    flutter build appbundle --release
+    $AabSource = "$AppDir\build\app\outputs\bundle\release\app-release.aab"
+    if (Test-Path $AabSource) {
+        Copy-Item $AabSource "$ReleaseDir\DuitKu-v$VersionName.aab" -Force
+        Write-Host "  -> [BUNDLE] App Bundle:   $ReleaseDir\DuitKu-v$VersionName.aab" -ForegroundColor Green
+    }
 }
 
 Write-Host "`n=======================================================" -ForegroundColor Cyan
-Write-Host " BUILD RELEASE v$VersionName SELESAI DAN SUKSES!        " -ForegroundColor Green
+Write-Host " BUILD RELEASE & SPLIT v$VersionName SUKSES LENGKAP!   " -ForegroundColor Green
 Write-Host "=======================================================" -ForegroundColor Cyan
-Write-Host "File APK siap diupload ke GitHub Releases:" -ForegroundColor Yellow
+Write-Host "File APK (Split & Universal) siap diupload ke GitHub:" -ForegroundColor Yellow
 Write-Host "Folder: $ReleaseDir`n" -ForegroundColor White
-Write-Host "Langkah upload rilis ke GitHub:" -ForegroundColor Cyan
+Write-Host "Daftar File yang Dihasilkan:" -ForegroundColor Cyan
+Get-ChildItem $ReleaseDir | ForEach-Object {
+    $SizeMB = [math]::Round($_.Length / 1MB, 2)
+    Write-Host "  * $($_.Name) ($SizeMB MB)" -ForegroundColor White
+}
+Write-Host "`nLangkah upload rilis ke GitHub:" -ForegroundColor Cyan
 Write-Host "1. Buka https://github.com/zusfan-ops/duitku/releases/new"
 Write-Host "2. Buat tag baru: v$VersionName"
 Write-Host "3. Beri judul rilis: DuitKu v$VersionName"
-Write-Host "4. Upload file APK dari folder $ReleaseDir"
+Write-Host "4. Upload semua file APK dari folder $ReleaseDir"
 Write-Host "5. Publikasikan Release!"
