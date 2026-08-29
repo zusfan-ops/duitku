@@ -27,8 +27,10 @@ import 'pos/pos_reports_screen.dart';
 import 'scan/notification_detector_screen.dart';
 import 'scan/ocr_receipt_screen.dart';
 import 'search/universal_search_screen.dart';
+import 'notifications/notifications_screen.dart';
 import 'stats_screen.dart';
 import 'transaction_sheet.dart';
+import 'tv/tv_streaming_screen.dart';
 import 'vehicle/vehicle_screen.dart';
 import 'wallet_screen.dart';
 import 'zakat_pajak/zakat_pajak_screen.dart';
@@ -2212,9 +2214,24 @@ void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback on
                         ],
                       ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      onPressed: () => Navigator.pop(ctx),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.campaign_rounded, size: 22, color: AppColors.primary),
+                          tooltip: 'Pesan & Pengumuman',
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 20),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
                     ),
                   ],
                 ),

@@ -26,6 +26,8 @@ import 'stats_screen.dart';
 import 'traveling/currency_converter_sheet.dart';
 import 'traveling/traveling_screen.dart';
 import 'vehicle/vehicle_screen.dart';
+import 'notifications/notifications_screen.dart';
+import 'tv/tv_streaming_screen.dart';
 import 'wallet_screen.dart';
 import 'zakat_pajak/zakat_pajak_screen.dart';
 
@@ -220,6 +222,28 @@ class FeaturesScreen extends StatelessWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const VehicleScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'TV & Streaming',
+              subtitle: 'Live streaming TV M3U',
+              icon: Icons.live_tv_rounded,
+              gradient: const [Color(0xFF7C3AED), Color(0xFFA855F7)],
+              shadowColor: const Color(0xFFA855F7),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TvStreamingScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Pemberitahuan',
+              subtitle: 'Pesan & info dari admin',
+              icon: Icons.notifications_active_rounded,
+              gradient: const [Color(0xFF0F766E), Color(0xFF14B8A6)],
+              shadowColor: const Color(0xFF14B8A6),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationsScreen()),
               ),
             ),
           ]),

@@ -231,6 +231,10 @@
                     <small><?= esc(session()->get('user_email')) ?></small>
                 </div>
                 <hr>
+                <?php if (in_array(strtolower((string)session()->get('user_role')), ['administrator', 'admin'])): ?>
+                    <a href="/admin" class="user-menu-item" style="color: #10B981; font-weight: 700;">🛡️ Admin Panel</a>
+                <?php endif; ?>
+                <a href="/tv" class="user-menu-item">📺 TV Streaming</a>
                 <a href="/settings" class="user-menu-item">⚙️ Pengaturan</a>
                 <a href="/logout" class="user-menu-item logout">🚪 Keluar</a>
             </div>

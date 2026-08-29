@@ -782,6 +782,28 @@ class ApiService {
     return post('wallets/members/delete/$memberId', {});
   }
 
+  // ── Push & Broadcast Notifications ──────────────────────────
+  Future<Map<String, dynamic>> getNotifications({int limit = 30}) async {
+    return get('notifications', query: {'limit': '$limit'});
+  }
+
+  Future<Map<String, dynamic>> markNotificationRead(int id) async {
+    return post('notifications/read/$id', {});
+  }
+
+  Future<Map<String, dynamic>> markAllNotificationsRead() async {
+    return post('notifications/read-all', {});
+  }
+
+  // ── TV & Live Streaming M3U ──────────────────────────────────
+  Future<Map<String, dynamic>> getTvChannels({String? category}) async {
+    return get('tv/channels', query: category != null && category != 'Semua' ? {'category': category} : null);
+  }
+
+  Future<Map<String, dynamic>> getTvChannelDetail(int id) async {
+    return get('tv/channels/$id');
+  }
+
   // ── Upload helpers ───────────────────────────────────────────
   Future<String?> base64FromFile(String path) async {
     final file = File(path);

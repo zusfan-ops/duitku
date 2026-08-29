@@ -165,6 +165,38 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/pos/products/adjust-stock', 'PosController::adjustStock');
     $routes->post('/pos/products/delete/(:num)','PosController::deleteProduct/$1');
     $routes->get('/pos/reports',                'PosController::reports');
+
+    // TV & Live Streaming Web Player
+    $routes->get('/tv',                         'TvController::index');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMINISTRATOR PANEL (Protected via 'admin' Filter)
+// ─────────────────────────────────────────────────────────────────────────────
+$routes->group('admin', ['filter' => 'admin'], function ($routes) {
+    // Dashboard
+    $routes->get('',                            'Admin\DashboardController::index');
+    $routes->get('dashboard',                   'Admin\DashboardController::index');
+
+    // Notifications (Broadcast & Push to App)
+    $routes->get('notifications',               'Admin\NotificationController::index');
+    $routes->post('notifications/store',        'Admin\NotificationController::store');
+    $routes->post('notifications/toggle-pin/(:num)', 'Admin\NotificationController::togglePin/$1');
+    $routes->post('notifications/delete/(:num)',     'Admin\NotificationController::delete/$1');
+
+    // TV Streaming & M3U Playlist Manager
+    $routes->get('tv',                          'Admin\TvController::index');
+    $routes->post('tv/store',                   'Admin\TvController::store');
+    $routes->post('tv/update/(:num)',           'Admin\TvController::update/$1');
+    $routes->post('tv/toggle/(:num)',           'Admin\TvController::toggle/$1');
+    $routes->post('tv/delete/(:num)',           'Admin\TvController::delete/$1');
+    $routes->post('tv/import-m3u',              'Admin\TvController::importM3u');
+
+    // User Management & Role Assignment
+    $routes->get('users',                       'Admin\UserController::index');
+    $routes->post('users/update-role/(:num)',   'Admin\UserController::updateRole/$1');
+    $routes->post('users/reset-password/(:num)','Admin\UserController::resetPassword/$1');
+    $routes->post('users/delete/(:num)',        'Admin\UserController::delete/$1');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -206,6 +238,15 @@ $routes->group('api', function ($routes) {
 
     // Protected
     $routes->group('', ['filter' => 'api_auth'], function ($routes) {
+
+        // Notifications & Broadcasts
+        $routes->get('notifications',               'Api\NotificationController::index');
+        $routes->post('notifications/read/(:num)',  'Api\NotificationController::markAsRead/$1');
+        $routes->post('notifications/read-all',     'Api\NotificationController::markAllAsRead');
+
+        // TV & Live Streaming Channels
+        $routes->get('tv/channels',                 'Api\TvController::index');
+        $routes->get('tv/channels/(:num)',          'Api\TvController::show/$1');
 
         // Dashboard / home
         $routes->get('dashboard', 'Api\DashboardController::index');

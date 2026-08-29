@@ -53,11 +53,12 @@ class AuthController extends BaseController
         session()->regenerate(true);
 
         session()->set([
-            'user_id'   => $user['id'],
-            'user_name' => $user['name'],
-            'user_email'=> $user['email'],
+            'user_id'    => $user['id'],
+            'user_name'  => $user['name'],
+            'user_email' => $user['email'],
             'user_avatar'=> $user['avatar'],
-            'logged_in' => true,
+            'user_role'  => $user['role'] ?? 'user',
+            'logged_in'  => true,
         ]);
 
         return redirect()->to('/');

@@ -35,6 +35,7 @@ class Filters extends BaseFilters
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
         'auth'          => \App\Filters\AuthFilter::class,
+        'admin'         => \App\Filters\AdminFilter::class,
         'api_auth'      => \App\Filters\ApiAuthFilter::class,
         'throttle'      => \App\Filters\RateLimitFilter::class,
     ];

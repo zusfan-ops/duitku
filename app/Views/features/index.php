@@ -136,6 +136,10 @@
     background: linear-gradient(135deg, #4F46E5 0%, #818CF8 100%);
     box-shadow: 0 6px 18px rgba(99, 102, 241, 0.25);
 }
+.feat-tv {
+    background: linear-gradient(135deg, #7C3AED 0%, #A855F7 100%);
+    box-shadow: 0 6px 18px rgba(168, 85, 247, 0.25);
+}
 .feat-debt {
     background: linear-gradient(135deg, #B45309 0%, #F59E0B 100%);
     box-shadow: 0 6px 18px rgba(245, 158, 11, 0.25);
@@ -337,6 +341,24 @@
             <div class="feature-card-info">
                 <div class="feature-card-title">Kendaraan & Servis</div>
                 <div class="feature-card-desc">Servis, oli & pajak STNK</div>
+            </div>
+        </a>
+
+        <!-- 9. TV & Live Streaming -->
+        <a href="/tv" class="feature-card feat-tv">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                <polyline points="17 2 12 7 7 2"></polyline>
+            </svg>
+            <div class="feature-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                    <polyline points="17 2 12 7 7 2"></polyline>
+                </svg>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">TV & Streaming</div>
+                <div class="feature-card-desc">Siaran live TV nasional</div>
             </div>
         </a>
     </div>

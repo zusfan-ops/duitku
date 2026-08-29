@@ -164,11 +164,12 @@ class AuthController extends ApiController
         }
 
         return [
-            'id'        => (int) $user['id'],
-            'name'      => $user['name'],
-            'email'     => $user['email'],
-            'initials'  => $avatarJson['initials'] ?? 'U',
-            'color'     => $avatarJson['color'] ?? '#2D5A27',
+            'id'          => (int) $user['id'],
+            'name'        => $user['name'],
+            'email'       => $user['email'],
+            'role'        => $user['role'] ?? 'user',
+            'initials'    => $avatarJson['initials'] ?? 'U',
+            'color'       => $avatarJson['color'] ?? '#2D5A27',
             'avatarImage' => $avatarImage,
         ];
     }
