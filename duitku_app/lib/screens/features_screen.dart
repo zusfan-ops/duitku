@@ -14,6 +14,10 @@ import 'pos/pos_products_screen.dart';
 import 'pos/pos_qr_screen.dart';
 import 'pos/pos_reports_screen.dart';
 import 'pos/pos_shifts_screen.dart';
+import 'games/coin_catcher_screen.dart';
+import 'games/game_hub_screen.dart';
+import 'games/money_2048_screen.dart';
+import 'games/tetris_screen.dart';
 import 'recurring/recurring_screen.dart';
 import 'savings/savings_screen.dart';
 import 'scan/notification_detector_screen.dart';
@@ -216,6 +220,58 @@ class FeaturesScreen extends StatelessWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const VehicleScreen()),
+              ),
+            ),
+          ]),
+
+          const SizedBox(height: 18),
+
+          // Section: Hiburan & Mini Games
+          _buildSectionHeader('HIBURAN & MINI-GAMES (ARCADE)'),
+          const SizedBox(height: 8),
+          _buildFeatureGrid(context, [
+            _FeatureItem(
+              title: 'DuitKu Arcade Hub',
+              subtitle: 'Pusat mini game & rekor',
+              icon: Icons.sports_esports_rounded,
+              gradient: const [Color(0xFF4338CA), Color(0xFF6366F1)],
+              shadowColor: const Color(0xFF6366F1),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const GameHubScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Brick Master (Tetris)',
+              subtitle: 'Susun balok & combo baris',
+              icon: Icons.grid_view_rounded,
+              gradient: const [Color(0xFF0284C7), Color(0xFF06B6D4)],
+              shadowColor: const Color(0xFF06B6D4),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TetrisScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Money Merge 2048',
+              subtitle: 'Gabung koin capai 2 Juta',
+              icon: Icons.monetization_on_rounded,
+              gradient: const [Color(0xFFD97706), Color(0xFFF59E0B)],
+              shadowColor: const Color(0xFFF59E0B),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const Money2048Screen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Tangkap Cuan',
+              subtitle: 'Refleks tangkap koin emas',
+              icon: Icons.savings_rounded,
+              gradient: const [Color(0xFF059669), Color(0xFF10B981)],
+              shadowColor: const Color(0xFF10B981),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CoinCatcherScreen()),
               ),
             ),
           ]),
