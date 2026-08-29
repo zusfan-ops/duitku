@@ -156,7 +156,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       child: ListView.separated(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
                         itemCount: _notifications.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
                         itemBuilder: (context, idx) {
                           final notif = _notifications[idx];
                           return _buildNotifCard(notif);
@@ -200,17 +200,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: notif.isRead ? AppColors.card : typeColor.withOpacity(0.04),
+          color: notif.isRead ? AppColors.card : typeColor.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: notif.isPinned
                 ? const Color(0xFFF59E0B)
-                : (notif.isRead ? AppColors.border : typeColor.withOpacity(0.3)),
+                : (notif.isRead ? AppColors.border : typeColor.withValues(alpha: 0.3)),
             width: notif.isPinned ? 1.5 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -224,7 +224,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: typeColor.withOpacity(0.12),
+                color: typeColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(typeIcon, color: typeColor, size: 20),
@@ -240,7 +240,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: typeColor.withOpacity(0.12),
+                          color: typeColor.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -257,7 +257,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF59E0B).withOpacity(0.15),
+                            color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: const Text(

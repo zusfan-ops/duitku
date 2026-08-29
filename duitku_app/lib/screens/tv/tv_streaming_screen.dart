@@ -184,7 +184,7 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: _categories.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          separatorBuilder: (_, _) => const SizedBox(width: 8),
                           itemBuilder: (context, idx) {
                             final cat = _categories[idx];
                             final isSelected = cat == _selectedCategory;
@@ -232,7 +232,7 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.12),
+                              color: Colors.red.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Row(
@@ -302,7 +302,7 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -326,7 +326,7 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
                     ? Image.network(
                         ch.logoUrl!,
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.tv_rounded, color: Colors.blueGrey),
+                        errorBuilder: (_, _, _) => const Icon(Icons.tv_rounded, color: Colors.blueGrey),
                       )
                     : const Icon(Icons.tv_rounded, color: Colors.blueGrey, size: 28),
               ),
@@ -410,7 +410,7 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -435,7 +435,7 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
                       ? Image.network(
                           ch.logoUrl!,
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.tv_rounded, color: AppColors.primary, size: 28),
+                          errorBuilder: (_, _, _) => const Icon(Icons.tv_rounded, color: AppColors.primary, size: 28),
                         )
                       : const Icon(Icons.tv_rounded, color: AppColors.primary, size: 28),
                 ),

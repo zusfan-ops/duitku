@@ -30,7 +30,6 @@ import 'search/universal_search_screen.dart';
 import 'notifications/notifications_screen.dart';
 import 'stats_screen.dart';
 import 'transaction_sheet.dart';
-import 'tv/tv_streaming_screen.dart';
 import 'vehicle/vehicle_screen.dart';
 import 'wallet_screen.dart';
 import 'zakat_pajak/zakat_pajak_screen.dart';
