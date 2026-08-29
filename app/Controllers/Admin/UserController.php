@@ -16,6 +16,19 @@ class UserController extends BaseController
 
     public function index()
     {
+        $db = \Config\Database::connect();
+        if (!$db->fieldExists('role', 'users')) {
+            $forge = \Config\Database::forge();
+            $forge->addColumn('users', [
+                'role' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 30,
+                    'default'    => 'user',
+                    'after'      => 'password',
+                ],
+            ]);
+        }
+
         $search = trim($this->request->getGet('q') ?? '');
         $builder = $this->userModel->orderBy('created_at', 'DESC');
 

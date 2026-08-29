@@ -25,13 +25,44 @@ class NotificationModel extends Model
 
     protected $useTimestamps = true;
     protected $createdField  = 'created_at';
-    protected $updatedField  = 'updated_at';
+    public function ensureTable(): void
+    {
+        $db = \Config\Database::connect();
+        if (!$db->tableExists($this->table)) {
+            $db->query("
+                CREATE TABLE IF NOT EXISTS `app_notifications` (
+                    `id`         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `title`      VARCHAR(255) NOT NULL,
+                    `message`    TEXT         NOT NULL,
+                    `type`       ENUM('info', 'announcement', 'promo', 'warning', 'system') DEFAULT 'info',
+                    `target`     ENUM('all', 'user') DEFAULT 'all',
+                    `user_id`    INT UNSIGNED DEFAULT NULL,
+                    `action_url` VARCHAR(255) DEFAULT NULL,
+                    `is_pinned`  TINYINT(1)   DEFAULT 0,
+                    `created_at` DATETIME     DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+        }
+        if (!$db->tableExists('notification_reads')) {
+            $db->query("
+                CREATE TABLE IF NOT EXISTS `notification_reads` (
+                    `id`              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `notification_id` INT UNSIGNED NOT NULL,
+                    `user_id`         INT UNSIGNED NOT NULL,
+                    `read_at`         DATETIME     DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE KEY `user_notif_read` (`notification_id`, `user_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+        }
+    }
 
     /**
      * Ambil notifikasi aktif yang relevan untuk user tertentu (broadcast all + target user)
      */
     public function getForUser(int $userId, int $limit = 30): array
     {
+        $this->ensureTable();
         $db = \Config\Database::connect();
         $builder = $db->table($this->table . ' n');
         $builder->select('n.*, (CASE WHEN nr.id IS NOT NULL THEN 1 ELSE 0 END) AS is_read, nr.read_at');
@@ -52,6 +83,7 @@ class NotificationModel extends Model
      */
     public function getUnreadCount(int $userId): int
     {
+        $this->ensureTable();
         $db = \Config\Database::connect();
         $builder = $db->table($this->table . ' n');
         $builder->join('notification_reads nr', "nr.notification_id = n.id AND nr.user_id = {$userId}", 'left');
@@ -69,6 +101,7 @@ class NotificationModel extends Model
      */
     public function markAsRead(int $notificationId, int $userId): bool
     {
+        $this->ensureTable();
         $db = \Config\Database::connect();
         $exists = $db->table('notification_reads')
                      ->where('notification_id', $notificationId)

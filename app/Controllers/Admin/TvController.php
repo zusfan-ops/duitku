@@ -16,6 +16,7 @@ class TvController extends BaseController
 
     public function index()
     {
+        $this->tvModel->ensureTable();
         $channels = $this->tvModel->orderBy('sort_order', 'ASC')
                                   ->orderBy('name', 'ASC')
                                   ->findAll();

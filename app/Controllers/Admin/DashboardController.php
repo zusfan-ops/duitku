@@ -22,11 +22,27 @@ class DashboardController extends BaseController
 
     public function index()
     {
+        $this->notifModel->ensureTable();
+        $this->tvModel->ensureTable();
+
         $db = \Config\Database::connect();
+
+        // Ensure role column in users
+        if (!$db->fieldExists('role', 'users')) {
+            $forge = \Config\Database::forge();
+            $forge->addColumn('users', [
+                'role' => [
+                    'type'       => 'VARCHAR',
+                    'constraint' => 30,
+                    'default'    => 'user',
+                    'after'      => 'password',
+                ],
+            ]);
+        }
 
         // Metrik Pengguna
         $totalUsers = $this->userModel->countAllResults();
-        $totalAdmins = $this->userModel->where('role', 'administrator')->orWhere('role', 'admin')->countAllResults();
+        $totalAdmins = $this->userModel->groupStart()->where('role', 'administrator')->orWhere('role', 'admin')->groupEnd()->countAllResults();
 
         // Metrik Transaksi
         $totalTx = 0;

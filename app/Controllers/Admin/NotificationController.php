@@ -19,6 +19,7 @@ class NotificationController extends BaseController
 
     public function index()
     {
+        $this->notifModel->ensureTable();
         $notifications = $this->notifModel->orderBy('is_pinned', 'DESC')
                                           ->orderBy('created_at', 'DESC')
                                           ->findAll();
