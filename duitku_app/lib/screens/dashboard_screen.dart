@@ -448,11 +448,20 @@ class _HeroCardState extends State<_HeroCard> {
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
-    final symbol = data.symbol as String;
+    final symbol = '${data.symbol ?? "Rp"}';
     final wallets = (data.wallets as List?) ?? [];
-    final primaryWalletName = wallets.isNotEmpty
-        ? (wallets.firstWhere((w) => (w as Wallet).isDefault, orElse: () => wallets.first) as Wallet).name
-        : 'Dompet Utama';
+    String primaryWalletName = 'Dompet Utama';
+    if (wallets.isNotEmpty) {
+      final firstW = wallets.first;
+      if (firstW is Wallet) {
+        final defW = wallets.whereType<Wallet>().firstWhere((w) => w.isDefault, orElse: () => firstW);
+        primaryWalletName = defW.name;
+      }
+    }
+
+    final balance = Fmt.toDouble(data.balance);
+    final monthlyIncome = Fmt.toDouble(data.monthlyIncome);
+    final monthStr = '${data.month ?? ""}'.toUpperCase();
 
     return Container(
       margin: const EdgeInsets.only(top: 4, bottom: 4),
@@ -468,9 +477,9 @@ class _HeroCardState extends State<_HeroCard> {
             top: 0,
             left: 16,
             right: 16,
+            height: 64,
             child: Container(
-              height: 70,
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
@@ -522,8 +531,8 @@ class _HeroCardState extends State<_HeroCard> {
 
           // ── Layer 2: Main Wallet Pocket (Foreground) ───────────────
           Container(
-            margin: const EdgeInsets.only(top: 36),
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+            margin: const EdgeInsets.only(top: 32),
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF1E3A8A), Color(0xFF1D4ED8), Color(0xFF2563EB)],
@@ -550,22 +559,23 @@ class _HeroCardState extends State<_HeroCard> {
                       ),
                     ),
                     // Month / trend tag
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        (data.month as String).toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: 0.4,
+                    if (monthStr.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          monthStr,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: 0.4,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -580,7 +590,7 @@ class _HeroCardState extends State<_HeroCard> {
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          _hideBalance ? 'Rp •••••••••' : Fmt.money(data.balance as double, symbol: symbol),
+                          _hideBalance ? 'Rp •••••••••' : Fmt.money(balance, symbol: symbol),
                           style: const TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.w900,
@@ -604,7 +614,7 @@ class _HeroCardState extends State<_HeroCard> {
                           const Icon(Icons.trending_up_rounded, size: 14, color: Color(0xFF6EE7B7)),
                           const SizedBox(width: 4),
                           Text(
-                            '+${Fmt.money0(data.monthlyIncome as double)}',
+                            '+${Fmt.money0(monthlyIncome)}',
                             style: const TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
@@ -616,7 +626,7 @@ class _HeroCardState extends State<_HeroCard> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
 
                 // ── Translucent Quick Action Glass Pills ────────────
                 Row(
@@ -722,10 +732,11 @@ class _ThreeColumnStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final income = data.monthlyIncome as double;
-    final expense = data.monthlyExpense as double;
-    final budget = data.budget as double;
+    final income = Fmt.toDouble(data.monthlyIncome);
+    final expense = Fmt.toDouble(data.monthlyExpense);
+    final budget = Fmt.toDouble(data.budget);
     final remainingBudget = budget > 0 ? (budget - expense) : 0.0;
+    final wallets = (data.wallets as List?) ?? [];
 
     return Container(
       margin: const EdgeInsets.only(top: 10, bottom: 8),
@@ -763,7 +774,7 @@ class _ThreeColumnStatsCard extends StatelessWidget {
           // Column 3: Sisa Budget / Status
           Expanded(
             child: _buildCol(
-              title: budget > 0 ? Fmt.money0(remainingBudget) : '${(data.wallets as List).length} Dompet',
+              title: budget > 0 ? Fmt.money0(remainingBudget) : '${wallets.length} Dompet',
               label: budget > 0 ? 'Sisa Budget' : 'Akun Dompet',
               subLabel: budget > 0 ? 'Limit bulanan' : 'Aktif',
               color: const Color(0xFF2563EB),

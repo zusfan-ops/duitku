@@ -77,7 +77,7 @@ class UpdateCheckerService {
   static final UpdateCheckerService instance = UpdateCheckerService._();
 
   /// Versi aplikasi saat ini (sesuai pubspec.yaml)
-  static const String currentVersion = '1.2.1';
+  static const String currentVersion = '1.2.2';
 
   /// Repositori GitHub resmi DuitKu
   static const String _repo = 'zusfan-ops/duitku';
