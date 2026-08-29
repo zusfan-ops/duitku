@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../models/tv_channel.dart';
 import '../../services/api_service.dart';
@@ -19,12 +21,25 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
   String _searchQuery = '';
   bool _loading = true;
   String? _error;
+
   TvChannel? _activeChannel;
+  VideoPlayerController? _videoController;
+  bool _isInitializingVideo = false;
+  bool _hasVideoError = false;
+  String? _videoErrorMessage;
+  bool _isMuted = false;
+  bool _showControls = true;
 
   @override
   void initState() {
     super.initState();
     _loadChannels();
+  }
+
+  @override
+  void dispose() {
+    _videoController?.dispose();
+    super.dispose();
   }
 
   Future<void> _loadChannels() async {
@@ -58,6 +73,11 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
         }
         _loading = false;
       });
+
+      // Auto play channel pertama jika belum ada controller
+      if (_channels.isNotEmpty && _videoController == null) {
+        _playStream(_channels.first, autoPlay: true);
+      }
     } catch (e) {
       setState(() {
         _error = 'Gagal memuat saluran TV: $e';
@@ -76,32 +96,101 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
     }).toList();
   }
 
-  Future<void> _playStream(TvChannel ch) async {
+  Future<void> _playStream(TvChannel ch, {bool autoPlay = true}) async {
+    if (_activeChannel?.id == ch.id && _videoController != null && !_hasVideoError) {
+      if (!_videoController!.value.isPlaying && autoPlay) {
+        _videoController!.play();
+      }
+      return;
+    }
+
     setState(() {
       _activeChannel = ch;
+      _isInitializingVideo = true;
+      _hasVideoError = false;
+      _videoErrorMessage = null;
     });
 
-    final uri = Uri.tryParse(ch.streamUrl);
-    if (uri != null) {
-      try {
-        final canLaunch = await canLaunchUrl(uri);
-        if (canLaunch) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        } else {
-          // Fallback: try platform default
-          await launchUrl(uri, mode: LaunchMode.platformDefault);
-        }
-      } catch (e) {
+    try {
+      // Dispose old controller
+      final oldController = _videoController;
+      _videoController = null;
+      await oldController?.dispose();
+
+      final uri = Uri.parse(ch.streamUrl);
+      final controller = VideoPlayerController.networkUrl(
+        uri,
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
+
+      _videoController = controller;
+
+      controller.addListener(() {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Buka URL siaran: ${ch.streamUrl}'),
-              backgroundColor: AppColors.primaryDark,
-            ),
-          );
+          setState(() {});
         }
+      });
+
+      await controller.initialize();
+      await controller.setVolume(_isMuted ? 0.0 : 1.0);
+
+      if (autoPlay) {
+        await controller.play();
+      }
+
+      if (mounted) {
+        setState(() {
+          _isInitializingVideo = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isInitializingVideo = false;
+          _hasVideoError = true;
+          _videoErrorMessage = 'Gagal memuat siaran live: $e';
+        });
       }
     }
+  }
+
+  void _togglePlayPause() {
+    if (_videoController == null || !_videoController!.value.isInitialized) return;
+    if (_videoController!.value.isPlaying) {
+      _videoController!.pause();
+    } else {
+      _videoController!.play();
+    }
+    setState(() {});
+  }
+
+  void _toggleMute() {
+    if (_videoController == null) return;
+    _isMuted = !_isMuted;
+    _videoController!.setVolume(_isMuted ? 0.0 : 1.0);
+    setState(() {});
+  }
+
+  void _openInExternalPlayer() async {
+    if (_activeChannel == null) return;
+    final uri = Uri.tryParse(_activeChannel!.streamUrl);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _openFullScreen() {
+    if (_videoController == null || !_videoController!.value.isInitialized) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _FullScreenTvPlayer(
+          controller: _videoController!,
+          channel: _activeChannel!,
+        ),
+      ),
+    );
   }
 
   @override
@@ -142,253 +231,442 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
                     ),
                   ),
                 )
-              : RefreshIndicator(
-                  onRefresh: _loadChannels,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
-                    children: [
-                      // Active Playing Preview Banner
-                      if (_activeChannel != null) _buildActiveChannelBanner(_activeChannel!),
-
-                      const SizedBox(height: 16),
-
-                      // Search bar
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.card,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: TextField(
-                          onChanged: (val) => setState(() => _searchQuery = val),
-                          decoration: InputDecoration(
-                            hintText: 'Cari siaran TV / kategori...',
-                            prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            suffixIcon: _searchQuery.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear_rounded, size: 18),
-                                    onPressed: () => setState(() => _searchQuery = ''),
-                                  )
-                                : null,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      // Category chips
-                      SizedBox(
-                        height: 38,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _categories.length,
-                          separatorBuilder: (_, _) => const SizedBox(width: 8),
-                          itemBuilder: (context, idx) {
-                            final cat = _categories[idx];
-                            final isSelected = cat == _selectedCategory;
-                            return ChoiceChip(
-                              label: Text(cat),
-                              selected: isSelected,
-                              selectedColor: AppColors.primary,
-                              labelStyle: TextStyle(
-                                color: isSelected ? Colors.white : AppColors.textPrimary,
-                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                fontSize: 12.5,
-                              ),
-                              backgroundColor: AppColors.card,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                                side: BorderSide(
-                                  color: isSelected ? AppColors.primary : AppColors.border,
-                                ),
-                              ),
-                              onSelected: (_) {
-                                setState(() {
-                                  _selectedCategory = cat;
-                                });
-                              },
-                            );
-                          },
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Section Title
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              : _channels.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            'DAFTAR SALURAN (${_filteredChannels.length})',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textSecondary,
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.circle, color: Colors.red, size: 8),
-                                SizedBox(width: 4),
-                                Text(
-                                  'LIVE HLS / M3U',
-                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.red),
-                                ),
-                              ],
-                            ),
-                          )
+                          Icon(Icons.live_tv_rounded, size: 64, color: Colors.grey.shade400),
+                          const SizedBox(height: 12),
+                          const Text('Belum ada saluran TV tersedia.', style: TextStyle(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          Text('Admin dapat menambahkan saluran di Admin Panel.', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
                         ],
                       ),
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
+                      children: [
+                        // In-App Live Video Player Box
+                        _buildVideoPlayerSection(),
 
-                      const SizedBox(height: 12),
+                        const SizedBox(height: 20),
 
-                      // Channels Grid
-                      if (_filteredChannels.isEmpty)
-                        Container(
-                          padding: const EdgeInsets.all(36),
-                          alignment: Alignment.center,
-                          child: const Column(
-                            children: [
-                              Icon(Icons.tv_off_rounded, size: 48, color: AppColors.textSecondary),
-                              SizedBox(height: 10),
-                              Text(
-                                'Tidak ada siaran TV ditemukan',
-                                style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                              ),
-                            ],
+                        // Search box
+                        TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Cari saluran TV atau kategori...',
+                            prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                            filled: true,
+                            fillColor: AppColors.card,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: AppColors.border),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: AppColors.border),
+                            ),
                           ),
-                        )
-                      else
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 1.1,
-                          ),
-                          itemCount: _filteredChannels.length,
-                          itemBuilder: (context, idx) {
-                            final ch = _filteredChannels[idx];
-                            final isActive = _activeChannel?.id == ch.id;
-                            return _buildChannelCard(ch, isActive);
+                          onChanged: (val) {
+                            setState(() {
+                              _searchQuery = val.trim();
+                            });
                           },
                         ),
-                    ],
-                  ),
-                ),
+
+                        const SizedBox(height: 14),
+
+                        // Category chips
+                        SizedBox(
+                          height: 38,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _categories.length,
+                            separatorBuilder: (_, _) => const SizedBox(width: 8),
+                            itemBuilder: (context, idx) {
+                              final cat = _categories[idx];
+                              final isSelected = cat == _selectedCategory;
+                              return ChoiceChip(
+                                label: Text(cat),
+                                selected: isSelected,
+                                selectedColor: AppColors.primary,
+                                labelStyle: TextStyle(
+                                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  fontSize: 12.5,
+                                ),
+                                backgroundColor: AppColors.card,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  side: BorderSide(
+                                    color: isSelected ? AppColors.primary : AppColors.border,
+                                  ),
+                                ),
+                                onSelected: (_) {
+                                  setState(() {
+                                    _selectedCategory = cat;
+                                  });
+                                },
+                              );
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        // Section Title
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'DAFTAR SALURAN (${_filteredChannels.length})',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textSecondary,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.circle, color: Colors.red, size: 8),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'LIVE IN-APP PLAYER',
+                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.red),
+                                  ),
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Channels Grid
+                        _filteredChannels.isEmpty
+                            ? Container(
+                                padding: const EdgeInsets.all(30),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  'Tidak ada saluran ditemukan untuk "$_searchQuery".',
+                                  style: const TextStyle(color: AppColors.textSecondary),
+                                ),
+                              )
+                            : GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: 10,
+                                  childAspectRatio: 0.88,
+                                ),
+                                itemCount: _filteredChannels.length,
+                                itemBuilder: (context, idx) {
+                                  final ch = _filteredChannels[idx];
+                                  final isActive = _activeChannel?.id == ch.id;
+                                  return _buildChannelCard(ch, isActive);
+                                },
+                              ),
+                      ],
+                    ),
     );
   }
 
-  Widget _buildActiveChannelBanner(TvChannel ch) {
+  Widget _buildVideoPlayerSection() {
+    final ch = _activeChannel;
+    if (ch == null) {
+      return const SizedBox.shrink();
+    }
+
+    final isInitialized = _videoController != null && _videoController!.value.isInitialized;
+    final isPlaying = isInitialized && _videoController!.value.isPlaying;
+    final isBuffering = isInitialized && _videoController!.value.isBuffering;
+
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
+        color: const Color(0xFF0B1120),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(16),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ch.logoUrl != null && ch.logoUrl!.isNotEmpty
-                    ? Image.network(
-                        ch.logoUrl!,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, _, _) => const Icon(Icons.tv_rounded, color: Colors.blueGrey),
-                      )
-                    : const Icon(Icons.tv_rounded, color: Colors.blueGrey, size: 28),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            ch.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
+          // Video Player Aspect Ratio Box
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _showControls = !_showControls;
+              });
+            },
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Actual Video Stream
+                  if (isInitialized && !_hasVideoError)
+                    SizedBox.expand(
+                      child: FittedBox(
+                        fit: BoxFit.cover,
+                        child: SizedBox(
+                          width: _videoController!.value.size.width > 0
+                              ? _videoController!.value.size.width
+                              : 1280,
+                          height: _videoController!.value.size.height > 0
+                              ? _videoController!.value.size.height
+                              : 720,
+                          child: VideoPlayer(_videoController!),
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      color: const Color(0xFF0F172A),
+                      child: Center(
+                        child: ch.logoUrl != null && ch.logoUrl!.isNotEmpty
+                            ? Image.network(
+                                ch.logoUrl!,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, _, _) => const Icon(Icons.tv_rounded, size: 64, color: Colors.blueGrey),
+                              )
+                            : const Icon(Icons.tv_rounded, size: 64, color: Colors.blueGrey),
+                      ),
+                    ),
+
+                  // Loading / Buffering Spinner
+                  if (_isInitializingVideo || isBuffering)
+                    Container(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      child: const Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(color: AppColors.primary),
+                            SizedBox(height: 10),
+                            Text(
+                              'Menghubungkan siaran live...',
+                              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            'LIVE',
-                            style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
-                          ),
+                      ),
+                    ),
+
+                  // Error Overlay
+                  if (_hasVideoError)
+                    Container(
+                      color: Colors.black.withValues(alpha: 0.8),
+                      padding: const EdgeInsets.all(16),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 36),
+                            const SizedBox(height: 8),
+                            Text(
+                              _videoErrorMessage ?? 'Format siaran tidak didukung secara in-app.',
+                              style: const TextStyle(color: Colors.white, fontSize: 11),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: () => _playStream(ch),
+                                  icon: const Icon(Icons.refresh, size: 16),
+                                  label: const Text('Coba Lagi', style: TextStyle(fontSize: 12)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                OutlinedButton.icon(
+                                  onPressed: _openInExternalPlayer,
+                                  icon: const Icon(Icons.open_in_new_rounded, size: 16, color: Colors.white),
+                                  label: const Text('Player Eksternal', style: TextStyle(fontSize: 12, color: Colors.white)),
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(color: Colors.white70),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      ch.category,
-                      style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+
+                  // Overlay Controls (when tapped & playing)
+                  if (_showControls && isInitialized && !_hasVideoError)
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.black.withValues(alpha: 0.6),
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.7),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Top Bar
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'LIVE',
+                                    style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    ch.name,
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  onPressed: _toggleMute,
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.fullscreen_rounded, color: Colors.white, size: 22),
+                                  onPressed: _openFullScreen,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Center Play / Pause
+                          IconButton(
+                            iconSize: 48,
+                            icon: Icon(
+                              isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                            onPressed: _togglePlayPause,
+                          ),
+
+                          // Bottom Bar
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  ch.category,
+                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11),
+                                ),
+                                InkWell(
+                                  onTap: () => _playStream(ch),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.refresh_rounded, size: 14, color: Colors.white.withValues(alpha: 0.8)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Reconnect',
+                                        style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _playStream(ch),
-                  icon: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 22),
-                  label: const Text('Putar Siaran Langsung', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+
+          // Player Info Banner below video
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: ch.logoUrl != null && ch.logoUrl!.isNotEmpty
+                      ? Image.network(
+                          ch.logoUrl!,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, _, _) => const Icon(Icons.tv_rounded, color: Colors.blueGrey),
+                        )
+                      : const Icon(Icons.tv_rounded, color: Colors.blueGrey, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ch.name,
+                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Kategori: ${ch.category}',
+                        style: TextStyle(color: Colors.grey.shade400, fontSize: 11.5),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
+                IconButton(
+                  onPressed: _openFullScreen,
+                  icon: const Icon(Icons.fullscreen_rounded, color: AppColors.primary, size: 28),
+                  tooltip: 'Layar Penuh',
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -400,7 +678,7 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
       onTap: () => _playStream(ch),
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: AppColors.card,
           borderRadius: BorderRadius.circular(16),
@@ -423,21 +701,21 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
               alignment: Alignment.center,
               children: [
                 Container(
-                  width: 52,
-                  height: 52,
+                  width: 48,
+                  height: 48,
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: AppColors.bg,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.border),
                   ),
                   child: ch.logoUrl != null && ch.logoUrl!.isNotEmpty
                       ? Image.network(
                           ch.logoUrl!,
                           fit: BoxFit.contain,
-                          errorBuilder: (_, _, _) => const Icon(Icons.tv_rounded, color: AppColors.primary, size: 28),
+                          errorBuilder: (_, _, _) => const Icon(Icons.tv_rounded, color: AppColors.primary, size: 24),
                         )
-                      : const Icon(Icons.tv_rounded, color: AppColors.primary, size: 28),
+                      : const Icon(Icons.tv_rounded, color: AppColors.primary, size: 24),
                 ),
                 Positioned(
                   top: 0,
@@ -454,13 +732,13 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               ch.name,
-              style: const TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                color: isActive ? AppColors.primary : AppColors.textPrimary,
               ),
               textAlign: TextAlign.center,
               maxLines: 1,
@@ -470,12 +748,145 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
             Text(
               ch.category,
               style: const TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 color: AppColors.textSecondary,
               ),
               textAlign: TextAlign.center,
               maxLines: 1,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// FullScreen Player Screen
+class _FullScreenTvPlayer extends StatefulWidget {
+  final VideoPlayerController controller;
+  final TvChannel channel;
+
+  const _FullScreenTvPlayer({
+    required this.controller,
+    required this.channel,
+  });
+
+  @override
+  State<_FullScreenTvPlayer> createState() => _FullScreenTvPlayerState();
+}
+
+class _FullScreenTvPlayerState extends State<_FullScreenTvPlayer> {
+  bool _showControls = true;
+
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isPlaying = widget.controller.value.isPlaying;
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: GestureDetector(
+        onTap: () {
+          setState(() {
+            _showControls = !_showControls;
+          });
+        },
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Center(
+              child: AspectRatio(
+                aspectRatio: widget.controller.value.aspectRatio > 0
+                    ? widget.controller.value.aspectRatio
+                    : 16 / 9,
+                child: VideoPlayer(widget.controller),
+              ),
+            ),
+
+            // Controls
+            if (_showControls)
+              Container(
+                color: Colors.black.withValues(alpha: 0.4),
+                child: SafeArea(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Top Bar
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              widget.channel.name,
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+                            ),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text('LIVE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11)),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Play/Pause center button
+                      IconButton(
+                        iconSize: 64,
+                        icon: Icon(
+                          isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                        onPressed: () {
+                          if (isPlaying) {
+                            widget.controller.pause();
+                          } else {
+                            widget.controller.play();
+                          }
+                          setState(() {});
+                        },
+                      ),
+
+                      // Bottom exit fullscreen
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              widget.channel.category,
+                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.fullscreen_exit_rounded, color: Colors.white, size: 28),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
       ),
