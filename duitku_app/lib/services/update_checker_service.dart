@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/update_dialog.dart';
@@ -52,7 +53,7 @@ class GitHubRelease {
     }
 
     return GitHubRelease(
-      tagName: (json['tag_name'] ?? 'v1.0.0') as String,
+      tagName: (json['tag_name'] ?? 'v1.2.1') as String,
       name: (json['name'] ?? json['tag_name'] ?? 'Pembaruan Aplikasi') as String,
       body: (json['body'] ?? '') as String,
       publishedAt: DateTime.tryParse(json['published_at'] ?? '') ?? DateTime.now(),
@@ -76,10 +77,12 @@ class UpdateCheckerService {
   static final UpdateCheckerService instance = UpdateCheckerService._();
 
   /// Versi aplikasi saat ini (sesuai pubspec.yaml)
-  static const String currentVersion = '1.0.0';
+  static const String currentVersion = '1.2.1';
 
   /// Repositori GitHub resmi DuitKu
   static const String _repo = 'zusfan-ops/duitku';
+
+  static const String _prefDismissedTag = 'duitku_dismissed_update_tag';
 
   DateTime? _lastCheckedAt;
   GitHubRelease? _latestRelease;
@@ -144,6 +147,14 @@ class UpdateCheckerService {
     return false;
   }
 
+  /// Abaikan rilis versi tertentu saat startup otomatis
+  Future<void> dismissRelease(String tagName) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefDismissedTag, tagName);
+    } catch (_) {}
+  }
+
   /// Memeriksa pembaruan dan menampilkan dialog jika tersedia
   Future<void> checkAndShowUpdateDialog(
     BuildContext context, {
@@ -178,6 +189,19 @@ class UpdateCheckerService {
     if (!context.mounted) return;
 
     if (release != null) {
+      // Cek apakah pengguna sebelumnya menekan "Nanti Saja" untuk rilis ini (hanya untuk startup check otomatis)
+      if (!isManualCheck) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final dismissed = prefs.getString(_prefDismissedTag);
+          if (dismissed == release.tagName) {
+            return;
+          }
+        } catch (_) {}
+      }
+
+      if (!context.mounted) return;
+
       // Tampilkan dialog pembaruan
       showDialog(
         context: context,

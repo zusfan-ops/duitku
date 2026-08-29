@@ -228,7 +228,10 @@ class UpdateDialog extends StatelessWidget {
                         },
                       ),
                       TextButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          UpdateCheckerService.instance.dismissRelease(release.tagName);
+                        },
                         child: const Text(
                           'Nanti Saja',
                           style: TextStyle(color: AppColors.textMuted, fontSize: 12),
