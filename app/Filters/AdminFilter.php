@@ -16,18 +16,20 @@ class AdminFilter implements FilterInterface
             return redirect()->to('/login')->with('error', 'Silakan login terlebih dahulu.');
         }
 
-        // Cek role dari database / session
-        $role = session()->get('user_role');
-        if (!$role) {
+        // Ambil role langsung dari database agar selalu akurat dengan perubahan di DB
+        try {
             $userModel = new UserModel();
             $user = $userModel->find($userId);
-            $role = $user['role'] ?? 'user';
+            $role = strtolower(trim((string)($user['role'] ?? 'user')));
             session()->set('user_role', $role);
+        } catch (\Throwable $e) {
+            $role = 'user';
         }
 
         $allowedRoles = ['administrator', 'admin'];
-        if (!in_array(strtolower((string)$role), $allowedRoles, true)) {
-            return redirect()->to('/')->with('error', 'Akses ditolak. Anda tidak memiliki izin Administrator.');
+        if (!in_array($role, $allowedRoles, true)) {
+            $email = session()->get('user_email') ?? 'User';
+            return redirect()->to('/')->with('error', "Akses Ditolak: Akun Anda ({$email}) saat ini memiliki role '{$role}'. Diperlukan role 'administrator'. Silakan update kolom role pada tabel users di database.");
         }
     }
 
