@@ -7,6 +7,7 @@ import '../models/category.dart';
 import '../models/user.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../services/update_checker_service.dart';
 import '../theme.dart';
 import '../utils/format.dart';
 import '../widgets/category_icon.dart';
@@ -663,6 +664,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         final ok = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const BackupRestoreScreen()));
                         if (ok == true) _load();
                       },
+                    ),
+                  ),
+                  _card(
+                    ListTile(
+                      leading: _icon(Icons.system_update_rounded, color: const Color(0xFFE11D48)),
+                      title: const Text('Pembaruan Aplikasi', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: const Text('Periksa rilis terbaru di GitHub Releases', style: TextStyle(fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                      onTap: () => UpdateCheckerService.instance.checkAndShowUpdateDialog(context, isManualCheck: true),
                     ),
                   ),
                   _card(

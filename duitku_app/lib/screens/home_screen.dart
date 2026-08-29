@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_data_provider.dart';
+import '../services/update_checker_service.dart';
 import '../theme.dart';
 import 'activity_screen.dart';
 import 'dashboard_screen.dart';
@@ -19,6 +20,19 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _index = 0;
   final _dashKey = GlobalKey<DashboardScreenState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Pengecekan otomatis update APK GitHub Releases setelah aplikasi siap
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          UpdateCheckerService.instance.checkAndShowUpdateDialog(context);
+        }
+      });
+    });
+  }
 
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
     GlobalKey<NavigatorState>(),
