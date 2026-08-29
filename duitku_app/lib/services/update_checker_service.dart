@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -76,8 +77,12 @@ class UpdateCheckerService {
   UpdateCheckerService._();
   static final UpdateCheckerService instance = UpdateCheckerService._();
 
-  /// Versi aplikasi saat ini (sesuai pubspec.yaml)
-  static const String currentVersion = '1.2.2';
+  /// Versi aplikasi fallback jika package_info belum termuat
+  static const String fallbackVersion = '1.2.3';
+  String _cachedVersion = fallbackVersion;
+
+  /// Versi aplikasi saat ini
+  String get currentVersion => _cachedVersion;
 
   /// Repositori GitHub resmi DuitKu
   static const String _repo = 'zusfan-ops/duitku';
@@ -88,8 +93,23 @@ class UpdateCheckerService {
   GitHubRelease? _latestRelease;
   bool _isChecking = false;
 
+  /// Ambil versi aplikasi secara dinamis dari package runtime
+  Future<String> getAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (info.version.isNotEmpty) {
+        _cachedVersion = info.version;
+      }
+    } catch (e) {
+      debugPrint('UpdateChecker package_info error: $e');
+    }
+    return _cachedVersion;
+  }
+
   /// Memeriksa apakah ada versi baru di GitHub Releases
   Future<GitHubRelease?> checkLatestRelease({bool force = false}) async {
+    await getAppVersion();
+
     // Jika baru saja diperiksa dalam 5 menit terakhir dan tidak force, gunakan cache
     if (!force && _lastCheckedAt != null && _latestRelease != null) {
       if (DateTime.now().difference(_lastCheckedAt!).inMinutes < 5) {
@@ -110,7 +130,7 @@ class UpdateCheckerService {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final release = GitHubRelease.fromJson(data);
 
-        if (_isNewerVersion(release.versionClean, currentVersion)) {
+        if (_isNewerVersion(release.versionClean, _cachedVersion)) {
           _latestRelease = release;
           _lastCheckedAt = DateTime.now();
           return release;
