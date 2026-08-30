@@ -155,7 +155,7 @@ class EmergencyController extends BaseController
         array_unshift($categories, 'Semua');
 
         $data = [
-            'pageTitle'  => 'Layanan Darurat & Nomor Darurat 24 Jam — DuitKu',
+            'pageTitle'  => 'Layanan Darurat',
             'directory'  => $directory,
             'categories' => $categories,
         ];

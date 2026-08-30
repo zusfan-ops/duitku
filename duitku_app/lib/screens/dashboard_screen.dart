@@ -1540,7 +1540,7 @@ class _EmergencyQuickBanner extends StatelessWidget {
                   child: const Icon(Icons.emergency_rounded, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

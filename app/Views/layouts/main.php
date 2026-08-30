@@ -155,13 +155,16 @@
                 str_starts_with($currentPath, '/tv') ||
                 str_starts_with($currentPath, '/pos')
             );
+            $isEmergency = (str_starts_with($currentPath, '/emergency') || str_starts_with($currentPath, '/layanan-darurat'));
             $isSettings  = str_starts_with($currentPath, '/settings');
 
             $navTitle = 'Dashboard';
             if ($isActivity) $navTitle = 'Aktivitas';
+            elseif ($isEmergency) $navTitle = 'Layanan Darurat';
             elseif ($isFeatures) $navTitle = 'Fitur';
             elseif ($isSettings) $navTitle = 'Pengaturan';
-            elseif (!empty($pageTitle)) $navTitle = $pageTitle;
+            elseif (!empty($pageTitle)) $navTitle = preg_replace('/ — DuitKu$/i', '', $pageTitle);
+            elseif (!empty($title)) $navTitle = preg_replace('/ — DuitKu$/i', '', $title);
         ?>
         <div class="topbar-brand">
             <div class="topbar-date-label"><?= esc($currentIndoDate) ?></div>

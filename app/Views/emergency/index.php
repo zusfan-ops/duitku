@@ -355,22 +355,117 @@
 #copyToast.show {
     transform: translateX(-50%) translateY(0);
 }
+/* SOS Modal */
+.sos-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.25s ease;
+}
+.sos-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+.sos-modal-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 420px;
+    padding: 22px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    transform: scale(0.92);
+    transition: transform 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+.sos-modal-overlay.active .sos-modal-card {
+    transform: scale(1);
+}
+.sos-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+.sos-modal-title {
+    font-size: 16px;
+    font-weight: 900;
+    color: #DC2626;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.sos-btn-close {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sos-action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.sos-item-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border);
+    background: var(--bg-surface);
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.sos-item-btn:hover, .sos-item-btn:active {
+    border-color: #DC2626;
+    background: rgba(220, 38, 38, 0.08);
+    color: #DC2626;
+}
+.sos-item-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
 </style>
 
 <div class="emergency-page">
 
     <!-- Hero Emergency Call & SOS Share -->
     <div class="emergency-hero">
-        <h1>🚨 Layanan & Kontak Darurat 24 Jam</h1>
-        <p>Akses cepat panggilan darurat nasional, mobil derek resmi jalan tol, pemadam kebakaran, polisi, dan ambulans medis gawat darurat.</p>
+        <h1>🚨 Layanan Darurat</h1>
+        <p>Akses cepat panggilan darurat nasional, mobil derek jalan tol, pemadam kebakaran, polisi, dan medis gawat darurat.</p>
         <div class="hero-actions">
             <a href="tel:112" class="btn-hero-call">
                 <span>📞</span>
-                <span>Panggilan Darurat 112</span>
+                <span>Panggil 112 (Bebas Pulsa)</span>
             </a>
-            <button type="button" class="btn-hero-sos" onclick="shareSosLocation()">
+            <button type="button" class="btn-hero-sos" onclick="openSosModal()">
                 <span>📍</span>
-                <span>Kirim SOS & Koordinat Lokasi</span>
+                <span id="btnSosText">Kirim SOS Lokasi</span>
             </button>
         </div>
     </div>
@@ -464,6 +559,50 @@
         </div>
     </div>
 
+<!-- SOS Quick Action Modal -->
+<div class="sos-modal-overlay" id="sosModalOverlay" onclick="if(event.target===this) closeSosModal()">
+    <div class="sos-modal-card">
+        <div class="sos-modal-header">
+            <div class="sos-modal-title">
+                <span>🚨</span>
+                <span>Tindakan Darurat SOS</span>
+            </div>
+            <button type="button" class="sos-btn-close" onclick="closeSosModal()">✕</button>
+        </div>
+        <p style="font-size:12px;color:var(--text-secondary);margin:0 0 16px 0;line-height:1.4">
+            Pilih tindakan bantuan darurat berikut. Titik koordinat GPS akan disertakan otomatis:
+        </p>
+        <div class="sos-action-list">
+            <button type="button" class="sos-item-btn" id="btnSendWa" onclick="sendWhatsAppSos()">
+                <div class="sos-item-icon" style="background:#DCFCE7;color:#16A34A">💬</div>
+                <div style="flex:1;text-align:left">
+                    <div style="font-size:13.5px;font-weight:800;color:var(--text-primary)">Kirim SOS via WhatsApp</div>
+                    <div style="font-size:11px;color:var(--text-muted);font-weight:500" id="btnWaSub">Kirim koordinat Maps ke kontak/grup</div>
+                </div>
+            </button>
+            <a href="tel:112" class="sos-item-btn" style="border-color:#FCA5A5">
+                <div class="sos-item-icon" style="background:#FEE2E2;color:#DC2626">📞</div>
+                <div style="flex:1;text-align:left">
+                    <div style="font-size:13.5px;font-weight:800;color:#DC2626">Panggil 112 (Bebas Pulsa)</div>
+                    <div style="font-size:11px;color:var(--text-muted);font-weight:500">Panggilan darurat terpadu 24 jam</div>
+                </div>
+            </a>
+            <a href="tel:14080" class="sos-item-btn">
+                <div class="sos-item-icon" style="background:#E0E7FF;color:#4338CA">🚗</div>
+                <div style="flex:1;text-align:left">
+                    <div style="font-size:13.5px;font-weight:800;color:var(--text-primary)">Derek Tol Jasa Marga (14080)</div>
+                    <div style="font-size:11px;color:var(--text-muted);font-weight:500">Bantuan derek resmi jalan tol 24 jam</div>
+                </div>
+            </a>
+            <button type="button" class="sos-item-btn" onclick="copySosText()">
+                <div class="sos-item-icon" style="background:var(--bg-card);color:var(--text-primary)">📋</div>
+                <div style="flex:1;text-align:left">
+                    <div style="font-size:13.5px;font-weight:800;color:var(--text-primary)">Salin Format Pesan SOS</div>
+                    <div style="font-size:11px;color:var(--text-muted);font-weight:500">Salin teks darurat & link lokasi</div>
+                </div>
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- Copy Notification Toast -->
@@ -471,6 +610,24 @@
 
 <script>
 let selectedCategory = 'Semua';
+let lastKnownLocation = null;
+
+// Pre-fetch position in background so SOS is instantaneous
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+        (pos) => { lastKnownLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude }; },
+        () => {},
+        { timeout: 5000, enableHighAccuracy: true }
+    );
+}
+
+function openSosModal() {
+    document.getElementById('sosModalOverlay')?.classList.add('active');
+}
+
+function closeSosModal() {
+    document.getElementById('sosModalOverlay')?.classList.remove('active');
+}
 
 function selectCategory(cat, btn) {
     selectedCategory = cat;
@@ -499,17 +656,31 @@ function filterCards() {
 }
 
 function copyNumber(num, name) {
-    navigator.clipboard.writeText(num).then(() => {
-        showToast('Nomor ' + name + ' (' + num + ') disalin!');
-    }).catch(() => {
-        const el = document.createElement('textarea');
-        el.value = num;
-        document.body.appendChild(el);
-        el.select();
+    const textToCopy = num;
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            showToast('Nomor ' + name + ' (' + num + ') disalin!');
+        }).catch(() => fallbackCopy(textToCopy, name));
+    } else {
+        fallbackCopy(textToCopy, name);
+    }
+}
+
+function fallbackCopy(num, name) {
+    const el = document.createElement('textarea');
+    el.value = num;
+    el.setAttribute('readonly', '');
+    el.style.position = 'absolute';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    el.select();
+    try {
         document.execCommand('copy');
-        document.body.removeChild(el);
-        showToast('Nomor (' + num + ') disalin!');
-    });
+        showToast('Nomor ' + (name ? name + ' ' : '') + '(' + num + ') disalin!');
+    } catch (err) {
+        showToast('Gagal menyalin nomor');
+    }
+    document.body.removeChild(el);
 }
 
 function showToast(msg) {
@@ -522,26 +693,53 @@ function showToast(msg) {
     }, 2200);
 }
 
-function shareSosLocation() {
+function buildSosMessage(coords) {
+    let locPart = '';
+    if (coords && coords.lat && coords.lng) {
+        locPart = `\nLokasi saya:\nhttps://maps.google.com/?q=${coords.lat},${coords.lng}\n`;
+    }
+    return `🚨 *SOS! PERMINTAAN BANTUAN DARURAT*\nSaya membutuhkan bantuan darurat segera!${locPart}\n(Dikirim melalui Layanan Darurat DuitKu)`;
+}
+
+function sendWhatsAppSos() {
+    const subEl = document.getElementById('btnWaSub');
+    if (subEl) subEl.textContent = 'Mendeteksi GPS & membuka WhatsApp...';
+
+    const dispatch = (coords) => {
+        const text = buildSosMessage(coords);
+        const encoded = encodeURIComponent(text);
+        const waUrl = `https://api.whatsapp.com/send?text=${encoded}`;
+        closeSosModal();
+        if (subEl) subEl.textContent = 'Kirim koordinat Maps ke kontak/grup';
+        // Direct navigation works 100% reliably in PWAs and mobile browsers without popup blocker issues
+        window.location.href = waUrl;
+    };
+
+    if (lastKnownLocation) {
+        dispatch(lastKnownLocation);
+        return;
+    }
+
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                const mapUrl = `https://maps.google.com/?q=${lat},${lng}`;
-                const text = encodeURIComponent(`🚨 *SOS! PERMINTAAN BANTUAN DARURAT*\nSaya membutuhkan bantuan darurat segera di lokasi ini:\n${mapUrl}\n(Dikirim via Layanan Darurat DuitKu)`);
-                window.open(`https://wa.me/?text=${text}`, '_blank');
+                lastKnownLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                dispatch(lastKnownLocation);
             },
             () => {
-                const text = encodeURIComponent(`🚨 *SOS! PERMINTAAN BANTUAN DARURAT*\nSaya membutuhkan bantuan darurat segera!\n(Dikirim via Layanan Darurat DuitKu)`);
-                window.open(`https://wa.me/?text=${text}`, '_blank');
+                dispatch(null);
             },
-            { timeout: 8000 }
+            { timeout: 4000, enableHighAccuracy: true }
         );
     } else {
-        const text = encodeURIComponent(`🚨 *SOS! PERMINTAAN BANTUAN DARURAT*\nSaya membutuhkan bantuan darurat segera!\n(Dikirim via Layanan Darurat DuitKu)`);
-        window.open(`https://wa.me/?text=${text}`, '_blank');
+        dispatch(null);
     }
+}
+
+function copySosText() {
+    const text = buildSosMessage(lastKnownLocation);
+    fallbackCopy(text, 'Format SOS');
+    closeSosModal();
 }
 </script>
 

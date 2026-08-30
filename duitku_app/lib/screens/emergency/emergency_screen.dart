@@ -89,15 +89,166 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
     }
   }
 
-  Future<void> _shareSos() async {
+  void _shareSos() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Text('🚨', style: TextStyle(fontSize: 20)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Tindakan Darurat SOS',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFFDC2626)),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 20),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Pilih jalur darurat yang ingin Anda gunakan segera:',
+              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('💬', style: TextStyle(fontSize: 18)),
+              ),
+              title: const Text('Kirim SOS via WhatsApp', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+              subtitle: const Text('Kirim pesan gawat darurat ke kontak/grup', style: TextStyle(fontSize: 11)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _sendWhatsAppSos();
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE2E2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('📞', style: TextStyle(fontSize: 18)),
+              ),
+              title: const Text('Panggil 112 (Bebas Pulsa)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFFDC2626))),
+              subtitle: const Text('Panggilan darurat terpadu nasional 24 jam', style: TextStyle(fontSize: 11)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: const BorderSide(color: Color(0xFFFCA5A5)),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _callNumber('112');
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0E7FF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('🚗', style: TextStyle(fontSize: 18)),
+              ),
+              title: const Text('Derek Tol Jasa Marga (14080)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+              subtitle: const Text('Bantuan derek resmi jalan tol 24 jam', style: TextStyle(fontSize: 11)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _callNumber('14080');
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('📋', style: TextStyle(fontSize: 18)),
+              ),
+              title: const Text('Salin Format Pesan SOS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+              subtitle: const Text('Salin teks darurat ke clipboard', style: TextStyle(fontSize: 11)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                Clipboard.setData(const ClipboardData(
+                  text: '🚨 *SOS! PERMINTAAN BANTUAN DARURAT*\nSaya membutuhkan bantuan darurat segera!\n(Dikirim melalui Layanan Darurat DuitKu)',
+                ));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Format pesan SOS disalin ke clipboard!'),
+                    backgroundColor: Color(0xFF0F172A),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _sendWhatsAppSos() async {
     final text = Uri.encodeComponent(
       '🚨 *SOS! PERMINTAAN BANTUAN DARURAT*\nSaya membutuhkan bantuan darurat segera!\n(Dikirim melalui Layanan Darurat DuitKu)',
     );
-    final waUri = Uri.parse('https://wa.me/?text=$text');
+    final waUri = Uri.parse('https://api.whatsapp.com/send?text=$text');
     try {
-      await launchUrl(waUri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(waUri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(waUri, mode: LaunchMode.platformDefault);
+      }
     } catch (_) {
-      await launchUrl(waUri);
+      try {
+        await launchUrl(Uri.parse('https://wa.me/?text=$text'), mode: LaunchMode.externalApplication);
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal membuka WhatsApp. Salin teks pesan darurat.'),
+            backgroundColor: Color(0xFFDC2626),
+          ),
+        );
+      }
     }
   }
 
@@ -120,7 +271,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         title: const Text(
-          'Layanan Darurat 24 Jam',
+          'Layanan Darurat',
           style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
         ),
         backgroundColor: Colors.white,
