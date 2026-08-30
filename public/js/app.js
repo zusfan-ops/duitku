@@ -122,39 +122,44 @@
     function populateWalletSelect(selectedId) {
         const sel = $('txWallet');
         if (!sel) return;
-        const wallets = window.DUITKU.wallets || [];
+        const rawWallets = window.DUITKU && window.DUITKU.wallets;
+        const wallets = Array.isArray(rawWallets) ? rawWallets : (rawWallets && typeof rawWallets === 'object' ? Object.values(rawWallets) : []);
         if (!wallets.length) {
             const row = $('walletPickerRow');
             if (row) row.style.display = 'none';
             return;
         }
-        const defaultW = wallets.find(w => w.is_default) || wallets[0];
+        const defaultW = wallets.find(w => w && w.is_default) || wallets[0];
         sel.innerHTML = wallets.map(w => {
+            if (!w) return '';
             const bal = Number(w.balance || 0).toLocaleString('id-ID');
-            const sel = String(w.id) === String(selectedId || defaultW?.id) ? ' selected' : '';
-            return `<option value="${w.id}"${sel}>${w.icon} ${w.name} — ${window.DUITKU.symbol} ${bal}</option>`;
+            const isSel = String(w.id) === String(selectedId || (defaultW ? defaultW.id : '')) ? ' selected' : '';
+            return `<option value="${w.id}"${isSel}>${w.icon || '💳'} ${escHtml(w.name || 'Dompet')} — ${window.DUITKU?.symbol || 'Rp'} ${bal}</option>`;
         }).join('');
     }
 
     function openModal(editData = null) {
-        if (!overlay) return;
+        const modalOverlay = $('txModalOverlay') || document.getElementById('txModalOverlay');
+        if (!modalOverlay) return;
         state.editingTxId        = null;
         state.selectedCategoryId = null;
         state.selectedType       = 'expense';
         state.isRecurring        = false;
 
         // Reset form
-        if (txForm) txForm.reset();
-        $('txId').value    = '';
-        $('txDate').value  = new Date().toISOString().slice(0, 10);
-        $('txType').value  = 'expense';
-        $('txAmount').value = '';
-        $('txNote').value  = '';
+        const formEl = $('txForm') || document.getElementById('txForm');
+        if (formEl) formEl.reset();
+        if ($('txId')) $('txId').value = '';
+        if ($('txDate')) $('txDate').value = new Date().toISOString().slice(0, 10);
+        if ($('txType')) $('txType').value = 'expense';
+        if ($('txAmount')) $('txAmount').value = '';
+        if ($('txNote')) $('txNote').value = '';
+        if ($('txCategory')) $('txCategory').value = '';
         if ($('txExistingImage')) $('txExistingImage').value = '';
         if ($('txImage')) $('txImage').value = '';
         if ($('txImagePreviewContainer')) {
             $('txImagePreviewContainer').style.display = 'none';
-            $('txImagePreview').src = '';
+            if ($('txImagePreview')) $('txImagePreview').src = '';
         }
         // Reset recurring toggle
         const recToggle = $('recurringToggle');
@@ -164,54 +169,60 @@
         if (recInput)  recInput.value = '0';
         if (recWrap)   recWrap.style.display = 'flex';
 
-        $('modalTitle').textContent = 'Transaksi Baru';
-        $('btnSave').textContent    = 'Simpan Pengeluaran';
+        if ($('modalTitle')) $('modalTitle').textContent = 'Transaksi Baru';
+        if ($('btnSave')) $('btnSave').textContent = 'Simpan Pengeluaran';
 
         // Reset type buttons
-        $('btnExpense').classList.add('active');
-        $('btnIncome').classList.remove('active', 'income-active');
-        $('btnExpense').classList.remove('income-active');
+        if ($('btnExpense')) {
+            $('btnExpense').classList.add('active');
+            $('btnExpense').classList.remove('income-active');
+        }
+        if ($('btnIncome')) $('btnIncome').classList.remove('active', 'income-active');
 
-        $('amountCurrency').textContent = window.DUITKU.symbol;
+        if ($('amountCurrency')) $('amountCurrency').textContent = (window.DUITKU && window.DUITKU.symbol) ? window.DUITKU.symbol : 'Rp';
 
         if (editData) {
             state.editingTxId = editData.id;
-            state.selectedType = editData.type;
-            $('txId').value    = editData.id;
-            $('txAmount').value = formatNum(editData.amount);
-            $('txNote').value   = editData.note || '';
-            $('txDate').value   = editData.date;
-            $('txType').value   = editData.type;
-            $('modalTitle').textContent = 'Edit Transaksi';
-            $('btnSave').textContent    = 'Simpan Perubahan';
+            state.selectedType = editData.type || 'expense';
+            if ($('txId')) $('txId').value = editData.id || '';
+            if ($('txAmount')) $('txAmount').value = editData.amount ? formatNum(editData.amount) : '';
+            if ($('txNote')) $('txNote').value = editData.note || '';
+            if ($('txDate') && editData.date) $('txDate').value = editData.date;
+            if ($('txType')) $('txType').value = editData.type || 'expense';
+            if ($('modalTitle')) $('modalTitle').textContent = 'Edit Transaksi';
+            if ($('btnSave')) $('btnSave').textContent = 'Simpan Perubahan';
 
             if (editData.type === 'income') {
-                $('btnIncome').classList.add('active', 'income-active');
-                $('btnExpense').classList.remove('active');
+                if ($('btnIncome')) $('btnIncome').classList.add('active', 'income-active');
+                if ($('btnExpense')) $('btnExpense').classList.remove('active', 'income-active');
             }
             state.selectedCategoryId = editData.category_id;
+            if ($('txCategory')) $('txCategory').value = editData.category_id || '';
 
             if (editData.image && $('txImagePreviewContainer')) {
                 $('txImagePreviewContainer').style.display = 'block';
-                $('txImagePreview').src = '/uploads/transactions/' + editData.image;
+                if ($('txImagePreview')) $('txImagePreview').src = '/uploads/transactions/' + editData.image;
             }
-            // Hide recurring toggle when editing (recurring is set at creation only)
             if (recWrap) recWrap.style.display = 'none';
         }
 
-        populateWalletSelect(editData ? editData.wallet_id : null);
-        renderCategoryChips();
-        overlay.classList.add('open');
-        window.DuitkuLockScroll();
-        setTimeout(() => $('txAmount').focus(), 350);
+        try { populateWalletSelect(editData ? editData.wallet_id : null); } catch (e) { console.error(e); }
+        try { renderCategoryChips(); } catch (e) { console.error(e); }
+        
+        modalOverlay.classList.add('open');
+        if (typeof window.DuitkuLockScroll === 'function') window.DuitkuLockScroll();
+        setTimeout(() => { if ($('txAmount')) $('txAmount').focus(); }, 350);
     }
 
     function closeModal() {
-        if (!overlay) return;
-        overlay.classList.remove('open');
-        window.DuitkuUnlockScroll();
+        const modalOverlay = $('txModalOverlay') || document.getElementById('txModalOverlay');
+        if (!modalOverlay) return;
+        modalOverlay.classList.remove('open');
+        if (typeof window.DuitkuUnlockScroll === 'function') window.DuitkuUnlockScroll();
     }
 
+    window.openModal = openModal;
+    window.closeModal = closeModal;
     window.openTransactionModal = function(type = 'expense', amount = null, note = null) {
         openModal({
             id: '',
@@ -660,7 +671,6 @@
             if (pwaBanner) pwaBanner.classList.remove('show');
             localStorage.setItem('pwa_dismissed', '1');
         });
-    }
     }
 
     // ════════════════════════════════════════════════════════════════════════

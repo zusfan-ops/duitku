@@ -350,7 +350,7 @@
         
         <!-- Center Docked FAB Slot -->
         <div class="bottom-nav-fab-slot">
-            <button class="fab" id="fabBtn" title="Tambah Transaksi" aria-label="Tambah Transaksi">
+            <button class="fab" id="fabBtn" type="button" title="Tambah Transaksi" aria-label="Tambah Transaksi" onclick="if(window.openTransactionModal){window.openTransactionModal();}else if(window.openModal){window.openModal();}else{document.getElementById('txModalOverlay')?.classList.add('open');}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
@@ -377,12 +377,12 @@
 </div><!-- #app -->
 
 <!-- ═══════════════════════════════════════════════════ TRANSACTION MODAL -->
-<div class="modal-overlay" id="txModalOverlay">
+<div class="modal-overlay" id="txModalOverlay" onclick="if(event.target===this){if(window.closeModal){window.closeModal();}else{this.classList.remove('open');}}">
     <div class="modal-sheet" id="txModal">
         <div class="modal-handle"></div>
         <div class="modal-header">
             <h3 id="modalTitle">Transaksi Baru</h3>
-            <button class="modal-close" id="modalClose">✕</button>
+            <button class="modal-close" id="modalClose" type="button" aria-label="Tutup" onclick="if(window.closeModal){window.closeModal();}else{document.getElementById('txModalOverlay')?.classList.remove('open');}">✕</button>
         </div>
 
         <form id="txForm" autocomplete="off">
