@@ -262,6 +262,88 @@
     margin: 0 4px;
 }
 
+/* ── Emergency SOS Home Card ────────────────────────────────── */
+.native-emergency-card {
+    background: #FEF2F2;
+    border: 1px solid #FCA5A5;
+    border-radius: 16px;
+    padding: 11px 14px;
+    margin-bottom: 12px;
+    color: #991B1B;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08);
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+.native-emergency-card:active {
+    transform: scale(0.98);
+}
+.native-emergency-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+.native-emergency-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #DC2626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    color: #fff;
+    flex-shrink: 0;
+}
+.native-emergency-title {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #991B1B;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.emergency-badge-24 {
+    font-size: 8.5px;
+    font-weight: 900;
+    color: #fff;
+    background: #DC2626;
+    padding: 1.5px 5px;
+    border-radius: 4px;
+    letter-spacing: 0.4px;
+}
+.native-emergency-sub {
+    font-size: 10.5px;
+    color: #B91C1C;
+    font-weight: 600;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.native-emergency-arrow {
+    font-size: 11.5px;
+    font-weight: 800;
+    background: rgba(220, 38, 38, 0.1);
+    color: #DC2626;
+    padding: 4px 8px;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+[data-theme="dark"] .native-emergency-card {
+    background: rgba(220, 38, 38, 0.12);
+    border-color: rgba(220, 38, 38, 0.35);
+    color: #FCA5A5;
+}
+[data-theme="dark"] .native-emergency-title { color: #FCA5A5; }
+[data-theme="dark"] .native-emergency-sub { color: #F87171; }
+[data-theme="dark"] .native-emergency-arrow { background: rgba(239, 68, 68, 0.2); color: #FCA5A5; }
+
 /* ── Belanja Home Card ────────────────────────────────────────── */
 .native-belanja-card {
     background: linear-gradient(135deg, #9D174D 0%, #BE185D 50%, #F43F5E 100%);
@@ -1217,6 +1299,21 @@
 
     <!-- ═══════════════════════════════════════════════════════════ PERSONAL WORKSPACE CONTAINER -->
     <div id="workspacePersonal">
+
+    <!-- ── EMERGENCY SOS QUICK ACCESS BANNER ── -->
+    <a href="/emergency" class="native-emergency-card">
+        <div class="native-emergency-left">
+            <div class="native-emergency-icon">🚨</div>
+            <div>
+                <div class="native-emergency-title">
+                    <span>Layanan Darurat &amp; Derek Tol</span>
+                    <span class="emergency-badge-24">24 JAM</span>
+                </div>
+                <div class="native-emergency-sub">112 · 14080 (Derek Tol) · Damkar · Medis · Polisi</div>
+            </div>
+        </div>
+        <div class="native-emergency-arrow">Buka →</div>
+    </a>
 
     <!-- ── APPLE WALLET STACKED CARDS DECK (1:1 with Flutter Native) ── -->
     <?php

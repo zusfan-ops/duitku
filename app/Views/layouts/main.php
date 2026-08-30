@@ -71,7 +71,30 @@
     .notif-item-card.urgent { border-color: #FCA5A5; background: #FEF2F2; }
     .notif-item-card.warning { border-color: #FDE68A; background: #FFFBEB; }
     [data-theme="dark"] .notif-item-card.urgent { background: rgba(220, 38, 38, 0.12); border-color: #DC2626; }
-    [data-theme="dark"] .notif-item-card.warning { background: rgba(217, 119, 6, 0.12); border-color: #D97706; }
+    .topbar-btn-sos {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #DC2626;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+        padding: 5px 9px;
+        border-radius: 999px;
+        text-decoration: none;
+        letter-spacing: 0.3px;
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+        transition: transform 0.15s ease, background 0.15s ease;
+    }
+    .topbar-btn-sos:hover {
+        background: #B91C1C;
+        color: #fff;
+        transform: scale(1.05);
+    }
+    [data-theme="dark"] .topbar-btn-sos {
+        background: #EF4444;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    }
     </style>
     <script>
         // Apply dark mode before render to avoid flash
@@ -269,6 +292,9 @@
                     $_layoutNotifs = [];
                 }
             ?>
+            <a href="/emergency" class="topbar-btn-sos" id="btnTopEmergency" title="Layanan Darurat & SOS 24 Jam">
+                <span class="sos-pill-inner">🚨 SOS</span>
+            </a>
             <button class="topbar-btn-notif" id="btnOpenSearch" title="Cari Data (Ctrl+K)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                     <circle cx="11" cy="11" r="8"></circle>
