@@ -80,7 +80,7 @@ class DashboardScreenState extends State<DashboardScreen> {
         _loading = false;
       });
       context.read<AppDataProvider>().ensureLoaded(force: true);
-      WidgetHelper.updateDashboardWidget();
+      WidgetHelper.updateDashboardWidget(data);
     } on ApiException catch (e) {
       if (!mounted) return;
       if (e.status == 401) {
@@ -2162,7 +2162,8 @@ class _TodoHomeCardState extends State<_TodoHomeCard> {
   }
 
   Future<void> _openTodo() async {
-    await Navigator.of(context, rootNavigator: true).push(
+    await Navigator.push(
+      context,
       MaterialPageRoute(builder: (_) => const TodoListScreen()),
     );
     _load();

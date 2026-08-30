@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:home_widget/home_widget.dart';
 
+import '../models/dashboard.dart';
 import '../utils/format.dart';
 import 'api_service.dart';
 
@@ -12,6 +13,7 @@ import 'api_service.dart';
 class WidgetHelper {
   static const _groupId = 'com.duitku.duitku_app.widget';
   static const _widgetName = 'DuitkuWidgetProvider';
+  static const _qualifiedAndroidName = 'com.duitku.duitku_app.DuitkuWidgetProvider';
 
   /// Key data yang dibaca oleh native widget.
   static const _kBalance = 'widget_balance';
@@ -24,9 +26,9 @@ class WidgetHelper {
   ///
   /// Dipanggil setiap kali dashboard berhasil di-load atau transaksi
   /// berhasil disimpan/dihapus.
-  static Future<void> updateDashboardWidget() async {
+  static Future<void> updateDashboardWidget([DashboardData? preloadedData]) async {
     try {
-      final data = await ApiService.instance.dashboard();
+      final data = preloadedData ?? await ApiService.instance.dashboard();
 
       await HomeWidget.saveWidgetData(
         _kBalance,
@@ -46,6 +48,7 @@ class WidgetHelper {
       await HomeWidget.updateWidget(
         name: _widgetName,
         androidName: _widgetName,
+        qualifiedAndroidName: _qualifiedAndroidName,
         iOSName: _widgetName,
       );
     } catch (e, st) {
@@ -53,8 +56,28 @@ class WidgetHelper {
     }
   }
 
+  /// Request pin widget otomatis ke Layar Utama (Android 8.0+).
+  static Future<bool> requestPinWidget() async {
+    try {
+      final supported = await HomeWidget.isRequestPinWidgetSupported();
+      if (supported == true) {
+        await updateDashboardWidget();
+        await HomeWidget.requestPinWidget(
+          name: _widgetName,
+          androidName: _widgetName,
+          qualifiedAndroidName: _qualifiedAndroidName,
+        );
+        return true;
+      }
+    } catch (e) {
+      log('Request pin widget failed: $e');
+    }
+    return false;
+  }
+
   /// Inisialisasi group ID untuk iOS (no-op di Android).
   static Future<void> init() async {
     await HomeWidget.setAppGroupId(_groupId);
   }
 }
+

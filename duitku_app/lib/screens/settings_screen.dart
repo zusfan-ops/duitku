@@ -799,8 +799,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _guideStep('3', 'Pilih menu "Widget" / "Widgets".'),
               _guideStep('4', 'Cari widget "DuitKu", lalu seret dan pasang ke layar.'),
               _guideStep('5', 'Widget akan otomatis menampilkan saldo kas & arus kas real-time!'),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               ElevatedButton.icon(
+                onPressed: () async {
+                  final pinned = await WidgetHelper.requestPinWidget();
+                  if (!ctx.mounted) return;
+                  Navigator.pop(ctx);
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        pinned
+                            ? 'Permintaan pasang widget dikirim ke Launcher!'
+                            : 'Widget disinkronkan. Pasang manual via menu Widget di Home Screen.',
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.add_to_home_screen_rounded),
+                label: const Text('Pasang Widget ke Layar Utama'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
                 onPressed: () async {
                   await WidgetHelper.updateDashboardWidget();
                   if (!ctx.mounted) return;
@@ -812,9 +838,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
                 icon: const Icon(Icons.sync_rounded),
                 label: const Text('Sinkronkan Data Widget Sekarang'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
