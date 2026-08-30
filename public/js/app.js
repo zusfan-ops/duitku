@@ -212,6 +212,30 @@
         window.DuitkuUnlockScroll();
     }
 
+    window.openTransactionModal = function(type = 'expense', amount = null, note = null) {
+        openModal({
+            id: '',
+            type: type,
+            amount: amount,
+            note: note,
+            date: new Date().toISOString().slice(0, 10),
+            wallet_id: null,
+            category_id: null
+        });
+    };
+
+    // Auto-open modal if URL query params are present (e.g. from Zakat / Pajak / Quick Action)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('add_expense') || urlParams.has('add_income')) {
+        const type = urlParams.has('add_income') ? 'income' : 'expense';
+        const amount = urlParams.get('amount') || '';
+        const note = urlParams.get('note') || '';
+        setTimeout(() => {
+            window.openTransactionModal(type, amount, note);
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }, 150);
+    }
+
     if (fabBtn)     fabBtn.addEventListener('click', () => openModal());
     if (modalClose) modalClose.addEventListener('click', closeModal);
     if (overlay)    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
