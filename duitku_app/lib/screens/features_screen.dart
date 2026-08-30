@@ -28,6 +28,7 @@ import 'traveling/traveling_screen.dart';
 import 'vehicle/vehicle_screen.dart';
 import 'notifications/notifications_screen.dart';
 import 'tv/tv_streaming_screen.dart';
+import 'nearby/nearby_places_screen.dart';
 import 'wallet_screen.dart';
 import 'zakat_pajak/zakat_pajak_screen.dart';
 
@@ -244,6 +245,17 @@ class FeaturesScreen extends StatelessWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Layanan Terdekat',
+              subtitle: 'Kelontong, SPBU & tambal ban',
+              icon: Icons.place_rounded,
+              gradient: const [Color(0xFF059669), Color(0xFF10B981)],
+              shadowColor: const Color(0xFF10B981),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NearbyPlacesScreen()),
               ),
             ),
           ]),
