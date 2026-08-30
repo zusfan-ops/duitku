@@ -129,6 +129,10 @@
 
     <!-- CTA buttons -->
     <div class="flex items-center gap-2">
+      <button type="button" onclick="handleAppInstallClick()" class="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100">
+        <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        <span id="headerInstallBtnText">Install App</span>
+      </button>
       <button @click="login=true" class="rounded-xl px-3.5 py-2 text-sm font-semibold text-ink/70 transition hover:bg-ink/5">Masuk</button>
       <a href="/register" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">Daftar Gratis</a>
     </div>
@@ -164,8 +168,12 @@
           Mulai catat gratis
           <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 transition group-hover:translate-x-0.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
-        <button @click="login=true" class="inline-flex items-center gap-2 rounded-2xl border border-ink/10 bg-white px-6 py-3.5 text-sm font-bold text-ink transition hover:border-ink/25">
-          Sudah punya akun
+        <button type="button" onclick="handleAppInstallClick()" class="inline-flex items-center gap-2 rounded-2xl border border-emerald-600/25 bg-emerald-50/80 px-5 py-3.5 text-sm font-bold text-emerald-800 transition hover:bg-emerald-100 hover:border-emerald-600/40">
+          <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 18h16"/></svg>
+          <span id="heroInstallBtnText">Install di HP</span>
+        </button>
+        <button @click="login=true" class="inline-flex items-center gap-2 rounded-2xl border border-ink/10 bg-white px-5 py-3.5 text-sm font-bold text-ink transition hover:border-ink/25">
+          Masuk
         </button>
       </div>
 
@@ -179,10 +187,10 @@
           <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-emerald-600" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
           Tanpa pelacak
         </span>
-        <span class="inline-flex items-center gap-1.5">
+        <button type="button" onclick="handleAppInstallClick()" class="inline-flex items-center gap-1.5 cursor-pointer hover:text-emerald-700 transition">
           <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-emerald-600" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M11 18h2"/></svg>
-          Install di HP (PWA)
-        </span>
+          <span id="trustInstallText">Install App (APK / PWA)</span>
+        </button>
       </div>
     </div>
 
@@ -507,18 +515,153 @@
       <a href="/register" class="font-semibold text-emerald-700 hover:underline">Daftar gratis</a>
     </p>
   </div>
+<!-- ══════════════════════════════════════════════════════
+     iOS PWA INSTALL MODAL
+══════════════════════════════════════════════════════ -->
+<div id="iosInstallModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-ink/60 backdrop-blur-sm" style="display:none">
+  <div class="relative w-full max-w-md bg-white rounded-t-[28px] sm:rounded-3xl p-6 sm:p-7 shadow-2xl animate-fade-in-up">
+    <!-- Close Button -->
+    <button type="button" onclick="closeIosInstallModal()" class="absolute right-5 top-5 h-8 w-8 rounded-full bg-ink/5 flex items-center justify-center text-ink/40 hover:text-ink transition">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+
+    <!-- Header -->
+    <div class="flex items-center gap-3.5 mb-5">
+      <img src="/images/logo.png" alt="DuitKu" class="h-12 w-12 rounded-2xl shadow-md p-1 bg-white border border-ink/5 object-contain">
+      <div>
+        <h3 class="text-lg font-extrabold text-ink leading-tight">Install DuitKu di iOS</h3>
+        <p class="text-xs text-ink/50 mt-0.5">Pasang ke Layar Utama iPhone / iPad</p>
+      </div>
+    </div>
+
+    <!-- Steps -->
+    <div class="space-y-3.5 bg-paper rounded-2xl p-4 border border-ink/5 text-sm">
+      <div class="flex items-start gap-3">
+        <div class="h-6 w-6 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</div>
+        <p class="text-ink/80 text-xs sm:text-sm">
+          Buka situs ini di browser <strong class="text-ink font-semibold">Safari</strong>, lalu ketuk tombol <strong class="text-ink font-semibold">Share</strong> 
+          <span class="inline-flex items-center justify-center p-1 bg-white rounded border border-ink/10 shadow-xs mx-1">
+            <svg class="h-3.5 w-3.5 text-blue-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+          </span>
+          di bilah bawah layar.
+        </p>
+      </div>
+
+      <div class="flex items-start gap-3">
+        <div class="h-6 w-6 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</div>
+        <p class="text-ink/80 text-xs sm:text-sm">
+          Gulir ke bawah pada menu bagikan dan pilih opsi <strong class="text-ink font-semibold">"Tambah ke Layar Utama"</strong> (<em>Add to Home Screen</em>).
+        </p>
+      </div>
+
+      <div class="flex items-start gap-3">
+        <div class="h-6 w-6 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</div>
+        <p class="text-ink/80 text-xs sm:text-sm">
+          Ketuk <strong class="text-ink font-semibold">"Tambah"</strong> (<em>Add</em>) di sudut kanan atas. Ikon DuitKu akan langsung muncul di Layar Utama HP Anda!
+        </p>
+      </div>
+    </div>
+
+    <button type="button" onclick="closeIosInstallModal()" class="mt-5 w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white transition hover:bg-emerald-700">
+      Mengerti &amp; Tutup
+    </button>
+  </div>
 </div>
 
 <!-- ── Scripts ──────────────────────────────────────── -->
 <script src="/js/app.js?v=<?= time() ?>"></script>
 <script>
+// Platform-aware Install Router
+const GITHUB_RELEASE_URL = 'https://github.com/zusfan-ops/duitku/releases';
+
+function isAndroidDevice() {
+  const ua = (navigator.userAgent || navigator.vendor || window.opera || '').toLowerCase();
+  return /android/i.test(ua);
+}
+
+function isIosDevice() {
+  const ua = (navigator.userAgent || navigator.vendor || window.opera || '').toLowerCase();
+  return /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function handleAppInstallClick() {
+  if (isAndroidDevice()) {
+    // Redirect Android users directly to GitHub Release
+    window.location.href = GITHUB_RELEASE_URL;
+    return;
+  }
+
+  if (isIosDevice()) {
+    // Show iOS PWA Installation Guide Modal
+    showIosInstallModal();
+    return;
+  }
+
+  // Desktop / Generic Browser PWA
+  if (window.deferredPrompt) {
+    window.deferredPrompt.prompt();
+    window.deferredPrompt.userChoice.then(() => {
+      window.deferredPrompt = null;
+    });
+  } else {
+    // Show modal or direct to GitHub release for APK
+    showIosInstallModal();
+  }
+}
+
+function showIosInstallModal() {
+  const modal = document.getElementById('iosInstallModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeIosInstallModal() {
+  const modal = document.getElementById('iosInstallModal');
+  if (modal) modal.style.display = 'none';
+}
+
+// Adjust UI banner & buttons according to OS on landing load
+document.addEventListener('DOMContentLoaded', () => {
+  const headerBtn = document.getElementById('headerInstallBtnText');
+  const heroBtn = document.getElementById('heroInstallBtnText');
+  const trustText = document.getElementById('trustInstallText');
+  const banner = document.getElementById('pwaInstallBanner');
+  const btnInstall = document.getElementById('btnInstallPwa');
+
+  if (isAndroidDevice()) {
+    if (headerBtn) headerBtn.innerText = 'Unduh APK';
+    if (heroBtn) heroBtn.innerText = 'Unduh APK Android';
+    if (trustText) trustText.innerText = 'Unduh APK Android (GitHub)';
+    if (btnInstall) btnInstall.innerText = 'Unduh APK';
+  } else if (isIosDevice()) {
+    if (headerBtn) headerBtn.innerText = 'Install iOS';
+    if (heroBtn) heroBtn.innerText = 'Install di iPhone';
+    if (trustText) trustText.innerText = 'Install di iOS (PWA)';
+    if (btnInstall) btnInstall.innerText = 'Petunjuk';
+  }
+
+  // Hook banner button
+  if (btnInstall) {
+    btnInstall.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleAppInstallClick();
+    });
+  }
+
+  // Display banner if not dismissed
+  if (banner && !localStorage.getItem('pwa_dismissed')) {
+    banner.classList.add('show');
+  }
+});
+
 // Scroll reveal
 const io = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
 }, { threshold: 0.1 });
 document.querySelectorAll('[data-reveal]').forEach(el => io.observe(el));
 
-// FAQ accordion (vanilla, no Alpine dependency)
+// FAQ accordion
 let openFaq = null;
 function toggleFaq(i) {
   const body  = document.getElementById('faqbody' + i);

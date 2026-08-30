@@ -592,17 +592,40 @@
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    //  PWA Install Prompt (A2HS) & iOS Support
+    //  PWA Install Prompt (A2HS) & Android GitHub / iOS Support
     // ════════════════════════════════════════════════════════════════════════
+    const GITHUB_RELEASE_URL = 'https://github.com/zusfan-ops/duitku/releases';
     let deferredPrompt;
     const pwaBanner     = $('pwaInstallBanner');
     const btnInstallPwa = $('btnInstallPwa');
     const btnClosePwa   = $('btnClosePwa');
 
-    // 1. Android / Chrome (Native Prompt)
+    const ua = (navigator.userAgent || navigator.vendor || window.opera || '').toLowerCase();
+    const isAndroid = /android/i.test(ua);
+    const isIos = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    // Customize banner UI per OS
+    if (pwaBanner) {
+        if (isAndroid && btnInstallPwa) {
+            btnInstallPwa.textContent = 'Unduh APK';
+            const titleEl = pwaBanner.querySelector('strong');
+            const subEl = pwaBanner.querySelector('span');
+            if (titleEl) titleEl.textContent = 'Aplikasi Android (APK)';
+            if (subEl) subEl.textContent = 'Unduh versi rilis resmi di GitHub.';
+        } else if (isIos && btnInstallPwa) {
+            btnInstallPwa.textContent = 'Petunjuk';
+            const titleEl = pwaBanner.querySelector('strong');
+            const subEl = pwaBanner.querySelector('span');
+            if (titleEl) titleEl.textContent = 'Pasang di iPhone / iPad';
+            if (subEl) subEl.textContent = 'Akses cepat dari Home Screen iOS.';
+        }
+    }
+
+    // 1. Android / Chrome (Native Prompt Event)
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
+        window.deferredPrompt = e;
         if (pwaBanner && !localStorage.getItem('pwa_dismissed')) {
             pwaBanner.classList.add('show');
         }
@@ -610,6 +633,18 @@
 
     if (btnInstallPwa) {
         btnInstallPwa.addEventListener('click', async () => {
+            if (isAndroid) {
+                // Direct Android users to GitHub Release APK
+                window.location.href = GITHUB_RELEASE_URL;
+                return;
+            }
+
+            if (isIos) {
+                // Show iOS Guide popup / banner details
+                alert('Untuk memasang di iPhone/iPad:\n1. Buka di Safari.\n2. Ketuk ikon Share di bilah bawah.\n3. Pilih "Tambah ke Layar Utama" (Add to Home Screen).');
+                return;
+            }
+
             if (pwaBanner) pwaBanner.classList.remove('show');
             if (!deferredPrompt) return;
             deferredPrompt.prompt();
@@ -624,40 +659,6 @@
             localStorage.setItem('pwa_dismissed', '1');
         });
     }
-
-    // 2. iOS Safari Custom Prompt
-    const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
-    const isSafari = /safari/.test(window.navigator.userAgent.toLowerCase()) && !/chrome/.test(window.navigator.userAgent.toLowerCase());
-    const isStandalone = ('standalone' in window.navigator) && (window.navigator.standalone);
-
-    if (isIos && isSafari && !isStandalone && !localStorage.getItem('pwa_dismissed')) {
-        if (pwaBanner) {
-            // Replace banner content with iOS specific guide
-            pwaBanner.innerHTML = `
-                <div class="pwa-banner-content" style="flex-direction:column; align-items:center; text-align:center; padding:16px;">
-                    <button class="btn-close-pwa" id="btnClosePwaIos" style="position:absolute; top:8px; right:8px;">✕</button>
-                    <div style="font-weight:bold; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
-                        <img src="/images/icon.svg" width="24" height="24">
-                        Install Aplikasi DuitKu
-                    </div>
-                    <div style="font-size:12px; line-height:1.6; color:var(--text-muted);">
-                        Untuk install ke Home Screen iOS:<br>
-                        1. Tekan ikon <strong>Share</strong> di bawah layar.<br>
-                        2. Pilih <strong>"Add to Home Screen"</strong>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('btnClosePwaIos').addEventListener('click', () => {
-                pwaBanner.classList.remove('show');
-                localStorage.setItem('pwa_dismissed', '1');
-            });
-
-            // Show after 2 seconds to not interrupt immediate load
-            setTimeout(() => {
-                pwaBanner.classList.add('show');
-            }, 2000);
-        }
     }
 
     // ════════════════════════════════════════════════════════════════════════

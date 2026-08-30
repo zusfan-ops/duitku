@@ -8,47 +8,54 @@
 /* ── Native Double-Layered Hero Wallet Card ───────────────────── */
 .native-hero-wrapper {
     position: relative;
-    margin-bottom: 12px;
+    padding-top: 28px;
+    margin-top: 6px;
+    margin-bottom: 14px;
 }
 .native-hero-tab {
     position: absolute;
     top: 0;
-    left: 18px;
-    right: 18px;
-    height: 52px;
-    background: linear-gradient(135deg, #1E3A8A 0%, #172554 100%);
+    left: 16px;
+    right: 16px;
+    height: 56px;
+    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
     border-radius: 20px 20px 0 0;
-    padding: 8px 16px 0;
+    padding: 7px 16px 0;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 -3px 12px rgba(37, 99, 235, 0.3);
+    z-index: 1;
+    box-sizing: border-box;
 }
 .native-hero-tab-name {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 800;
-    color: #fff;
+    color: #ffffff;
     letter-spacing: -0.2px;
-    text-transform: uppercase;
+    line-height: 1.2;
 }
 .native-hero-tab-badge {
-    font-size: 9px;
+    font-size: 9.5px;
     font-weight: 900;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.22);
-    border-radius: 6px;
-    padding: 2px 7px;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+    padding: 2.5px 8px;
     letter-spacing: 0.5px;
+    line-height: 1;
 }
 .native-hero-card {
     position: relative;
-    margin-top: 30px;
+    z-index: 2;
+    margin-top: 0;
     background: linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 50%, #2563EB 100%);
     border-radius: 24px;
     padding: 20px 20px 18px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    box-shadow: 0 12px 36px rgba(37, 99, 235, 0.28), 0 4px 12px rgba(30, 58, 138, 0.2);
-    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 14px 34px rgba(37, 99, 235, 0.32), 0 4px 10px rgba(0, 0, 0, 0.08);
+    color: #ffffff;
+    box-sizing: border-box;
 }
 .native-hero-top {
     display: flex;
