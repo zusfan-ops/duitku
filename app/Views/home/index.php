@@ -1678,6 +1678,7 @@ try {
         updateBadge();
     }
     function updateBadge() {
+        if (!badge) return;
         const n = items.length;
         if (n > 0) {
             badge.textContent = n;
@@ -1986,12 +1987,14 @@ try {
     function isOverdue(d) { return d < today; }
 
     function updateBadge() {
+        if (!billsBadge) return;
         const n = bills.filter(b => isDueSoon(b.dueDay) || isOverdue(b.dueDay)).length;
         billsBadge.textContent    = n;
         billsBadge.style.display  = n > 0 ? 'inline-flex' : 'none';
     }
 
     function checkDue() {
+        if (!dueBanner) return;
         const due = bills.filter(b => isDueSoon(b.dueDay) || isOverdue(b.dueDay));
         if (!due.length) { dueBanner.style.display = 'none'; return; }
         dueBanner.style.display = 'block';

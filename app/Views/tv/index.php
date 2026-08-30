@@ -233,7 +233,7 @@
         <div class="tv-grid">
             <?php foreach ($channels as $ch): ?>
                 <?php $isPlaying = $currentChannel && (int)$currentChannel['id'] === (int)$ch['id']; ?>
-                <div class="tv-card <?= $isPlaying ? 'playing' : '' ?>" onclick="switchChannel(<?= json_encode($ch) ?>)">
+                <div class="tv-card <?= $isPlaying ? 'playing' : '' ?>" onclick="switchChannel(<?= (int)$ch['id'] ?>)">
                     <div class="tv-card-live-dot"></div>
                     <div class="tv-logo-box">
                         <?php if (!empty($ch['logo_url'])): ?>
@@ -302,8 +302,8 @@
         }
     }
 
-    function switchChannel(channel) {
-        window.location.href = '/tv?play=' + channel.id + (window.location.search.includes('category=') ? '&' + window.location.search.substring(1).split('&').filter(p => p.startsWith('category=')).join('&') : '');
+    function switchChannel(channelId) {
+        window.location.href = '/tv?play=' + channelId + (window.location.search.includes('category=') ? '&' + window.location.search.substring(1).split('&').filter(p => p.startsWith('category=')).join('&') : '');
     }
 
     function reloadStream() {

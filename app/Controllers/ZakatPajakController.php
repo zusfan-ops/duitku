@@ -14,11 +14,9 @@ class ZakatPajakController extends BaseController
         $txModel = new TransactionModel();
 
         // Total kekayaan saldo seluruh dompet
-        $wallets = $walletModel->where('user_id', $userId)->findAll();
-        $totalBalance = 0;
-        foreach ($wallets as $w) {
-            $totalBalance += (float) ($w['balance'] ?? 0);
-        }
+        $wb = $walletModel->getWithBalances($userId);
+        $totalBalance = max(0, (float) ($wb['total'] ?? 0));
+        $wallets = $wb['wallets'] ?? [];
 
         // Estimasi penghasilan bulanan (pemasukan bulan ini)
         $currentMonth = date('Y-m');
