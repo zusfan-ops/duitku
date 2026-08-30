@@ -127,7 +127,7 @@ class _NearbyPlacesScreenState extends State<NearbyPlacesScreen> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.2),
+                    color: AppColors.primary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.explore_rounded, color: AppColors.primary, size: 24),
@@ -160,7 +160,7 @@ class _NearbyPlacesScreenState extends State<NearbyPlacesScreen> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (_, idx) {
                 final cat = _categories[idx];
                 final isSelected = cat['id'] == _selectedCategory;
@@ -236,9 +236,9 @@ class _NearbyPlacesScreenState extends State<NearbyPlacesScreen> {
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: (currentCatData['color'] as Color).withOpacity(0.08),
+                color: (currentCatData['color'] as Color).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: (currentCatData['color'] as Color).withOpacity(0.3)),
+                border: Border.all(color: (currentCatData['color'] as Color).withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -301,7 +301,7 @@ class _NearbyPlacesScreenState extends State<NearbyPlacesScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: (currentCatData['color'] as Color).withOpacity(0.12),
+                        color: (currentCatData['color'] as Color).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(currentCatData['icon'] as IconData, color: currentCatData['color'] as Color, size: 20),
@@ -326,7 +326,7 @@ class _NearbyPlacesScreenState extends State<NearbyPlacesScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.12),
+                                  color: AppColors.primary.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
