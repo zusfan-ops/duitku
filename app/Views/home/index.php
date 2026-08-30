@@ -730,12 +730,49 @@
     background: #E2E8F0;
     z-index: 1;
 }
+.nearby-accordion-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+.nearby-accordion-hdr:hover {
+    border-color: var(--primary);
+}
+.nearby-count-badge {
+    background: var(--primary-dim);
+    color: var(--primary);
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 10px;
+}
+.nearby-accordion-icon {
+    font-size: 13px;
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+}
+.nearby-accordion-icon.open {
+    transform: rotate(180deg);
+}
 .nearby-list-wrap {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 220px;
+    max-height: 240px;
     overflow-y: auto;
+    transition: all 0.25s ease;
+}
+.nearby-list-wrap.collapsed {
+    display: none;
 }
 .nearby-place-item {
     background: var(--bg);
@@ -1077,8 +1114,18 @@
         <!-- Leaflet Map Screen -->
         <div id="nearbyMap" class="nearby-map-container"></div>
 
-        <!-- Nearby Places List -->
-        <div class="nearby-list-wrap" id="nearbyPlacesList">
+        <!-- Accordion Header Toggle -->
+        <div class="nearby-accordion-hdr" id="nearbyAccordionHdr">
+            <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:13px">📋</span>
+                <span style="font-size:12px;font-weight:700;color:var(--text-primary)" id="nearbyAccordionLabel">Daftar Tempat Terdekat</span>
+                <span class="nearby-count-badge" id="nearbyCountBadge">Memuat...</span>
+            </div>
+            <div class="nearby-accordion-icon" id="nearbyAccordionIcon">▾</div>
+        </div>
+
+        <!-- Nearby Places List (Collapsible Accordion) -->
+        <div class="nearby-list-wrap collapsed" id="nearbyPlacesList">
             <!-- Dynamic POI Cards loaded via JS -->
             <div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px">
                 ⏳ Memindai tempat terdekat di sekitar lokasi Anda...
@@ -2779,13 +2826,31 @@ try {
         renderPlaces(places);
     }
 
+    function toggleNearbyList(forceOpen = false) {
+        const listEl = document.getElementById('nearbyPlacesList');
+        const iconEl = document.getElementById('nearbyAccordionIcon');
+        if (!listEl) return;
+        if (forceOpen) {
+            listEl.classList.remove('collapsed');
+            if (iconEl) iconEl.classList.add('open');
+        } else {
+            const isCollapsed = listEl.classList.toggle('collapsed');
+            if (iconEl) iconEl.classList.toggle('open', !isCollapsed);
+        }
+    }
+
     function renderPlaces(places) {
         const listEl = document.getElementById('nearbyPlacesList');
+        const countBadge = document.getElementById('nearbyCountBadge');
         if (!listEl) return;
+
+        if (countBadge) {
+            countBadge.innerText = places.length > 0 ? `${places.length} Lokasi` : '0 Lokasi';
+        }
 
         if (places.length === 0) {
             listEl.innerHTML = `
-                <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px">
+                <div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px">
                     Belum ditemukan lokasi pada radius ${currentRadius}m.<br>Coba perbesar radius jangkauan ke 1km atau 2km.
                 </div>`;
             return;
@@ -2868,6 +2933,11 @@ try {
             initMap();
             acquireGeolocation();
         }, 300);
+
+        // Accordion Toggle Header
+        document.getElementById('nearbyAccordionHdr')?.addEventListener('click', () => {
+            toggleNearbyList();
+        });
 
         // Refresh Location Button
         document.getElementById('btnRefreshLoc')?.addEventListener('click', () => {
