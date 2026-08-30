@@ -5,7 +5,7 @@
 /* ── Home Layout ──────────────────────────────────────────────── */
 .home-page { padding-bottom: 32px; }
 
-/* ─── Apple Wallet Stacked Cards Deck ────────────────────────────── */
+/* ─── Apple Wallet Stacked Cards Deck (1:1 with Native) ────────── */
 .apple-wallet-wrapper {
     position: relative;
     margin: 4px 0 16px;
@@ -22,30 +22,26 @@
     right: 0;
     border-radius: 24px;
     padding: 16px 20px 18px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     color: #ffffff;
     cursor: pointer;
     box-sizing: border-box;
-    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-                box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-                opacity 0.3s ease,
-                filter 0.3s ease;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.3s ease;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     overflow: hidden;
 }
 .apple-deck-card:not(.active-card) {
-    height: 56px;
-    box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.25), 0 4px 10px rgba(0,0,0,0.15);
+    box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.22), 0 4px 10px rgba(0,0,0,0.12);
 }
 .apple-deck-card:not(.active-card):hover {
-    filter: brightness(1.12);
+    filter: brightness(1.1);
     transform: translateY(calc(var(--card-y, 0px) - 4px)) scale(var(--card-scale, 0.96)) !important;
 }
 .apple-deck-card.active-card {
     cursor: default;
-    height: auto;
-    min-height: 195px;
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35), 0 4px 14px rgba(37, 99, 235, 0.3);
 }
 
@@ -103,7 +99,7 @@
 
 /* Expanded Card Body */
 .apple-card-body {
-    margin-top: 10px;
+    margin-top: 12px;
     transition: opacity 0.25s ease;
 }
 .apple-deck-card:not(.active-card) .apple-card-body {
@@ -113,18 +109,6 @@
 .apple-deck-card.active-card .apple-card-body {
     display: block;
     opacity: 1;
-}
-.native-hero-card {
-    position: relative;
-    z-index: 2;
-    margin-top: 0;
-    background: linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 50%, #2563EB 100%);
-    border-radius: 24px;
-    padding: 20px 20px 18px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    box-shadow: 0 14px 34px rgba(37, 99, 235, 0.32), 0 4px 10px rgba(0, 0, 0, 0.08);
-    color: #ffffff;
-    box-sizing: border-box;
 }
 .native-hero-top {
     display: flex;
@@ -1234,14 +1218,11 @@
     <!-- ═══════════════════════════════════════════════════════════ PERSONAL WORKSPACE CONTAINER -->
     <div id="workspacePersonal">
 
-    <!-- ── APPLE WALLET STACKED CARDS DECK ── -->
+    <!-- ── APPLE WALLET STACKED CARDS DECK (1:1 with Flutter Native) ── -->
     <?php
     $activeHeroWallets = array_values(array_filter($wallets ?? [], function($w) {
         return (float)($w['balance'] ?? 0) > 0;
     }));
-    if (empty($activeHeroWallets) && !empty($wallets)) {
-        $activeHeroWallets = $wallets;
-    }
 
     $paletteGradients = [
         'total'       => 'linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 50%, #2563EB 100%)',
@@ -3510,8 +3491,13 @@ let activeAppleCardIndex = 0;
 
 function layoutAppleDeck() {
     const cards = document.querySelectorAll('.apple-deck-card');
+    const wrapper = document.getElementById('appleWalletWrapper');
     if (!cards.length) return;
     const totalCards = cards.length;
+    const stackOffsetPx = (totalCards - 1) * 36;
+    if (wrapper) {
+        wrapper.style.height = `calc(195px + ${stackOffsetPx}px)`;
+    }
 
     let stackIdx = 0;
     cards.forEach((card, idx) => {
@@ -3544,7 +3530,6 @@ function selectAppleDeckCard(idx) {
 }
 window.selectAppleDeckCard = selectAppleDeckCard;
 
-// Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
     layoutAppleDeck();
 });

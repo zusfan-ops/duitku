@@ -476,7 +476,7 @@ class _HeroCardState extends State<_HeroCard> {
   List<Color> _getGradientForType(String type) {
     switch (type.toLowerCase()) {
       case 'bank':
-        return const [Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF3B82F6)];
+        return const [Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF2563EB)];
       case 'cash':
         return const [Color(0xFF064E3B), Color(0xFF047857), Color(0xFF10B981)];
       case 'ewallet':
@@ -485,7 +485,7 @@ class _HeroCardState extends State<_HeroCard> {
       case 'credit_card':
         return const [Color(0xFF701A75), Color(0xFF86198F), Color(0xFFC026D3)];
       default:
-        return const [Color(0xFF1E293B), Color(0xFF334155), Color(0xFF475569)];
+        return const [Color(0xFF1E3A8A), Color(0xFF1D4ED8), Color(0xFF2563EB)];
     }
   }
 
@@ -512,8 +512,8 @@ class _HeroCardState extends State<_HeroCard> {
     final wallets = (data.wallets as List?) ?? [];
 
     final allWallets = wallets.whereType<Wallet>().toList();
+    // Only show wallets with balance > 0 in the stacked deck
     final activeWallets = allWallets.where((w) => w.balance > 0).toList();
-    final displayWallets = activeWallets.isNotEmpty ? activeWallets : allWallets;
 
     final monthStr = '${data.month ?? ""}'.toUpperCase();
     final monthlyIncome = Fmt.toDouble(data.monthlyIncome);
@@ -529,7 +529,7 @@ class _HeroCardState extends State<_HeroCard> {
         gradient: const [Color(0xFF1E3A8A), Color(0xFF1D4ED8), Color(0xFF2563EB)],
         isTotal: true,
       ),
-      ...displayWallets.map((w) => _AppleDeckCardData(
+      ...activeWallets.map((w) => _AppleDeckCardData(
         id: '${w.id}',
         title: 'SALDO ${w.name.toUpperCase()}',
         badge: w.type.toUpperCase(),
@@ -544,12 +544,19 @@ class _HeroCardState extends State<_HeroCard> {
     final double stackOffset = (cards.length - 1) * 36.0;
     final double totalDeckHeight = 205.0 + stackOffset;
 
+    // Render background cards first, and active card LAST so it sits on top
+    final List<int> renderOrder = [];
+    for (int i = 0; i < cards.length; i++) {
+      if (i != safeActiveIdx) renderOrder.add(i);
+    }
+    renderOrder.add(safeActiveIdx);
+
     return Container(
       margin: const EdgeInsets.only(top: 4, bottom: 4),
       height: totalDeckHeight,
       child: Stack(
         clipBehavior: Clip.none,
-        children: List.generate(cards.length, (idx) {
+        children: renderOrder.map((idx) {
           final card = cards[idx];
           final bool isFront = (idx == safeActiveIdx);
 
@@ -566,13 +573,13 @@ class _HeroCardState extends State<_HeroCard> {
           final double targetScale = isFront ? 1.0 : (0.94 + (stackOrder * 0.018)).clamp(0.92, 0.98);
 
           return AnimatedPositioned(
-            duration: const Duration(milliseconds: 420),
+            duration: const Duration(milliseconds: 380),
             curve: Curves.easeOutCubic,
             top: targetTop,
             left: 0,
             right: 0,
             child: AnimatedScale(
-              duration: const Duration(milliseconds: 420),
+              duration: const Duration(milliseconds: 380),
               curve: Curves.easeOutCubic,
               scale: targetScale,
               child: GestureDetector(
@@ -807,7 +814,7 @@ class _HeroCardState extends State<_HeroCard> {
               ),
             ),
           );
-        }),
+        }).toList(),
       ),
     );
   }
