@@ -814,6 +814,11 @@ class ApiService {
     return post('tv/chats', {'message': message});
   }
 
+  // ── Emergency Services API ────────────────────────────────────
+  Future<Map<String, dynamic>> getEmergencyDirectory() async {
+    return get('emergency');
+  }
+
   // ── Todos & Tasks API ─────────────────────────────────────────
   Future<Map<String, dynamic>> getTodos({String? filter, String? category, String? search}) async {
     final query = <String, String>{};

@@ -182,6 +182,10 @@
     background: linear-gradient(135deg, #4338CA 0%, #6366F1 50%, #8B5CF6 100%);
     box-shadow: 0 6px 18px rgba(99, 102, 241, 0.25);
 }
+.feat-emergency {
+    background: linear-gradient(135deg, #DC2626 0%, #EF4444 50%, #B91C1C 100%);
+    box-shadow: 0 6px 18px rgba(220, 38, 38, 0.28);
+}
 .feat-activity {
     background: linear-gradient(135deg, #334155 0%, #64748B 100%);
     box-shadow: 0 6px 18px rgba(100, 116, 139, 0.25);
@@ -326,7 +330,23 @@
     <div class="features-section-title">HIBURAN & GAYA HIDUP</div>
     <div class="features-grid">
 
-        <!-- 1. TV & Live Streaming -->
+        <!-- 1. Layanan Darurat 24 Jam -->
+        <a href="/emergency" class="feature-card feat-emergency" style="grid-column: span 2;">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <div class="feature-card-icon">
+                <span style="font-size: 16px;">🚨</span>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Layanan Darurat 24 Jam</div>
+                <div class="feature-card-desc">Derek Tol (14080), Damkar (113), Polisi (110), Ambulans (118/119) & SOS</div>
+            </div>
+        </a>
+
+        <!-- 2. TV & Live Streaming -->
         <a href="/tv" class="feature-card feat-tv">
             <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>

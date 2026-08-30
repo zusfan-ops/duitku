@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../screens/emergency/emergency_screen.dart';
 import '../theme.dart';
 
 class NearbyServicesCard extends StatefulWidget {
@@ -17,6 +18,44 @@ class _NearbyServicesCardState extends State<NearbyServicesCard> {
 
   // Category Configuration
   final List<Map<String, dynamic>> _categories = [
+    {
+      'id': 'darurat',
+      'label': '🚨 Darurat 24 Jam',
+      'icon': '🚨',
+      'iconData': Icons.emergency_rounded,
+      'color': const Color(0xFFDC2626),
+      'query': 'rumah sakit ugd polsek pos damkar terdekat',
+      'isEmergency': true,
+      'places': [
+        {
+          'name': 'Panggilan Darurat 112',
+          'desc': 'Bebas pulsa 24 jam (Polisi, Medis, Damkar)',
+          'dist': 'Bebas Pulsa',
+          'distNum': 0,
+          'eta': 'Instan',
+          'phone': '112',
+          'offset': const Offset(0.0, -0.3),
+        },
+        {
+          'name': 'Derek Tol Jasa Marga (14080)',
+          'desc': 'Bantuan derek resmi jalan tol 24 jam',
+          'dist': 'Tol 24 Jam',
+          'distNum': 0,
+          'eta': '24 Jam',
+          'phone': '14080',
+          'offset': const Offset(-0.35, 0.25),
+        },
+        {
+          'name': 'RS & UGD 24 Jam Terdekat',
+          'desc': 'Ambulans (118/119) & pertolongan pertama',
+          'dist': '500 m',
+          'distNum': 500,
+          'eta': '2 mnt',
+          'phone': '118',
+          'offset': const Offset(0.35, 0.2),
+        },
+      ]
+    },
     {
       'id': 'toko_kelontong',
       'label': 'Toko Kelontong',
@@ -542,6 +581,51 @@ class _NearbyServicesCardState extends State<NearbyServicesCard> {
               ),
             ),
           ),
+          if (_selectedCategory == 'darurat') ...[
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const EmergencyScreen()),
+                );
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFDC2626), Color(0xFFEF4444)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFDC2626).withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('🚨', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 6),
+                    Text(
+                      'Buka Direktori Lengkap Layanan Darurat 24 Jam',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 12),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
 
           // ── Accordion Header Toggle ───────────────────────────────

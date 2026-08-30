@@ -178,6 +178,10 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('/tv/chats',                   'TvController::chats');
     $routes->post('/tv/chats',                  'TvController::sendChat');
 
+    // Layanan Darurat 24 Jam
+    $routes->get('/emergency',                  'EmergencyController::index');
+    $routes->get('/layanan-darurat',            'EmergencyController::index');
+
     // Kalkulator Zakat & Pajak
     $routes->get('/zakat-pajak',                'ZakatPajakController::index');
     $routes->get('/pajak-zakat',                'ZakatPajakController::index');
@@ -273,6 +277,9 @@ $routes->group('api', function ($routes) {
         $routes->get('tv/channels/(:num)',          'Api\TvController::show/$1');
         $routes->get('tv/chats',                    'Api\TvController::chats');
         $routes->post('tv/chats',                   'Api\TvController::sendChat');
+
+        // Emergency Services Directory API
+        $routes->get('emergency',                   'EmergencyController::apiList');
 
         // Todos API
         $routes->get('todos',                       'TodoController::apiList');

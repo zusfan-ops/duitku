@@ -29,6 +29,7 @@ import 'vehicle/vehicle_screen.dart';
 import 'notifications/notifications_screen.dart';
 import 'todo/todo_list_screen.dart';
 import 'tv/tv_streaming_screen.dart';
+import 'emergency/emergency_screen.dart';
 import 'nearby/nearby_places_screen.dart';
 import 'wallet_screen.dart';
 import 'zakat_pajak/zakat_pajak_screen.dart';
@@ -236,6 +237,17 @@ class FeaturesScreen extends StatelessWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const VehicleScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Layanan Darurat',
+              subtitle: 'Derek tol, damkar & medis',
+              icon: Icons.emergency_rounded,
+              gradient: const [Color(0xFFDC2626), Color(0xFFEF4444)],
+              shadowColor: const Color(0xFFEF4444),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EmergencyScreen()),
               ),
             ),
             _FeatureItem(
@@ -453,27 +465,24 @@ class FeaturesScreen extends StatelessWidget {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: item.onTap,
-            borderRadius: BorderRadius.circular(16),
-            child: Ink(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: item.gradient,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: item.shadowColor.withValues(alpha: 0.25),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+        return GestureDetector(
+          onTap: item.onTap,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: item.gradient,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: item.shadowColor.withValues(alpha: 0.25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Stack(
@@ -559,12 +568,11 @@ class FeaturesScreen extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
+    }
   }
-}
 
 class _FeatureItem {
   final String title;
