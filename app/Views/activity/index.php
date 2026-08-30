@@ -69,6 +69,18 @@
             $grouped[$tx['date']][] = $tx;
         }
     ?>
+    <?php
+    $softPalettes = [
+        ['bg' => '#F0F9FF', 'border' => '#BAE6FD', 'accent' => '#0284C7', 'icon_bg' => '#E0F2FE'],
+        ['bg' => '#FAF5FF', 'border' => '#E9D5FF', 'accent' => '#7C3AED', 'icon_bg' => '#F3E8FF'],
+        ['bg' => '#FFF7ED', 'border' => '#FFEDD5', 'accent' => '#EA580C', 'icon_bg' => '#FFEDD5'],
+        ['bg' => '#F0FDFA', 'border' => '#99F6E4', 'accent' => '#0D9488', 'icon_bg' => '#CCFBF1'],
+        ['bg' => '#FFF1F2', 'border' => '#FECDD3', 'accent' => '#E11D48', 'icon_bg' => '#FFE4E6'],
+        ['bg' => '#EEF2FF', 'border' => '#C7D2FE', 'accent' => '#4F46E5', 'icon_bg' => '#E0E7FF'],
+        ['bg' => '#F7FEE7', 'border' => '#D9F99D', 'accent' => '#65A30D', 'icon_bg' => '#ECFCCB'],
+    ];
+    $incomePal = ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'accent' => '#16A34A', 'icon_bg' => '#DCFCE7'];
+    ?>
     <div class="tx-list" id="activityList">
         <?php foreach ($grouped as $date => $txs): ?>
         <div class="tx-date-group">
@@ -77,11 +89,12 @@
             </div>
             <?php foreach ($txs as $tx): ?>
             <?php
-                $catColor = !empty($tx['category_color']) ? $tx['category_color'] : '#2563EB';
+                $isIncome = ($tx['type'] ?? '') === 'income';
+                $pal = $isIncome ? $incomePal : $softPalettes[abs((int)($tx['id'] ?? 0)) % count($softPalettes)];
                 $hasNote = !empty(trim($tx['note'] ?? ''));
                 $title = $hasNote ? $tx['note'] : ($tx['category_name'] ?? 'Transaksi');
             ?>
-            <div class="tx-item" style="--cat-color:<?= esc($catColor) ?>;" data-id="<?= $tx['id'] ?>" data-tx='<?= json_encode($tx) ?>'>
+            <div class="tx-item" style="--tx-bg:<?= $pal['bg'] ?>;--tx-border:<?= $pal['border'] ?>;--tx-accent:<?= $pal['accent'] ?>;--tx-icon-bg:<?= $pal['icon_bg'] ?>;" data-id="<?= $tx['id'] ?>" data-tx='<?= json_encode($tx) ?>'>
                 <div class="tx-icon">
                     <?= categoryIcon($tx['category_icon'] ?? 'other') ?>
                 </div>
@@ -98,8 +111,8 @@
                     </div>
                 </div>
                 <div class="tx-right">
-                    <div class="tx-amount <?= $tx['type'] === 'income' ? 'income' : 'expense' ?>">
-                        <?= $tx['type'] === 'income' ? '+' : '-' ?> <?= esc($symbol) ?> <?= number_format($tx['amount'], 0, ',', '.') ?>
+                    <div class="tx-amount <?= $isIncome ? 'income' : 'expense' ?>">
+                        <?= $isIncome ? '+' : '-' ?> <?= esc($symbol) ?> <?= number_format($tx['amount'], 0, ',', '.') ?>
                     </div>
                     <div class="tx-actions">
                         <button class="tx-edit-btn" title="Edit">✏️</button>

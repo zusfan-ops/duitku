@@ -473,77 +473,74 @@ table { max-width: 100%; }
 .tx-list { display: flex; flex-direction: column; gap: 8px; }
 
 .tx-item {
-    display: flex; align-items: center; gap: 14px;
-    background: linear-gradient(135deg, color-mix(in srgb, var(--cat-color, var(--primary)) 8%, var(--bg-card)) 0%, var(--bg-card) 100%);
-    border-radius: var(--radius-lg);
-    padding: 13px 16px;
-    transition: all var(--transition);
+    display: flex; align-items: center; gap: 12px;
+    background: var(--tx-bg, #F8FAFC);
+    border-radius: 16px;
+    padding: 12px 14px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
     cursor: pointer;
-    border: 1.2px solid color-mix(in srgb, var(--cat-color, var(--primary)) 24%, var(--border));
-    border-left: 4.5px solid var(--cat-color, var(--primary));
-    box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--cat-color, var(--primary)) 12%, transparent), var(--shadow-sm);
-    position: relative;
+    border: 1.2px solid var(--tx-border, #E2E8F0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 .tx-item:hover {
-    border-color: var(--cat-color, var(--primary));
-    border-left-color: var(--cat-color, var(--primary));
-    box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--cat-color, var(--primary)) 25%, transparent), var(--shadow-md);
-    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+    transform: translateY(-1.5px);
 }
 .tx-item:active { transform: scale(0.99); }
 
 .tx-icon {
-    width: 44px; height: 44px; border-radius: 14px;
+    width: 42px; height: 42px; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    background: color-mix(in srgb, var(--cat-color, var(--primary)) 16%, var(--bg));
-    border: 1px solid color-mix(in srgb, var(--cat-color, var(--primary)) 32%, transparent);
-    color: var(--cat-color, var(--primary));
-    font-size: 20px;
+    background: var(--tx-icon-bg, #EFF6FF);
+    border: 1px solid var(--tx-border, #E2E8F0);
+    color: var(--tx-accent, #2563EB);
+    font-size: 19px;
     flex-shrink: 0;
-    box-shadow: 0 2px 6px color-mix(in srgb, var(--cat-color, var(--primary)) 15%, transparent);
 }
 .tx-body { flex: 1; min-width: 0; }
 .tx-name {
     font-size: 14px;
-    font-weight: 700;
-    color: var(--text-primary);
+    font-weight: 800;
+    color: #0F172A;
     display: flex;
     align-items: center;
     gap: 6px;
-    flex-wrap: wrap;
+    letter-spacing: -0.2px;
 }
 .tx-badge {
     display: inline-block;
     font-size: 10.5px;
     font-weight: 700;
-    padding: 1px 7px;
+    padding: 1.5px 7px;
     border-radius: 6px;
-    background: color-mix(in srgb, var(--cat-color, var(--primary)) 14%, transparent);
-    color: var(--cat-color, var(--primary));
-    border: 0.8px solid color-mix(in srgb, var(--cat-color, var(--primary)) 25%, transparent);
+    background: var(--tx-icon-bg, #EFF6FF);
+    color: var(--tx-accent, #2563EB);
+    border: 0.8px solid var(--tx-border, #E2E8F0);
 }
 .tx-note {
-    font-size: 12px;
-    color: var(--text-muted);
+    font-size: 11.5px;
+    color: #64748B;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     margin-top: 3px;
+    display: flex;
+    align-items: center;
 }
 .tx-right { text-align: right; flex-shrink: 0; }
-.tx-amount { font-size: 14.5px; font-weight: 800; letter-spacing: -0.2px; }
-.tx-amount.income  { color: var(--income); }
-.tx-amount.expense { color: var(--text-primary); }
+.tx-amount { font-size: 14.5px; font-weight: 900; letter-spacing: -0.3px; }
+.tx-amount.income  { color: #16A34A; }
+.tx-amount.expense { color: #0F172A; }
 .tx-date {
     font-size: 10.5px;
     font-weight: 700;
-    color: var(--text-muted);
+    color: var(--tx-accent, #64748B);
     margin-top: 3px;
-    background: var(--bg);
+    background: #FFFFFF;
     padding: 2px 7px;
     border-radius: 6px;
     display: inline-block;
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--tx-border, #E2E8F0);
 }
 
 .tx-actions { display: flex; gap: 4px; margin-top: 4px; justify-content: flex-end; }
