@@ -13,7 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :root {
-            --admin-sidebar-w: 250px;
+            --admin-sidebar-w: 78px;
             --admin-primary: #10B981;
             --admin-primary-dark: #059669;
             --admin-primary-light: #D1FAE5;
@@ -48,30 +48,32 @@
             min-height: 100vh;
         }
         
-        /* ── Sidebar (VitaFarma style) ──────────────────────────────── */
+        /* ── Sidebar Compact Rail (Vitafarma exact style) ─────────────── */
         .admin-sidebar {
-            width: var(--admin-sidebar-w);
-            background: linear-gradient(180deg, #0F172A 0%, #020617 100%);
+            width: 78px;
+            background: linear-gradient(180deg, #123b6d 0%, #0b2447 100%);
             color: #fff;
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
-            border-right: 1px solid rgba(255,255,255,0.06);
-            transition: all 0.22s ease;
+            border-right: 1px solid rgba(255,255,255,0.08);
+            transition: width 0.22s ease;
             position: sticky;
             top: 0;
             height: 100vh;
-            z-index: 100;
-            box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+            z-index: 30;
+            box-shadow: 2px 0 10px rgba(15,23,42,0.15);
         }
         .admin-sidebar.collapsed {
-            width: 72px;
+            width: 60px;
         }
         .admin-brand {
-            padding: 20px 18px;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 12px;
+            justify-content: center;
+            gap: 6px;
+            padding: 16px 0;
             border-bottom: 1px solid rgba(255,255,255,0.08);
             text-decoration: none;
         }
@@ -82,92 +84,81 @@
             flex-shrink: 0;
             box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
         }
-        .admin-brand-text h2 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 800;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            letter-spacing: -0.2px;
-            white-space: nowrap;
+        .admin-brand-text {
+            display: block;
         }
-        .admin-brand-text span {
+        .admin-brand-text .name {
             font-size: 10px;
-            background: rgba(16, 185, 129, 0.2);
-            color: #34D399;
-            padding: 2px 6px;
-            border-radius: 6px;
             font-weight: 800;
-            letter-spacing: 0.5px;
+            color: #e2e8f0;
+            letter-spacing: 0.2px;
+            text-align: center;
         }
         .admin-nav {
-            padding: 16px 12px;
             flex: 1;
+            overflow-y: auto;
+            padding: 14px 0;
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            overflow-y: auto;
+            align-items: center;
+            gap: 10px;
             scrollbar-width: none;
         }
         .admin-nav::-webkit-scrollbar { display: none; }
         
-        .admin-nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 11px 14px;
-            color: var(--admin-sidebar-text);
-            text-decoration: none;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.15s ease;
-            white-space: nowrap;
+        .rail-btn {
             position: relative;
-        }
-        .admin-nav-item:hover {
-            color: #fff;
-            background: rgba(255,255,255,0.06);
-            transform: translateX(2px);
-        }
-        .admin-nav-item.active {
-            color: #fff;
-            background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-dark));
-            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
-        }
-        .admin-nav-icon {
-            font-size: 18px;
-            width: 24px;
-            text-align: center;
-            flex-shrink: 0;
-        }
-        .admin-sidebar.collapsed .admin-nav-text,
-        .admin-sidebar.collapsed .admin-brand-text {
-            display: none;
-        }
-        .admin-sidebar.collapsed .admin-nav-item {
+            width: 52px;
+            height: 52px;
+            padding: 0;
+            border-radius: 14px;
+            border: none;
+            background: transparent;
+            color: #cbd5e1;
+            display: flex;
+            align-items: center;
             justify-content: center;
-            padding: 12px 0;
+            transition: 0.15s;
+            cursor: pointer;
+            text-decoration: none;
         }
-        
+        .rail-btn .rail-label { display: none; }
+        .rail-btn .rail-icon {
+            font-size: 24px;
+            line-height: 1;
+            width: 42px;
+            height: 42px;
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+        .rail-btn:hover .rail-icon {
+            background: rgba(255,255,255,0.08);
+            transform: scale(1.05);
+        }
+        .rail-btn.active .rail-icon {
+            background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-dark));
+            box-shadow: 0 6px 14px rgba(16,185,129,0.45);
+            color: #fff;
+        }
         .admin-sidebar-footer {
-            padding: 14px 16px;
+            padding: 12px 6px;
             border-top: 1px solid rgba(255,255,255,0.08);
+            font-size: 9px;
+            color: #64748b;
+            text-align: center;
+            line-height: 1.5;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-        }
-        .admin-user-pill {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            min-width: 0;
+            gap: 6px;
         }
         .admin-user-avatar {
-            width: 34px;
-            height: 34px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background: linear-gradient(135deg, #10B981, #059669);
             color: #fff;
@@ -175,28 +166,160 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
-            flex-shrink: 0;
+            font-size: 12px;
+            cursor: pointer;
         }
-        .admin-user-info {
-            line-height: 1.2;
-            min-width: 0;
-            overflow: hidden;
-        }
-        .admin-user-name {
-            font-size: 12.5px;
-            font-weight: 700;
+
+        /* ── Rail Tooltip ──────────────────────────────────────────── */
+        .rail-tooltip {
+            position: fixed;
+            background: #0f172a;
             color: #fff;
+            font-size: 11.5px;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-50%) translateX(-6px);
+            transition: opacity 0.15s ease, transform 0.15s ease;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .admin-user-role {
-            font-size: 10px;
-            color: #34D399;
-            text-transform: uppercase;
+        .rail-tooltip.show {
+            opacity: 1;
+            transform: translateY(-50%) translateX(0);
+        }
+
+        /* ── Rail Flyout (Vitafarma Exact Style) ────────────────────── */
+        .rail-flyout-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.35);
+            z-index: 90;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.18s ease;
+        }
+        .rail-flyout-backdrop.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .rail-flyout {
+            position: fixed;
+            top: 0;
+            height: max-content;
+            max-height: 100vh;
+            width: max-content;
+            min-width: 260px;
+            max-width: calc(100vw - 90px);
+            background: var(--admin-card);
+            z-index: 91;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 24px 48px -12px rgba(2,20,46,0.35), 6px 0 26px rgba(15,23,42,0.18);
+            transform: translateX(-10px);
+            opacity: 0;
+            visibility: hidden;
+            transition: transform 0.18s ease, opacity 0.18s ease;
+            border-bottom-right-radius: 20px;
+            border: 1px solid var(--admin-border);
+        }
+        .rail-flyout.open {
+            transform: translateX(0);
+            opacity: 1;
+            visibility: visible;
+        }
+        .rail-flyout-panel {
+            display: none;
+            flex-direction: column;
+            width: max-content;
+            min-width: 260px;
+            max-width: 100%;
+            max-height: 100%;
+            overflow-y: auto;
+            padding: 20px 20px 24px;
+            box-sizing: border-box;
+        }
+        .rail-flyout-panel.open {
+            display: flex;
+        }
+        .rail-flyout-head h2 {
+            font-size: 17px;
             font-weight: 800;
-            letter-spacing: 0.4px;
+            color: var(--admin-text);
+            letter-spacing: -0.2px;
+            margin: 0;
+        }
+        .rail-flyout-rule {
+            height: 3px;
+            width: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, var(--admin-primary), #059669);
+            margin: 8px 0 16px;
+            opacity: 0.8;
+        }
+        .rail-flyout-grid {
+            display: grid;
+            gap: 10px;
+        }
+        .rail-flyout-grid.cols-1 { grid-template-columns: repeat(1, 120px); }
+        .rail-flyout-grid.cols-2 { grid-template-columns: repeat(2, 120px); }
+        .rail-flyout-grid.cols-3 { grid-template-columns: repeat(3, 120px); }
+        
+        .rail-flyout .nav-item {
+            width: 120px;
+            height: 100px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 8px;
+            padding: 10px 8px;
+            border: 1px solid var(--admin-border);
+            border-radius: 14px;
+            background: var(--admin-card);
+            color: var(--admin-text-secondary);
+            white-space: normal;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.1s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+        .rail-flyout .nav-item:hover {
+            border-color: var(--admin-primary);
+            color: var(--admin-primary-dark);
+            box-shadow: 0 8px 18px -6px rgba(16,185,129,0.25);
+            transform: translateY(-2px);
+        }
+        .rail-flyout .nav-item.active {
+            background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-dark));
+            border-color: var(--admin-primary-dark);
+            color: #fff;
+            box-shadow: 0 6px 16px rgba(16,185,129,0.35);
+        }
+        .rail-flyout .nav-item .nav-icon {
+            font-size: 22px;
+            width: 40px;
+            height: 40px;
+            line-height: 1;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: var(--admin-bg);
+            transition: background 0.15s ease;
+        }
+        .rail-flyout .nav-item.active .nav-icon {
+            background: rgba(255,255,255,0.2);
+        }
+        .rail-flyout .nav-item .nav-label {
+            font-size: 11.5px;
+            font-weight: 700;
         }
 
         /* ── Main Content Area ─────────────────────────────────────── */
@@ -250,7 +373,7 @@
             letter-spacing: -0.3px;
         }
         .admin-header-title p {
-            margin: 1px 0 0 0;
+            margin: 2px 0 0 0;
             font-size: 11px;
             color: var(--admin-text-secondary);
         }
@@ -260,43 +383,39 @@
             gap: 10px;
         }
 
-        /* ── Accurate/VitaFarma-Style Closable Tab Strip ─────────────── */
+        /* ── VitaFarma Closable Tab Strip ───────────────────────────── */
         .tab-strip {
             display: flex;
+            align-items: center;
             gap: 4px;
             background: var(--admin-card);
             border-bottom: 1px solid var(--admin-border);
-            padding: 8px 20px 0;
+            padding: 6px 20px 0 20px;
             overflow-x: auto;
-            scrollbar-width: thin;
-            position: sticky;
-            top: 64px;
-            z-index: 45;
+            scrollbar-width: none;
         }
-        .tab-strip::-webkit-scrollbar { height: 4px; }
-        .tab-strip::-webkit-scrollbar-thumb { background: var(--admin-border); border-radius: 4px; }
-        
+        .tab-strip::-webkit-scrollbar { display: none; }
         .tab-pill {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 8px 14px;
-            border: 1px solid var(--admin-border);
-            border-bottom: none;
+            padding: 7px 14px;
             border-radius: 10px 10px 0 0;
-            background: var(--admin-bg);
-            color: var(--admin-text-secondary);
             font-size: 12px;
             font-weight: 700;
-            white-space: nowrap;
-            cursor: pointer;
-            flex-shrink: 0;
+            color: var(--admin-text-secondary);
             text-decoration: none;
+            background: var(--admin-bg);
+            border: 1px solid var(--admin-border);
+            border-bottom: none;
             transition: all 0.15s ease;
+            position: relative;
+            cursor: pointer;
+            white-space: nowrap;
         }
         .tab-pill:hover {
-            background: var(--admin-primary-light);
-            color: var(--admin-primary-dark);
+            color: var(--admin-text);
+            background: var(--admin-card);
         }
         .tab-pill.active {
             background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-dark));
@@ -528,11 +647,11 @@
             margin: 3px 0 0 0;
         }
 
-        /* ── Responsive & Modal ────────────────────────────────────── */
+        /* ── Responsive & Mobile ───────────────────────────────────── */
         @media (max-width: 900px) {
             .admin-sidebar {
                 position: fixed;
-                left: -260px;
+                left: -80px;
                 top: 0;
                 bottom: 0;
             }
@@ -545,55 +664,140 @@
 <body>
 
 <div class="admin-wrapper">
-    <!-- Sidebar (VitaFarma Multi-Menu Rail) -->
+    <!-- Compact Sidebar Rail (Vitafarma Exact Design) -->
     <aside class="admin-sidebar" id="adminSidebar">
-        <a href="/admin" class="admin-brand">
+        <a href="/admin" class="admin-brand" title="DuitKu Admin Hub">
             <img src="/images/logo.png" alt="DuitKu Logo">
             <div class="admin-brand-text">
-                <h2>DuitKu <span>ADMIN</span></h2>
+                <div class="name">DuitKu</div>
             </div>
         </a>
 
         <nav class="admin-nav">
-            <a href="/admin" class="admin-nav-item <?= ($activeMenu ?? '') === 'dashboard' ? 'active' : '' ?>" data-tab-id="dashboard" data-tab-icon="📊" data-tab-title="Dashboard" onclick="handleMenuClick(event, 'dashboard', '/admin')">
-                <span class="admin-nav-icon">📊</span>
-                <span class="admin-nav-text">Dashboard Ringkasan</span>
-            </a>
-            <a href="/admin/notifications" class="admin-nav-item <?= ($activeMenu ?? '') === 'notifications' ? 'active' : '' ?>" data-tab-id="notifications" data-tab-icon="📢" data-tab-title="Kirim Notifikasi" onclick="handleMenuClick(event, 'notifications', '/admin/notifications')">
-                <span class="admin-nav-icon">📢</span>
-                <span class="admin-nav-text">Kirim Notifikasi</span>
-            </a>
-            <a href="/admin/tv" class="admin-nav-item <?= ($activeMenu ?? '') === 'tv' ? 'active' : '' ?>" data-tab-id="tv" data-tab-icon="📺" data-tab-title="TV & M3U Channels" onclick="handleMenuClick(event, 'tv', '/admin/tv')">
-                <span class="admin-nav-icon">📺</span>
-                <span class="admin-nav-text">TV & M3U Channels</span>
-            </a>
-            <a href="/admin/users" class="admin-nav-item <?= ($activeMenu ?? '') === 'users' ? 'active' : '' ?>" data-tab-id="users" data-tab-icon="👥" data-tab-title="Kelola Pengguna" onclick="handleMenuClick(event, 'users', '/admin/users')">
-                <span class="admin-nav-icon">👥</span>
-                <span class="admin-nav-text">Kelola Pengguna</span>
-            </a>
-            <a href="/tv" target="_blank" class="admin-nav-item">
-                <span class="admin-nav-icon">▶️</span>
-                <span class="admin-nav-text">Live TV Web Player ↗</span>
-            </a>
-            <a href="/" class="admin-nav-item">
-                <span class="admin-nav-icon">🏠</span>
-                <span class="admin-nav-text">Kembali ke App ↗</span>
-            </a>
+            <button type="button" class="rail-btn <?= ($activeMenu ?? '') === 'dashboard' ? 'active' : '' ?>" data-group="utama" data-tip="Utama & Dashboard" onclick="openRailFlyout('utama')">
+                <span class="rail-icon">🏠</span>
+                <span class="rail-label">Utama</span>
+            </button>
+            <button type="button" class="rail-btn <?= ($activeMenu ?? '') === 'notifications' ? 'active' : '' ?>" data-group="notifikasi" data-tip="Notifikasi & Broadcast" onclick="openRailFlyout('notifikasi')">
+                <span class="rail-icon">📢</span>
+                <span class="rail-label">Notifikasi</span>
+            </button>
+            <button type="button" class="rail-btn <?= ($activeMenu ?? '') === 'tv' ? 'active' : '' ?>" data-group="media" data-tip="TV & Streaming M3U" onclick="openRailFlyout('media')">
+                <span class="rail-icon">📺</span>
+                <span class="rail-label">TV & M3U</span>
+            </button>
+            <button type="button" class="rail-btn <?= ($activeMenu ?? '') === 'users' ? 'active' : '' ?>" data-group="pengguna" data-tip="Kelola Pengguna" onclick="openRailFlyout('pengguna')">
+                <span class="rail-icon">👥</span>
+                <span class="rail-label">Pengguna</span>
+            </button>
+            <button type="button" class="rail-btn" data-group="pintasan" data-tip="Aplikasi & Pintasan" onclick="openRailFlyout('pintasan')">
+                <span class="rail-icon">⚡</span>
+                <span class="rail-label">Pintasan</span>
+            </button>
         </nav>
 
         <div class="admin-sidebar-footer">
-            <div class="admin-user-pill">
-                <div class="admin-user-avatar">
-                    <?= esc(substr(session()->get('user_name') ?? 'A', 0, 1)) ?>
-                </div>
-                <div class="admin-user-info">
-                    <div class="admin-user-name"><?= esc(session()->get('user_name') ?? 'Administrator') ?></div>
-                    <div class="admin-user-role"><?= esc(session()->get('user_role') ?? 'ADMIN') ?></div>
-                </div>
+            <div class="admin-user-avatar" title="<?= esc(session()->get('user_name') ?? 'Administrator') ?>">
+                <?= esc(substr(session()->get('user_name') ?? 'A', 0, 1)) ?>
             </div>
-            <a href="/logout" title="Logout" style="color: #EF4444; font-size: 16px; text-decoration: none;">🚪</a>
+            <a href="/logout" title="Keluar / Logout" style="color: #EF4444; font-size: 15px; text-decoration: none; margin-top: 4px;">🚪</a>
         </div>
     </aside>
+
+    <!-- Rail Tooltip -->
+    <div id="rail-tooltip" class="rail-tooltip"></div>
+
+    <!-- Rail Flyout Backdrop -->
+    <div id="rail-flyout-backdrop" class="rail-flyout-backdrop" onclick="closeRailFlyout()"></div>
+
+    <!-- Rail Flyout Panels (Closed by default, opened on demand) -->
+    <div id="rail-flyout" class="rail-flyout">
+        <!-- Panel: Utama -->
+        <div class="rail-flyout-panel" data-group="utama">
+            <div class="rail-flyout-head">
+                <h2>Utama &amp; Ringkasan</h2>
+                <div class="rail-flyout-rule"></div>
+            </div>
+            <div class="rail-flyout-grid cols-2">
+                <a href="/admin" class="nav-item <?= ($activeMenu ?? '') === 'dashboard' ? 'active' : '' ?>" onclick="handleMenuClick(event, 'dashboard', '/admin'); closeRailFlyout();">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Dashboard Ringkasan</span>
+                </a>
+                <a href="/" target="_blank" class="nav-item" onclick="closeRailFlyout();">
+                    <span class="nav-icon">📱</span>
+                    <span class="nav-label">Buka Web App ↗</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Panel: Notifikasi -->
+        <div class="rail-flyout-panel" data-group="notifikasi">
+            <div class="rail-flyout-head">
+                <h2>Notifikasi &amp; Siaran</h2>
+                <div class="rail-flyout-rule"></div>
+            </div>
+            <div class="rail-flyout-grid cols-2">
+                <a href="/admin/notifications" class="nav-item <?= ($activeMenu ?? '') === 'notifications' ? 'active' : '' ?>" onclick="handleMenuClick(event, 'notifications', '/admin/notifications'); closeRailFlyout();">
+                    <span class="nav-icon">📢</span>
+                    <span class="nav-label">Kirim Notifikasi</span>
+                </a>
+                <a href="/notifications" target="_blank" class="nav-item" onclick="closeRailFlyout();">
+                    <span class="nav-icon">🔔</span>
+                    <span class="nav-label">Pusat Notif App ↗</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Panel: Media & TV -->
+        <div class="rail-flyout-panel" data-group="media">
+            <div class="rail-flyout-head">
+                <h2>TV Streaming &amp; M3U</h2>
+                <div class="rail-flyout-rule"></div>
+            </div>
+            <div class="rail-flyout-grid cols-2">
+                <a href="/admin/tv" class="nav-item <?= ($activeMenu ?? '') === 'tv' ? 'active' : '' ?>" onclick="handleMenuClick(event, 'tv', '/admin/tv'); closeRailFlyout();">
+                    <span class="nav-icon">📺</span>
+                    <span class="nav-label">Kelola Channel TV</span>
+                </a>
+                <a href="/tv" target="_blank" class="nav-item" onclick="closeRailFlyout();">
+                    <span class="nav-icon">▶️</span>
+                    <span class="nav-label">Live TV Player ↗</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Panel: Pengguna -->
+        <div class="rail-flyout-panel" data-group="pengguna">
+            <div class="rail-flyout-head">
+                <h2>Kelola Pengguna</h2>
+                <div class="rail-flyout-rule"></div>
+            </div>
+            <div class="rail-flyout-grid cols-1">
+                <a href="/admin/users" class="nav-item <?= ($activeMenu ?? '') === 'users' ? 'active' : '' ?>" onclick="handleMenuClick(event, 'users', '/admin/users'); closeRailFlyout();">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-label">Daftar Pengguna</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Panel: Pintasan -->
+        <div class="rail-flyout-panel" data-group="pintasan">
+            <div class="rail-flyout-head">
+                <h2>Pintasan Layanan</h2>
+                <div class="rail-flyout-rule"></div>
+            </div>
+            <div class="rail-flyout-grid cols-2">
+                <a href="/" class="nav-item" onclick="closeRailFlyout();">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Aplikasi Utama</span>
+                </a>
+                <a href="/settings" target="_blank" class="nav-item" onclick="closeRailFlyout();">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Pengaturan App ↗</span>
+                </a>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Content -->
     <main class="admin-main">
@@ -690,7 +894,6 @@
             openTabs.push(tabId);
             saveOpenTabs(openTabs);
         }
-        // Let normal browser navigation take user to page smoothly
     }
 
     function handleTabPillClick(event, tabId, url) {
@@ -713,13 +916,87 @@
         }
     }
 
+    /* ── Vitafarma Exact Rail Flyout & Tooltip Logic ───────────────────────── */
     function toggleAdminSidebar() {
         const sidebar = document.getElementById('adminSidebar');
         if (sidebar) {
             sidebar.classList.toggle('collapsed');
             sidebar.classList.toggle('open');
         }
+        closeRailFlyout();
     }
+
+    function openRailFlyout(group) {
+        const panel = document.querySelector('.rail-flyout-panel[data-group="' + group + '"]');
+        if (!panel) return;
+        
+        const flyout = document.getElementById('rail-flyout');
+        const backdrop = document.getElementById('rail-flyout-backdrop');
+        const sidebar = document.getElementById('adminSidebar');
+        
+        const isCurrentlyOpen = panel.classList.contains('open') && flyout && flyout.classList.contains('open');
+        closeRailFlyout();
+
+        if (!isCurrentlyOpen && flyout) {
+            panel.classList.add('open');
+            if (sidebar) {
+                const rect = sidebar.getBoundingClientRect();
+                flyout.style.left = (rect.right > 0 ? rect.right : 78) + 'px';
+            } else {
+                flyout.style.left = '78px';
+            }
+            flyout.classList.add('open');
+            if (backdrop) backdrop.classList.add('open');
+            document.querySelectorAll('.rail-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.group === group);
+            });
+        }
+    }
+
+    function closeRailFlyout() {
+        document.querySelectorAll('.rail-flyout-panel').forEach(p => p.classList.remove('open'));
+        const flyout = document.getElementById('rail-flyout');
+        if (flyout) flyout.classList.remove('open');
+        const backdrop = document.getElementById('rail-flyout-backdrop');
+        if (backdrop) backdrop.classList.remove('open');
+        
+        const groupMapping = {
+            'dashboard': 'utama',
+            'notifications': 'notifikasi',
+            'tv': 'media',
+            'users': 'pengguna'
+        };
+        const activeGroup = groupMapping[currentTabId] || 'utama';
+        document.querySelectorAll('.rail-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.group === activeGroup);
+        });
+        hideRailTooltip();
+    }
+
+    function showRailTooltip(btn) {
+        const tip = document.getElementById('rail-tooltip');
+        if (!tip) return;
+        tip.textContent = btn.dataset.tip || '';
+        const r = btn.getBoundingClientRect();
+        tip.style.left = (r.right + 10) + 'px';
+        tip.style.top = (r.top + r.height / 2) + 'px';
+        tip.classList.add('show');
+    }
+
+    function hideRailTooltip() {
+        const tip = document.getElementById('rail-tooltip');
+        if (tip) tip.classList.remove('show');
+    }
+
+    document.addEventListener('mouseover', (e) => {
+        const btn = e.target.closest('.rail-btn');
+        if (btn) showRailTooltip(btn);
+        else hideRailTooltip();
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        if (e.target.closest('.rail-btn')) hideRailTooltip();
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
         renderTabStrip();

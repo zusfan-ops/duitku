@@ -15,6 +15,7 @@ import '../theme.dart';
 import '../utils/format.dart';
 import '../widgets/calculator_sheet.dart';
 import '../widgets/category_icon.dart';
+import '../widgets/nearby_services_card.dart';
 import '../widgets/transaction_tile.dart';
 import 'belanja/belanja_screen.dart';
 import 'bills_screen.dart';
@@ -243,6 +244,7 @@ class DashboardScreenState extends State<DashboardScreen> {
           if (data.budget > 0) _BudgetCard(data: data),
           if ((data.topCategories as List).isNotEmpty) _TopCategoriesCard(data: data),
           _QuickActions(data: data),
+          const NearbyServicesCard(),
           if (data.savingsTarget > 0) _SavingsCard(data: data),
           if ((data.monthNote ?? '').isNotEmpty) _NotePreview(data: data),
           if ((data.debtSummary.activeCount as int) > 0) _DebtSummaryCard(data: data),
