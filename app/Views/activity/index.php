@@ -76,16 +76,24 @@
                 <?= date('d F Y', strtotime($date)) ?>
             </div>
             <?php foreach ($txs as $tx): ?>
-            <div class="tx-item" data-id="<?= $tx['id'] ?>" data-tx='<?= json_encode($tx) ?>'>
-                <div class="tx-icon" style="background:<?= esc($tx['category_color'] ?? '#6B7280') ?>20;color:<?= esc($tx['category_color'] ?? '#6B7280') ?>">
+            <?php
+                $catColor = !empty($tx['category_color']) ? $tx['category_color'] : '#2563EB';
+                $hasNote = !empty(trim($tx['note'] ?? ''));
+                $title = $hasNote ? $tx['note'] : ($tx['category_name'] ?? 'Transaksi');
+            ?>
+            <div class="tx-item" style="--cat-color:<?= esc($catColor) ?>;" data-id="<?= $tx['id'] ?>" data-tx='<?= json_encode($tx) ?>'>
+                <div class="tx-icon">
                     <?= categoryIcon($tx['category_icon'] ?? 'other') ?>
                 </div>
                 <div class="tx-body">
-                    <div class="tx-name"><?= esc($tx['category_name'] ?? 'Tanpa Kategori') ?></div>
+                    <div class="tx-name">
+                        <span><?= esc($title) ?></span>
+                    </div>
                     <div class="tx-note">
-                        <?= esc($tx['note'] ?? '') ?>
+                        <span class="tx-badge"><?= esc($tx['category_name'] ?? 'Umum') ?></span>
+                        <span style="margin-left: 4px;"><?= esc($tx['wallet_name'] ?? 'Dompet') ?></span>
                         <?php if (!empty($tx['image'])): ?>
-                            <span title="Ada Foto" style="margin-left:4px; opacity:0.6">📷</span>
+                            <span title="Ada Foto" style="margin-left:4px; opacity:0.7">📷</span>
                         <?php endif; ?>
                     </div>
                 </div>
