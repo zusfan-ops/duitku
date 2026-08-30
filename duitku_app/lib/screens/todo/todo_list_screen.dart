@@ -415,23 +415,26 @@ class _TodoListScreenState extends State<TodoListScreen> {
             children: [
               // Checkbox button
               GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () => _toggleTask(task),
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  margin: const EdgeInsets.only(top: 2),
-                  decoration: BoxDecoration(
-                    color: isDone ? const Color(0xFF10B981) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDone ? const Color(0xFF10B981) : Colors.grey.shade400,
-                      width: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: isDone ? const Color(0xFF10B981) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDone ? const Color(0xFF10B981) : Colors.grey.shade400,
+                        width: 2,
+                      ),
                     ),
+                    child: isDone ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
                   ),
-                  child: isDone ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
 
               // Title and desc
               Expanded(
