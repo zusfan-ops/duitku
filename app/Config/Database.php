@@ -159,7 +159,7 @@ class Database extends Config
 
     /**
      * This database connection is used when running PHPUnit database tests.
-     *
+     * hh
      * @var array<string, mixed>
      */
     public array $tests = [
