@@ -74,6 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         body: IndexedStack(
           index: _index,
           children: [

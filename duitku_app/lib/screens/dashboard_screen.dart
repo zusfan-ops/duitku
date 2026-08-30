@@ -2162,8 +2162,7 @@ class _TodoHomeCardState extends State<_TodoHomeCard> {
   }
 
   Future<void> _openTodo() async {
-    await Navigator.push(
-      context,
+    await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(builder: (_) => const TodoListScreen()),
     );
     _load();

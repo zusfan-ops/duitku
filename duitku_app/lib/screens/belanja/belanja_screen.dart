@@ -235,6 +235,7 @@ class _BelanjaScreenState extends State<BelanjaScreen> {
 
     final saved = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(

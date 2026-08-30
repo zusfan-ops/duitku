@@ -133,6 +133,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
   void _openFormSheet([TodoItem? task]) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => TodoFormSheet(
