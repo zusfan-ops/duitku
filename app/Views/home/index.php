@@ -2956,6 +2956,15 @@ try {
                 fillOpacity: 0.12,
                 weight: 1.5
             }).addTo(nearbyMap);
+
+            // Trigger size calculation to ensure full-width tile rendering
+            setTimeout(() => { if (nearbyMap) nearbyMap.invalidateSize(true); }, 50);
+            setTimeout(() => { if (nearbyMap) nearbyMap.invalidateSize(true); }, 250);
+            setTimeout(() => { if (nearbyMap) nearbyMap.invalidateSize(true); }, 600);
+
+            window.addEventListener('resize', () => {
+                if (nearbyMap) nearbyMap.invalidateSize(true);
+            });
         }
     }
 
@@ -2969,6 +2978,7 @@ try {
                 radiusCircle.setLatLng([lat, lng]);
                 radiusCircle.setRadius(currentRadius);
             }
+            setTimeout(() => { if (nearbyMap) nearbyMap.invalidateSize(true); }, 50);
         }
     }
 
@@ -3174,10 +3184,14 @@ try {
     // Bind Event Listeners
     document.addEventListener('DOMContentLoaded', () => {
         // Initialize Map
+        initMap();
+        acquireGeolocation();
         setTimeout(() => {
-            initMap();
-            acquireGeolocation();
-        }, 300);
+            if (nearbyMap) nearbyMap.invalidateSize(true);
+        }, 150);
+        setTimeout(() => {
+            if (nearbyMap) nearbyMap.invalidateSize(true);
+        }, 450);
 
         // Accordion Toggle Header
         document.getElementById('nearbyAccordionHdr')?.addEventListener('click', () => {

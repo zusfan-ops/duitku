@@ -73,9 +73,19 @@ body {
 
 a { text-decoration: none; color: inherit; }
 button { cursor: pointer; border: none; background: none; font-family: var(--font); }
-input, select, textarea { font-family: var(--font); }
-img, svg, video, canvas, audio, iframe, embed, object { max-width: 100%; display: block; }
+img:not(.leaflet-tile):not(.leaflet-marker-icon), svg, video, canvas, audio, iframe, embed, object { max-width: 100%; display: block; }
 table { max-width: 100%; }
+
+/* Leaflet Maps Full Dimension & Tile Reset */
+.leaflet-container img,
+.leaflet-tile {
+    max-width: none !important;
+    max-height: none !important;
+}
+.leaflet-container {
+    width: 100% !important;
+    height: 100% !important;
+}
 
 /* ─── APP SHELL ──────────────────────────────────────────────────────────── */
 #app {
