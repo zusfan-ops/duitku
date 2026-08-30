@@ -4,6 +4,8 @@
 <style>
 .features-page {
     padding: 12px 16px 110px;
+    max-width: 760px;
+    margin: 0 auto;
 }
 
 .features-section-title {
@@ -140,6 +142,18 @@
     background: linear-gradient(135deg, #7C3AED 0%, #A855F7 100%);
     box-shadow: 0 6px 18px rgba(168, 85, 247, 0.25);
 }
+.feat-zakat {
+    background: linear-gradient(135deg, #059669 0%, #34D399 100%);
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.25);
+}
+.feat-arcade {
+    background: linear-gradient(135deg, #EC4899 0%, #F43F5E 100%);
+    box-shadow: 0 6px 18px rgba(236, 72, 153, 0.25);
+}
+.feat-notif {
+    background: linear-gradient(135deg, #2563EB 0%, #60A5FA 100%);
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+}
 .feat-debt {
     background: linear-gradient(135deg, #B45309 0%, #F59E0B 100%);
     box-shadow: 0 6px 18px rgba(245, 158, 11, 0.25);
@@ -174,8 +188,8 @@
 <?= $this->section('content') ?>
 <div class="features-page">
 
-    <!-- Header Section -->
-    <div class="features-section-title">MANAJEMEN KEUANGAN</div>
+    <!-- ── 1. MANAJEMEN KEUANGAN & PERPAJAKAN ── -->
+    <div class="features-section-title">MANAJEMEN KEUANGAN & PERPAJAKAN</div>
     <div class="features-grid">
         
         <!-- 1. Statistik & Analisis -->
@@ -194,7 +208,30 @@
             </div>
         </a>
 
-        <!-- 2. Daftar Tagihan -->
+        <!-- 2. Kalkulator Zakat & Pajak -->
+        <a href="/zakat-pajak" class="feature-card feat-zakat">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                <line x1="8" y1="6" x2="16" y2="6"></line>
+                <line x1="16" y1="14" x2="16" y2="18"></line>
+                <path d="M16 10h.01"></path>
+                <path d="M12 10h.01"></path>
+                <path d="M8 10h.01"></path>
+                <path d="M12 14h.01"></path>
+                <path d="M8 14h.01"></path>
+                <path d="M12 18h.01"></path>
+                <path d="M8 18h.01"></path>
+            </svg>
+            <div class="feature-card-icon">
+                <span style="font-size: 16px;">🧮</span>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Zakat & Pajak</div>
+                <div class="feature-card-desc">Zakat Mal, PPh & PPN</div>
+            </div>
+        </a>
+
+        <!-- 3. Daftar Tagihan -->
         <a href="/bills" class="feature-card feat-bills">
             <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/>
@@ -212,7 +249,7 @@
             </div>
         </a>
 
-        <!-- 3. Hutang & Piutang -->
+        <!-- 4. Hutang & Piutang -->
         <a href="/hutang" class="feature-card feat-debt">
             <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M19 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z"/>
@@ -230,7 +267,7 @@
             </div>
         </a>
 
-        <!-- 4. Kelola Rekening -->
+        <!-- 5. Kelola Rekening -->
         <a href="/wallets" class="feature-card feat-wallets">
             <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/>
@@ -246,7 +283,7 @@
             </div>
         </a>
 
-        <!-- 5. Smart Scan Struk / Nota (OCR) -->
+        <!-- 6. Smart Scan Struk / Nota (OCR) -->
         <a href="/scan" class="feature-card feat-ocr">
             <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -264,13 +301,61 @@
             </div>
         </a>
 
+        <!-- 7. Pemberitahuan & Notifikasi -->
+        <a href="/notifications" class="feature-card feat-notif" style="grid-column: span 2;">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <div class="feature-card-icon">
+                <span style="font-size: 16px;">📢</span>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Pemberitahuan & Pengumuman</div>
+                <div class="feature-card-desc">Informasi promo, update sistem & pengumuman penting</div>
+            </div>
+        </a>
+
     </div>
 
-    <!-- Lifestyle & Plans Section -->
-    <div class="features-section-title">GAYA HIDUP & BELANJA</div>
+    <!-- ── 2. HIBURAN & GAYA HIDUP ── -->
+    <div class="features-section-title">HIBURAN & GAYA HIDUP</div>
     <div class="features-grid">
 
-        <!-- 5. Daftar Belanja -->
+        <!-- 1. TV & Live Streaming -->
+        <a href="/tv" class="feature-card feat-tv">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                <polyline points="17 2 12 7 7 2"></polyline>
+            </svg>
+            <div class="feature-card-icon">
+                <span style="font-size: 16px;">📺</span>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">TV & Streaming</div>
+                <div class="feature-card-desc">Siaran live TV nasional</div>
+            </div>
+        </a>
+
+        <!-- 2. DuitKu Arcade Games -->
+        <a href="/arcade" class="feature-card feat-arcade">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                <line x1="6" y1="12" x2="10" y2="12"></line>
+                <line x1="8" y1="10" x2="8" y2="14"></line>
+                <circle cx="15" cy="11" r="1"></circle>
+                <circle cx="17" cy="13" r="1"></circle>
+            </svg>
+            <div class="feature-card-icon">
+                <span style="font-size: 16px;">🎮</span>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">DuitKu Arcade</div>
+                <div class="feature-card-desc">Tetris, 2048 & Coin Catcher</div>
+            </div>
+        </a>
+
+        <!-- 3. Daftar Belanja -->
         <a href="/belanja" class="feature-card feat-belanja">
             <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <circle cx="9" cy="21" r="1"></circle>
@@ -290,7 +375,7 @@
             </div>
         </a>
 
-        <!-- 6. Traveling & Trip -->
+        <!-- 4. Traveling & Trip -->
         <a href="/traveling" class="feature-card feat-travel">
             <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>
@@ -306,7 +391,7 @@
             </div>
         </a>
 
-        <!-- 7. Stok Barang -->
+        <!-- 5. Stok Barang -->
         <a href="/barang" class="feature-card feat-barang">
             <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -326,7 +411,7 @@
             </div>
         </a>
 
-        <!-- 8. Kendaraan & Servis -->
+        <!-- 6. Kendaraan & Servis -->
         <a href="/kendaraan" class="feature-card feat-vehicle">
             <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
@@ -344,27 +429,9 @@
             </div>
         </a>
 
-        <!-- 9. TV & Live Streaming -->
-        <a href="/tv" class="feature-card feat-tv">
-            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
-                <polyline points="17 2 12 7 7 2"></polyline>
-            </svg>
-            <div class="feature-card-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
-                    <polyline points="17 2 12 7 7 2"></polyline>
-                </svg>
-            </div>
-            <div class="feature-card-info">
-                <div class="feature-card-title">TV & Streaming</div>
-                <div class="feature-card-desc">Siaran live TV nasional</div>
-            </div>
-        </a>
     </div>
 
-    <!-- ── BISNIS & USAHA (KASIR UMKM) ── -->
-    <!-- ── BISNIS & USAHA (KASIR UMKM) ── -->
+    <!-- ── 3. BISNIS & USAHA (KASIR UMKM) ── -->
     <div class="features-section-title">Bisnis & Usaha (Kasir POS)</div>
     <div class="features-grid">
         <!-- 1. Live Pesanan Masuk -->
@@ -507,9 +574,10 @@
         </a>
     </div>
 
-    <div class="features-grid">
-        <!-- 9. Semua Mutasi -->
-        <a href="/activity" class="feature-card feat-activity">
+    <!-- ── 4. RIWAYAT DATA ── -->
+    <div class="features-grid" style="margin-top: 14px;">
+        <!-- Semua Mutasi -->
+        <a href="/activity" class="feature-card feat-activity" style="grid-column: span 2;">
             <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
             </svg>
@@ -519,11 +587,10 @@
                 </svg>
             </div>
             <div class="feature-card-info">
-                <div class="feature-card-title">Semua Mutasi</div>
-                <div class="feature-card-desc">Riwayat & pencarian data</div>
+                <div class="feature-card-title">Semua Mutasi Transaksi</div>
+                <div class="feature-card-desc">Riwayat pencatatan lengkap & pencarian data</div>
             </div>
         </a>
-
     </div>
 
 </div>

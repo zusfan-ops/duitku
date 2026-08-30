@@ -191,6 +191,25 @@
                                     'action_url' => '/kendaraan/' . $t['vehicle_id'],
                                 ];
                             }
+
+                            // Broadcast App Notifications
+                            $nm = new \App\Models\NotificationModel();
+                            $unreadBroadcasts = $nm->getForUser($userId, 5);
+                            foreach ($unreadBroadcasts as $ub) {
+                                if (empty($ub['is_read'])) {
+                                    $_layoutNotifs[] = [
+                                        'id' => 'notif_' . $ub['id'],
+                                        'type' => 'broadcast',
+                                        'title' => $ub['title'] ?? 'Pengumuman',
+                                        'subtitle' => mb_strimwidth($ub['message'] ?? '', 0, 50, '...'),
+                                        'amount' => 0,
+                                        'days_left' => -99, // prioritas atas
+                                        'icon' => '📢',
+                                        'action_url' => '/notifications',
+                                    ];
+                                }
+                            }
+
                             usort($_layoutNotifs, fn($a, $b) => $a['days_left'] <=> $b['days_left']);
                         } catch (\Throwable $e) {
                             $_layoutNotifs = [];
@@ -234,6 +253,9 @@
                 <?php if (in_array(strtolower((string)session()->get('user_role')), ['administrator', 'admin'])): ?>
                     <a href="/admin" class="user-menu-item" style="color: #10B981; font-weight: 700;">🛡️ Admin Panel</a>
                 <?php endif; ?>
+                <a href="/notifications" class="user-menu-item">📢 Pemberitahuan</a>
+                <a href="/zakat-pajak" class="user-menu-item">🧮 Zakat & Pajak</a>
+                <a href="/arcade" class="user-menu-item">🎮 DuitKu Arcade</a>
                 <a href="/tv" class="user-menu-item">📺 TV Streaming</a>
                 <a href="/settings" class="user-menu-item">⚙️ Pengaturan</a>
                 <a href="/logout" class="user-menu-item logout">🚪 Keluar</a>
@@ -265,7 +287,13 @@
             str_starts_with($currentPath, '/wallets') ||
             str_starts_with($currentPath, '/belanja') ||
             str_starts_with($currentPath, '/traveling') ||
-            str_starts_with($currentPath, '/barang')
+            str_starts_with($currentPath, '/barang') ||
+            str_starts_with($currentPath, '/kendaraan') ||
+            str_starts_with($currentPath, '/zakat-pajak') ||
+            str_starts_with($currentPath, '/arcade') ||
+            str_starts_with($currentPath, '/notifications') ||
+            str_starts_with($currentPath, '/tv') ||
+            str_starts_with($currentPath, '/pos')
         );
         $isSettings  = str_starts_with($currentPath, '/settings');
     ?>

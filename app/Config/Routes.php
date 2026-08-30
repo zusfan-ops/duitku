@@ -168,6 +168,21 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // TV & Live Streaming Web Player
     $routes->get('/tv',                         'TvController::index');
+
+    // Kalkulator Zakat & Pajak
+    $routes->get('/zakat-pajak',                'ZakatPajakController::index');
+    $routes->get('/pajak-zakat',                'ZakatPajakController::index');
+
+    // DuitKu Arcade Mini-Games Hub
+    $routes->get('/arcade',                     'ArcadeController::index');
+    $routes->get('/games',                      'ArcadeController::index');
+
+    // Pusat Notifikasi & Pesan
+    $routes->get('/notifications',              'NotificationController::index');
+    $routes->get('/notifications/read/(:num)',  'NotificationController::markAsRead/$1');
+    $routes->post('/notifications/read/(:num)', 'NotificationController::markAsRead/$1');
+    $routes->get('/notifications/read-all',     'NotificationController::markAllAsRead');
+    $routes->post('/notifications/read-all',    'NotificationController::markAllAsRead');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
