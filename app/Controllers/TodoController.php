@@ -238,7 +238,7 @@ class TodoController extends BaseController
     // ── REST API Endpoints for Flutter Native App ─────────────────────────────
     public function apiList()
     {
-        $userId = session()->get('user_id') ?: $this->request->getGet('user_id');
+        $userId = \App\Libraries\ApiAuth::id() ?: session()->get('user_id') ?: (int)$this->request->getGet('user_id');
         if (!$userId) {
             return $this->response->setStatusCode(401)->setJSON(['success' => false, 'message' => 'Unauthorized']);
         }
@@ -263,16 +263,17 @@ class TodoController extends BaseController
 
     public function apiStore()
     {
-        $userId = session()->get('user_id') ?: $this->request->getPost('user_id');
+        $userId = \App\Libraries\ApiAuth::id() ?: session()->get('user_id') ?: (int)$this->request->getPost('user_id');
         if (!$userId) {
             $json = $this->request->getJSON(true);
-            $userId = $json['user_id'] ?? null;
+            $userId = (int)($json['user_id'] ?? 0);
         }
         if (!$userId) {
             return $this->response->setStatusCode(401)->setJSON(['success' => false, 'message' => 'Unauthorized']);
         }
 
         $input = $this->request->getJSON(true) ?: $this->request->getPost();
+        $id    = (int)($input['id'] ?? 0);
         $title = trim($input['title'] ?? '');
 
         if (empty($title)) {
@@ -291,6 +292,20 @@ class TodoController extends BaseController
             'subtasks'     => isset($input['subtasks']) ? (is_array($input['subtasks']) ? json_encode($input['subtasks']) : $input['subtasks']) : null,
         ];
 
+        if ($id > 0) {
+            $existing = $this->todoModel->where('id', $id)->where('user_id', (int)$userId)->first();
+            if ($existing) {
+                unset($data['is_completed']);
+                $this->todoModel->update($id, $data);
+                $task = $this->todoModel->find($id);
+                return $this->response->setJSON([
+                    'success' => true,
+                    'data'    => $task,
+                    'message' => 'Tugas berhasil diperbarui!',
+                ]);
+            }
+        }
+
         $id = $this->todoModel->insert($data);
         $task = $this->todoModel->find($id);
 
@@ -303,13 +318,16 @@ class TodoController extends BaseController
 
     public function apiToggle($id)
     {
-        $userId = session()->get('user_id') ?: $this->request->getGet('user_id');
+        $userId = \App\Libraries\ApiAuth::id() ?: session()->get('user_id') ?: (int)$this->request->getGet('user_id');
         if (!$userId) {
             $json = $this->request->getJSON(true);
-            $userId = $json['user_id'] ?? null;
+            $userId = (int)($json['user_id'] ?? 0);
+        }
+        if (!$userId) {
+            return $this->response->setStatusCode(401)->setJSON(['success' => false, 'message' => 'Unauthorized']);
         }
 
-        $task = $this->todoModel->find($id);
+        $task = $this->todoModel->where('id', $id)->where('user_id', (int)$userId)->first();
         if (!$task) {
             return $this->response->setJSON(['success' => false, 'message' => 'Tugas tidak ditemukan.']);
         }
@@ -329,7 +347,16 @@ class TodoController extends BaseController
 
     public function apiDelete($id)
     {
-        $task = $this->todoModel->find($id);
+        $userId = \App\Libraries\ApiAuth::id() ?: session()->get('user_id') ?: (int)$this->request->getGet('user_id');
+        if (!$userId) {
+            $json = $this->request->getJSON(true);
+            $userId = (int)($json['user_id'] ?? 0);
+        }
+        if (!$userId) {
+            return $this->response->setStatusCode(401)->setJSON(['success' => false, 'message' => 'Unauthorized']);
+        }
+
+        $task = $this->todoModel->where('id', $id)->where('user_id', (int)$userId)->first();
         if (!$task) {
             return $this->response->setJSON(['success' => false, 'message' => 'Tugas tidak ditemukan.']);
         }
