@@ -70,16 +70,9 @@
         }
     ?>
     <?php
-    $softPalettes = [
-        ['bg' => '#F0F9FF', 'border' => '#BAE6FD', 'accent' => '#0284C7', 'icon_bg' => '#E0F2FE'],
-        ['bg' => '#FAF5FF', 'border' => '#E9D5FF', 'accent' => '#7C3AED', 'icon_bg' => '#F3E8FF'],
-        ['bg' => '#FFF7ED', 'border' => '#FFEDD5', 'accent' => '#EA580C', 'icon_bg' => '#FFEDD5'],
-        ['bg' => '#F0FDFA', 'border' => '#99F6E4', 'accent' => '#0D9488', 'icon_bg' => '#CCFBF1'],
-        ['bg' => '#FFF1F2', 'border' => '#FECDD3', 'accent' => '#E11D48', 'icon_bg' => '#FFE4E6'],
-        ['bg' => '#EEF2FF', 'border' => '#C7D2FE', 'accent' => '#4F46E5', 'icon_bg' => '#E0E7FF'],
-        ['bg' => '#F7FEE7', 'border' => '#D9F99D', 'accent' => '#65A30D', 'icon_bg' => '#ECFCCB'],
-    ];
     $incomePal = ['bg' => '#F0FDF4', 'border' => '#BBF7D0', 'accent' => '#16A34A', 'icon_bg' => '#DCFCE7'];
+    $expensePal = ['bg' => '#FEF2F2', 'border' => '#FECDD3', 'accent' => '#DC2626', 'icon_bg' => '#FEE2E2'];
+    $recurringPal = ['bg' => '#FEFCE8', 'border' => '#FDE68A', 'accent' => '#D97706', 'icon_bg' => '#FEF3C7'];
     ?>
     <div class="tx-list" id="activityList">
         <?php foreach ($grouped as $date => $txs): ?>
@@ -90,20 +83,33 @@
             <?php foreach ($txs as $tx): ?>
             <?php
                 $isIncome = ($tx['type'] ?? '') === 'income';
-                $pal = $isIncome ? $incomePal : $softPalettes[abs((int)($tx['id'] ?? 0)) % count($softPalettes)];
-                $hasNote = !empty(trim($tx['note'] ?? ''));
-                $title = $hasNote ? $tx['note'] : ($tx['category_name'] ?? 'Transaksi');
+                $noteStr = $tx['note'] ?? '';
+                $isRecurring = !empty($tx['is_recurring']) || !empty($tx['recurring_id']) ||
+                    stripos($noteStr, '(otomatis)') !== false ||
+                    stripos($noteStr, 'pembayaran rutin') !== false ||
+                    stripos($noteStr, '(berulang)') !== false ||
+                    stripos($noteStr, 'rutin') !== false;
+
+                if ($isRecurring) {
+                    $pal = $recurringPal;
+                } elseif ($isIncome) {
+                    $pal = $incomePal;
+                } else {
+                    $pal = $expensePal;
+                }
+                $hasNote = !empty(trim($noteStr));
+                $title = $hasNote ? $noteStr : ($tx['category_name'] ?? 'Transaksi');
             ?>
             <div class="tx-item" style="--tx-bg:<?= $pal['bg'] ?>;--tx-border:<?= $pal['border'] ?>;--tx-accent:<?= $pal['accent'] ?>;--tx-icon-bg:<?= $pal['icon_bg'] ?>;" data-id="<?= $tx['id'] ?>" data-tx='<?= json_encode($tx) ?>'>
                 <div class="tx-icon">
-                    <?= categoryIcon($tx['category_icon'] ?? 'other') ?>
+                    <?= $isRecurring ? '🔄' : categoryIcon($tx['category_icon'] ?? ($isIncome ? 'income' : 'other')) ?>
                 </div>
                 <div class="tx-body">
                     <div class="tx-name">
                         <span><?= esc($title) ?></span>
                     </div>
                     <div class="tx-note">
-                        <span class="tx-badge"><?= esc($tx['category_name'] ?? 'Umum') ?></span>
+                        <span class="tx-badge"><?= $isRecurring ? 'Berulang' : esc($tx['category_name'] ?? ($isIncome ? 'Pemasukan' : 'Pengeluaran')) ?></span>
                         <span style="margin-left: 4px;"><?= esc($tx['wallet_name'] ?? 'Dompet') ?></span>
                         <?php if (!empty($tx['image'])): ?>
                             <span title="Ada Foto" style="margin-left:4px; opacity:0.7">📷</span>
@@ -111,7 +117,7 @@
                     </div>
                 </div>
                 <div class="tx-right">
-                    <div class="tx-amount <?= $isIncome ? 'income' : 'expense' ?>">
+                    <div class="tx-amount" style="color:<?= $pal['accent'] ?>;">
                         <?= $isIncome ? '+' : '-' ?> <?= esc($symbol) ?> <?= number_format($tx['amount'], 0, ',', '.') ?>
                     </div>
                     <div class="tx-actions">

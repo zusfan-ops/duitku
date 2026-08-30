@@ -4,13 +4,13 @@ import '../models/transaction.dart';
 import '../utils/format.dart';
 import 'category_icon.dart';
 
-class _SoftPalette {
+class _CardTheme {
   final Color bg;
   final Color border;
   final Color accent;
   final Color iconBg;
 
-  const _SoftPalette({
+  const _CardTheme({
     required this.bg,
     required this.border,
     required this.accent,
@@ -18,56 +18,28 @@ class _SoftPalette {
   });
 }
 
-const List<_SoftPalette> _curatedPalettes = [
-  _SoftPalette(
-    bg: Color(0xFFF0F9FF), // Sky blue soft
-    border: Color(0xFFBAE6FD),
-    accent: Color(0xFF0284C7),
-    iconBg: Color(0xFFE0F2FE),
-  ),
-  _SoftPalette(
-    bg: Color(0xFFFAF5FF), // Purple soft
-    border: Color(0xFFE9D5FF),
-    accent: Color(0xFF7C3AED),
-    iconBg: Color(0xFFF3E8FF),
-  ),
-  _SoftPalette(
-    bg: Color(0xFFFFF7ED), // Orange/Amber soft
-    border: Color(0xFFFFEDD5),
-    accent: Color(0xFFEA580C),
-    iconBg: Color(0xFFFFEDD5),
-  ),
-  _SoftPalette(
-    bg: Color(0xFFF0FDFA), // Teal soft
-    border: Color(0xFF99F6E4),
-    accent: Color(0xFF0D9488),
-    iconBg: Color(0xFFCCFBF1),
-  ),
-  _SoftPalette(
-    bg: Color(0xFFFFF1F2), // Rose soft
-    border: Color(0xFFFECDD3),
-    accent: Color(0xFFE11D48),
-    iconBg: Color(0xFFFFE4E6),
-  ),
-  _SoftPalette(
-    bg: Color(0xFFEEF2FF), // Indigo soft
-    border: Color(0xFFC7D2FE),
-    accent: Color(0xFF4F46E5),
-    iconBg: Color(0xFFE0E7FF),
-  ),
-  _SoftPalette(
-    bg: Color(0xFFF7FEE7), // Lime soft
-    border: Color(0xFFD9F99D),
-    accent: Color(0xFF65A30D),
-    iconBg: Color(0xFFECFCCB),
-  ),
-];
-
-const _incomePalette = _SoftPalette(
-  bg: Color(0xFFF0FDF4), // Emerald soft
+// 1. Pemasukan -> Hijau (Green)
+const _incomeTheme = _CardTheme(
+  bg: Color(0xFFF0FDF4),
   border: Color(0xFFBBF7D0),
   accent: Color(0xFF16A34A),
   iconBg: Color(0xFFDCFCE7),
+);
+
+// 2. Pengeluaran -> Merah (Red)
+const _expenseTheme = _CardTheme(
+  bg: Color(0xFFFEF2F2),
+  border: Color(0xFFFECDD3),
+  accent: Color(0xFFDC2626),
+  iconBg: Color(0xFFFEE2E2),
+);
+
+// 3. Transaksi Berulang -> Kuning (Yellow / Amber)
+const _recurringTheme = _CardTheme(
+  bg: Color(0xFFFEFCE8),
+  border: Color(0xFFFDE68A),
+  accent: Color(0xFFD97706),
+  iconBg: Color(0xFFFEF3C7),
 );
 
 class TransactionTile extends StatelessWidget {
@@ -82,35 +54,37 @@ class TransactionTile extends StatelessWidget {
     this.onTap,
   });
 
-  _SoftPalette _resolvePalette() {
-    if (tx.type == 'income') {
-      return _incomePalette;
+  _CardTheme _resolveTheme() {
+    if (tx.isRecurring) {
+      return _recurringTheme;
     }
-    final palIndex = tx.id.hashCode.abs() % _curatedPalettes.length;
-    return _curatedPalettes[palIndex];
+    if (tx.type == 'income') {
+      return _incomeTheme;
+    }
+    return _expenseTheme;
   }
 
   @override
   Widget build(BuildContext context) {
-    final palette = _resolvePalette();
+    final theme = _resolveTheme();
     final isIncome = tx.type == 'income';
     final hasNote = (tx.note ?? '').trim().isNotEmpty;
     final primaryTitle = hasNote ? tx.note! : (tx.categoryName ?? 'Transaksi');
-    final categoryName = tx.categoryName ?? 'Umum';
+    final categoryName = tx.categoryName ?? (isIncome ? 'Pemasukan' : 'Pengeluaran');
     final walletName = tx.walletName ?? 'Dompet';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 9),
       decoration: BoxDecoration(
-        color: palette.bg,
+        color: theme.bg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: palette.border,
+          color: theme.border,
           width: 1.2,
         ),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0A000000),
+            color: Color(0x08000000),
             blurRadius: 4,
             offset: Offset(0, 2),
           ),
@@ -121,8 +95,8 @@ class TransactionTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
-          splashColor: palette.accent.withValues(alpha: 0.1),
-          highlightColor: palette.accent.withValues(alpha: 0.05),
+          splashColor: theme.accent.withValues(alpha: 0.1),
+          highlightColor: theme.accent.withValues(alpha: 0.05),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
@@ -132,17 +106,19 @@ class TransactionTile extends StatelessWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: palette.iconBg,
+                    color: theme.iconBg,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: palette.border,
+                      color: theme.border,
                       width: 1,
                     ),
                   ),
                   child: Center(
                     child: Icon(
-                      categoryIcon(tx.categoryIcon ?? 'other'),
-                      color: palette.accent,
+                      tx.isRecurring
+                          ? Icons.sync_rounded
+                          : categoryIcon(tx.categoryIcon ?? (isIncome ? 'income' : 'other')),
+                      color: theme.accent,
                       size: 21,
                     ),
                   ),
@@ -174,21 +150,21 @@ class TransactionTile extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                               decoration: BoxDecoration(
-                                color: palette.iconBg,
+                                color: theme.iconBg,
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(
-                                  color: palette.border,
+                                  color: theme.border,
                                   width: 0.8,
                                 ),
                               ),
                               child: Text(
-                                categoryName,
+                                tx.isRecurring ? 'Berulang' : categoryName,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w800,
-                                  color: palette.accent,
+                                  color: theme.accent,
                                   letterSpacing: -0.1,
                                 ),
                               ),
@@ -224,7 +200,7 @@ class TransactionTile extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w900,
-                        color: isIncome ? const Color(0xFF16A34A) : const Color(0xFF0F172A),
+                        color: theme.accent,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -234,14 +210,14 @@ class TransactionTile extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: palette.border),
+                        border: Border.all(color: theme.border),
                       ),
                       child: Text(
                         Fmt.dateDay(tx.date),
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
-                          color: palette.accent,
+                          color: theme.accent,
                         ),
                       ),
                     ),

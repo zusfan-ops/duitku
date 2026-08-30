@@ -11,6 +11,7 @@ class Transaction {
   final String? categoryIcon;
   final String? categoryColor;
   final String? walletName;
+  final bool isRecurring;
 
   Transaction({
     required this.id,
@@ -25,9 +26,20 @@ class Transaction {
     this.categoryIcon,
     this.categoryColor,
     this.walletName,
+    this.isRecurring = false,
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
+    final noteStr = json['note']?.toString() ?? '';
+    final isRec = json['is_recurring'] == 1 ||
+        json['is_recurring'] == true ||
+        json['is_recurring'] == '1' ||
+        json['recurring_id'] != null ||
+        noteStr.toLowerCase().contains('(otomatis)') ||
+        noteStr.toLowerCase().contains('pembayaran rutin') ||
+        noteStr.toLowerCase().contains('(berulang)') ||
+        noteStr.toLowerCase().contains('rutin');
+
     return Transaction(
       id: json['id'] is int ? json['id'] as int : int.tryParse('${json['id']}') ?? 0,
       walletId: json['wallet_id'] == null ? null : int.tryParse('${json['wallet_id']}'),
@@ -41,6 +53,7 @@ class Transaction {
       categoryIcon: json['category_icon']?.toString(),
       categoryColor: json['category_color']?.toString(),
       walletName: json['wallet_name']?.toString(),
+      isRecurring: isRec,
     );
   }
 }
