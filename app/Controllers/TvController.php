@@ -43,4 +43,46 @@ class TvController extends BaseController
 
         return view('tv/index', $data);
     }
+
+    public function chats()
+    {
+        $chatModel = new \App\Models\TvChatModel();
+        $afterId   = (int) ($this->request->getGet('after_id') ?? 0);
+        $messages  = $chatModel->getRecentChats(50, $afterId);
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data'   => $messages,
+        ]);
+    }
+
+    public function sendChat()
+    {
+        $userId   = session()->get('user_id');
+        $userName = session()->get('user_name') ?? 'Pengguna';
+        if (!$userId) {
+            return $this->response->setStatusCode(401)->setJSON([
+                'status'  => 'error',
+                'message' => 'Silakan login terlebih dahulu.',
+            ]);
+        }
+
+        $json    = $this->request->getJSON(true);
+        $message = $json['message'] ?? $this->request->getPost('message') ?? '';
+
+        try {
+            $chatModel = new \App\Models\TvChatModel();
+            $chat = $chatModel->postMessage((int)$userId, (string)$userName, (string)$message);
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'data'   => $chat,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status'  => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
 }

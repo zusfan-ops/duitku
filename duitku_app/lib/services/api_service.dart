@@ -804,6 +804,16 @@ class ApiService {
     return get('tv/channels/$id');
   }
 
+  Future<Map<String, dynamic>> getTvChats({int? afterId}) async {
+    final query = <String, String>{};
+    if (afterId != null && afterId > 0) query['after_id'] = '$afterId';
+    return get('tv/chats', query: query.isNotEmpty ? query : null);
+  }
+
+  Future<Map<String, dynamic>> sendTvChat(String message) async {
+    return post('tv/chats', {'message': message});
+  }
+
   // ── Upload helpers ───────────────────────────────────────────
   Future<String?> base64FromFile(String path) async {
     final file = File(path);

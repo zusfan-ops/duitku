@@ -6,6 +6,7 @@ import 'package:video_player/video_player.dart';
 import '../../models/tv_channel.dart';
 import '../../services/api_service.dart';
 import '../../theme.dart';
+import 'tv_chat_sheet.dart';
 
 class TvStreamingScreen extends StatefulWidget {
   const TvStreamingScreen({super.key});
@@ -15,6 +16,7 @@ class TvStreamingScreen extends StatefulWidget {
 }
 
 class _TvStreamingScreenState extends State<TvStreamingScreen> {
+  final ScrollController _scrollController = ScrollController();
   List<TvChannel> _channels = [];
   List<String> _categories = ['Semua'];
   String _selectedCategory = 'Semua';
@@ -30,16 +32,60 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
   bool _isMuted = false;
   bool _showControls = true;
 
+  // Auto PiP on Scroll state
+  bool _isPipMode = false;
+  bool _isPipDismissed = false;
+
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _loadChannels();
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _videoController?.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_isPipDismissed || _videoController == null || !_videoController!.value.isInitialized) {
+      return;
+    }
+
+    final offset = _scrollController.offset;
+    // When the top inline player is scrolled off screen
+    if (offset > 240 && !_isPipMode) {
+      setState(() {
+        _isPipMode = true;
+      });
+    } else if (offset <= 160 && _isPipMode) {
+      setState(() {
+        _isPipMode = false;
+      });
+    }
+  }
+
+  void _restoreFromPip() {
+    setState(() {
+      _isPipDismissed = false;
+      _isPipMode = false;
+    });
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _dismissPip() {
+    setState(() {
+      _isPipDismissed = true;
+      _isPipMode = false;
+    });
   }
 
   Future<void> _loadChannels() async {
@@ -109,6 +155,7 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
       _isInitializingVideo = true;
       _hasVideoError = false;
       _videoErrorMessage = null;
+      _isPipDismissed = false;
     });
 
     try {
@@ -208,6 +255,28 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
           ),
         ],
       ),
+      // ── Floating Action Button: TV Live Chat (Exclusive to TV screen) ──
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => TvChatSheet.show(context),
+        backgroundColor: const Color(0xFF10B981),
+        elevation: 6,
+        icon: const Icon(Icons.forum_rounded, color: Colors.white, size: 20),
+        label: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Live Chat TV',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+              ),
+            ),
+            SizedBox(width: 6),
+            Icon(Icons.circle, color: Colors.white, size: 7),
+          ],
+        ),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -244,142 +313,329 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
                         ],
                       ),
                     )
-                  : ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
+                  : Stack(
                       children: [
-                        // In-App Live Video Player Box
-                        _buildVideoPlayerSection(),
-
-                        const SizedBox(height: 20),
-
-                        // Search box
-                        TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Cari saluran TV atau kategori...',
-                            prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                            filled: true,
-                            fillColor: AppColors.card,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: AppColors.border),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(color: AppColors.border),
-                            ),
-                          ),
-                          onChanged: (val) {
-                            setState(() {
-                              _searchQuery = val.trim();
-                            });
-                          },
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // Category chips
-                        SizedBox(
-                          height: 38,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _categories.length,
-                            separatorBuilder: (_, _) => const SizedBox(width: 8),
-                            itemBuilder: (context, idx) {
-                              final cat = _categories[idx];
-                              final isSelected = cat == _selectedCategory;
-                              return ChoiceChip(
-                                label: Text(cat),
-                                selected: isSelected,
-                                selectedColor: AppColors.primary,
-                                labelStyle: TextStyle(
-                                  color: isSelected ? Colors.white : AppColors.textPrimary,
-                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                  fontSize: 12.5,
-                                ),
-                                backgroundColor: AppColors.card,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                  side: BorderSide(
-                                    color: isSelected ? AppColors.primary : AppColors.border,
-                                  ),
-                                ),
-                                onSelected: (_) {
-                                  setState(() {
-                                    _selectedCategory = cat;
-                                  });
-                                },
-                              );
-                            },
-                          ),
-                        ),
-
-                        const SizedBox(height: 18),
-
-                        // Section Title
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        ListView(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
                           children: [
-                            Text(
-                              'DAFTAR SALURAN (${_filteredChannels.length})',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textSecondary,
-                                letterSpacing: 0.8,
+                            // In-App Live Video Player Box (or placeholder when PiP is active)
+                            _isPipMode && !_isPipDismissed
+                                ? _buildPipPlaceholder()
+                                : _buildVideoPlayerSection(),
+
+                            const SizedBox(height: 20),
+
+                            // Search box
+                            TextField(
+                              decoration: InputDecoration(
+                                hintText: 'Cari saluran TV atau kategori...',
+                                prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                                filled: true,
+                                fillColor: AppColors.card,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: const BorderSide(color: AppColors.border),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: const BorderSide(color: AppColors.border),
+                                ),
+                              ),
+                              onChanged: (val) {
+                                setState(() {
+                                  _searchQuery = val.trim();
+                                });
+                              },
+                            ),
+
+                            const SizedBox(height: 14),
+
+                            // Category chips
+                            SizedBox(
+                              height: 38,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: _categories.length,
+                                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                                itemBuilder: (context, idx) {
+                                  final cat = _categories[idx];
+                                  final isSelected = cat == _selectedCategory;
+                                  return ChoiceChip(
+                                    label: Text(cat),
+                                    selected: isSelected,
+                                    selectedColor: AppColors.primary,
+                                    labelStyle: TextStyle(
+                                      color: isSelected ? Colors.white : AppColors.textPrimary,
+                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                      fontSize: 12.5,
+                                    ),
+                                    backgroundColor: AppColors.card,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      side: BorderSide(
+                                        color: isSelected ? AppColors.primary : AppColors.border,
+                                      ),
+                                    ),
+                                    onSelected: (_) {
+                                      setState(() {
+                                        _selectedCategory = cat;
+                                      });
+                                    },
+                                  );
+                                },
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.circle, color: Colors.red, size: 8),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'LIVE IN-APP PLAYER',
-                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.red),
+
+                            const SizedBox(height: 18),
+
+                            // Section Title
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'DAFTAR SALURAN (${_filteredChannels.length})',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textSecondary,
+                                    letterSpacing: 0.8,
                                   ),
-                                ],
-                              ),
-                            )
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.circle, color: Colors.red, size: 8),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'LIVE IN-APP PLAYER',
+                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.red),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              ],
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Channels Grid
+                            _filteredChannels.isEmpty
+                                ? Container(
+                                    padding: const EdgeInsets.all(30),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      'Tidak ada saluran ditemukan untuk "$_searchQuery".',
+                                      style: const TextStyle(color: AppColors.textSecondary),
+                                    ),
+                                  )
+                                : GridView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 3,
+                                      crossAxisSpacing: 10,
+                                      mainAxisSpacing: 10,
+                                      childAspectRatio: 0.88,
+                                    ),
+                                    itemCount: _filteredChannels.length,
+                                    itemBuilder: (context, idx) {
+                                      final ch = _filteredChannels[idx];
+                                      final isActive = _activeChannel?.id == ch.id;
+                                      return _buildChannelCard(ch, isActive);
+                                    },
+                                  ),
                           ],
                         ),
 
-                        const SizedBox(height: 12),
-
-                        // Channels Grid
-                        _filteredChannels.isEmpty
-                            ? Container(
-                                padding: const EdgeInsets.all(30),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  'Tidak ada saluran ditemukan untuk "$_searchQuery".',
-                                  style: const TextStyle(color: AppColors.textSecondary),
-                                ),
-                              )
-                            : GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  crossAxisSpacing: 10,
-                                  mainAxisSpacing: 10,
-                                  childAspectRatio: 0.88,
-                                ),
-                                itemCount: _filteredChannels.length,
-                                itemBuilder: (context, idx) {
-                                  final ch = _filteredChannels[idx];
-                                  final isActive = _activeChannel?.id == ch.id;
-                                  return _buildChannelCard(ch, isActive);
-                                },
-                              ),
+                        // ── Floating Mini PiP Player Overlay on Scroll ──
+                        if (_isPipMode && !_isPipDismissed && _activeChannel != null && _videoController != null && _videoController!.value.isInitialized)
+                          Positioned(
+                            bottom: 80,
+                            right: 16,
+                            child: _buildFloatingMiniPlayer(),
+                          ),
                       ],
                     ),
+    );
+  }
+
+  Widget _buildPipPlaceholder() {
+    final ch = _activeChannel;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.4), width: 1.5),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.picture_in_picture_alt_rounded, color: AppColors.primary, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Sedang memutar ${ch?.name ?? "TV"}',
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppColors.textPrimary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Siaran dialihkan ke Mini Player (PiP)',
+                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: _restoreFromPip,
+            child: const Text('Kembalikan', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloatingMiniPlayer() {
+    final ch = _activeChannel!;
+    final isPlaying = _videoController!.value.isPlaying;
+
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        width: 220,
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primary, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.45),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Mini Header Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              color: Colors.black87,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: const Text(
+                      'LIVE',
+                      style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      ch.name,
+                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: _restoreFromPip,
+                    child: const Padding(
+                      padding: EdgeInsets.all(2),
+                      child: Icon(Icons.fullscreen_exit_rounded, color: Colors.white, size: 16),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  InkWell(
+                    onTap: _dismissPip,
+                    child: const Padding(
+                      padding: EdgeInsets.all(2),
+                      child: Icon(Icons.close_rounded, color: Colors.white70, size: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Video Frame
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox.expand(
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _videoController!.value.size.width > 0
+                            ? _videoController!.value.size.width
+                            : 1280,
+                        height: _videoController!.value.size.height > 0
+                            ? _videoController!.value.size.height
+                            : 720,
+                        child: VideoPlayer(_videoController!),
+                      ),
+                    ),
+                  ),
+                  // Tap to restore
+                  Positioned.fill(
+                    child: InkWell(
+                      onTap: _restoreFromPip,
+                    ),
+                  ),
+                  // Center play/pause on hover/tap
+                  Positioned(
+                    bottom: 4,
+                    right: 4,
+                    child: InkWell(
+                      onTap: _togglePlayPause,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -64,4 +64,38 @@ class TvController extends ApiController
             ]
         ]);
     }
+    public function chats()
+    {
+        $chatModel = new \App\Models\TvChatModel();
+        $afterId   = (int) ($this->request->getGet('after_id') ?? 0);
+        $messages  = $chatModel->getRecentChats(50, $afterId);
+
+        return $this->ok([
+            'messages' => $messages,
+        ]);
+    }
+
+    public function sendChat()
+    {
+        $userId   = $this->user['id'] ?? null;
+        $userName = $this->user['name'] ?? 'Pengguna';
+        if (!$userId) {
+            return $this->fail('Unauthenticated', 401);
+        }
+
+        $json    = $this->request->getJSON(true);
+        $message = $json['message'] ?? $this->request->getPost('message') ?? '';
+
+        try {
+            $chatModel = new \App\Models\TvChatModel();
+            $chat = $chatModel->postMessage((int)$userId, (string)$userName, (string)$message);
+
+            return $this->ok([
+                'message' => 'Pesan terkirim',
+                'chat'    => $chat,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->fail($e->getMessage(), 400);
+        }
+    }
 }

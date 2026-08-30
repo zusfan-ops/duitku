@@ -168,6 +168,8 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // TV & Live Streaming Web Player
     $routes->get('/tv',                         'TvController::index');
+    $routes->get('/tv/chats',                   'TvController::chats');
+    $routes->post('/tv/chats',                  'TvController::sendChat');
 
     // Kalkulator Zakat & Pajak
     $routes->get('/zakat-pajak',                'ZakatPajakController::index');
@@ -262,6 +264,8 @@ $routes->group('api', function ($routes) {
         // TV & Live Streaming Channels
         $routes->get('tv/channels',                 'Api\TvController::index');
         $routes->get('tv/channels/(:num)',          'Api\TvController::show/$1');
+        $routes->get('tv/chats',                    'Api\TvController::chats');
+        $routes->post('tv/chats',                   'Api\TvController::sendChat');
 
         // Dashboard / home
         $routes->get('dashboard', 'Api\DashboardController::index');
