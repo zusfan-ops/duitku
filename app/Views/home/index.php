@@ -5,103 +5,254 @@
 /* ── Home Layout ──────────────────────────────────────────────── */
 .home-page { padding-bottom: 32px; }
 
-/* ── Hero Balance ─────────────────────────────────────────────── */
-.hb-hero {
-    background: linear-gradient(140deg, #043D22 0%, #076836 42%, #0AA956 100%);
-    border-radius: 24px;
-    padding: 24px 20px 22px;
-    margin-bottom: 16px;
+/* ── Native Double-Layered Hero Wallet Card ───────────────────── */
+.native-hero-wrapper {
     position: relative;
-    overflow: hidden;
-    box-shadow: 0 8px 28px rgba(7,104,54,.30), 0 2px 8px rgba(7,104,54,.15);
+    margin-bottom: 12px;
 }
-.hb-hero::before {
-    content: '';
+.native-hero-tab {
     position: absolute;
-    top: -50px; right: -50px;
-    width: 180px; height: 180px;
-    border-radius: 50%;
-    background: rgba(255,255,255,.06);
-    pointer-events: none;
-}
-.hb-hero::after {
-    content: '';
-    position: absolute;
-    bottom: -40px; left: -10px;
-    width: 140px; height: 140px;
-    border-radius: 50%;
-    background: rgba(255,255,255,.04);
-    pointer-events: none;
-}
-.hb-greeting {
-    font-size: 13px;
-    font-weight: 600;
-    color: rgba(255,255,255,.6);
-    margin-bottom: 10px;
+    top: 0;
+    left: 18px;
+    right: 18px;
+    height: 52px;
+    background: linear-gradient(135deg, #1E3A8A 0%, #172554 100%);
+    border-radius: 20px 20px 0 0;
+    padding: 8px 16px 0;
     display: flex;
-    align-items: center;
-    gap: 6px;
+    justify-content: space-between;
+    align-items: flex-start;
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
-.hb-balance-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .6px;
-    text-transform: uppercase;
-    color: rgba(255,255,255,.5);
-    margin-bottom: 4px;
-}
-.hb-balance-amount {
-    font-size: 34px;
+.native-hero-tab-name {
+    font-size: 12px;
     font-weight: 800;
     color: #fff;
-    letter-spacing: -1px;
-    line-height: 1;
-    margin-bottom: 4px;
-}
-.hb-balance-sub {
-    font-size: 11px;
-    color: rgba(255,255,255,.4);
-    margin-bottom: 16px;
-}
-.hb-divider {
-    height: 1px;
-    background: rgba(255,255,255,.12);
-    margin-bottom: 14px;
-}
-.hb-month-label {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .4px;
+    letter-spacing: -0.2px;
     text-transform: uppercase;
-    color: rgba(255,255,255,.35);
-    margin-bottom: 10px;
 }
-.hb-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+.native-hero-tab-badge {
+    font-size: 9px;
+    font-weight: 900;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 6px;
+    padding: 2px 7px;
+    letter-spacing: 0.5px;
 }
-.hb-stat {
+.native-hero-card {
+    position: relative;
+    margin-top: 30px;
+    background: linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 50%, #2563EB 100%);
+    border-radius: 24px;
+    padding: 20px 20px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 12px 36px rgba(37, 99, 235, 0.28), 0 4px 12px rgba(30, 58, 138, 0.2);
+    color: #fff;
+}
+.native-hero-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.native-hero-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    color: rgba(255, 255, 255, 0.75);
+    text-transform: uppercase;
+}
+.native-hero-month-tag {
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    padding: 3px 9px;
+    letter-spacing: 0.4px;
+}
+.native-hero-balance-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: rgba(0,0,0,.18);
-    border-radius: 14px;
-    padding: 10px 12px;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 18px;
 }
-.hb-stat-icon {
-    width: 32px; height: 32px;
+.native-hero-amount {
+    font-size: 30px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -0.8px;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.native-hero-trend-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(16, 185, 129, 0.22);
+    color: #6EE7B7;
+    padding: 4px 8px;
     border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
+    font-size: 10.5px;
+    font-weight: 800;
+    white-space: nowrap;
     flex-shrink: 0;
 }
-.hb-stat-icon.income  { background: rgba(74,222,128,.18); }
-.hb-stat-icon.expense { background: rgba(248,113,113,.18); }
-.hb-stat-icon svg { width: 16px; height: 16px; }
-.hb-stat-icon.income  svg { stroke: #4ADE80; }
-.hb-stat-icon.expense svg { stroke: #F87171; }
-.hb-stat-lbl { font-size: 10px; font-weight: 600; color: rgba(255,255,255,.45); margin-bottom: 2px; }
-.hb-stat-val { font-size: 14px; font-weight: 800; color: #fff; }
+.native-hero-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.native-hero-pill-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 16px;
+    padding: 10px 12px;
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+.native-hero-pill-btn:active {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(0.98);
+}
+.native-hero-icon-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+.native-hero-icon-btn:active {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(0.95);
+}
+
+/* ── Three-Column Stats Card ──────────────────────────────────── */
+.native-stats-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04), 0 1px 4px rgba(15, 23, 42, 0.02);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.native-stats-col {
+    flex: 1;
+    text-align: center;
+    min-width: 0;
+}
+.native-stats-val {
+    font-size: 15.5px;
+    font-weight: 900;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.native-stats-val.income { color: var(--income); }
+.native-stats-val.text-primary { color: var(--text-primary); }
+.native-stats-val.blue { color: #2563EB; }
+.native-stats-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-top: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.native-stats-sub {
+    font-size: 9.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.native-stats-divider {
+    width: 1px;
+    height: 38px;
+    background: var(--border-light);
+    flex-shrink: 0;
+    margin: 0 4px;
+}
+
+/* ── Belanja Home Card ────────────────────────────────────────── */
+.native-belanja-card {
+    background: linear-gradient(135deg, #9D174D 0%, #BE185D 50%, #F43F5E 100%);
+    border-radius: 20px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    color: #fff;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 6px 20px rgba(244, 63, 94, 0.28);
+    transition: transform 0.15s ease;
+}
+.native-belanja-card:active {
+    transform: scale(0.98);
+}
+.native-belanja-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.native-belanja-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.native-belanja-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #fff;
+}
+.native-belanja-sub {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
+    margin-top: 2px;
+}
+.native-belanja-arrow {
+    font-size: 12px;
+    font-weight: 800;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 10px;
+    border-radius: 10px;
+}
 
 /* ── Wallet Strip ─────────────────────────────────────────────── */
 .wallet-strip-wrap { margin-bottom: 16px; }
@@ -720,15 +871,49 @@
     border-color: #0284C7;
 }
 .nearby-map-container {
-    height: 180px;
-    width: 100%;
-    border-radius: 14px;
-    overflow: hidden;
-    position: relative;
+    height: 220px !important;
+    width: 100% !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    position: relative !important;
     border: 1px solid var(--border);
     margin-bottom: 12px;
     background: #E2E8F0;
     z-index: 1;
+    display: block;
+}
+#nearbyMap {
+    height: 100% !important;
+    width: 100% !important;
+    min-height: 220px !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
+/* Leaflet Tile Container overrides to prevent global img max-width conflicts */
+.leaflet-container {
+    height: 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border-radius: 16px;
+}
+.leaflet-container img,
+.leaflet-tile {
+    max-width: none !important;
+    max-height: none !important;
+    width: 256px !important;
+    height: 256px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.leaflet-tile-pane,
+.leaflet-layer,
+.leaflet-tile-container {
+    width: 100% !important;
+    height: 100% !important;
 }
 .nearby-accordion-hdr {
     display: flex;
@@ -874,38 +1059,98 @@
     <!-- ═══════════════════════════════════════════════════════════ PERSONAL WORKSPACE CONTAINER -->
     <div id="workspacePersonal">
 
-    <!-- ── HERO BALANCE ──────────────────────────────────────── -->
-    <div class="hb-hero">
-        <div class="hb-greeting">
-            Halo, <?= esc(explode(' ', session()->get('user_name'))[0]) ?>
-            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.8" width="14" height="14"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    <!-- ── DOUBLE-LAYER WALLET HERO CARD (Aligned 1:1 with Native _HeroCard) ── -->
+    <div class="native-hero-wrapper">
+        <!-- Layer 1: Background Cash Wallet Header Tab -->
+        <div class="native-hero-tab">
+            <span class="native-hero-tab-name"><?= esc(!empty($wallets[0]['name']) ? $wallets[0]['name'] : 'DOMPET UTAMA') ?></span>
+            <span class="native-hero-tab-badge">CASH</span>
         </div>
-        <div class="hb-balance-label">Total Saldo</div>
-        <div class="hb-balance-amount" id="totalBalance"><?= esc($symbol) ?> <?= number_format($balance, 0, ',', '.') ?></div>
-        <div class="hb-balance-sub">Akumulasi semua transaksi</div>
-        <div class="hb-divider"></div>
-        <div class="hb-month-label">Bulan ini · <?= esc($month) ?></div>
-        <div class="hb-stats">
-            <div class="hb-stat">
-                <div class="hb-stat-icon income">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        <!-- Layer 2: Main Blue Gradient Pocket -->
+        <div class="native-hero-card">
+            <div class="native-hero-top">
+                <span class="native-hero-label">TOTAL BALANCE</span>
+                <span class="native-hero-month-tag"><?= strtoupper(esc($month)) ?></span>
+            </div>
+            <div class="native-hero-balance-row">
+                <div class="native-hero-amount" id="displayBalance" data-raw="<?= esc($symbol) ?> <?= number_format($balance, 0, ',', '.') ?>" data-hidden="Rp •••••••••">
+                    <?= esc($symbol) ?> <?= number_format($balance, 0, ',', '.') ?>
                 </div>
-                <div>
-                    <div class="hb-stat-lbl">Pemasukan</div>
-                    <div class="hb-stat-val"><?= esc($symbol) ?> <?= number_format($monthly['income'], 0, ',', '.') ?></div>
+                <div class="native-hero-trend-pill">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    <span>+<?= esc($symbol) ?> <?= number_format($monthly['income'], 0, ',', '.') ?></span>
                 </div>
             </div>
-            <div class="hb-stat">
-                <div class="hb-stat-icon expense">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-                </div>
-                <div>
-                    <div class="hb-stat-lbl">Pengeluaran</div>
-                    <div class="hb-stat-val"><?= esc($symbol) ?> <?= number_format($monthly['expense'], 0, ',', '.') ?></div>
-                </div>
+            <!-- Translucent Quick Action Glass Pills -->
+            <div class="native-hero-actions">
+                <a href="/stats" class="native-hero-pill-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span>View Reports</span>
+                </a>
+                <a href="/scan" class="native-hero-icon-btn" title="Scan Struk (OCR)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+                        <path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3M7 12h10M7 8h10M7 16h6"/>
+                    </svg>
+                </a>
+                <button type="button" class="native-hero-icon-btn" id="btnToggleBalancePrivacy" title="Sembunyikan / Tampilkan Saldo" onclick="toggleBalancePrivacy()">
+                    <svg id="eyeOpenIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <svg id="eyeClosedIcon" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                </button>
             </div>
         </div>
     </div>
+
+    <!-- ── THREE-COLUMN STATS CARD (Aligned 1:1 with Native _ThreeColumnStatsCard) ── -->
+    <div class="native-stats-card">
+        <div class="native-stats-col">
+            <div class="native-stats-val income"><?= esc($symbol) ?> <?= number_format($monthly['income'], 0, ',', '.') ?></div>
+            <div class="native-stats-lbl">Pemasukan</div>
+            <div class="native-stats-sub">Bulan ini</div>
+        </div>
+        <div class="native-stats-divider"></div>
+        <div class="native-stats-col">
+            <div class="native-stats-val text-primary"><?= esc($symbol) ?> <?= number_format($monthly['expense'], 0, ',', '.') ?></div>
+            <div class="native-stats-lbl">Pengeluaran</div>
+            <div class="native-stats-sub"><?= count($recent ?? []) ?> transaksi</div>
+        </div>
+        <div class="native-stats-divider"></div>
+        <div class="native-stats-col">
+            <?php if (($budget ?? 0) > 0): ?>
+                <div class="native-stats-val blue"><?= esc($symbol) ?> <?= number_format(max(0, $budget - $monthly['expense']), 0, ',', '.') ?></div>
+                <div class="native-stats-lbl">Sisa Budget</div>
+                <div class="native-stats-sub">Limit bulanan</div>
+            <?php else: ?>
+                <div class="native-stats-val blue"><?= count($wallets ?? []) ?> Dompet</div>
+                <div class="native-stats-lbl">Akun Dompet</div>
+                <div class="native-stats-sub">Aktif</div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- ── BELANJA QUICK CARD (Aligned 1:1 with Native _BelanjaHomeCard) ── -->
+    <a href="/belanja" class="native-belanja-card">
+        <div class="native-belanja-left">
+            <div class="native-belanja-icon">🛒</div>
+            <div>
+                <div class="native-belanja-title">Daftar Rencana Belanja</div>
+                <div class="native-belanja-sub">Kelola catatan kebutuhan & checklist belanja</div>
+            </div>
+        </div>
+        <div class="native-belanja-arrow">Buka →</div>
+    </a>
 
     <!-- ── WALLET STRIP ─────────────────────────────────────── -->
     <?php if (!empty($wallets)): ?>
@@ -2967,8 +3212,39 @@ try {
                 loadNearbyPlaces();
             });
         });
+
+        // Initialize balance privacy from localStorage
+        try {
+            if (localStorage.getItem('duitku_hide_balance') === 'true') {
+                toggleBalancePrivacy(true);
+            }
+        } catch(e) {}
     });
 
 })();
+
+function toggleBalancePrivacy(forceHide = null) {
+    const el = document.getElementById('displayBalance');
+    const eyeOpen = document.getElementById('eyeOpenIcon');
+    const eyeClosed = document.getElementById('eyeClosedIcon');
+    if (!el) return;
+
+    const raw = el.dataset.raw || el.textContent;
+    const hidden = el.dataset.hidden || 'Rp •••••••••';
+    const isCurrentlyHidden = (el.textContent.trim() === hidden.trim());
+    const shouldHide = forceHide !== null ? forceHide : !isCurrentlyHidden;
+
+    if (shouldHide) {
+        el.textContent = hidden;
+        if (eyeOpen) eyeOpen.style.display = 'none';
+        if (eyeClosed) eyeClosed.style.display = 'block';
+        try { localStorage.setItem('duitku_hide_balance', 'true'); } catch(e) {}
+    } else {
+        el.textContent = raw;
+        if (eyeOpen) eyeOpen.style.display = 'block';
+        if (eyeClosed) eyeClosed.style.display = 'none';
+        try { localStorage.setItem('duitku_hide_balance', 'false'); } catch(e) {}
+    }
+}
 </script>
 <?= $this->endSection() ?>

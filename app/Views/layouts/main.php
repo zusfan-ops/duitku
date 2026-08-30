@@ -15,9 +15,10 @@
     <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
     <link rel="apple-touch-startup-image" href="/images/logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <link rel="stylesheet" href="/css/app.css?v=<?= time() ?>">
+    <?= $this->renderSection('styles') ?>
     <style>
     .topbar-btn-notif {
         position: relative;
@@ -100,10 +101,48 @@
 <!-- ═══════════════════════════════════════════════════════════════ APP SHELL -->
 <div id="app">
 
-    <!-- TOP BAR -->
+    <!-- TOP BAR (Aligned 1:1 with Flutter Native AppBar) -->
     <header class="topbar">
+        <?php
+            $daysIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            $monthsIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            $w = (int)date('w');
+            $d = (int)date('j');
+            $m = (int)date('n');
+            $y = date('Y');
+            $currentIndoDate = ($daysIndo[$w] ?? '') . ', ' . $d . ' ' . ($monthsIndo[$m] ?? '') . ' ' . $y;
+
+            $currentPath = current_url(true)->getPath();
+            $isHome      = ($currentPath === '/' || $currentPath === '');
+            $isActivity  = str_starts_with($currentPath, '/activity');
+            $isFeatures  = (
+                str_starts_with($currentPath, '/features') ||
+                str_starts_with($currentPath, '/fitur') ||
+                str_starts_with($currentPath, '/stats') ||
+                str_starts_with($currentPath, '/bills') ||
+                str_starts_with($currentPath, '/hutang') ||
+                str_starts_with($currentPath, '/wallets') ||
+                str_starts_with($currentPath, '/belanja') ||
+                str_starts_with($currentPath, '/traveling') ||
+                str_starts_with($currentPath, '/barang') ||
+                str_starts_with($currentPath, '/kendaraan') ||
+                str_starts_with($currentPath, '/zakat-pajak') ||
+                str_starts_with($currentPath, '/arcade') ||
+                str_starts_with($currentPath, '/notifications') ||
+                str_starts_with($currentPath, '/tv') ||
+                str_starts_with($currentPath, '/pos')
+            );
+            $isSettings  = str_starts_with($currentPath, '/settings');
+
+            $navTitle = 'Dashboard';
+            if ($isActivity) $navTitle = 'Aktivitas';
+            elseif ($isFeatures) $navTitle = 'Fitur';
+            elseif ($isSettings) $navTitle = 'Pengaturan';
+            elseif (!empty($pageTitle)) $navTitle = $pageTitle;
+        ?>
         <div class="topbar-brand">
-            <img src="/images/logo.png" alt="DuitKu" class="topbar-logo" style="object-fit:contain">
+            <div class="topbar-date-label"><?= esc($currentIndoDate) ?></div>
+            <h1 class="topbar-page-title"><?= esc($navTitle) ?></h1>
         </div>
         <div class="topbar-actions">
             <?php
@@ -222,13 +261,18 @@
                 }
             ?>
             <button class="topbar-btn-notif" id="btnOpenSearch" title="Cari Data (Ctrl+K)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
             </button>
+            <a href="/scan" class="topbar-btn-notif" id="btnTopOcrScan" title="Smart Scan Struk (OCR)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3M7 12h10M7 8h10M7 16h6"/>
+                </svg>
+            </a>
             <button class="topbar-btn-notif" id="btnOpenNotif" title="Notifikasi Pengingat">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
@@ -273,37 +317,16 @@
         <?= $this->renderSection('content') ?>
     </main>
 
-    <!-- BOTTOM NAVIGATION (Native-aligned 4 tabs + center FAB) -->
-    <?php
-        $currentPath = current_url(true)->getPath();
-        $isHome      = ($currentPath === '/' || $currentPath === '');
-        $isActivity  = str_starts_with($currentPath, '/activity');
-        $isFeatures  = (
-            str_starts_with($currentPath, '/features') ||
-            str_starts_with($currentPath, '/fitur') ||
-            str_starts_with($currentPath, '/stats') ||
-            str_starts_with($currentPath, '/bills') ||
-            str_starts_with($currentPath, '/hutang') ||
-            str_starts_with($currentPath, '/wallets') ||
-            str_starts_with($currentPath, '/belanja') ||
-            str_starts_with($currentPath, '/traveling') ||
-            str_starts_with($currentPath, '/barang') ||
-            str_starts_with($currentPath, '/kendaraan') ||
-            str_starts_with($currentPath, '/zakat-pajak') ||
-            str_starts_with($currentPath, '/arcade') ||
-            str_starts_with($currentPath, '/notifications') ||
-            str_starts_with($currentPath, '/tv') ||
-            str_starts_with($currentPath, '/pos')
-        );
-        $isSettings  = str_starts_with($currentPath, '/settings');
-    ?>
+    <!-- BOTTOM NAVIGATION (Native 4 Tabs + Center Elevated FAB) -->
     <nav class="bottom-nav" id="bottomNav">
         <a href="/" class="bottom-nav-item <?= $isHome ? 'active' : '' ?>" id="nav-home">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
+                <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
             </svg>
-            <span>Beranda</span>
+            <span>Dashboard</span>
         </a>
         <a href="/activity" class="bottom-nav-item <?= $isActivity ? 'active' : '' ?>" id="nav-activity">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -327,10 +350,9 @@
 
         <a href="/features" class="bottom-nav-item <?= $isFeatures ? 'active' : '' ?>" id="nav-features">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
-                <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
-                <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
-                <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
             </svg>
             <span>Fitur</span>
         </a>
@@ -750,6 +772,7 @@
     });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="/js/app.js?v=<?= time() ?>"></script>
 <?= $this->renderSection('scripts') ?>
 
