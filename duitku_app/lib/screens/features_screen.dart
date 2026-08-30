@@ -27,6 +27,7 @@ import 'traveling/currency_converter_sheet.dart';
 import 'traveling/traveling_screen.dart';
 import 'vehicle/vehicle_screen.dart';
 import 'notifications/notifications_screen.dart';
+import 'todo/todo_list_screen.dart';
 import 'tv/tv_streaming_screen.dart';
 import 'nearby/nearby_places_screen.dart';
 import 'wallet_screen.dart';
@@ -190,6 +191,17 @@ class FeaturesScreen extends StatelessWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const BelanjaScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Rencana & Todo',
+              subtitle: 'Target tugas & checklist',
+              icon: Icons.checklist_rounded,
+              gradient: const [Color(0xFF4338CA), Color(0xFF6366F1)],
+              shadowColor: const Color(0xFF6366F1),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TodoListScreen()),
               ),
             ),
             _FeatureItem(

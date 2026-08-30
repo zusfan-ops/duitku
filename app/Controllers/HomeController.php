@@ -252,6 +252,7 @@ class HomeController extends BaseController
             'notifications'      => $notifications,
             'unreadCount'        => count($notifications),
             'business'           => $businessSummary,
+            'todoSummary'        => (new \App\Models\TodoModel())->getSummary($userId),
         ]);
     }
 

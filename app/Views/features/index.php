@@ -178,6 +178,10 @@
     background: linear-gradient(135deg, #4338CA 0%, #6366F1 100%);
     box-shadow: 0 6px 18px rgba(99, 102, 241, 0.25);
 }
+.feat-todo {
+    background: linear-gradient(135deg, #4338CA 0%, #6366F1 50%, #8B5CF6 100%);
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.25);
+}
 .feat-activity {
     background: linear-gradient(135deg, #334155 0%, #64748B 100%);
     box-shadow: 0 6px 18px rgba(100, 116, 139, 0.25);
@@ -372,6 +376,21 @@
             <div class="feature-card-info">
                 <div class="feature-card-title">Daftar Belanja</div>
                 <div class="feature-card-desc">Checklist & budget belanja</div>
+            </div>
+        </a>
+
+        <!-- 4. Rencana & Todo-List -->
+        <a href="/todo" class="feature-card feat-todo">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+            <div class="feature-card-icon">
+                <span style="font-size: 16px;">🎯</span>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Rencana & Todo</div>
+                <div class="feature-card-desc">Target tugas & checklist</div>
             </div>
         </a>
 

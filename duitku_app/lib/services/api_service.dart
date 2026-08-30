@@ -814,6 +814,27 @@ class ApiService {
     return post('tv/chats', {'message': message});
   }
 
+  // ── Todos & Tasks API ─────────────────────────────────────────
+  Future<Map<String, dynamic>> getTodos({String? filter, String? category, String? search}) async {
+    final query = <String, String>{};
+    if (filter != null && filter != 'all') query['filter'] = filter;
+    if (category != null && category != 'all') query['category'] = category;
+    if (search != null && search.isNotEmpty) query['search'] = search;
+    return get('todos', query: query.isNotEmpty ? query : null);
+  }
+
+  Future<Map<String, dynamic>> createTodo(Map<String, dynamic> data) async {
+    return post('todos/store', data);
+  }
+
+  Future<Map<String, dynamic>> toggleTodo(int id) async {
+    return post('todos/toggle/$id', {});
+  }
+
+  Future<Map<String, dynamic>> deleteTodo(int id) async {
+    return post('todos/delete/$id', {});
+  }
+
   // ── Upload helpers ───────────────────────────────────────────
   Future<String?> base64FromFile(String path) async {
     final file = File(path);

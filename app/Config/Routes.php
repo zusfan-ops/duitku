@@ -62,6 +62,13 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/savings/topup/(:num)',     'SavingsController::topup/$1');
     $routes->post('/savings/delete/(:num)',    'SavingsController::delete/$1');
 
+    // Todo-List (Professional Task Manager)
+    $routes->get('/todo',                      'TodoController::index');
+    $routes->post('/todo/store',               'TodoController::store');
+    $routes->post('/todo/toggle/(:num)',       'TodoController::toggle/$1');
+    $routes->post('/todo/update/(:num)',       'TodoController::updateTask/$1');
+    $routes->post('/todo/delete/(:num)',       'TodoController::delete/$1');
+
     // Export
     $routes->get('/export/csv', 'ExportController::csv');
     $routes->get('/export/pdf', 'ExportController::pdf');
@@ -266,6 +273,12 @@ $routes->group('api', function ($routes) {
         $routes->get('tv/channels/(:num)',          'Api\TvController::show/$1');
         $routes->get('tv/chats',                    'Api\TvController::chats');
         $routes->post('tv/chats',                   'Api\TvController::sendChat');
+
+        // Todos API
+        $routes->get('todos',                       'TodoController::apiList');
+        $routes->post('todos/store',                'TodoController::apiStore');
+        $routes->post('todos/toggle/(:num)',        'TodoController::apiToggle/$1');
+        $routes->post('todos/delete/(:num)',        'TodoController::apiDelete/$1');
 
         // Dashboard / home
         $routes->get('dashboard', 'Api\DashboardController::index');

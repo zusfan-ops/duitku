@@ -261,6 +261,105 @@
     border-radius: 10px;
 }
 
+/* ── Todo Home Card ───────────────────────────────────────────── */
+.native-todo-card {
+    background: linear-gradient(135deg, #4338CA 0%, #6366F1 50%, #8B5CF6 100%);
+    border-radius: 20px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 6px 22px rgba(99, 102, 241, 0.28);
+    transition: transform 0.15s ease;
+}
+.native-todo-card:active {
+    transform: scale(0.98);
+}
+.native-todo-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.native-todo-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.native-todo-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.native-todo-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #ffffff;
+}
+.native-todo-sub {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
+    margin-top: 2px;
+}
+.native-todo-arrow {
+    font-size: 12px;
+    font-weight: 800;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 10px;
+    border-radius: 10px;
+}
+.native-todo-tasks-preview {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.native-todo-task-item {
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.native-todo-task-item.done {
+    opacity: 0.6;
+    text-decoration: line-through;
+}
+.native-todo-check-btn {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.8);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 800;
+    transition: all 0.15s ease;
+}
+.native-todo-check-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+.native-todo-task-item.done .native-todo-check-btn {
+    background: #10B981;
+    border-color: #10B981;
+    color: #ffffff;
+}
+
 /* ── Wallet Strip ─────────────────────────────────────────────── */
 .wallet-strip-wrap { margin-bottom: 16px; }
 .wallet-strip-hdr {
@@ -1153,11 +1252,39 @@
             <div class="native-belanja-icon">🛒</div>
             <div>
                 <div class="native-belanja-title">Daftar Rencana Belanja</div>
-                <div class="native-belanja-sub">Kelola catatan kebutuhan & checklist belanja</div>
+                <div class="native-belanja-sub">Kelola catatan kebutuhan &amp; checklist belanja</div>
             </div>
         </div>
         <div class="native-belanja-arrow">Buka →</div>
     </a>
+
+    <!-- ── TODO-LIST QUICK HOME CARD (Aligned 1:1 with Native _TodoHomeCard) ── -->
+    <div class="native-todo-card">
+        <div class="native-todo-hdr">
+            <a href="/todo" class="native-todo-title-wrap" style="color:inherit;text-decoration:none">
+                <div class="native-todo-icon">🎯</div>
+                <div>
+                    <div class="native-todo-title">Rencana &amp; Target Tugas (Todo)</div>
+                    <div class="native-todo-sub">
+                        <?= (int)($todoSummary['completed_all'] ?? 0) ?>/<?= (int)($todoSummary['total_all'] ?? 0) ?> Selesai · <?= (int)($todoSummary['pending_all'] ?? 0) ?> Aktif
+                    </div>
+                </div>
+            </a>
+            <a href="/todo" class="native-todo-arrow" style="color:inherit;text-decoration:none">Buka →</a>
+        </div>
+
+        <?php if (!empty($todoSummary['previews'])): ?>
+        <div class="native-todo-tasks-preview">
+            <?php foreach ($todoSummary['previews'] as $pTask): ?>
+            <div class="native-todo-task-item" id="homeTodo-<?= $pTask['id'] ?>">
+                <button type="button" class="native-todo-check-btn" onclick="toggleHomeTask(event, <?= $pTask['id'] ?>)" title="Tandai selesai">✓</button>
+                <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?= esc($pTask['title']) ?></span>
+                <span style="font-size:10px;opacity:0.8;background:rgba(255,255,255,0.15);padding:1px 6px;border-radius:6px"><?= esc($pTask['category']) ?></span>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+    </div>
 
     <!-- ── WALLET STRIP ─────────────────────────────────────── -->
     <?php if (!empty($wallets)): ?>
@@ -3265,6 +3392,30 @@ function toggleBalancePrivacy(forceHide = null) {
         if (eyeOpen) eyeOpen.style.display = 'block';
         if (eyeClosed) eyeClosed.style.display = 'none';
         try { localStorage.setItem('duitku_hide_balance', 'false'); } catch(e) {}
+    }
+}
+
+async function toggleHomeTask(event, taskId) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const item = document.getElementById('homeTodo-' + taskId);
+    if (!item) return;
+
+    item.classList.toggle('done');
+
+    try {
+        await fetch('/todo/toggle/' + taskId, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: '<?= csrf_token() ?>=<?= csrf_hash() ?>'
+        });
+    } catch(e) {
+        console.error('Error toggling home todo:', e);
     }
 }
 </script>

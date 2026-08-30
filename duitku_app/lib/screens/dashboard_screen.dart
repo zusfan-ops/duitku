@@ -21,6 +21,8 @@ import 'belanja/belanja_screen.dart';
 import 'bills_screen.dart';
 import 'debt_screen.dart';
 import 'note_sheet.dart';
+import 'todo/todo_list_screen.dart';
+import '../models/todo_item.dart';
 import 'recurring/recurring_screen.dart';
 import 'pos/pos_cashier_screen.dart';
 import 'pos/pos_products_screen.dart';
@@ -237,6 +239,7 @@ class DashboardScreenState extends State<DashboardScreen> {
           ),
           _ThreeColumnStatsCard(data: data, recentCount: recent.length),
           const _BelanjaHomeCard(),
+          const _TodoHomeCard(),
           if ((data.wallets as List).isNotEmpty) _WalletStrip(wallets: data.wallets as List<Wallet>),
           if ((data.dailyBalance as List).length > 1)
             _DailyChart(data: data),
@@ -1991,6 +1994,278 @@ class _BelanjaHomeCardState extends State<_BelanjaHomeCard> {
                             const SizedBox(width: 6),
                             Text(
                               'Ketuk untuk membuat daftar belanjaan baru',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Todo Home Card ─────────────────────────────────────────────
+class _TodoHomeCard extends StatefulWidget {
+  const _TodoHomeCard();
+
+  @override
+  State<_TodoHomeCard> createState() => _TodoHomeCardState();
+}
+
+class _TodoHomeCardState extends State<_TodoHomeCard> {
+  final _api = ApiService.instance;
+  TodoSummary _summary = TodoSummary();
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final res = await _api.getTodos();
+      if (!mounted) return;
+      if (res['success'] == true) {
+        final sum = TodoSummary.fromJson(res['summary'] is Map<String, dynamic> ? res['summary'] : {});
+        setState(() {
+          _summary = sum;
+          _loading = false;
+        });
+      } else {
+        setState(() => _loading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _toggleTask(TodoItem task) async {
+    final oldState = task.isCompleted;
+    setState(() => task.isCompleted = !oldState);
+
+    try {
+      final res = await _api.toggleTodo(task.id);
+      if (res['success'] != true) {
+        setState(() => task.isCompleted = oldState);
+      } else {
+        _load();
+      }
+    } catch (_) {
+      setState(() => task.isCompleted = oldState);
+    }
+  }
+
+  Future<void> _openTodo() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TodoListScreen()),
+    );
+    _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const SizedBox.shrink();
+
+    final progress = _summary.totalAll > 0 ? (_summary.completedAll / _summary.totalAll) : 0.0;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF4338CA), Color(0xFF6366F1), Color(0xFF8B5CF6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _openTodo,
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -10,
+                  bottom: -15,
+                  child: Transform.rotate(
+                    angle: -0.15,
+                    child: Icon(
+                      Icons.task_alt_rounded,
+                      size: 90,
+                      color: Colors.white.withValues(alpha: 0.12),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.22),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.checklist_rounded, color: Colors.white, size: 20),
+                              ),
+                              const SizedBox(width: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Rencana & Todo-List',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                  Text(
+                                    _summary.totalAll == 0
+                                        ? 'Belum ada tugas target'
+                                        : '${_summary.completedAll}/${_summary.totalAll} Selesai · ${_summary.pendingAll} Aktif',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white.withValues(alpha: 0.85),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.22),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Buka',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(width: 3),
+                                Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Colors.white),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_summary.totalAll > 0) ...[
+                        const SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            minHeight: 5,
+                            backgroundColor: Colors.black.withValues(alpha: 0.2),
+                            valueColor: const AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        ),
+                        if (_summary.previews.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          Column(
+                            children: _summary.previews.map((task) {
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 3),
+                                child: Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () => _toggleTask(task),
+                                      child: Container(
+                                        width: 16,
+                                        height: 16,
+                                        margin: const EdgeInsets.only(right: 8),
+                                        decoration: BoxDecoration(
+                                          color: task.isCompleted ? Colors.white : Colors.transparent,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: Colors.white.withValues(alpha: 0.8), width: 1.5),
+                                        ),
+                                        child: task.isCompleted
+                                            ? const Icon(Icons.check, size: 10, color: Color(0xFF6366F1))
+                                            : null,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        task.title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
+                                          decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        task.category,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white.withValues(alpha: 0.9),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ] else ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Icon(Icons.add_task_rounded, size: 15, color: Colors.white.withValues(alpha: 0.9)),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Ketuk untuk membuat target tugas baru',
                               style: TextStyle(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w600,
