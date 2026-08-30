@@ -560,7 +560,7 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
                         // ── Floating Mini PiP Player Overlay on Scroll ──
                         if (_isPipMode && !_isPipDismissed && _activeChannel != null && _videoController != null && _videoController!.value.isInitialized)
                           Positioned(
-                            bottom: 80,
+                            top: 16,
                             right: 16,
                             child: _buildFloatingMiniPlayer(),
                           ),

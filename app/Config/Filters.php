@@ -64,6 +64,7 @@ class Filters extends BaseFilters
             'csrf' => [
                 'except' => [
                     'api/*',
+                    'tv/chats',
                     'menu/*/order',
                     'menu/*/verify-voucher',
                     'shop/*/order',

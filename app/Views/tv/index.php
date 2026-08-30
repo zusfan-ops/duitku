@@ -71,20 +71,24 @@
         border-top: 1px solid rgba(255,255,255,0.08);
     }
     
-    /* ── Floating Mini PiP on Scroll ──────────────────────────────── */
+    /* ── Floating Mini PiP on Scroll (Docked at Top, Draggable) ─── */
     .tv-player-wrap.is-pip {
         position: fixed;
-        bottom: 80px;
-        right: 20px;
-        width: 320px;
+        top: 72px;
+        right: 16px;
+        bottom: auto;
+        left: auto;
+        width: 250px;
         max-width: calc(100vw - 32px);
-        z-index: 990;
+        z-index: 1500;
         border-radius: 16px;
-        box-shadow: 0 18px 45px rgba(0,0,0,0.55), 0 0 0 2px var(--primary);
-        animation: pipSlideIn 0.25s ease forwards;
+        box-shadow: 0 16px 45px rgba(0,0,0,0.6), 0 0 0 2px var(--primary);
+        animation: pipSlideInTop 0.25s ease forwards;
+        touch-action: none;
+        user-select: none;
     }
-    @keyframes pipSlideIn {
-        from { opacity: 0; transform: translateY(30px) scale(0.92); }
+    @keyframes pipSlideInTop {
+        from { opacity: 0; transform: translateY(-25px) scale(0.92); }
         to   { opacity: 1; transform: translateY(0) scale(1); }
     }
     .tv-pip-bar {
@@ -98,15 +102,17 @@
         z-index: 10;
         justify-content: space-between;
         align-items: center;
+        cursor: move;
     }
     .tv-player-wrap.is-pip .tv-pip-bar {
         display: flex;
     }
     .tv-player-wrap.is-pip .tv-player-info {
-        padding: 8px 12px;
+        padding: 6px 10px;
+        cursor: move;
     }
     .tv-player-wrap.is-pip .tv-player-info h4 {
-        font-size: 13px !important;
+        font-size: 12px !important;
     }
     .tv-player-wrap.is-pip .tv-player-info small {
         display: none;
@@ -114,18 +120,21 @@
     .tv-player-wrap.is-pip .btn-reload {
         display: none;
     }
+    .tv-player-wrap.is-pip #playerFavBtn {
+        display: none;
+    }
     .tv-pip-btn {
         background: rgba(0,0,0,0.6);
         border: 1px solid rgba(255,255,255,0.25);
         color: #fff;
-        font-size: 11px;
+        font-size: 10.5px;
         font-weight: 700;
-        padding: 3px 8px;
+        padding: 2px 7px;
         border-radius: 6px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: 3px;
         transition: all 0.15s ease;
     }
     .tv-pip-btn:hover {
@@ -270,25 +279,25 @@
     .tv-floating-chat-btn {
         position: fixed;
         bottom: 85px;
-        left: 20px;
-        z-index: 950;
+        left: 16px;
+        z-index: 1000;
         background: linear-gradient(135deg, #10B981 0%, #059669 100%);
         color: #fff;
         border: none;
         border-radius: 30px;
-        padding: 10px 18px;
-        font-size: 13px;
+        padding: 9px 16px;
+        font-size: 12.5px;
         font-weight: 800;
         display: flex;
         align-items: center;
         gap: 8px;
         cursor: pointer;
-        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4), 0 2px 6px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.45), 0 2px 6px rgba(0,0,0,0.2);
         transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
     .tv-floating-chat-btn:hover {
-        transform: scale(1.04);
-        box-shadow: 0 10px 28px rgba(16, 185, 129, 0.5);
+        transform: scale(1.05);
+        box-shadow: 0 10px 28px rgba(16, 185, 129, 0.55);
     }
     .tv-floating-chat-btn:active {
         transform: scale(0.96);
@@ -301,13 +310,13 @@
         animation: pulse 1.2s infinite;
     }
 
-    /* ── Live TV Chat Drawer / Modal ──────────────────────────────── */
+    /* ── Live TV Chat Box (Positioned Floating ABOVE Bottom Menu) ─── */
     .tv-chat-backdrop {
         position: fixed;
         inset: 0;
-        background: rgba(15,23,42,0.45);
-        backdrop-filter: blur(2px);
-        z-index: 998;
+        background: rgba(15,23,42,0.6);
+        backdrop-filter: blur(4px);
+        z-index: 2500;
         opacity: 0;
         visibility: hidden;
         transition: all 0.22s ease;
@@ -318,27 +327,33 @@
     }
     .tv-chat-drawer {
         position: fixed;
-        bottom: 0;
-        right: 0;
-        width: 380px;
-        max-width: 100vw;
-        height: 520px;
-        max-height: 85vh;
+        bottom: 80px;
+        left: 16px;
+        right: 16px;
+        width: calc(100% - 32px);
+        max-width: 440px;
+        margin: 0 auto;
+        height: 58vh;
+        max-height: 520px;
         background: var(--bg-card);
         border: 1px solid var(--border);
-        border-radius: 20px 20px 0 0;
-        z-index: 999;
+        border-radius: 20px;
+        z-index: 2600;
         display: flex;
         flex-direction: column;
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
-        transform: translateY(105%);
+        box-shadow: 0 16px 48px rgba(0,0,0,0.45);
+        transform: translateY(120%);
         transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
+        box-sizing: border-box;
     }
     @media (min-width: 768px) {
         .tv-chat-drawer {
-            bottom: 24px;
+            bottom: 85px;
             right: 24px;
-            height: 560px;
+            left: auto;
+            width: 380px;
+            height: 540px;
             border-radius: 20px;
             transform: translateY(30px) scale(0.95);
             opacity: 0;
@@ -706,7 +721,11 @@
         }
     }
 
-    /* ── Auto PiP on Scroll Logic ──────────────────────────────────── */
+    /* ── Auto PiP on Scroll & Draggable PiP Logic ─────────────────── */
+    let isDraggingPip = false;
+    let pipStartX = 0, pipStartY = 0;
+    let pipInitLeft = 0, pipInitTop = 0;
+
     function handleScrollPiP() {
         const anchor = document.getElementById('tvPlayerAnchor');
         const playerWrap = document.getElementById('tvPlayerWrap');
@@ -720,20 +739,109 @@
             playerWrap.classList.add('is-pip');
         } else if (!isOutOfView && playerWrap.classList.contains('is-pip')) {
             playerWrap.classList.remove('is-pip');
+            playerWrap.style.left = '';
+            playerWrap.style.top = '';
+            playerWrap.style.bottom = '';
+            playerWrap.style.right = '';
         }
     }
 
     function restoreFromPip() {
         isPipDismissed = false;
         const playerWrap = document.getElementById('tvPlayerWrap');
-        if (playerWrap) playerWrap.classList.remove('is-pip');
+        if (playerWrap) {
+            playerWrap.classList.remove('is-pip');
+            playerWrap.style.left = '';
+            playerWrap.style.top = '';
+            playerWrap.style.bottom = '';
+            playerWrap.style.right = '';
+            playerWrap.style.transition = '';
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function closePip() {
         isPipDismissed = true;
         const playerWrap = document.getElementById('tvPlayerWrap');
-        if (playerWrap) playerWrap.classList.remove('is-pip');
+        if (playerWrap) {
+            playerWrap.classList.remove('is-pip');
+            playerWrap.style.left = '';
+            playerWrap.style.top = '';
+            playerWrap.style.bottom = '';
+            playerWrap.style.right = '';
+        }
+    }
+
+    function initDraggablePip() {
+        const wrap = document.getElementById('tvPlayerWrap');
+        if (!wrap) return;
+
+        function startDrag(e) {
+            if (!wrap.classList.contains('is-pip')) return;
+            // Ignore if clicking on button, input or native controls
+            if (e.target.closest('.tv-pip-btn') || e.target.closest('button')) return;
+
+            isDraggingPip = true;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            pipStartX = clientX;
+            pipStartY = clientY;
+
+            const rect = wrap.getBoundingClientRect();
+            pipInitLeft = rect.left;
+            pipInitTop = rect.top;
+
+            wrap.style.transition = 'none';
+            wrap.style.bottom = 'auto';
+            wrap.style.right = 'auto';
+            wrap.style.left = pipInitLeft + 'px';
+            wrap.style.top = pipInitTop + 'px';
+
+            document.addEventListener('mousemove', onDrag, { passive: false });
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchmove', onDrag, { passive: false });
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function onDrag(e) {
+            if (!isDraggingPip) return;
+            if (e.cancelable) e.preventDefault();
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const dx = clientX - pipStartX;
+            const dy = clientY - pipStartY;
+
+            const wrapWidth = wrap.offsetWidth;
+            const wrapHeight = wrap.offsetHeight;
+
+            let newLeft = pipInitLeft + dx;
+            let newTop = pipInitTop + dy;
+
+            // Boundaries within screen viewport
+            const maxLeft = window.innerWidth - wrapWidth - 8;
+            const maxTop = window.innerHeight - wrapHeight - 8;
+
+            newLeft = Math.max(8, Math.min(newLeft, maxLeft));
+            newTop = Math.max(8, Math.min(newTop, maxTop));
+
+            wrap.style.left = newLeft + 'px';
+            wrap.style.top = newTop + 'px';
+        }
+
+        function endDrag() {
+            if (!isDraggingPip) return;
+            isDraggingPip = false;
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchmove', onDrag);
+            document.removeEventListener('touchend', endDrag);
+        }
+
+        wrap.addEventListener('mousedown', startDrag);
+        wrap.addEventListener('touchstart', startDrag, { passive: true });
     }
 
     /* ── Floating Live Chat & Polling ──────────────────────────────── */
@@ -765,21 +873,28 @@
     async function loadChats() {
         try {
             const res = await fetch('/tv/chats?after_id=' + lastChatId);
+            const container = document.getElementById('tvChatMessages');
             if (res.ok) {
                 const json = await res.json();
                 const messages = json.data || [];
                 if (messages.length > 0) {
-                    renderMessages(messages);
-                    lastChatId = messages[messages.length - 1].id;
-                } else if (lastChatId === 0) {
-                    const container = document.getElementById('tvChatMessages');
-                    if (container && container.children.length === 0) {
-                        container.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Belum ada obrolan. Jadilah yang pertama mengirim pesan! 🎉</div>';
+                    if (lastChatId === 0 && container) {
+                        container.innerHTML = '';
                     }
+                    renderMessages(messages);
+                    lastChatId = parseInt(messages[messages.length - 1].id, 10);
+                } else if (lastChatId === 0 && container) {
+                    container.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:32px 16px;line-height:1.6;">Belum ada obrolan siaran TV.<br>Jadilah yang pertama menulis komentar! 🎉</div>';
                 }
+            } else if (container && lastChatId === 0) {
+                container.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:24px 16px;">Ruang obrolan siaran siap 🎉<br><small style="color:var(--text-secondary);">Kirim pesan pertama Anda di bawah.</small></div>';
             }
         } catch (e) {
             console.log('Chat fetch error', e);
+            const container = document.getElementById('tvChatMessages');
+            if (container && lastChatId === 0) {
+                container.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:24px 16px;">Ruang obrolan siaran siap 🎉<br><small style="color:var(--text-secondary);">Kirim pesan pertama Anda di bawah.</small></div>';
+            }
         }
     }
 
@@ -1003,8 +1118,9 @@
         updateFavoriteBadges();
         updateHistoryBadge();
 
-        // Attach scroll listener for PiP mode
+        // Attach scroll listener for PiP mode and draggable events
         window.addEventListener('scroll', handleScrollPiP, { passive: true });
+        initDraggablePip();
     });
 
     window.addEventListener('beforeunload', function() {
