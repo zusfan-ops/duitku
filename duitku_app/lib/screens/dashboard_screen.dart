@@ -451,22 +451,120 @@ class _HeroCard extends StatefulWidget {
 
 class _HeroCardState extends State<_HeroCard> {
   bool _hideBalance = false;
+  int? _selectedWalletId;
+
+  Widget _buildDeckTab({
+    required String title,
+    required String badge,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(right: 6),
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : LinearGradient(
+                  colors: [
+                    const Color(0xFF1E40AF).withValues(alpha: 0.82),
+                    const Color(0xFF1D4ED8).withValues(alpha: 0.82),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+          border: Border(
+            top: BorderSide(
+              color: Colors.white.withValues(alpha: isSelected ? 0.38 : 0.18),
+              width: 1,
+            ),
+            left: BorderSide(
+              color: Colors.white.withValues(alpha: isSelected ? 0.38 : 0.18),
+              width: 1,
+            ),
+            right: BorderSide(
+              color: Colors.white.withValues(alpha: isSelected ? 0.38 : 0.18),
+              width: 1,
+            ),
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.45),
+                    blurRadius: 10,
+                    offset: const Offset(0, -3),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.82),
+                letterSpacing: -0.2,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: isSelected ? 0.32 : 0.2),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                badge,
+                style: const TextStyle(
+                  fontSize: 8.5,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
     final symbol = '${data.symbol ?? "Rp"}';
     final wallets = (data.wallets as List?) ?? [];
-    String primaryWalletName = 'Dompet Utama';
-    if (wallets.isNotEmpty) {
-      final firstW = wallets.first;
-      if (firstW is Wallet) {
-        final defW = wallets.whereType<Wallet>().firstWhere((w) => w.isDefault, orElse: () => firstW);
-        primaryWalletName = defW.name;
-      }
+
+    final allWallets = wallets.whereType<Wallet>().toList();
+    final activeWallets = allWallets.where((w) => w.balance > 0).toList();
+    final displayTabs = activeWallets.isNotEmpty ? activeWallets : allWallets;
+
+    Wallet? selWallet;
+    if (_selectedWalletId != null) {
+      selWallet = displayTabs.firstWhere(
+        (w) => w.id == _selectedWalletId,
+        orElse: () => displayTabs.first,
+      );
     }
 
-    final balance = Fmt.toDouble(data.balance);
+    final double activeBalance = selWallet != null
+        ? selWallet.balance
+        : Fmt.toDouble(data.balance);
+    final String activeLabel = selWallet != null
+        ? 'SALDO ${selWallet.name.toUpperCase()}'
+        : 'TOTAL BALANCE';
+
     final monthlyIncome = Fmt.toDouble(data.monthlyIncome);
     final monthStr = '${data.month ?? ""}'.toUpperCase();
 
@@ -479,58 +577,29 @@ class _HeroCardState extends State<_HeroCard> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // ── Layer 1: Background Card popping out from top pocket ──
+          // ── Layer 1: Background Active Wallet Tabs Deck ────────────
           Positioned(
             top: 0,
-            left: 16,
-            right: 16,
-            height: 64,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF1D4ED8).withValues(alpha: 0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
+            left: 8,
+            right: 8,
+            height: 48,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    primaryWalletName,
-                    style: const TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      letterSpacing: -0.2,
-                    ),
+                  _buildDeckTab(
+                    title: 'SEMUA',
+                    badge: 'TOTAL',
+                    isSelected: _selectedWalletId == null,
+                    onTap: () => setState(() => _selectedWalletId = null),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.22),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'CASH',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
+                  ...displayTabs.map((w) => _buildDeckTab(
+                    title: w.name,
+                    badge: w.type.toUpperCase(),
+                    isSelected: _selectedWalletId == w.id,
+                    onTap: () => setState(() => _selectedWalletId = w.id),
+                  )),
                 ],
               ),
             ),
@@ -538,7 +607,7 @@ class _HeroCardState extends State<_HeroCard> {
 
           // ── Layer 2: Main Wallet Pocket (Foreground) ───────────────
           Container(
-            margin: const EdgeInsets.only(top: 32),
+            margin: const EdgeInsets.only(top: 36),
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
@@ -556,9 +625,9 @@ class _HeroCardState extends State<_HeroCard> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'TOTAL BALANCE',
-                      style: TextStyle(
+                    Text(
+                      activeLabel,
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.8,
@@ -597,7 +666,7 @@ class _HeroCardState extends State<_HeroCard> {
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          _hideBalance ? 'Rp •••••••••' : Fmt.money(balance, symbol: symbol),
+                          _hideBalance ? 'Rp •••••••••' : Fmt.money(activeBalance, symbol: symbol),
                           style: const TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.w900,

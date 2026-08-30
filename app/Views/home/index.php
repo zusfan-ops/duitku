@@ -8,42 +8,77 @@
 /* ── Native Double-Layered Hero Wallet Card ───────────────────── */
 .native-hero-wrapper {
     position: relative;
-    padding-top: 28px;
+    padding-top: 36px;
     margin-top: 6px;
     margin-bottom: 14px;
 }
-.native-hero-tab {
+.native-hero-tabs-deck {
     position: absolute;
     top: 0;
-    left: 16px;
-    right: 16px;
-    height: 56px;
-    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-    border-radius: 20px 20px 0 0;
-    padding: 7px 16px 0;
+    left: 8px;
+    right: 8px;
+    height: 48px;
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    box-shadow: 0 -3px 12px rgba(37, 99, 235, 0.3);
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
     z-index: 1;
-    box-sizing: border-box;
+    padding: 0 4px;
 }
-.native-hero-tab-name {
-    font-size: 13px;
+.native-hero-tabs-deck::-webkit-scrollbar { display: none; }
+.native-hero-deck-tab {
+    flex: 0 0 auto;
+    min-width: 84px;
+    height: 38px;
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.82) 0%, rgba(29, 78, 216, 0.82) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-bottom: none;
+    border-radius: 14px 14px 0 0;
+    padding: 6px 12px 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #ffffff;
+    opacity: 0.82;
+    transform: translateY(3px);
+    box-shadow: 0 -2px 8px rgba(37, 99, 235, 0.18);
+    user-select: none;
+}
+.native-hero-deck-tab:hover {
+    opacity: 0.95;
+    transform: translateY(1px);
+}
+.native-hero-deck-tab.active {
+    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+    border-color: rgba(255, 255, 255, 0.38);
+    opacity: 1;
+    transform: translateY(-2px);
+    box-shadow: 0 -4px 16px rgba(37, 99, 235, 0.45);
+    z-index: 2;
+}
+.native-hero-deck-tab .tab-txt {
+    font-size: 12px;
     font-weight: 800;
     color: #ffffff;
+    white-space: nowrap;
     letter-spacing: -0.2px;
-    line-height: 1.2;
 }
-.native-hero-tab-badge {
-    font-size: 9.5px;
+.native-hero-deck-tab .tab-badge {
+    font-size: 8.5px;
     font-weight: 900;
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.25);
-    border-radius: 8px;
-    padding: 2.5px 8px;
-    letter-spacing: 0.5px;
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 6px;
+    padding: 2px 5.5px;
+    letter-spacing: 0.4px;
     line-height: 1;
+}
+.native-hero-deck-tab.active .tab-badge {
+    background: rgba(255, 255, 255, 0.32);
 }
 .native-hero-card {
     position: relative;
@@ -1166,28 +1201,44 @@
     <div id="workspacePersonal">
 
     <!-- ── DOUBLE-LAYER WALLET HERO CARD (Aligned 1:1 with Native _HeroCard) ── -->
+    <?php
+    $activeHeroWallets = array_values(array_filter($wallets ?? [], function($w) {
+        return (float)($w['balance'] ?? 0) > 0;
+    }));
+    if (empty($activeHeroWallets) && !empty($wallets)) {
+        $activeHeroWallets = $wallets;
+    }
+    ?>
     <div class="native-hero-wrapper">
-        <!-- Layer 1: Background Cash Wallet Header Tab -->
-        <div class="native-hero-tab">
-            <span class="native-hero-tab-name"><?= esc(!empty($wallets[0]['name']) ? $wallets[0]['name'] : 'DOMPET UTAMA') ?></span>
-            <span class="native-hero-tab-badge">CASH</span>
+        <!-- Layer 1: Background Active/Funded Wallet Tabs Deck -->
+        <div class="native-hero-tabs-deck" id="heroWalletTabs">
+            <button type="button" class="native-hero-deck-tab active" data-wallet-id="total" data-name="TOTAL BALANCE" data-balance="<?= esc($balance) ?>" onclick="selectHeroWalletTab(this)">
+                <span class="tab-txt">SEMUA</span>
+                <span class="tab-badge">TOTAL</span>
+            </button>
+            <?php foreach ($activeHeroWallets as $hw): ?>
+            <button type="button" class="native-hero-deck-tab" data-wallet-id="<?= $hw['id'] ?>" data-name="<?= esc($hw['name']) ?>" data-balance="<?= (float)$hw['balance'] ?>" onclick="selectHeroWalletTab(this)">
+                <span class="tab-txt"><?= esc($hw['name']) ?></span>
+                <span class="tab-badge"><?= strtoupper(esc($hw['type'] ?? 'CASH')) ?></span>
+            </button>
+            <?php endforeach; ?>
         </div>
         <!-- Layer 2: Main Blue Gradient Pocket -->
         <div class="native-hero-card">
             <div class="native-hero-top">
-                <span class="native-hero-label">TOTAL BALANCE</span>
+                <span class="native-hero-label" id="heroBalanceLabel">TOTAL BALANCE</span>
                 <span class="native-hero-month-tag"><?= strtoupper(esc($month)) ?></span>
             </div>
             <div class="native-hero-balance-row">
                 <div class="native-hero-amount" id="displayBalance" data-raw="<?= esc($symbol) ?> <?= number_format($balance, 0, ',', '.') ?>" data-hidden="Rp •••••••••">
                     <?= esc($symbol) ?> <?= number_format($balance, 0, ',', '.') ?>
                 </div>
-                <div class="native-hero-trend-pill">
+                <div class="native-hero-trend-pill" id="heroTrendPill">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
-                    <span>+<?= esc($symbol) ?> <?= number_format($monthly['income'], 0, ',', '.') ?></span>
+                    <span id="heroTrendText">+<?= esc($symbol) ?> <?= number_format($monthly['income'], 0, ',', '.') ?></span>
                 </div>
             </div>
             <!-- Translucent Quick Action Glass Pills -->
@@ -3370,6 +3421,38 @@ try {
     });
 
 })();
+
+function selectHeroWalletTab(btn) {
+    if (!btn) return;
+    document.querySelectorAll('.native-hero-deck-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+
+    const name = btn.dataset.name || 'TOTAL BALANCE';
+    const balance = parseFloat(btn.dataset.balance) || 0;
+    const symbol = '<?= esc($symbol ?? 'Rp') ?>';
+    const formatted = symbol + ' ' + Number(balance).toLocaleString('id-ID');
+
+    const labelEl = document.getElementById('heroBalanceLabel');
+    const displayEl = document.getElementById('displayBalance');
+    const trendText = document.getElementById('heroTrendText');
+
+    if (labelEl) {
+        labelEl.textContent = btn.dataset.walletId === 'total' ? 'TOTAL BALANCE' : 'SALDO ' + name.toUpperCase();
+    }
+    if (displayEl) {
+        displayEl.setAttribute('data-raw', formatted);
+        const isHidden = (localStorage.getItem('duitku_hide_balance') === 'true');
+        displayEl.textContent = isHidden ? (displayEl.dataset.hidden || 'Rp •••••••••') : formatted;
+    }
+    if (trendText) {
+        if (btn.dataset.walletId !== 'total') {
+            trendText.textContent = name;
+        } else {
+            trendText.textContent = '+<?= esc($symbol) ?> <?= number_format($monthly['income'], 0, ',', '.') ?>';
+        }
+    }
+}
+window.selectHeroWalletTab = selectHeroWalletTab;
 
 function toggleBalancePrivacy(forceHide = null) {
     const el = document.getElementById('displayBalance');
