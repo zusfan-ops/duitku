@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
@@ -18,7 +19,7 @@ class TvStreamingScreen extends StatefulWidget {
 class _TvStreamingScreenState extends State<TvStreamingScreen> {
   final ScrollController _scrollController = ScrollController();
   List<TvChannel> _channels = [];
-  List<String> _categories = ['Semua'];
+  List<String> _categories = ['Semua', '⭐ Favorit', '🕒 Riwayat'];
   String _selectedCategory = 'Semua';
   String _searchQuery = '';
   bool _loading = true;
@@ -36,10 +37,15 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
   bool _isPipMode = false;
   bool _isPipDismissed = false;
 
+  // Favorites & Watch History
+  Set<int> _favoriteIds = {};
+  List<int> _historyIds = [];
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _loadFavoritesAndHistory();
     _loadChannels();
   }
 
@@ -49,6 +55,58 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
     _scrollController.dispose();
     _videoController?.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadFavoritesAndHistory() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final favList = prefs.getStringList('tv_favs') ?? [];
+      final histList = prefs.getStringList('tv_history') ?? [];
+      if (mounted) {
+        setState(() {
+          _favoriteIds = favList.map((e) => int.tryParse(e) ?? 0).where((id) => id > 0).toSet();
+          _historyIds = histList.map((e) => int.tryParse(e) ?? 0).where((id) => id > 0).toList();
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _toggleFavorite(int id) async {
+    setState(() {
+      if (_favoriteIds.contains(id)) {
+        _favoriteIds.remove(id);
+      } else {
+        _favoriteIds.add(id);
+      }
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('tv_favs', _favoriteIds.map((e) => e.toString()).toList());
+    } catch (_) {}
+  }
+
+  Future<void> _recordHistory(int id) async {
+    setState(() {
+      _historyIds.remove(id);
+      _historyIds.insert(0, id);
+      if (_historyIds.length > 20) {
+        _historyIds = _historyIds.sublist(0, 20);
+      }
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('tv_history', _historyIds.map((e) => e.toString()).toList());
+    } catch (_) {}
+  }
+
+  Future<void> _clearHistory() async {
+    setState(() {
+      _historyIds.clear();
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('tv_history');
+    } catch (_) {}
   }
 
   void _onScroll() {
@@ -95,20 +153,24 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
     });
 
     try {
+      final isSpecial = _selectedCategory == '⭐ Favorit' || _selectedCategory == '🕒 Riwayat';
       final res = await ApiService.instance.getTvChannels(
-        category: _selectedCategory == 'Semua' ? null : _selectedCategory,
+        category: (isSpecial || _selectedCategory == 'Semua') ? null : _selectedCategory,
       );
 
       final chList = ((res['channels'] as List<dynamic>?) ?? [])
           .map((e) => TvChannel.fromJson(e as Map<String, dynamic>))
           .toList();
 
-      final catList = ((res['categories'] as List<dynamic>?) ?? ['Semua'])
+      final rawCatList = ((res['categories'] as List<dynamic>?) ?? ['Semua'])
           .map((e) => e.toString())
           .toList();
 
-      if (!catList.contains('Semua')) {
-        catList.insert(0, 'Semua');
+      final catList = <String>['Semua', '⭐ Favorit', '🕒 Riwayat'];
+      for (final c in rawCatList) {
+        if (c != 'Semua' && !catList.contains(c)) {
+          catList.add(c);
+        }
       }
 
       setState(() {
@@ -133,16 +195,29 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
   }
 
   List<TvChannel> get _filteredChannels {
-    return _channels.where((ch) {
-      final matchesSearch = _searchQuery.isEmpty ||
-          ch.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+    List<TvChannel> list;
+    if (_selectedCategory == '⭐ Favorit') {
+      list = _channels.where((ch) => _favoriteIds.contains(ch.id)).toList();
+    } else if (_selectedCategory == '🕒 Riwayat') {
+      final map = {for (final c in _channels) c.id: c};
+      list = _historyIds.map((id) => map[id]).whereType<TvChannel>().toList();
+    } else if (_selectedCategory == 'Semua') {
+      list = _channels;
+    } else {
+      list = _channels.where((ch) => ch.category == _selectedCategory).toList();
+    }
+
+    if (_searchQuery.isEmpty) return list;
+
+    return list.where((ch) {
+      return ch.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           ch.category.toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchesCat = _selectedCategory == 'Semua' || ch.category == _selectedCategory;
-      return matchesSearch && matchesCat;
     }).toList();
   }
 
   Future<void> _playStream(TvChannel ch, {bool autoPlay = true}) async {
+    _recordHistory(ch.id);
+
     if (_activeChannel?.id == ch.id && _videoController != null && !_hasVideoError) {
       if (!_videoController!.value.isPlaying && autoPlay) {
         _videoController!.play();
@@ -395,7 +470,11 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'DAFTAR SALURAN (${_filteredChannels.length})',
+                                  _selectedCategory == '⭐ Favorit'
+                                      ? 'SALURAN FAVORIT (${_filteredChannels.length})'
+                                      : _selectedCategory == '🕒 Riwayat'
+                                          ? 'RIWAYAT TONTONAN (${_filteredChannels.length})'
+                                          : 'DAFTAR SALURAN (${_filteredChannels.length})',
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w800,
@@ -403,24 +482,47 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
                                     letterSpacing: 0.8,
                                   ),
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.circle, color: Colors.red, size: 8),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'LIVE IN-APP PLAYER',
-                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.red),
+                                if (_selectedCategory == '🕒 Riwayat' && _historyIds.isNotEmpty)
+                                  InkWell(
+                                    onTap: _clearHistory,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                    ],
-                                  ),
-                                )
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.delete_outline_rounded, color: Colors.red, size: 12),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'Hapus Riwayat',
+                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.red),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.circle, color: Colors.red, size: 8),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'LIVE IN-APP PLAYER',
+                                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.red),
+                                        ),
+                                      ],
+                                    ),
+                                  )
                               ],
                             ),
 
@@ -917,6 +1019,15 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
                   ),
                 ),
                 IconButton(
+                  onPressed: () => _toggleFavorite(ch.id),
+                  icon: Icon(
+                    _favoriteIds.contains(ch.id) ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: _favoriteIds.contains(ch.id) ? Colors.amber : Colors.white70,
+                    size: 26,
+                  ),
+                  tooltip: 'Favorit',
+                ),
+                IconButton(
                   onPressed: _openFullScreen,
                   icon: const Icon(Icons.fullscreen_rounded, color: AppColors.primary, size: 28),
                   tooltip: 'Layar Penuh',
@@ -930,6 +1041,8 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
   }
 
   Widget _buildChannelCard(TvChannel ch, bool isActive) {
+    final isFav = _favoriteIds.contains(ch.id);
+
     return InkWell(
       onTap: () => _playStream(ch),
       borderRadius: BorderRadius.circular(16),
@@ -984,6 +1097,20 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 1.5),
                     ),
+                  ),
+                ),
+                Positioned(
+                  top: -6,
+                  left: -6,
+                  child: IconButton(
+                    iconSize: 18,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: Icon(
+                      isFav ? Icons.star_rounded : Icons.star_outline_rounded,
+                      color: isFav ? Colors.amber : Colors.grey.shade400,
+                    ),
+                    onPressed: () => _toggleFavorite(ch.id),
                   ),
                 ),
               ],

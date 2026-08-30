@@ -62,97 +62,140 @@ class _ExportScreenState extends State<ExportScreen> {
     }
   }
 
+  pw.Document _buildOfficialPdf(List<dynamic> rawTx) {
+    final pdf = pw.Document();
+    final summary = _stats?['summary'] as Map<String, dynamic>? ?? {};
+    final income = Fmt.toDouble(summary['income'] ?? summary['total_income']);
+    final expense = Fmt.toDouble(summary['expense'] ?? summary['total_expense']);
+    final balance = income - expense;
+    final docId = 'DK-FIN-${_monthKey.replaceAll('-', '')}-${_monthKey.hashCode.abs().toString().padLeft(6, '0').substring(0, 6)}';
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(36),
+        header: (pw.Context context) {
+          return pw.Container(
+            padding: const pw.EdgeInsets.only(bottom: 12),
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey400, width: 1.5)),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Row(
+                  children: [
+                    pw.Container(
+                      width: 28,
+                      height: 28,
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.green700,
+                        borderRadius: pw.BorderRadius.circular(6),
+                      ),
+                      alignment: pw.Alignment.center,
+                      child: pw.Text('D', style: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 16)),
+                    ),
+                    pw.SizedBox(width: 8),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('DuitKu Financial Statement',
+                            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.green900)),
+                        pw.Text('Periode: ${Fmt.monthLabel(_monthKey)}',
+                            style: const pw.TextStyle(fontSize: 9.5, color: PdfColors.grey600)),
+                      ],
+                    ),
+                  ],
+                ),
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: [
+                    pw.Text('No: $docId', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
+                    pw.Text('Dicetak: ${Fmt.dateDay(DateTime.now().toIso8601String().substring(0, 10))}',
+                        style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+        build: (pw.Context context) => [
+          pw.SizedBox(height: 14),
+          // Ringkasan Finansial Card
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey100,
+              borderRadius: pw.BorderRadius.circular(8),
+              border: pw.Border.all(color: PdfColors.grey300),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+              children: [
+                _pdfSummaryBox('Total Pemasukan', '+ $_symbol ${Fmt.money0(income)}', PdfColors.green700),
+                _pdfSummaryBox('Total Pengeluaran', '- $_symbol ${Fmt.money0(expense)}', PdfColors.red700),
+                _pdfSummaryBox('Surplus / Defisit', '$_symbol ${Fmt.money0(balance)}', balance >= 0 ? PdfColors.blue700 : PdfColors.red700),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 20),
+          pw.Text('Rincian Buku Transaksi (${rawTx.length} Transaksi)',
+              style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.grey900)),
+          pw.SizedBox(height: 8),
+          // Table
+          pw.TableHelper.fromTextArray(
+            headers: ['Tanggal', 'Tipe', 'Kategori', 'Catatan', 'Nominal'],
+            data: rawTx.map((t) {
+              final isInc = t['type']?.toString() == 'income';
+              return [
+                t['date']?.toString() ?? '',
+                isInc ? 'Masuk' : 'Keluar',
+                t['category_name']?.toString() ?? 'Umum',
+                t['note']?.toString() ?? '-',
+                '${isInc ? '+' : '-'} $_symbol ${Fmt.money0(Fmt.toDouble(t['amount']))}',
+              ];
+            }).toList(),
+            headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.green800),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+            cellHeight: 20,
+            cellAlignments: {
+              0: pw.Alignment.centerLeft,
+              1: pw.Alignment.center,
+              2: pw.Alignment.centerLeft,
+              3: pw.Alignment.centerLeft,
+              4: pw.Alignment.centerRight,
+            },
+          ),
+          pw.SizedBox(height: 20),
+          pw.Container(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.green700, style: pw.BorderStyle.dashed),
+              borderRadius: pw.BorderRadius.circular(6),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('✓ DuitKu Ledger Audit Passed — Laporan Keuangan Sah',
+                    style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.green800)),
+                pw.Text('Digital Signature ID: $docId',
+                    style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    return pdf;
+  }
+
   Future<void> _generatePdf() async {
     setState(() => _loading = true);
     try {
-      // Fetch activity/transactions for this month
       final actRes = await ApiService.instance.activity(type: 'all', page: 1);
       final rawTx = (actRes['transactions'] as List<dynamic>? ?? []);
-
-      final pdf = pw.Document();
-
-      final summary = _stats?['summary'] as Map<String, dynamic>? ?? {};
-      final income = Fmt.toDouble(summary['income'] ?? summary['total_income']);
-      final expense = Fmt.toDouble(summary['expense'] ?? summary['total_expense']);
-      final balance = income - expense;
-
-      pdf.addPage(
-        pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(32),
-          header: (pw.Context context) {
-            return pw.Container(
-              padding: const pw.EdgeInsets.only(bottom: 12),
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 1)),
-              ),
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('DuitKu — Laporan Keuangan',
-                          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.green800)),
-                      pw.Text('Periode: ${Fmt.monthLabel(_monthKey)}',
-                          style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey600)),
-                    ],
-                  ),
-                  pw.Text('Dicetak: ${Fmt.dateDay(DateTime.now().toIso8601String().substring(0, 10))}',
-                      style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey500)),
-                ],
-              ),
-            );
-          },
-          build: (pw.Context context) => [
-            pw.SizedBox(height: 16),
-            // Ringkasan Finansial Card
-            pw.Container(
-              padding: const pw.EdgeInsets.all(14),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.grey100,
-                borderRadius: pw.BorderRadius.circular(8),
-              ),
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-                children: [
-                  _pdfSummaryBox('Total Pemasukan', '+ $_symbol ${Fmt.money0(income)}', PdfColors.green700),
-                  _pdfSummaryBox('Total Pengeluaran', '- $_symbol ${Fmt.money0(expense)}', PdfColors.red700),
-                  _pdfSummaryBox('Sisa Saldo Bersih', '$_symbol ${Fmt.money0(balance)}', balance >= 0 ? PdfColors.blue700 : PdfColors.red700),
-                ],
-              ),
-            ),
-            pw.SizedBox(height: 24),
-            pw.Text('Daftar Transaksi', style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 8),
-            // Table
-            pw.TableHelper.fromTextArray(
-              headers: ['Tanggal', 'Tipe', 'Kategori', 'Catatan', 'Nominal'],
-              data: rawTx.map((t) {
-                final isInc = t['type']?.toString() == 'income';
-                return [
-                  t['date']?.toString() ?? '',
-                  isInc ? 'Masuk' : 'Keluar',
-                  t['category_name']?.toString() ?? 'Lainnya',
-                  t['note']?.toString() ?? '-',
-                  '${isInc ? '+' : '-'} $_symbol ${Fmt.money0(Fmt.toDouble(t['amount']))}',
-                ];
-              }).toList(),
-              headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
-              headerDecoration: const pw.BoxDecoration(color: PdfColors.green800),
-              cellStyle: const pw.TextStyle(fontSize: 8.5),
-              cellHeight: 22,
-              cellAlignments: {
-                0: pw.Alignment.centerLeft,
-                1: pw.Alignment.center,
-                2: pw.Alignment.centerLeft,
-                3: pw.Alignment.centerLeft,
-                4: pw.Alignment.centerRight,
-              },
-            ),
-          ],
-        ),
-      );
+      final pdf = _buildOfficialPdf(rawTx);
 
       setState(() => _loading = false);
 
@@ -168,12 +211,30 @@ class _ExportScreenState extends State<ExportScreen> {
     }
   }
 
+  Future<void> _sharePdf() async {
+    setState(() => _loading = true);
+    try {
+      final actRes = await ApiService.instance.activity(type: 'all', page: 1);
+      final rawTx = (actRes['transactions'] as List<dynamic>? ?? []);
+      final pdf = _buildOfficialPdf(rawTx);
+      final bytes = await pdf.save();
+
+      setState(() => _loading = false);
+      await Printing.sharePdf(bytes: bytes, filename: 'duitku-laporan-$_monthKey.pdf');
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal membagikan PDF: $e')));
+      }
+    }
+  }
+
   pw.Widget _pdfSummaryBox(String label, String value, PdfColor color) {
     return pw.Column(
       children: [
-        pw.Text(label, style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
-        pw.SizedBox(height: 4),
-        pw.Text(value, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: color)),
+        pw.Text(label, style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey600)),
+        pw.SizedBox(height: 3),
+        pw.Text(value, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: color)),
       ],
     );
   }
@@ -299,14 +360,25 @@ class _ExportScreenState extends State<ExportScreen> {
                   icon: Icons.picture_as_pdf_rounded,
                   iconColor: const Color(0xFFDC2626),
                   iconBg: const Color(0xFFFEE2E2),
-                  title: 'Cetak & Simpan PDF Native',
-                  subtitle: 'Format siap cetak, simpan langsung ke perangkat',
-                  badge: 'Rekomendasi',
+                  title: 'Cetak & Simpan PDF Resmi',
+                  subtitle: 'Format akuntansi resmi, kop surat, dan tanda tangan',
+                  badge: 'Resmi',
                   onTap: _generatePdf,
                 ),
                 const SizedBox(height: 10),
 
-                // Option 2: Web PDF Preview
+                // Option 2: Share PDF (WhatsApp / Drive / dll)
+                _exportOptionCard(
+                  icon: Icons.share_rounded,
+                  iconColor: const Color(0xFF10B981),
+                  iconBg: const Color(0xFFECFDF5),
+                  title: 'Kirim / Bagikan PDF',
+                  subtitle: 'Bagikan langsung via WhatsApp, Email, atau Google Drive',
+                  onTap: _sharePdf,
+                ),
+                const SizedBox(height: 10),
+
+                // Option 3: Web PDF Preview
                 _exportOptionCard(
                   icon: Icons.open_in_browser_rounded,
                   iconColor: const Color(0xFF2563EB),

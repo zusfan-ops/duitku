@@ -134,3 +134,6 @@ _modules/*
 *.sha1
 /duitku_app/releases/
 /releases/
+Database.php.backup
+app/Config/Database.php
+app/Config/Database.php

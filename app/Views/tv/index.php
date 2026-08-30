@@ -239,6 +239,32 @@
         border-radius: 50%;
         background: #10B981;
     }
+    .tv-card-fav-star {
+        position: absolute;
+        top: 6px;
+        left: 8px;
+        background: none;
+        border: none;
+        color: rgba(148, 163, 184, 0.4);
+        font-size: 16px;
+        cursor: pointer;
+        padding: 4px;
+        transition: transform 0.15s ease, color 0.15s ease;
+        z-index: 5;
+    }
+    .tv-card-fav-star:hover {
+        transform: scale(1.25);
+        color: #FBBF24;
+    }
+    .tv-card-fav-star.active {
+        color: #FBBF24;
+        text-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
+    }
+    .tv-fav-star-btn.active {
+        background: rgba(251, 191, 36, 0.2) !important;
+        border-color: #FBBF24 !important;
+        color: #FBBF24 !important;
+    }
 
     /* ── Floating Live Chat Button (TV Only) ──────────────────────── */
     .tv-floating-chat-btn {
@@ -499,7 +525,10 @@
                             </small>
                         </div>
                     </div>
-                    <div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button type="button" class="tv-fav-star-btn" id="playerFavBtn" onclick="toggleCurrentPlayerFavorite()" title="Tandai Saluran Favorit" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#FBBF24; font-size:16px; border-radius:8px; padding:4px 8px; cursor:pointer;">
+                            ★
+                        </button>
                         <button onclick="reloadStream()" class="btn btn-outline btn-reload" style="color: #fff; border-color: rgba(255,255,255,0.2); padding: 6px 12px; font-size: 12px; white-space:nowrap;">
                             🔄 Muat Ulang
                         </button>
@@ -510,11 +539,17 @@
         </div>
     <?php endif; ?>
 
-    <!-- Category Filter Tabs -->
-    <div class="tv-cat-tabs">
-        <a href="/tv" class="tv-cat-tab <?= empty($selectedCat) || $selectedCat === 'Semua' ? 'active' : '' ?>">
+    <!-- Category & Special Filter Tabs -->
+    <div class="tv-cat-tabs" id="tvCatTabs">
+        <a href="/tv" class="tv-cat-tab <?= empty($selectedCat) || $selectedCat === 'Semua' ? 'active' : '' ?>" id="tabAll">
             Semua Saluran (<?= count($channels) ?>)
         </a>
+        <button type="button" class="tv-cat-tab" id="tabFavs" onclick="filterSpecial('fav')">
+            ⭐ Favorit (<span id="favCount">0</span>)
+        </button>
+        <button type="button" class="tv-cat-tab" id="tabHist" onclick="filterSpecial('hist')">
+            🕒 Riwayat (<span id="histCount">0</span>)
+        </button>
         <?php foreach ($categories as $cat): ?>
             <a href="/tv?category=<?= urlencode($cat) ?>" class="tv-cat-tab <?= $selectedCat === $cat ? 'active' : '' ?>">
                 <?= esc($cat) ?>
@@ -522,19 +557,30 @@
         <?php endforeach; ?>
     </div>
 
+    <!-- History Bar (Shown only in History view) -->
+    <div id="historyBar" style="display:none; justify-content:space-between; align-items:center; margin-bottom:14px; background:var(--bg-card); padding:10px 16px; border-radius:12px; border:1px solid var(--border);">
+        <span style="font-size:12.5px; font-weight:700; color:var(--text-primary);">🕒 Saluran yang Baru Saja Ditonton</span>
+        <button type="button" onclick="clearTvHistory()" class="btn btn-outline" style="font-size:11px; padding:4px 10px; color:#EF4444; border-color:rgba(239,68,68,0.3);">
+            🗑️ Hapus Riwayat
+        </button>
+    </div>
+
     <!-- Channels Grid -->
     <?php if (empty($channels)): ?>
-        <div class="empty-state" style="padding: 60px 20px; text-align: center;">
+        <div class="empty-state" id="tvEmptyState" style="padding: 60px 20px; text-align: center;">
             <div style="font-size: 48px; margin-bottom: 12px;">📺</div>
             <h3 style="margin: 0 0 6px 0;">Belum Ada Channel TV</h3>
             <p style="color: var(--text-secondary); font-size: 13px;">Belum ada saluran streaming TV yang aktif pada kategori ini.</p>
         </div>
     <?php else: ?>
-        <div class="tv-grid">
+        <div class="tv-grid" id="tvGrid">
             <?php foreach ($channels as $ch): ?>
                 <?php $isPlaying = $currentChannel && (int)$currentChannel['id'] === (int)$ch['id']; ?>
-                <div class="tv-card <?= $isPlaying ? 'playing' : '' ?>" onclick="switchChannel(<?= (int)$ch['id'] ?>)">
+                <div class="tv-card <?= $isPlaying ? 'playing' : '' ?>" data-channel-id="<?= (int)$ch['id'] ?>" data-name="<?= esc($ch['name']) ?>" data-cat="<?= esc($ch['category'] ?? 'Nasional') ?>" onclick="switchChannel(<?= (int)$ch['id'] ?>)">
                     <div class="tv-card-live-dot"></div>
+                    <button type="button" class="tv-card-fav-star" onclick="toggleCardFavorite(event, <?= (int)$ch['id'] ?>)" title="Favorit">
+                        ★
+                    </button>
                     <div class="tv-logo-box">
                         <?php if (!empty($ch['logo_url'])): ?>
                             <img src="<?= esc($ch['logo_url']) ?>" alt="<?= esc($ch['name']) ?>">
@@ -822,10 +868,140 @@
         }
     }
 
+    /* ── Saluran Favorit & Riwayat Tontonan ──────────────────────── */
+    const currentChannelId = <?= (int)($currentChannel['id'] ?? 0) ?>;
+    let activeSpecialFilter = null; // 'fav' | 'hist' | null
+
+    function getFavorites() {
+        try {
+            return JSON.parse(localStorage.getItem('duitku_tv_favorites') || '[]');
+        } catch(e) { return []; }
+    }
+
+    function saveFavorites(favs) {
+        localStorage.setItem('duitku_tv_favorites', JSON.stringify(favs));
+        updateFavoriteBadges();
+    }
+
+    function toggleFavoriteId(id) {
+        let favs = getFavorites();
+        if (favs.includes(id)) {
+            favs = favs.filter(x => x !== id);
+        } else {
+            favs.push(id);
+        }
+        saveFavorites(favs);
+        if (activeSpecialFilter === 'fav') filterSpecial('fav');
+    }
+
+    function toggleCardFavorite(e, id) {
+        e.stopPropagation();
+        toggleFavoriteId(id);
+    }
+
+    function toggleCurrentPlayerFavorite() {
+        if (currentChannelId > 0) {
+            toggleFavoriteId(currentChannelId);
+        }
+    }
+
+    function getHistory() {
+        try {
+            return JSON.parse(localStorage.getItem('duitku_tv_history') || '[]');
+        } catch(e) { return []; }
+    }
+
+    function recordWatchHistory(id) {
+        if (!id) return;
+        let hist = getHistory().filter(x => x !== id);
+        hist.unshift(id);
+        if (hist.length > 20) hist = hist.slice(0, 20);
+        localStorage.setItem('duitku_tv_history', JSON.stringify(hist));
+        updateHistoryBadge();
+    }
+
+    function clearTvHistory() {
+        if (confirm('Hapus semua riwayat tontonan TV?')) {
+            localStorage.removeItem('duitku_tv_history');
+            updateHistoryBadge();
+            filterSpecial('hist');
+        }
+    }
+
+    function updateFavoriteBadges() {
+        const favs = getFavorites();
+        const countEl = document.getElementById('favCount');
+        if (countEl) countEl.textContent = favs.length;
+
+        document.querySelectorAll('.tv-card').forEach(card => {
+            const id = parseInt(card.dataset.channelId, 10);
+            const isFav = favs.includes(id);
+            const btn = card.querySelector('.tv-card-fav-star');
+            if (btn) {
+                btn.classList.toggle('active', isFav);
+                btn.textContent = isFav ? '★' : '☆';
+            }
+        });
+
+        const playerBtn = document.getElementById('playerFavBtn');
+        if (playerBtn && currentChannelId > 0) {
+            const isFav = favs.includes(currentChannelId);
+            playerBtn.classList.toggle('active', isFav);
+            playerBtn.textContent = isFav ? '★ Favorit' : '☆ Favorit';
+        }
+    }
+
+    function updateHistoryBadge() {
+        const hist = getHistory();
+        const countEl = document.getElementById('histCount');
+        if (countEl) countEl.textContent = hist.length;
+    }
+
+    function filterSpecial(type) {
+        activeSpecialFilter = type;
+        const cards = document.querySelectorAll('.tv-card');
+        const historyBar = document.getElementById('historyBar');
+        const tabFavs = document.getElementById('tabFavs');
+        const tabHist = document.getElementById('tabHist');
+
+        document.querySelectorAll('.tv-cat-tab').forEach(t => t.classList.remove('active'));
+
+        if (type === 'fav') {
+            if (tabFavs) tabFavs.classList.add('active');
+            if (historyBar) historyBar.style.display = 'none';
+            const favs = getFavorites();
+            cards.forEach(card => {
+                const id = parseInt(card.dataset.channelId, 10);
+                card.style.display = favs.includes(id) ? 'flex' : 'none';
+                card.style.order = 'unset';
+            });
+        } else if (type === 'hist') {
+            if (tabHist) tabHist.classList.add('active');
+            if (historyBar) historyBar.style.display = 'flex';
+            const hist = getHistory();
+            cards.forEach(card => {
+                const id = parseInt(card.dataset.channelId, 10);
+                const order = hist.indexOf(id);
+                if (order !== -1) {
+                    card.style.display = 'flex';
+                    card.style.order = order;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         if (currentStreamUrl) {
             initPlayer(currentStreamUrl);
+            if (currentChannelId > 0) {
+                recordWatchHistory(currentChannelId);
+            }
         }
+
+        updateFavoriteBadges();
+        updateHistoryBadge();
 
         // Attach scroll listener for PiP mode
         window.addEventListener('scroll', handleScrollPiP, { passive: true });

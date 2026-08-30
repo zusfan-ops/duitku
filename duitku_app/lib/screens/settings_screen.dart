@@ -16,6 +16,7 @@ import 'developer_screen.dart';
 import 'export/export_screen.dart';
 import 'recurring/recurring_screen.dart';
 import 'savings/savings_screen.dart';
+import '../services/widget_helper.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -601,6 +602,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       },
                     ),
                   ),
+                  _card(
+                    ListTile(
+                      leading: _icon(Icons.widgets_outlined, color: const Color(0xFF0284C7)),
+                      title: const Text('Widget Layar Beranda', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: const Text('Panduan pasang widget saldo di Android', style: TextStyle(fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                      onTap: _showWidgetGuide,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   const Text('KATEGORI',
                       style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .5, color: AppColors.textMuted)),
@@ -726,6 +736,121 @@ class _SettingsScreenState extends State<SettingsScreen> {
         boxShadow: AppColors.cardShadow,
       ),
       child: child,
+    );
+  }
+
+  void _showWidgetGuide() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0284C7).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.widgets_rounded, color: Color(0xFF0284C7), size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Widget Home Screen Android',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        'Pantau saldo & arus kas langsung di HP',
+                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _guideStep('1', 'Buka Layar Beranda (Home Screen) HP Anda.'),
+              _guideStep('2', 'Tekan dan tahan (Long-Press) pada area kosong layar.'),
+              _guideStep('3', 'Pilih menu "Widget" / "Widgets".'),
+              _guideStep('4', 'Cari widget "DuitKu", lalu seret dan pasang ke layar.'),
+              _guideStep('5', 'Widget akan otomatis menampilkan saldo kas & arus kas real-time!'),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await WidgetHelper.updateDashboardWidget();
+                  if (!ctx.mounted) return;
+                  Navigator.pop(ctx);
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Data widget berhasil disinkronkan!')),
+                  );
+                },
+                icon: const Icon(Icons.sync_rounded),
+                label: const Text('Sinkronkan Data Widget Sekarang'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _guideStep(String step, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              step,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text, style: const TextStyle(fontSize: 13, height: 1.4)),
+          ),
+        ],
+      ),
     );
   }
 }
