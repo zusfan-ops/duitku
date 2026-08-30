@@ -449,95 +449,60 @@ class _HeroCard extends StatefulWidget {
   State<_HeroCard> createState() => _HeroCardState();
 }
 
+class _AppleDeckCardData {
+  final String id;
+  final String title;
+  final String badge;
+  final double balance;
+  final IconData icon;
+  final List<Color> gradient;
+  final bool isTotal;
+
+  _AppleDeckCardData({
+    required this.id,
+    required this.title,
+    required this.badge,
+    required this.balance,
+    required this.icon,
+    required this.gradient,
+    this.isTotal = false,
+  });
+}
+
 class _HeroCardState extends State<_HeroCard> {
   bool _hideBalance = false;
-  int? _selectedWalletId;
+  int _activeCardIndex = 0;
 
-  Widget _buildDeckTab({
-    required String title,
-    required String badge,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(right: 6),
-        padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? const LinearGradient(
-                  colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : LinearGradient(
-                  colors: [
-                    const Color(0xFF1E40AF).withValues(alpha: 0.82),
-                    const Color(0xFF1D4ED8).withValues(alpha: 0.82),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-          border: Border(
-            top: BorderSide(
-              color: Colors.white.withValues(alpha: isSelected ? 0.38 : 0.18),
-              width: 1,
-            ),
-            left: BorderSide(
-              color: Colors.white.withValues(alpha: isSelected ? 0.38 : 0.18),
-              width: 1,
-            ),
-            right: BorderSide(
-              color: Colors.white.withValues(alpha: isSelected ? 0.38 : 0.18),
-              width: 1,
-            ),
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF2563EB).withValues(alpha: 0.45),
-                    blurRadius: 10,
-                    offset: const Offset(0, -3),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.82),
-                letterSpacing: -0.2,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: isSelected ? 0.32 : 0.2),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                badge,
-                style: const TextStyle(
-                  fontSize: 8.5,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  letterSpacing: 0.4,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  List<Color> _getGradientForType(String type) {
+    switch (type.toLowerCase()) {
+      case 'bank':
+        return const [Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF3B82F6)];
+      case 'cash':
+        return const [Color(0xFF064E3B), Color(0xFF047857), Color(0xFF10B981)];
+      case 'ewallet':
+      case 'e-wallet':
+        return const [Color(0xFF312E81), Color(0xFF4338CA), Color(0xFF6366F1)];
+      case 'credit_card':
+        return const [Color(0xFF701A75), Color(0xFF86198F), Color(0xFFC026D3)];
+      default:
+        return const [Color(0xFF1E293B), Color(0xFF334155), Color(0xFF475569)];
+    }
+  }
+
+  IconData _getIconForType(String type) {
+    switch (type.toLowerCase()) {
+      case 'bank':
+        return Icons.account_balance_rounded;
+      case 'cash':
+        return Icons.payments_rounded;
+      case 'ewallet':
+      case 'e-wallet':
+        return Icons.account_balance_wallet_rounded;
+      case 'credit_card':
+        return Icons.credit_card_rounded;
+      default:
+        return Icons.wallet_rounded;
+    }
   }
 
   @override
@@ -548,249 +513,301 @@ class _HeroCardState extends State<_HeroCard> {
 
     final allWallets = wallets.whereType<Wallet>().toList();
     final activeWallets = allWallets.where((w) => w.balance > 0).toList();
-    final displayTabs = activeWallets.isNotEmpty ? activeWallets : allWallets;
+    final displayWallets = activeWallets.isNotEmpty ? activeWallets : allWallets;
 
-    Wallet? selWallet;
-    if (_selectedWalletId != null) {
-      selWallet = displayTabs.firstWhere(
-        (w) => w.id == _selectedWalletId,
-        orElse: () => displayTabs.first,
-      );
-    }
-
-    final double activeBalance = selWallet != null
-        ? selWallet.balance
-        : Fmt.toDouble(data.balance);
-    final String activeLabel = selWallet != null
-        ? 'SALDO ${selWallet.name.toUpperCase()}'
-        : 'TOTAL BALANCE';
-
-    final monthlyIncome = Fmt.toDouble(data.monthlyIncome);
     final monthStr = '${data.month ?? ""}'.toUpperCase();
+    final monthlyIncome = Fmt.toDouble(data.monthlyIncome);
+
+    // Build Stacked Cards List
+    final List<_AppleDeckCardData> cards = [
+      _AppleDeckCardData(
+        id: 'total',
+        title: 'TOTAL BALANCE',
+        badge: monthStr.isNotEmpty ? monthStr : 'TOTAL',
+        balance: Fmt.toDouble(data.balance),
+        icon: Icons.diamond_rounded,
+        gradient: const [Color(0xFF1E3A8A), Color(0xFF1D4ED8), Color(0xFF2563EB)],
+        isTotal: true,
+      ),
+      ...displayWallets.map((w) => _AppleDeckCardData(
+        id: '${w.id}',
+        title: 'SALDO ${w.name.toUpperCase()}',
+        badge: w.type.toUpperCase(),
+        balance: w.balance,
+        icon: _getIconForType(w.type),
+        gradient: _getGradientForType(w.type),
+        isTotal: false,
+      )),
+    ];
+
+    final int safeActiveIdx = _activeCardIndex.clamp(0, cards.length - 1);
+    final double stackOffset = (cards.length - 1) * 36.0;
+    final double totalDeckHeight = 205.0 + stackOffset;
 
     return Container(
       margin: const EdgeInsets.only(top: 4, bottom: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: AppColors.blueGlowShadow,
-      ),
+      height: totalDeckHeight,
       child: Stack(
         clipBehavior: Clip.none,
-        children: [
-          // ── Layer 1: Background Active Wallet Tabs Deck ────────────
-          Positioned(
-            top: 0,
-            left: 8,
-            right: 8,
-            height: 48,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              child: Row(
-                children: [
-                  _buildDeckTab(
-                    title: 'SEMUA',
-                    badge: 'TOTAL',
-                    isSelected: _selectedWalletId == null,
-                    onTap: () => setState(() => _selectedWalletId = null),
+        children: List.generate(cards.length, (idx) {
+          final card = cards[idx];
+          final bool isFront = (idx == safeActiveIdx);
+
+          int stackOrder = 0;
+          if (!isFront) {
+            for (int i = 0; i < cards.length; i++) {
+              if (i == safeActiveIdx) continue;
+              if (i == idx) break;
+              stackOrder++;
+            }
+          }
+
+          final double targetTop = isFront ? stackOffset : (stackOrder * 36.0);
+          final double targetScale = isFront ? 1.0 : (0.94 + (stackOrder * 0.018)).clamp(0.92, 0.98);
+
+          return AnimatedPositioned(
+            duration: const Duration(milliseconds: 420),
+            curve: Curves.easeOutCubic,
+            top: targetTop,
+            left: 0,
+            right: 0,
+            child: AnimatedScale(
+              duration: const Duration(milliseconds: 420),
+              curve: Curves.easeOutCubic,
+              scale: targetScale,
+              child: GestureDetector(
+                onTap: () {
+                  if (!isFront) {
+                    setState(() => _activeCardIndex = idx);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: card.gradient,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: isFront ? 0.25 : 0.16),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isFront ? 0.35 : 0.22),
+                        blurRadius: isFront ? 28 : 12,
+                        offset: Offset(0, isFront ? 14 : -3),
+                      ),
+                      if (isFront)
+                        BoxShadow(
+                          color: card.gradient.last.withValues(alpha: 0.35),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                    ],
                   ),
-                  ...displayTabs.map((w) => _buildDeckTab(
-                    title: w.name,
-                    badge: w.type.toUpperCase(),
-                    isSelected: _selectedWalletId == w.id,
-                    onTap: () => setState(() => _selectedWalletId = w.id),
-                  )),
-                ],
-              ),
-            ),
-          ),
-
-          // ── Layer 2: Main Wallet Pocket (Foreground) ───────────────
-          Container(
-            margin: const EdgeInsets.only(top: 36),
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF1E3A8A), Color(0xFF1D4ED8), Color(0xFF2563EB)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top header inside pocket
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      activeLabel,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                        color: Colors.white70,
-                      ),
-                    ),
-                    // Month / trend tag
-                    if (monthStr.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          monthStr,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: 0.4,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // Balance display with trend indicator
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Expanded(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          _hideBalance ? 'Rp •••••••••' : Fmt.money(activeBalance, symbol: symbol),
-                          style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: -1,
-                            height: 1.1,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ── Header (Always visible in stack) ──────────
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(Icons.trending_up_rounded, size: 14, color: Color(0xFF6EE7B7)),
-                          const SizedBox(width: 4),
-                          Text(
-                            '+${Fmt.money0(monthlyIncome)}',
-                            style: const TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF6EE7B7),
-                            ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(card.icon, size: 16, color: Colors.white70),
+                              const SizedBox(width: 8),
+                              Text(
+                                card.title,
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (!isFront) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.25),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    _hideBalance ? 'Rp ••••' : Fmt.money(card.balance, symbol: symbol),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                              ],
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  card.badge,
+                                  style: const TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                    letterSpacing: 0.4,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
 
-                // ── Translucent Quick Action Glass Pills ────────────
-                Row(
-                  children: [
-                    // View Reports Pill Button
-                    Expanded(
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: widget.onOpenStats,
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.16),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                            ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.bar_chart_rounded, size: 18, color: Colors.white),
-                                SizedBox(width: 8),
-                                Text(
-                                  'View Reports',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w800,
+                      // ── Expanded Body (Visible only on front card) ─
+                      if (isFront) ...[
+                        const SizedBox(height: 12),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Expanded(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  _hideBalance ? 'Rp •••••••••' : Fmt.money(card.balance, symbol: symbol),
+                                  style: const TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w900,
                                     color: Colors.white,
-                                    letterSpacing: -0.1,
+                                    letterSpacing: -1,
+                                    height: 1.1,
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.trending_up_rounded, size: 14, color: Color(0xFF6EE7B7)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    card.isTotal ? '+${Fmt.money0(monthlyIncome)}' : card.badge,
+                                    style: const TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF6EE7B7),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    // Scan Receipt Circular Glass Button
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: widget.onScanOcr,
-                        borderRadius: BorderRadius.circular(14),
-                        child: Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                          ),
-                          child: const Icon(Icons.document_scanner_rounded, size: 18, color: Colors.white),
+                        const SizedBox(height: 18),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: widget.onOpenStats,
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.16),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                                    ),
+                                    child: const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.bar_chart_rounded, size: 18, color: Colors.white),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'View Reports',
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.white,
+                                            letterSpacing: -0.1,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: widget.onScanOcr,
+                                borderRadius: BorderRadius.circular(14),
+                                child: Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.16),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                                  ),
+                                  child: const Icon(Icons.document_scanner_rounded, size: 18, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => setState(() => _hideBalance = !_hideBalance),
+                                borderRadius: BorderRadius.circular(14),
+                                child: Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.16),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                                  ),
+                                  child: Icon(
+                                    _hideBalance ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                    size: 18,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    // Privacy Eye Toggle Circular Glass Button
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => setState(() => _hideBalance = !_hideBalance),
-                        borderRadius: BorderRadius.circular(14),
-                        child: Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                          ),
-                          child: Icon(
-                            _hideBalance ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                            size: 18,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                      ],
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
+          );
+        }),
       ),
     );
   }

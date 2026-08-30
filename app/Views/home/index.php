@@ -5,80 +5,114 @@
 /* ── Home Layout ──────────────────────────────────────────────── */
 .home-page { padding-bottom: 32px; }
 
-/* ── Native Double-Layered Hero Wallet Card ───────────────────── */
-.native-hero-wrapper {
+/* ─── Apple Wallet Stacked Cards Deck ────────────────────────────── */
+.apple-wallet-wrapper {
     position: relative;
-    padding-top: 36px;
-    margin-top: 6px;
-    margin-bottom: 14px;
+    margin: 4px 0 16px;
+    perspective: 1000px;
 }
-.native-hero-tabs-deck {
+.apple-wallet-deck {
+    position: relative;
+    width: 100%;
+}
+.apple-deck-card {
     position: absolute;
     top: 0;
-    left: 8px;
-    right: 8px;
-    height: 48px;
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    z-index: 1;
-    padding: 0 4px;
-}
-.native-hero-tabs-deck::-webkit-scrollbar { display: none; }
-.native-hero-deck-tab {
-    flex: 0 0 auto;
-    min-width: 84px;
-    height: 38px;
-    background: linear-gradient(135deg, rgba(30, 64, 175, 0.82) 0%, rgba(29, 78, 216, 0.82) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-bottom: none;
-    border-radius: 14px 14px 0 0;
-    padding: 6px 12px 14px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    left: 0;
+    right: 0;
+    border-radius: 24px;
+    padding: 16px 20px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #ffffff;
     cursor: pointer;
-    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-    color: #ffffff;
-    opacity: 0.82;
-    transform: translateY(3px);
-    box-shadow: 0 -2px 8px rgba(37, 99, 235, 0.18);
+    box-sizing: border-box;
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.3s ease,
+                filter 0.3s ease;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    overflow: hidden;
 }
-.native-hero-deck-tab:hover {
-    opacity: 0.95;
-    transform: translateY(1px);
+.apple-deck-card:not(.active-card) {
+    height: 56px;
+    box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.25), 0 4px 10px rgba(0,0,0,0.15);
 }
-.native-hero-deck-tab.active {
-    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-    border-color: rgba(255, 255, 255, 0.38);
-    opacity: 1;
-    transform: translateY(-2px);
-    box-shadow: 0 -4px 16px rgba(37, 99, 235, 0.45);
-    z-index: 2;
+.apple-deck-card:not(.active-card):hover {
+    filter: brightness(1.12);
+    transform: translateY(calc(var(--card-y, 0px) - 4px)) scale(var(--card-scale, 0.96)) !important;
 }
-.native-hero-deck-tab .tab-txt {
-    font-size: 12px;
-    font-weight: 800;
-    color: #ffffff;
-    white-space: nowrap;
-    letter-spacing: -0.2px;
+.apple-deck-card.active-card {
+    cursor: default;
+    height: auto;
+    min-height: 195px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35), 0 4px 14px rgba(37, 99, 235, 0.3);
 }
-.native-hero-deck-tab .tab-badge {
-    font-size: 8.5px;
-    font-weight: 900;
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.22);
-    border-radius: 6px;
-    padding: 2px 5.5px;
-    letter-spacing: 0.4px;
+
+/* Card Header */
+.apple-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 26px;
+}
+.apple-card-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.apple-card-icon {
+    font-size: 15px;
     line-height: 1;
 }
-.native-hero-deck-tab.active .tab-badge {
-    background: rgba(255, 255, 255, 0.32);
+.apple-card-name {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+.apple-card-meta-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.apple-card-badge {
+    font-size: 9px;
+    font-weight: 900;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 3px 8px;
+    letter-spacing: 0.5px;
+    line-height: 1;
+}
+.apple-card-mini-balance {
+    font-size: 11px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    padding: 2.5px 8px;
+    letter-spacing: -0.2px;
+    display: none;
+}
+.apple-deck-card:not(.active-card) .apple-card-mini-balance {
+    display: inline-block;
+}
+
+/* Expanded Card Body */
+.apple-card-body {
+    margin-top: 10px;
+    transition: opacity 0.25s ease;
+}
+.apple-deck-card:not(.active-card) .apple-card-body {
+    display: none;
+    opacity: 0;
+}
+.apple-deck-card.active-card .apple-card-body {
+    display: block;
+    opacity: 1;
 }
 .native-hero-card {
     position: relative;
@@ -1200,7 +1234,7 @@
     <!-- ═══════════════════════════════════════════════════════════ PERSONAL WORKSPACE CONTAINER -->
     <div id="workspacePersonal">
 
-    <!-- ── DOUBLE-LAYER WALLET HERO CARD (Aligned 1:1 with Native _HeroCard) ── -->
+    <!-- ── APPLE WALLET STACKED CARDS DECK ── -->
     <?php
     $activeHeroWallets = array_values(array_filter($wallets ?? [], function($w) {
         return (float)($w['balance'] ?? 0) > 0;
@@ -1208,65 +1242,115 @@
     if (empty($activeHeroWallets) && !empty($wallets)) {
         $activeHeroWallets = $wallets;
     }
+
+    $paletteGradients = [
+        'total'       => 'linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 50%, #2563EB 100%)',
+        'bank'        => 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 55%, #3B82F6 100%)',
+        'cash'        => 'linear-gradient(135deg, #064E3B 0%, #047857 55%, #10B981 100%)',
+        'ewallet'     => 'linear-gradient(135deg, #312E81 0%, #4338CA 55%, #6366F1 100%)',
+        'credit_card' => 'linear-gradient(135deg, #701A75 0%, #86198F 55%, #C026D3 100%)',
+        'default'     => 'linear-gradient(135deg, #1E293B 0%, #334155 55%, #475569 100%)',
+    ];
+
+    $deckCards = [
+        [
+            'id'       => 'total',
+            'name'     => 'TOTAL BALANCE',
+            'badge'    => strtoupper(esc($month)),
+            'balance'  => (float)$balance,
+            'icon'     => '💎',
+            'gradient' => $paletteGradients['total'],
+            'is_total' => true,
+        ]
+    ];
+
+    foreach ($activeHeroWallets as $hw) {
+        $wType = strtolower($hw['type'] ?? 'default');
+        $grad = $paletteGradients[$wType] ?? $paletteGradients['default'];
+        $deckCards[] = [
+            'id'       => (string)$hw['id'],
+            'name'     => 'SALDO ' . strtoupper($hw['name']),
+            'badge'    => strtoupper($hw['type'] ?? 'CASH'),
+            'balance'  => (float)$hw['balance'],
+            'icon'     => $hw['icon'] ?? '💳',
+            'gradient' => $grad,
+            'is_total' => false,
+        ];
+    }
+    $stackOffsetPx = max(0, count($deckCards) - 1) * 36;
     ?>
-    <div class="native-hero-wrapper">
-        <!-- Layer 1: Background Active/Funded Wallet Tabs Deck -->
-        <div class="native-hero-tabs-deck" id="heroWalletTabs">
-            <button type="button" class="native-hero-deck-tab active" data-wallet-id="total" data-name="TOTAL BALANCE" data-balance="<?= esc($balance) ?>" onclick="selectHeroWalletTab(this)">
-                <span class="tab-txt">SEMUA</span>
-                <span class="tab-badge">TOTAL</span>
-            </button>
-            <?php foreach ($activeHeroWallets as $hw): ?>
-            <button type="button" class="native-hero-deck-tab" data-wallet-id="<?= $hw['id'] ?>" data-name="<?= esc($hw['name']) ?>" data-balance="<?= (float)$hw['balance'] ?>" onclick="selectHeroWalletTab(this)">
-                <span class="tab-txt"><?= esc($hw['name']) ?></span>
-                <span class="tab-badge"><?= strtoupper(esc($hw['type'] ?? 'CASH')) ?></span>
-            </button>
+    <div class="apple-wallet-wrapper" id="appleWalletWrapper" style="height: calc(195px + <?= $stackOffsetPx ?>px);">
+        <div class="apple-wallet-deck" id="appleWalletDeck">
+            <?php foreach ($deckCards as $cIdx => $card): ?>
+            <div class="apple-deck-card <?= $cIdx === 0 ? 'active-card' : '' ?>"
+                 id="appleCard-<?= $cIdx ?>"
+                 data-index="<?= $cIdx ?>"
+                 data-wallet-id="<?= esc($card['id']) ?>"
+                 data-name="<?= esc($card['name']) ?>"
+                 data-balance="<?= (float)$card['balance'] ?>"
+                 style="background: <?= $card['gradient'] ?>;"
+                 onclick="selectAppleDeckCard(<?= $cIdx ?>)">
+                
+                <!-- Card Header (Always visible in stack) -->
+                <div class="apple-card-header">
+                    <div class="apple-card-title-group">
+                        <span class="apple-card-icon"><?= $card['icon'] ?></span>
+                        <span class="apple-card-name"><?= esc($card['name']) ?></span>
+                    </div>
+                    <div class="apple-card-meta-group">
+                        <span class="apple-card-mini-balance" data-raw="<?= esc($symbol) ?> <?= number_format($card['balance'], 0, ',', '.') ?>" data-hidden="Rp ••••">
+                            <?= esc($symbol) ?> <?= number_format($card['balance'], 0, ',', '.') ?>
+                        </span>
+                        <span class="apple-card-badge"><?= esc($card['badge']) ?></span>
+                    </div>
+                </div>
+
+                <!-- Card Body (Expanded when active) -->
+                <div class="apple-card-body">
+                    <div class="native-hero-balance-row">
+                        <div class="native-hero-amount display-balance-amount"
+                             data-raw="<?= esc($symbol) ?> <?= number_format($card['balance'], 0, ',', '.') ?>"
+                             data-hidden="Rp •••••••••">
+                            <?= esc($symbol) ?> <?= number_format($card['balance'], 0, ',', '.') ?>
+                        </div>
+                        <div class="native-hero-trend-pill">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            </svg>
+                            <span><?= $card['is_total'] ? ('+' . esc($symbol) . ' ' . number_format($monthly['income'], 0, ',', '.')) : esc($card['badge']) ?></span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="native-hero-actions">
+                        <a href="/stats" class="native-hero-pill-btn" onclick="event.stopPropagation()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <line x1="18" y1="20" x2="18" y2="10"></line>
+                                <line x1="12" y1="20" x2="12" y2="4"></line>
+                                <line x1="6" y1="20" x2="6" y2="14"></line>
+                            </svg>
+                            <span>View Reports</span>
+                        </a>
+                        <a href="/scan" class="native-hero-icon-btn" title="Scan Struk (OCR)" onclick="event.stopPropagation()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+                                <path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3M7 12h10M7 8h10M7 16h6"/>
+                            </svg>
+                        </a>
+                        <button type="button" class="native-hero-icon-btn btn-privacy-toggle" title="Sembunyikan / Tampilkan Saldo" onclick="event.stopPropagation(); toggleBalancePrivacy();">
+                            <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <svg class="eye-closed" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
             <?php endforeach; ?>
-        </div>
-        <!-- Layer 2: Main Blue Gradient Pocket -->
-        <div class="native-hero-card">
-            <div class="native-hero-top">
-                <span class="native-hero-label" id="heroBalanceLabel">TOTAL BALANCE</span>
-                <span class="native-hero-month-tag"><?= strtoupper(esc($month)) ?></span>
-            </div>
-            <div class="native-hero-balance-row">
-                <div class="native-hero-amount" id="displayBalance" data-raw="<?= esc($symbol) ?> <?= number_format($balance, 0, ',', '.') ?>" data-hidden="Rp •••••••••">
-                    <?= esc($symbol) ?> <?= number_format($balance, 0, ',', '.') ?>
-                </div>
-                <div class="native-hero-trend-pill" id="heroTrendPill">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
-                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                        <polyline points="17 6 23 6 23 12"></polyline>
-                    </svg>
-                    <span id="heroTrendText">+<?= esc($symbol) ?> <?= number_format($monthly['income'], 0, ',', '.') ?></span>
-                </div>
-            </div>
-            <!-- Translucent Quick Action Glass Pills -->
-            <div class="native-hero-actions">
-                <a href="/stats" class="native-hero-pill-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <line x1="18" y1="20" x2="18" y2="10"></line>
-                        <line x1="12" y1="20" x2="12" y2="4"></line>
-                        <line x1="6" y1="20" x2="6" y2="14"></line>
-                    </svg>
-                    <span>View Reports</span>
-                </a>
-                <a href="/scan" class="native-hero-icon-btn" title="Scan Struk (OCR)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
-                        <path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3M7 12h10M7 8h10M7 16h6"/>
-                    </svg>
-                </a>
-                <button type="button" class="native-hero-icon-btn" id="btnToggleBalancePrivacy" title="Sembunyikan / Tampilkan Saldo" onclick="toggleBalancePrivacy()">
-                    <svg id="eyeOpenIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                    <svg id="eyeClosedIcon" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                    </svg>
-                </button>
-            </div>
         </div>
     </div>
 
@@ -3422,60 +3506,74 @@ try {
 
 })();
 
-function selectHeroWalletTab(btn) {
-    if (!btn) return;
-    document.querySelectorAll('.native-hero-deck-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
+let activeAppleCardIndex = 0;
 
-    const name = btn.dataset.name || 'TOTAL BALANCE';
-    const balance = parseFloat(btn.dataset.balance) || 0;
-    const symbol = '<?= esc($symbol ?? 'Rp') ?>';
-    const formatted = symbol + ' ' + Number(balance).toLocaleString('id-ID');
+function layoutAppleDeck() {
+    const cards = document.querySelectorAll('.apple-deck-card');
+    if (!cards.length) return;
+    const totalCards = cards.length;
 
-    const labelEl = document.getElementById('heroBalanceLabel');
-    const displayEl = document.getElementById('displayBalance');
-    const trendText = document.getElementById('heroTrendText');
-
-    if (labelEl) {
-        labelEl.textContent = btn.dataset.walletId === 'total' ? 'TOTAL BALANCE' : 'SALDO ' + name.toUpperCase();
-    }
-    if (displayEl) {
-        displayEl.setAttribute('data-raw', formatted);
-        const isHidden = (localStorage.getItem('duitku_hide_balance') === 'true');
-        displayEl.textContent = isHidden ? (displayEl.dataset.hidden || 'Rp •••••••••') : formatted;
-    }
-    if (trendText) {
-        if (btn.dataset.walletId !== 'total') {
-            trendText.textContent = name;
+    let stackIdx = 0;
+    cards.forEach((card, idx) => {
+        if (idx === activeAppleCardIndex) {
+            card.classList.add('active-card');
+            const yOffset = (totalCards - 1) * 36;
+            card.style.setProperty('--card-y', `${yOffset}px`);
+            card.style.setProperty('--card-scale', '1');
+            card.style.transform = `translateY(${yOffset}px) scale(1)`;
+            card.style.zIndex = '25';
+            card.style.opacity = '1';
         } else {
-            trendText.textContent = '+<?= esc($symbol) ?> <?= number_format($monthly['income'], 0, ',', '.') ?>';
+            card.classList.remove('active-card');
+            const yOffset = stackIdx * 36;
+            const scale = 0.94 + (stackIdx * 0.018);
+            card.style.setProperty('--card-y', `${yOffset}px`);
+            card.style.setProperty('--card-scale', `${scale}`);
+            card.style.transform = `translateY(${yOffset}px) scale(${scale})`;
+            card.style.zIndex = String(stackIdx + 1);
+            card.style.opacity = '0.94';
+            stackIdx++;
         }
-    }
+    });
 }
-window.selectHeroWalletTab = selectHeroWalletTab;
+
+function selectAppleDeckCard(idx) {
+    if (activeAppleCardIndex === idx) return;
+    activeAppleCardIndex = idx;
+    layoutAppleDeck();
+}
+window.selectAppleDeckCard = selectAppleDeckCard;
+
+// Initialize on DOM load
+document.addEventListener('DOMContentLoaded', () => {
+    layoutAppleDeck();
+});
 
 function toggleBalancePrivacy(forceHide = null) {
-    const el = document.getElementById('displayBalance');
-    const eyeOpen = document.getElementById('eyeOpenIcon');
-    const eyeClosed = document.getElementById('eyeClosedIcon');
-    if (!el) return;
+    const isHidden = (localStorage.getItem('duitku_hide_balance') === 'true');
+    const shouldHide = forceHide !== null ? forceHide : !isHidden;
 
-    const raw = el.dataset.raw || el.textContent;
-    const hidden = el.dataset.hidden || 'Rp •••••••••';
-    const isCurrentlyHidden = (el.textContent.trim() === hidden.trim());
-    const shouldHide = forceHide !== null ? forceHide : !isCurrentlyHidden;
+    try { localStorage.setItem('duitku_hide_balance', shouldHide ? 'true' : 'false'); } catch(e) {}
 
-    if (shouldHide) {
-        el.textContent = hidden;
-        if (eyeOpen) eyeOpen.style.display = 'none';
-        if (eyeClosed) eyeClosed.style.display = 'block';
-        try { localStorage.setItem('duitku_hide_balance', 'true'); } catch(e) {}
-    } else {
-        el.textContent = raw;
-        if (eyeOpen) eyeOpen.style.display = 'block';
-        if (eyeClosed) eyeClosed.style.display = 'none';
-        try { localStorage.setItem('duitku_hide_balance', 'false'); } catch(e) {}
-    }
+    // Update all cards in deck
+    document.querySelectorAll('.display-balance-amount').forEach(el => {
+        const raw = el.dataset.raw || el.textContent;
+        const hidden = el.dataset.hidden || 'Rp •••••••••';
+        el.textContent = shouldHide ? hidden : raw;
+    });
+
+    document.querySelectorAll('.apple-card-mini-balance').forEach(el => {
+        const raw = el.dataset.raw || el.textContent;
+        const hidden = el.dataset.hidden || 'Rp ••••';
+        el.textContent = shouldHide ? hidden : raw;
+    });
+
+    document.querySelectorAll('.btn-privacy-toggle').forEach(btn => {
+        const open = btn.querySelector('.eye-open');
+        const closed = btn.querySelector('.eye-closed');
+        if (open) open.style.display = shouldHide ? 'none' : 'block';
+        if (closed) closed.style.display = shouldHide ? 'block' : 'none';
+    });
 }
 
 async function toggleHomeTask(event, taskId) {
