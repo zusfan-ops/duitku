@@ -32,7 +32,18 @@ abstract class ApiController extends Controller
         if ($raw === null || $raw === '') {
             return 0.0;
         }
-        $str = str_replace(['.', ','], ['', '.'], (string) $raw);
+        if (is_int($raw) || is_float($raw)) {
+            return (float) $raw;
+        }
+        $str = trim((string) $raw);
+        if (str_contains($str, ',')) {
+            $str = str_replace('.', '', $str);
+            $str = str_replace(',', '.', $str);
+        } else {
+            if (preg_match('/^\d{1,3}(\.\d{3})+$/', $str)) {
+                $str = str_replace('.', '', $str);
+            }
+        }
         return (float) $str;
     }
 }

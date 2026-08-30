@@ -101,23 +101,39 @@ class WalletModel extends Model
             }
         }
 
-        $total = 0.0;
-        foreach ($wallets as &$w) {
-            $w['balance'] = (float)$w['initial_balance'] + ($netByWallet[(int)$w['id']] ?? 0.0);
-            if (empty($w['is_shared'])) {
-                $total += $w['balance'];
+        // Find default wallet ID to attribute legacy unlinked transactions
+        $defaultWalletId = null;
+        foreach ($wallets as $w) {
+            if (!empty($w['is_default'])) {
+                $defaultWalletId = (int)$w['id'];
+                break;
             }
         }
-        unset($w);
+        if (!$defaultWalletId && !empty($wallets)) {
+            $defaultWalletId = (int)$wallets[0]['id'];
+        }
 
-        // Also include transactions not linked to any wallet (legacy) for owned wallets
+        // Include transactions not linked to any wallet (legacy) and associate with default wallet
         $legacy = $db->query("
             SELECT
                 SUM(CASE WHEN type='income'  THEN amount ELSE 0 END) -
                 SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) AS net
             FROM transactions WHERE user_id = ? AND wallet_id IS NULL
         ", [$userId])->getRowArray();
-        $total += (float)($legacy['net'] ?? 0);
+        $legacyNet = (float)($legacy['net'] ?? 0);
+
+        $total = 0.0;
+        foreach ($wallets as &$w) {
+            $net = $netByWallet[(int)$w['id']] ?? 0.0;
+            if ((int)$w['id'] === $defaultWalletId) {
+                $net += $legacyNet;
+            }
+            $w['balance'] = (float)$w['initial_balance'] + $net;
+            if (empty($w['is_shared'])) {
+                $total += $w['balance'];
+            }
+        }
+        unset($w);
 
         return ['wallets' => $wallets, 'total' => $total];
     }

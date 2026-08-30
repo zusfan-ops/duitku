@@ -40,7 +40,7 @@ class WalletController extends BaseController
         $type    = $this->request->getPost('type') ?: 'cash';
         $icon    = $this->request->getPost('icon') ?: '💵';
         $color   = $this->request->getPost('color') ?: '#0AA956';
-        $initial = (float)str_replace(['.', ','], ['', '.'], $this->request->getPost('initial_balance') ?? '0');
+        $initial = $this->parseAmount($this->request->getPost('initial_balance') ?? '0');
 
         if (!$name || !in_array($type, ['bank', 'e-wallet', 'cash', 'savings_home'])) {
             return $this->response->setJSON(['success' => false, 'message' => 'Data tidak lengkap.']);

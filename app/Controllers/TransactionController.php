@@ -42,7 +42,7 @@ class TransactionController extends BaseController
             'wallet_id'   => $walletId,
             'category_id' => $this->request->getPost('category_id') ?: null,
             'type'        => $this->request->getPost('type'),
-            'amount'      => (float) str_replace(['.', ','], ['', '.'], $this->request->getPost('amount')),
+            'amount'      => $this->parseAmount($this->request->getPost('amount')),
             'note'        => $this->request->getPost('note') ?: null,
             'date'        => $this->request->getPost('date') ?: date('Y-m-d'),
         ];
@@ -123,7 +123,7 @@ class TransactionController extends BaseController
             'wallet_id'   => $walletId,
             'category_id' => $this->request->getPost('category_id') ?: null,
             'type'        => $this->request->getPost('type'),
-            'amount'      => (float) str_replace(['.', ','], ['', '.'], $this->request->getPost('amount')),
+            'amount'      => $this->parseAmount($this->request->getPost('amount')),
             'note'        => $this->request->getPost('note') ?: null,
             'date'        => $this->request->getPost('date') ?: date('Y-m-d'),
         ];
