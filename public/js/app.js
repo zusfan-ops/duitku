@@ -289,7 +289,9 @@
     function renderCategoryChips() {
         const container = $('categoryChips');
         if (!container) return;
-        const cats = (window.DUITKU.categories || []).filter(c => c.type === state.selectedType);
+        const rawCats = window.DUITKU && window.DUITKU.categories;
+        const allCats = Array.isArray(rawCats) ? rawCats : (rawCats && typeof rawCats === 'object' ? Object.values(rawCats) : []);
+        const cats = allCats.filter(c => c && typeof c === 'object' && c.type === state.selectedType);
         container.innerHTML = cats.map(c => `
             <button type="button"
                 class="cat-chip ${String(state.selectedCategoryId) === String(c.id) ? 'selected' : ''}"

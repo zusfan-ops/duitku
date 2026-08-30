@@ -444,7 +444,7 @@
         </div>
         <div class="todo-meta-row">
             <select name="category" class="todo-select">
-                <?php foreach ($categories as $cName => $cData): ?>
+                <?php foreach (($todoCategories ?? []) as $cName => $cData): ?>
                 <option value="<?= esc($cName) ?>"><?= $cData['icon'] ?> <?= esc($cName) ?></option>
                 <?php endforeach; ?>
             </select>
@@ -478,7 +478,7 @@
         <a href="/todo?filter=<?= esc($filter) ?>&category=all" class="todo-cat-pill <?= $category === 'all' ? 'active' : '' ?>">
             Semua Kategori
         </a>
-        <?php foreach ($categories as $cName => $cData): ?>
+        <?php foreach (($todoCategories ?? []) as $cName => $cData): ?>
         <a href="/todo?filter=<?= esc($filter) ?>&category=<?= urlencode($cName) ?>" class="todo-cat-pill <?= $category === $cName ? 'active' : '' ?>">
             <?= $cData['icon'] ?> <?= esc($cName) ?>
         </a>
@@ -501,7 +501,7 @@
             $prio = $t['priority'] ?? 'medium';
             $prioClass = $prio === 'high' ? 'prio-high' : ($prio === 'low' ? 'prio-low' : 'prio-medium');
             $prioLabel = $prio === 'high' ? '🔥 Tinggi' : ($prio === 'low' ? '🌱 Rendah' : '⚡ Sedang');
-            $catIcon = $categories[$t['category']]['icon'] ?? '📝';
+            $catIcon = $todoCategories[$t['category']]['icon'] ?? '📝';
         ?>
         <div class="todo-card <?= $isDone ? 'completed' : '' ?>" id="todoCard-<?= $t['id'] ?>" data-id="<?= $t['id'] ?>">
             <button type="button" class="todo-checkbox" onclick="toggleTask(<?= $t['id'] ?>)" title="Tandai selesai">
@@ -586,7 +586,7 @@
                 <div>
                     <label style="font-size:11.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Kategori</label>
                     <select name="category" id="editCategory" class="todo-select" style="width:100%;margin-top:4px;padding:8px 10px;">
-                        <?php foreach ($categories as $cName => $cData): ?>
+                        <?php foreach (($todoCategories ?? []) as $cName => $cData): ?>
                         <option value="<?= esc($cName) ?>"><?= $cData['icon'] ?> <?= esc($cName) ?></option>
                         <?php endforeach; ?>
                     </select>

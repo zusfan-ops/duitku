@@ -152,6 +152,7 @@
                 $avatar     = (is_array($avatar) && !empty($avatar['initials'])) ? $avatar : ['initials' => 'U', 'color' => '#2D5A27'];
                 $avatarImg  = null;
                 $_layoutWallets = [];
+                $_layoutCategories = [];
                 $_layoutNotifs = [];
                 if ($userId) {
                     try {
@@ -161,6 +162,14 @@
                             $avatarImg = '/uploads/avatars/' . $avatarImgFile;
                         }
                     } catch (\Throwable $e) {}
+
+                    // Load transaction categories list for transaction modal (available on every page)
+                    try {
+                        $cm = new \App\Models\CategoryModel();
+                        $_layoutCategories = $cm->getForUser($userId);
+                    } catch (\Throwable $e) {
+                        $_layoutCategories = [];
+                    }
 
                     // Load wallet list for transaction modal (available on every page)
                     if (!isset($wallets)) {
@@ -555,7 +564,7 @@
 <!-- ═══════════════════════════════════════════════════════════════ SCRIPTS -->
 <script>
     window.DUITKU = {
-        categories:    <?= json_encode($categories ?? []) ?>,
+        categories:    <?= json_encode($_layoutCategories ?? []) ?>,
         wallets:       <?= json_encode($_layoutWallets ?? []) ?>,
         notifications: <?= json_encode($_layoutNotifs ?? []) ?>,
         symbol:        '<?= esc($symbol ?? 'Rp') ?>',

@@ -41,13 +41,13 @@ class TodoController extends BaseController
         ];
 
         return view('todo/index', [
-            'pageTitle'  => 'Todo-List',
-            'tasks'      => $tasks,
-            'summary'    => $summary,
-            'filter'     => $filter,
-            'category'   => $category,
-            'search'     => $search,
-            'categories' => $categories,
+            'pageTitle'      => 'Todo-List',
+            'tasks'          => $tasks,
+            'summary'        => $summary,
+            'filter'         => $filter,
+            'category'       => $category,
+            'search'         => $search,
+            'todoCategories' => $categories,
         ]);
     }
 
