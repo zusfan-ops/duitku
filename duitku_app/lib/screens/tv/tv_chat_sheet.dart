@@ -30,6 +30,12 @@ class _TvChatSheetState extends State<TvChatSheet> {
   bool _isLoading = true;
   bool _isSending = false;
 
+  int _parseInt(dynamic val) {
+    if (val == null) return 0;
+    if (val is num) return val.toInt();
+    return int.tryParse(val.toString()) ?? 0;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -63,12 +69,15 @@ class _TvChatSheetState extends State<TvChatSheet> {
       if (list.isNotEmpty) {
         setState(() {
           for (final item in list) {
-            final m = item as Map<String, dynamic>;
-            final id = (m['id'] as num?)?.toInt() ?? 0;
+            final m = Map<String, dynamic>.from(item as Map);
+            final id = _parseInt(m['id']);
             if (id > _lastId) {
               _lastId = id;
             }
-            _messages.add(m);
+            final exists = _messages.any((x) => _parseInt(x['id']) == id);
+            if (!exists) {
+              _messages.add(m);
+            }
           }
           _isLoading = false;
         });
@@ -99,36 +108,36 @@ class _TvChatSheetState extends State<TvChatSheet> {
     final cleanText = text.trim();
     if (cleanText.isEmpty || _isSending) return;
 
-    final auth = context.read<AuthProvider>();
-    final curUser = auth.user;
-    final curUserId = curUser?.id ?? 0;
-    final curUserName = curUser?.name ?? 'Pengguna';
-
     _textController.clear();
     setState(() {
       _isSending = true;
-      // Optimistic append
-      _messages.add({
-        'id': _lastId + 1,
-        'user_id': curUserId,
-        'user_name': curUserName,
-        'message': cleanText,
-        'created_at': DateTime.now().toIso8601String(),
-      });
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-        );
-      }
     });
 
     try {
-      await ApiService.instance.sendTvChat(cleanText);
+      final res = await ApiService.instance.sendTvChat(cleanText);
+      final chatData = res['chat'] as Map<String, dynamic>?;
+      if (chatData != null && mounted) {
+        final id = _parseInt(chatData['id']);
+        if (id > _lastId) {
+          _lastId = id;
+        }
+        setState(() {
+          final exists = _messages.any((x) => _parseInt(x['id']) == id);
+          if (!exists) {
+            _messages.add(chatData);
+          }
+        });
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+      }
       await _fetchMessages(isPolling: true);
     } catch (_) {
     } finally {
@@ -260,8 +269,8 @@ class _TvChatSheetState extends State<TvChatSheet> {
                           itemCount: _messages.length,
                           itemBuilder: (context, idx) {
                             final msg = _messages[idx];
-                            final msgUserId = (msg['user_id'] as num?)?.toInt() ?? 0;
-                            final isMine = msgUserId == curUserId;
+                            final msgUserId = _parseInt(msg['user_id']);
+                            final isMine = curUserId > 0 && msgUserId == curUserId;
                             final userName = (msg['user_name'] as String?) ?? 'Pengguna';
                             final text = (msg['message'] as String?) ?? '';
                             final createdAt = msg['created_at'] as String?;

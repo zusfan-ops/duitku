@@ -77,11 +77,14 @@ class TvController extends ApiController
 
     public function sendChat()
     {
-        $userId   = $this->user['id'] ?? null;
-        $userName = $this->user['name'] ?? 'Pengguna';
+        $userId = $this->uid();
         if (!$userId) {
             return $this->fail('Unauthenticated', 401);
         }
+
+        $userModel = new \App\Models\UserModel();
+        $user = $userModel->find($userId);
+        $userName = $user['name'] ?? $user['username'] ?? 'Pengguna';
 
         $json    = $this->request->getJSON(true);
         $message = $json['message'] ?? $this->request->getPost('message') ?? '';
