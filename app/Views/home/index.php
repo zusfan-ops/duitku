@@ -2233,7 +2233,7 @@
             </div>
             <div id="mediaHeaderBadge">
                 <span class="tv-badge-live-sm" id="badgeLiveTv">LIVE</span>
-                <span class="jellyfin-badge-sm" id="badgeJellyfin" style="display:none">JELLYFIN</span>
+                <span class="jellyfin-badge-sm" id="badgeJellyfin" style="display:none">FILM HD</span>
             </div>
         </div>
 
@@ -2299,7 +2299,7 @@
                         <span style="font-size:13px; font-weight:800; color:var(--text-primary);">🎬 Katalog Film</span>
                         <span style="font-size:11px; font-weight:700; color:var(--text-muted);">(<?= count($jellyfinMovies) ?> Judul)</span>
                     </div>
-                    <span style="font-size:10.5px; color:#00A4DC; font-weight:700;">Jellyfin Server</span>
+                    <span style="font-size:10.5px; color:#00A4DC; font-weight:700;">Film Bioskop</span>
                 </div>
 
                 <!-- Search Input inside tab -->

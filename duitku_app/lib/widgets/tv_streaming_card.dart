@@ -393,7 +393,7 @@ class _TvStreamingCardState extends State<TvStreamingCard> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Text(
-                    'JELLYFIN',
+                    'FILM HD',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
@@ -748,7 +748,7 @@ class _TvStreamingCardState extends State<TvStreamingCard> {
                   backgroundColor: AppColors.bg,
                 ),
                 icon: const Text(
-                  'Lihat Semua Film (Jellyfin)',
+                  'Lihat Semua Film',
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w800,
@@ -765,7 +765,7 @@ class _TvStreamingCardState extends State<TvStreamingCard> {
   }
 }
 
-// ── BOTTOM SHEET: KATALOG FILM JELLYFIN ──
+// ── BOTTOM SHEET: KATALOG FILM ──
 class _JellyfinCatalogSheet extends StatefulWidget {
   final List<JellyfinMovie> movies;
   final ValueChanged<JellyfinMovie> onSelectMovie;
@@ -812,11 +812,11 @@ class _JellyfinCatalogSheetState extends State<_JellyfinCatalogSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Katalog Film Jellyfin',
+                        'Katalog Film',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
                       ),
                       Text(
-                        'film.hallosemarang.com',
+                        'Koleksi Film Pilihan',
                         style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                       ),
                     ],
