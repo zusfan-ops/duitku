@@ -249,6 +249,7 @@ class DashboardController extends ApiController
             'unreadCount'        => count($notifications),
             'tv_channels'        => (new \App\Models\TvChannelModel())->getActiveChannels(),
             'my_home_summary'    => \App\Controllers\BarangController::getSummaryForUser($userId),
+            'jellyfin_movies'    => \App\Services\JellyfinService::getMovies(24),
             'user'               => [
                 'name'  => session()->get('user_name') ?: '',
             ],

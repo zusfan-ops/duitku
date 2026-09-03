@@ -278,6 +278,9 @@ $routes->group('api', function ($routes) {
         $routes->get('tv/chats',                    'Api\TvController::chats');
         $routes->post('tv/chats',                   'Api\TvController::sendChat');
 
+        // Jellyfin Movie Streaming API
+        $routes->get('jellyfin/movies',             'Api\JellyfinController::index');
+
         // Emergency Services Directory API
         $routes->get('emergency',                   'EmergencyController::apiList');
 

@@ -43,6 +43,7 @@ import '../services/sync_service.dart';
 import '../widgets/sync_status_banner.dart';
 import '../widgets/tv_streaming_card.dart';
 import '../widgets/my_home_card.dart';
+import '../models/jellyfin_movie.dart';
 import 'barang/barang_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -348,7 +349,10 @@ class DashboardScreenState extends State<DashboardScreen> {
           _QuickActions(data: data),
           MyHomeDashboardCard(summary: (data.myHomeSummary as Map<String, dynamic>? ?? {})),
           const NearbyServicesCard(),
-          TvStreamingCard(initialChannels: (data.tvChannels as List<TvChannel>? ?? [])),
+          TvStreamingCard(
+            initialChannels: (data.tvChannels as List<TvChannel>? ?? []),
+            initialMovies: (data.jellyfinMovies as List<JellyfinMovie>? ?? []),
+          ),
           if (data.savingsTarget > 0) _SavingsCard(data: data),
           if ((data.monthNote ?? '').isNotEmpty) _NotePreview(data: data),
           if ((data.debtSummary.activeCount as int) > 0) _DebtSummaryCard(data: data),

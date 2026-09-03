@@ -163,88 +163,102 @@ class _MyHomeDashboardCardState extends State<MyHomeDashboardCard> {
           ),
           const SizedBox(height: 12),
 
-          // Hero Health Card
+          // Hero Health Card (Material Design 3 Surface Container)
           InkWell(
             onTap: _openMyHome,
             borderRadius: BorderRadius.circular(18),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFF97316), Color(0xFFD946EF), Color(0xFF6366F1)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: AppColors.bg,
                 borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFD946EF).withValues(alpha: 0.3),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+                border: Border.all(color: AppColors.border, width: 1.2),
               ),
               child: Column(
                 children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF2FF),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.home_work_outlined, color: Color(0xFF4F46E5), size: 22),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   Text(
                     _assetsCount == 0 ? '-' : '$_healthScore',
                     style: const TextStyle(
-                      fontSize: 44,
+                      fontSize: 46,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: -1,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -1.5,
                       height: 1.05,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.home_outlined, color: Colors.white, size: 16),
-                      SizedBox(width: 5),
-                      Text(
-                        'Home Health',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'HOME HEALTH',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textSecondary,
+                      letterSpacing: 0.8,
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     _healthStatus,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: Colors.white.withValues(alpha: 0.92),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textMuted,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.22),
+                      color: _assetsCount == 0
+                          ? const Color(0xFFEEF2FF)
+                          : (_attentionCount > 0 ? const Color(0xFFFEF2F2) : const Color(0xFFECFDF5)),
                       borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: _assetsCount == 0
+                            ? const Color(0xFFC7D2FE)
+                            : (_attentionCount > 0 ? const Color(0xFFFECACA) : const Color(0xFFA7F3D0)),
+                        width: 1,
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(_assetsCount == 0 ? '➕' : (_attentionCount > 0 ? '⚠️' : '✨'), style: const TextStyle(fontSize: 12)),
-                        const SizedBox(width: 5),
+                        Icon(
+                          _assetsCount == 0
+                              ? Icons.add_circle_outline_rounded
+                              : (_attentionCount > 0 ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded),
+                          size: 15,
+                          color: _assetsCount == 0
+                              ? const Color(0xFF4F46E5)
+                              : (_attentionCount > 0 ? const Color(0xFFDC2626) : const Color(0xFF059669)),
+                        ),
+                        const SizedBox(width: 6),
                         Text(
                           _assetsCount == 0
-                              ? 'Mulai catat aset pertama'
+                              ? 'Mulai Catat Aset Pertama'
                               : (_attentionCount > 0
                                   ? '$_attentionCount tugas butuh perhatian'
                                   : 'Semua perawatan & garansi aman'),
-                          style: const TextStyle(
-                            fontSize: 11,
+                          style: TextStyle(
+                            fontSize: 11.5,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: _assetsCount == 0
+                                ? const Color(0xFF4F46E5)
+                                : (_attentionCount > 0 ? const Color(0xFFDC2626) : const Color(0xFF059669)),
                           ),
                         ),
                       ],

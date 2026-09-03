@@ -98,66 +98,75 @@
     box-shadow: 0 3px 10px rgba(99, 102, 241, 0.3);
 }
 
-/* Hero Home Health Card */
+/* Hero Home Health Card (Material Design 3 Surface Container) */
 .myhome-health-card {
     position: relative;
     border-radius: 24px;
     padding: 24px 20px;
-    background: linear-gradient(135deg, #F97316 0%, #D946EF 55%, #6366F1 100%);
-    color: #ffffff;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
     margin-bottom: 16px;
-    box-shadow: 0 10px 30px rgba(217, 70, 239, 0.28);
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    overflow: hidden;
-}
-.myhome-health-card::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    left: -20%;
-    width: 140%;
-    height: 140%;
-    background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 60%);
-    pointer-events: none;
 }
 .myhome-health-icon {
-    font-size: 26px;
-    margin-bottom: 4px;
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366F1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+    font-size: 22px;
 }
 .myhome-health-score {
     font-size: 52px;
     font-weight: 900;
     line-height: 1;
     letter-spacing: -1.5px;
+    color: var(--text-primary);
     margin-bottom: 4px;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.15);
 }
 .myhome-health-title {
-    font-size: 14px;
+    font-size: 11.5px;
     font-weight: 800;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
     margin-bottom: 4px;
 }
 .myhome-health-sub {
-    font-size: 12px;
-    opacity: 0.94;
-    max-width: 320px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    max-width: 340px;
 }
 .myhome-health-badge {
-    margin-top: 12px;
-    padding: 6px 14px;
-    background: rgba(255,255,255,0.22);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    margin-top: 14px;
+    padding: 7px 16px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
     border-radius: 20px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
+    color: #4F46E5;
     display: inline-flex;
     align-items: center;
     gap: 6px;
+}
+.myhome-health-badge.urgent {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #DC2626;
+}
+.myhome-health-badge.safe {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.2);
+    color: #059669;
 }
 
 /* Attention Section */
@@ -542,25 +551,28 @@
 
     <!-- ── TAB 1: HOME AT A GLANCE ── -->
     <div id="viewHome" style="<?= $activeTab === 'home' ? '' : 'display:none' ?>">
-        <!-- Hero Health Card -->
+        <!-- Hero Health Card (Material Design) -->
         <?php $hasAssets = ($summary['assets_count'] ?? 0) > 0; ?>
         <div class="myhome-health-card">
-            <div class="myhome-health-icon">🏠</div>
+            <div class="myhome-health-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
             <div class="myhome-health-score"><?= $hasAssets ? ($summary['health_score'] ?? 100) : '-' ?></div>
             <div class="myhome-health-title">Home Health</div>
             <div class="myhome-health-sub"><?= esc($summary['health_status'] ?? 'Mulai catat aset rumah Anda untuk memantau kondisi.') ?></div>
             
             <?php if (!$hasAssets): ?>
             <div class="myhome-health-badge" style="cursor:pointer" onclick="openAddAssetModal()">
-                <span>➕</span> <span>Mulai Catat Aset Pertama</span>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Mulai Catat Aset Pertama</span>
             </div>
             <?php elseif (!empty($summary['attention'])): ?>
-            <div class="myhome-health-badge">
+            <div class="myhome-health-badge urgent">
                 <span>⚠️</span> <span><?= count($summary['attention']) ?> jadwal butuh perhatian Anda</span>
             </div>
             <?php else: ?>
-            <div class="myhome-health-badge">
-                <span>✨</span> <span>Semua perawatan & garansi aman</span>
+            <div class="myhome-health-badge safe">
+                <span>✓</span> <span>Semua perawatan & garansi aman</span>
             </div>
             <?php endif; ?>
         </div>

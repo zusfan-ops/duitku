@@ -255,6 +255,7 @@ class HomeController extends BaseController
             'todoSummary'        => (new \App\Models\TodoModel())->getSummary($userId),
             'tvChannels'         => (new \App\Models\TvChannelModel())->getActiveChannels(),
             'myHomeSummary'      => \App\Controllers\BarangController::getSummaryForUser($userId),
+            'jellyfinMovies'     => \App\Services\JellyfinService::getMovies(24),
         ]);
     }
 

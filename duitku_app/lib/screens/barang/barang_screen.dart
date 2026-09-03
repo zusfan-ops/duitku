@@ -287,80 +287,103 @@ class _BarangScreenState extends State<BarangScreen> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
       children: [
         // Hero Health Card
+        // Hero Health Card (Material Design 3 Surface Container)
         Container(
           padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFF97316), Color(0xFFD946EF), Color(0xFF6366F1)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: AppColors.card,
             borderRadius: BorderRadius.circular(22),
-            boxShadow: [
+            border: Border.all(color: AppColors.border, width: 1.2),
+            boxShadow: const [
               BoxShadow(
-                color: const Color(0xFFD946EF).withValues(alpha: 0.35),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+                color: Color(0x06000000),
+                blurRadius: 16,
+                offset: Offset(0, 4),
               ),
             ],
           ),
           child: Column(
             children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2FF),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Center(
+                  child: Icon(Icons.home_work_outlined, color: Color(0xFF4F46E5), size: 24),
+                ),
+              ),
+              const SizedBox(height: 10),
               Text(
                 _items.isEmpty ? '-' : '$_healthScore',
                 style: const TextStyle(
-                  fontSize: 50,
+                  fontSize: 48,
                   fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  letterSpacing: -1,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -1.5,
                   height: 1.05,
                 ),
               ),
               const SizedBox(height: 4),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.home_rounded, color: Colors.white, size: 18),
-                  SizedBox(width: 5),
-                  Text(
-                    'Home Health',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
+              const Text(
+                'HOME HEALTH',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textSecondary,
+                  letterSpacing: 0.8,
+                ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 _healthStatus,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.94),
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textMuted,
                 ),
               ),
               const SizedBox(height: 12),
               GestureDetector(
                 onTap: _items.isEmpty ? () => _openAddForm() : null,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.22),
+                    color: _items.isEmpty
+                        ? const Color(0xFFEEF2FF)
+                        : (_healthScore < 85 ? const Color(0xFFFEF2F2) : const Color(0xFFECFDF5)),
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: _items.isEmpty
+                          ? const Color(0xFFC7D2FE)
+                          : (_healthScore < 85 ? const Color(0xFFFECACA) : const Color(0xFFA7F3D0)),
+                      width: 1,
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(_items.isEmpty ? '➕' : '✨', style: const TextStyle(fontSize: 12)),
-                      const SizedBox(width: 5),
+                      Icon(
+                        _items.isEmpty
+                            ? Icons.add_circle_outline_rounded
+                            : (_healthScore < 85 ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded),
+                        size: 15,
+                        color: _items.isEmpty
+                            ? const Color(0xFF4F46E5)
+                            : (_healthScore < 85 ? const Color(0xFFDC2626) : const Color(0xFF059669)),
+                      ),
+                      const SizedBox(width: 6),
                       Text(
-                        _items.isEmpty ? 'Mulai catat aset pertama' : 'Semua aset dan perawatan terpelihara',
-                        style: const TextStyle(
-                          fontSize: 11,
+                        _items.isEmpty ? 'Mulai Catat Aset Pertama' : 'Semua aset dan perawatan terpelihara',
+                        style: TextStyle(
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: _items.isEmpty
+                              ? const Color(0xFF4F46E5)
+                              : (_healthScore < 85 ? const Color(0xFFDC2626) : const Color(0xFF059669)),
                         ),
                       ),
                     ],

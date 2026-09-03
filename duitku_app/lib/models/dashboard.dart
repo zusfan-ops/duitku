@@ -1,6 +1,7 @@
 import 'bill.dart';
 import 'category.dart';
 import 'debt.dart';
+import 'jellyfin_movie.dart';
 import 'tv_channel.dart';
 import 'wallet.dart';
 
@@ -33,6 +34,7 @@ class DashboardData {
   final Map<String, dynamic> business;
   final List<TvChannel> tvChannels;
   final Map<String, dynamic> myHomeSummary;
+  final List<JellyfinMovie> jellyfinMovies;
 
   DashboardData({
     this.balance = 0,
@@ -63,6 +65,7 @@ class DashboardData {
     this.business = const {},
     this.tvChannels = const [],
     this.myHomeSummary = const {},
+    this.jellyfinMovies = const [],
   });
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
@@ -106,6 +109,11 @@ class DashboardData {
       myHomeSummary: json['my_home_summary'] as Map<String, dynamic>? ??
           json['myHomeSummary'] as Map<String, dynamic>? ??
           {},
+      jellyfinMovies: (json['jellyfin_movies'] as List<dynamic>? ??
+              json['jellyfinMovies'] as List<dynamic>? ??
+              [])
+          .map((e) => JellyfinMovie.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

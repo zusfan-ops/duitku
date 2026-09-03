@@ -1468,6 +1468,112 @@
     transform: scale(0.98);
 }
 
+/* ── 🎬 Tabbed Media Streaming & Jellyfin Styles ────────────── */
+.media-tab-group {
+    display: flex;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 3px;
+    gap: 4px;
+}
+.media-tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 6px 10px;
+    border-radius: 9px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+.media-tab-btn.active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.jellyfin-badge-sm {
+    background: linear-gradient(135deg, #00A4DC, #AA5CC3);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.film-cards-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    scrollbar-width: none;
+}
+.film-cards-scroll::-webkit-scrollbar { display: none; }
+.film-mini-card {
+    flex: 0 0 100px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+}
+.film-mini-card:hover, .film-mini-card.active {
+    border-color: #00A4DC;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 164, 220, 0.18);
+}
+.film-mini-poster {
+    width: 100%;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    background: #1E293B;
+    display: block;
+}
+.film-mini-info {
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.film-mini-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.film-mini-meta {
+    font-size: 9.5px;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.film-rating-badge {
+    color: #EAB308;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
 /* ── 🏡 My Home Dashboard Card ────────────────────────────── */
 .my-home-card {
     background: var(--bg-card);
@@ -1506,63 +1612,77 @@
 }
 .my-home-hero-banner {
     position: relative;
-    border-radius: 18px;
-    padding: 20px 16px;
-    background: linear-gradient(135deg, #F97316 0%, #D946EF 55%, #6366F1 100%);
-    color: #ffffff;
+    border-radius: 20px;
+    padding: 20px 18px;
+    background: var(--bg);
+    border: 1px solid var(--border);
     margin-bottom: 14px;
-    box-shadow: 0 8px 24px rgba(217, 70, 239, 0.28);
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    overflow: hidden;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.my-home-hero-banner::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    left: -20%;
-    width: 140%;
-    height: 140%;
-    background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 60%);
-    pointer-events: none;
+.my-home-hero-banner:hover {
+    border-color: #6366F1;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.08);
 }
-.my-home-score-num {
-    font-size: 42px;
-    font-weight: 900;
-    line-height: 1;
-    letter-spacing: -1px;
-    margin-bottom: 4px;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-.my-home-score-label {
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: 0.3px;
+.my-home-hero-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366F1;
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    margin-bottom: 8px;
+    font-size: 20px;
+}
+.my-home-score-num {
+    font-size: 46px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -1.5px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+.my-home-score-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
     margin-bottom: 4px;
 }
 .my-home-score-sub {
-    font-size: 11.5px;
+    font-size: 12px;
     font-weight: 500;
-    opacity: 0.92;
-    max-width: 280px;
+    color: var(--text-muted);
+    max-width: 320px;
 }
 .my-home-attention-box {
-    margin-top: 10px;
-    padding: 6px 12px;
-    background: rgba(255,255,255,0.2);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-radius: 12px;
-    font-size: 11px;
+    margin-top: 12px;
+    padding: 6px 14px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 20px;
+    font-size: 11.5px;
     font-weight: 700;
+    color: #4F46E5;
     display: inline-flex;
     align-items: center;
     gap: 6px;
+}
+.my-home-attention-box.urgent {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #DC2626;
+}
+.my-home-attention-box.safe {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.2);
+    color: #059669;
 }
 .my-home-grid {
     display: grid;
@@ -2026,24 +2146,25 @@
         <!-- Hero Home Health Banner -->
         <?php $hasAssets = ($hs['assets_count'] ?? 0) > 0; ?>
         <a href="/barang" class="my-home-hero-banner" style="text-decoration:none">
-            <div class="my-home-score-num"><?= $hasAssets ? ($hs['health_score'] ?? 100) : '-' ?></div>
-            <div class="my-home-score-label">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-                <span>Home Health</span>
+            <div class="my-home-hero-icon">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </div>
+            <div class="my-home-score-num"><?= $hasAssets ? ($hs['health_score'] ?? 100) : '-' ?></div>
+            <div class="my-home-score-label">Home Health</div>
             <div class="my-home-score-sub"><?= esc($hs['health_status'] ?? 'Mulai catat aset rumah Anda untuk memantau kondisi.') ?></div>
 
             <?php if (!$hasAssets): ?>
             <div class="my-home-attention-box">
-                <span>➕</span> <span>Mulai Catat Aset Pertama</span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Mulai Catat Aset Pertama</span>
             </div>
             <?php elseif (!empty($hs['attention'])): ?>
-            <div class="my-home-attention-box">
+            <div class="my-home-attention-box urgent">
                 <span>⚠️</span> <span><?= count($hs['attention']) ?> tugas butuh perhatian Anda</span>
             </div>
             <?php else: ?>
-            <div class="my-home-attention-box">
-                <span>✨</span> <span>Semua perawatan & garansi aman</span>
+            <div class="my-home-attention-box safe">
+                <span>✓</span> <span>Semua perawatan & garansi aman</span>
             </div>
             <?php endif; ?>
         </a>
@@ -2087,53 +2208,128 @@
         </a>
     </div>
 
-    <!-- ── 📺 WIDGET TV & LIVE STREAMING (NO AUTOPLAY) ── -->
-    <?php if (!empty($tvChannels)): 
-        $defaultChannel = $tvChannels[0];
+    <!-- ── 📺 & 🎬 TABBED MEDIA STREAMING (TV & FILM JELLYFIN) ── -->
+    <?php 
+        $hasTv = !empty($tvChannels);
+        $hasFilm = !empty($jellyfinMovies);
+        if ($hasTv || $hasFilm): 
+            $defaultChannel = $hasTv ? $tvChannels[0] : null;
+            $defaultMovie = $hasFilm ? $jellyfinMovies[0] : null;
     ?>
-    <div class="tv-home-card" id="tvHomeCard">
-        <div class="tv-home-hdr">
-            <div class="tv-home-title-wrap">
-                <span class="tv-home-title">📺 TV & Live Streaming</span>
-                <span class="tv-badge-live-sm">LIVE</span>
+    <div class="tv-home-card" id="mediaStreamingCard">
+        <!-- Header with Segmented Tabs -->
+        <div class="tv-home-hdr" style="gap:8px; flex-wrap:wrap;">
+            <div class="media-tab-group" id="mediaTabGroup">
+                <?php if ($hasTv): ?>
+                <button type="button" class="media-tab-btn active" id="tabBtnTv" onclick="switchMediaTab('tv')">
+                    <span>📺</span> <span>TV Streaming</span>
+                </button>
+                <?php endif; ?>
+                <?php if ($hasFilm): ?>
+                <button type="button" class="media-tab-btn <?= !$hasTv ? 'active' : '' ?>" id="tabBtnFilm" onclick="switchMediaTab('film')">
+                    <span>🎬</span> <span>Film Streaming</span>
+                </button>
+                <?php endif; ?>
             </div>
-            <span style="font-size:11.5px; font-weight:700; color:var(--text-muted);">
-                <?= count($tvChannels) ?> Siaran
-            </span>
+            <div id="mediaHeaderBadge">
+                <span class="tv-badge-live-sm" id="badgeLiveTv">LIVE</span>
+                <span class="jellyfin-badge-sm" id="badgeJellyfin" style="display:none">JELLYFIN</span>
+            </div>
         </div>
 
-        <!-- Video Player Box (No Autoplay) -->
-        <div class="tv-home-player-box" id="tvHomePlayerBox">
-            <!-- Poster Overlay (Initial State before Play) -->
-            <div class="tv-home-poster" id="tvHomePoster" onclick="startHomeTvPlay()">
-                <div class="tv-home-play-btn">
-                    <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <!-- ── TAB 1: TV STREAMING PANEL ── -->
+        <div id="mediaPanelTv" style="<?= $hasTv ? '' : 'display:none' ?>">
+            <?php if ($hasTv): ?>
+            <!-- Video Player Box (No Autoplay) -->
+            <div class="tv-home-player-box" id="tvHomePlayerBox">
+                <div class="tv-home-poster" id="tvHomePoster" onclick="startHomeTvPlay()">
+                    <div class="tv-home-play-btn">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    </div>
+                    <div class="tv-home-poster-name" id="tvHomePosterName"><?= esc($defaultChannel['name']) ?></div>
+                    <div class="tv-home-poster-hint">Ketuk untuk Memutar Siaran Langsung</div>
                 </div>
-                <div class="tv-home-poster-name" id="tvHomePosterName"><?= esc($defaultChannel['name']) ?></div>
-                <div class="tv-home-poster-hint">Ketuk untuk Memutar Siaran Langsung</div>
+                <video id="homeTvVideo" class="tv-home-video" controls playsinline preload="none"
+                       data-stream="<?= esc($defaultChannel['stream_url']) ?>">
+                </video>
             </div>
 
-            <!-- Video Element (Activated on user click) -->
-            <video id="homeTvVideo" class="tv-home-video" controls playsinline preload="none"
-                   data-stream="<?= esc($defaultChannel['stream_url']) ?>">
-            </video>
+            <!-- Channel Switcher Chips -->
+            <div class="tv-home-chips" id="tvHomeChips">
+                <?php foreach ($tvChannels as $idx => $ch): ?>
+                <button type="button" class="tv-home-chip <?= $idx === 0 ? 'active' : '' ?>"
+                        onclick="switchHomeTvChannel(<?= (int)$ch['id'] ?>, '<?= esc($ch['stream_url'], 'js') ?>', '<?= esc($ch['name'], 'js') ?>', '<?= esc($ch['category'], 'js') ?>', this)">
+                    <span>📺</span> <?= esc($ch['name']) ?>
+                </button>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Action: Lihat Semua Live Streaming -->
+            <a href="<?= base_url('tv') ?>" class="tv-home-see-all">
+                <span>Lihat Semua Live Streaming</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+            <?php endif; ?>
         </div>
 
-        <!-- Channel Switcher Chips -->
-        <div class="tv-home-chips" id="tvHomeChips">
-            <?php foreach ($tvChannels as $idx => $ch): ?>
-            <button type="button" class="tv-home-chip <?= $idx === 0 ? 'active' : '' ?>"
-                    onclick="switchHomeTvChannel(<?= (int)$ch['id'] ?>, '<?= esc($ch['stream_url'], 'js') ?>', '<?= esc($ch['name'], 'js') ?>', '<?= esc($ch['category'], 'js') ?>', this)">
-                <span>📺</span> <?= esc($ch['name']) ?>
-            </button>
-            <?php endforeach; ?>
-        </div>
+        <!-- ── TAB 2: FILM STREAMING (JELLYFIN) PANEL ── -->
+        <div id="mediaPanelFilm" style="<?= !$hasTv && $hasFilm ? '' : 'display:none' ?>">
+            <?php if ($hasFilm): ?>
+            <!-- Film Video Player Box (No Autoplay) -->
+            <div class="tv-home-player-box" id="filmHomePlayerBox">
+                <div class="tv-home-poster" id="filmHomePoster" onclick="startHomeFilmPlay()" style="background-image:url('<?= esc($defaultMovie['backdrop'] ?? $defaultMovie['poster']) ?>'); background-size:cover; background-position:center;">
+                    <div style="position:absolute; inset:0; background:rgba(11,15,25,0.72); backdrop-filter:blur(2px);"></div>
+                    <div class="tv-home-play-btn" style="position:relative; z-index:2; background:#00A4DC; box-shadow:0 6px 20px rgba(0,164,220,0.5);">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    </div>
+                    <div class="tv-home-poster-name" id="filmHomePosterName" style="position:relative; z-index:2;"><?= esc($defaultMovie['title']) ?> (<?= esc($defaultMovie['year']) ?>)</div>
+                    <div class="tv-home-poster-hint" id="filmHomePosterHint" style="position:relative; z-index:2;">
+                        <?= !empty($defaultMovie['rating']) ? '⭐ ' . esc($defaultMovie['rating']) . ' • ' : '' ?><?= esc($defaultMovie['duration']) ?> • Ketuk untuk Memutar Film
+                    </div>
+                </div>
+                <video id="homeFilmVideo" class="tv-home-video" controls playsinline preload="none"
+                       data-stream="<?= esc($defaultMovie['stream_url']) ?>">
+                </video>
+            </div>
 
-        <!-- Action: Lihat Semua Live Streaming -->
-        <a href="<?= base_url('tv') ?>" class="tv-home-see-all">
-            <span>Lihat Semua Live Streaming</span>
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </a>
+            <!-- Katalog Film Section (HANYA MUNCUL DI TAB FILM STREAMING) -->
+            <div style="margin-top:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="font-size:13px; font-weight:800; color:var(--text-primary);">🎬 Katalog Film</span>
+                        <span style="font-size:11px; font-weight:700; color:var(--text-muted);">(<?= count($jellyfinMovies) ?> Judul)</span>
+                    </div>
+                    <span style="font-size:10.5px; color:#00A4DC; font-weight:700;">Jellyfin Server</span>
+                </div>
+
+                <!-- Search Input inside tab -->
+                <div style="margin-bottom:12px; position:relative;">
+                    <input type="text" id="jellyfinSearchInput" placeholder="Cari judul film..." 
+                           style="width:100%; padding:9px 12px 9px 34px; border-radius:12px; border:1px solid var(--border); background:var(--bg); color:var(--text-primary); font-size:12px; outline:none;"
+                           oninput="filterJellyfinCatalog(this.value)">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" style="position:absolute; left:11px; top:10px; color:var(--text-muted)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+
+                <!-- Grid of Films inside tab -->
+                <div id="jellyfinCatalogGrid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; max-height:420px; overflow-y:auto; padding-right:2px; scrollbar-width:thin;">
+                    <?php foreach ($jellyfinMovies as $idx => $m): ?>
+                    <div class="jellyfin-catalog-item" data-title="<?= esc(strtolower($m['title'])) ?>" onclick="playFilmFromCatalog('<?= esc($m['id'], 'js') ?>', '<?= esc($m['stream_url'], 'js') ?>', '<?= esc($m['title'], 'js') ?>', '<?= esc($m['year'], 'js') ?>', '<?= esc($m['backdrop'], 'js') ?>', '<?= esc($m['rating'] ?? '', 'js') ?>', '<?= esc($m['duration'], 'js') ?>')" style="background:var(--bg); border:1px solid var(--border); border-radius:12px; overflow:hidden; cursor:pointer; display:flex; flex-direction:column; transition:transform 0.15s ease, border-color 0.15s ease;">
+                        <img src="<?= esc($m['poster']) ?>" alt="<?= esc($m['title']) ?>" style="width:100%; aspect-ratio:2/2.8; object-fit:cover; background:#1E293B; display:block;" loading="lazy">
+                        <div style="padding:6px; display:flex; flex-direction:column; gap:2px; flex:1;">
+                            <div style="font-size:11px; font-weight:800; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="<?= esc($m['title']) ?>"><?= esc($m['title']) ?></div>
+                            <div style="font-size:9.5px; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center;">
+                                <span><?= esc($m['year']) ?></span>
+                                <?php if (!empty($m['rating'])): ?>
+                                <span style="color:#D97706; font-weight:800">★ <?= esc($m['rating']) ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
     </div>
     <?php endif; ?>
 
@@ -4247,6 +4443,146 @@ function switchHomeTvChannel(id, streamUrl, name, cat, btnEl) {
 
     if (isHomeTvPlaying && video) {
         playStreamUrl(video, streamUrl);
+    }
+}
+
+function switchMediaTab(tab) {
+    const tabBtnTv = document.getElementById('tabBtnTv');
+    const tabBtnFilm = document.getElementById('tabBtnFilm');
+    const panelTv = document.getElementById('mediaPanelTv');
+    const panelFilm = document.getElementById('mediaPanelFilm');
+    const badgeLive = document.getElementById('badgeLiveTv');
+    const badgeJellyfin = document.getElementById('badgeJellyfin');
+
+    const tvVideo = document.getElementById('homeTvVideo');
+    const filmVideo = document.getElementById('homeFilmVideo');
+
+    if (tab === 'tv') {
+        if (tabBtnTv) tabBtnTv.classList.add('active');
+        if (tabBtnFilm) tabBtnFilm.classList.remove('active');
+        if (panelTv) panelTv.style.display = 'block';
+        if (panelFilm) panelFilm.style.display = 'none';
+        if (badgeLive) badgeLive.style.display = 'inline-flex';
+        if (badgeJellyfin) badgeJellyfin.style.display = 'none';
+
+        if (filmVideo && !filmVideo.paused) {
+            filmVideo.pause();
+        }
+    } else {
+        if (tabBtnFilm) tabBtnFilm.classList.add('active');
+        if (tabBtnTv) tabBtnTv.classList.remove('active');
+        if (panelFilm) panelFilm.style.display = 'block';
+        if (panelTv) panelTv.style.display = 'none';
+        if (badgeLive) badgeLive.style.display = 'none';
+        if (badgeJellyfin) badgeJellyfin.style.display = 'inline-flex';
+
+        if (tvVideo && !tvVideo.paused) {
+            tvVideo.pause();
+        }
+    }
+}
+
+function startHomeFilmPlay() {
+    const poster = document.getElementById('filmHomePoster');
+    const video = document.getElementById('homeFilmVideo');
+    if (!video) return;
+
+    const streamUrl = video.dataset.stream;
+    if (!streamUrl) return;
+
+    if (poster) poster.style.display = 'none';
+    video.classList.add('active');
+
+    video.src = streamUrl;
+    video.play().catch(() => {});
+}
+
+function selectHomeFilm(el) {
+    document.querySelectorAll('.film-mini-card').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+
+    const video = document.getElementById('homeFilmVideo');
+    const poster = document.getElementById('filmHomePoster');
+    const nameEl = document.getElementById('filmHomePosterName');
+    const hintEl = document.getElementById('filmHomePosterHint');
+
+    const streamUrl = el.dataset.stream;
+    const title = el.dataset.title;
+    const year = el.dataset.year;
+    const rating = el.dataset.rating;
+    const duration = el.dataset.duration;
+    const backdrop = el.dataset.backdrop;
+
+    if (video) {
+        video.dataset.stream = streamUrl;
+        video.src = streamUrl;
+        video.classList.remove('active');
+        video.pause();
+    }
+
+    if (poster) {
+        poster.style.display = 'flex';
+        if (backdrop) {
+            poster.style.backgroundImage = `url('${backdrop}')`;
+        }
+    }
+
+    if (nameEl) nameEl.textContent = `${title} (${year})`;
+    if (hintEl) {
+        hintEl.textContent = `${rating ? '⭐ ' + rating + ' • ' : ''}${duration ? duration + ' • ' : ''}Ketuk untuk Memutar Film`;
+    }
+}
+
+
+function filterJellyfinCatalog(q) {
+    q = (q || '').toLowerCase().trim();
+    document.querySelectorAll('.jellyfin-catalog-item').forEach(item => {
+        const title = item.dataset.title || '';
+        if (!q || title.includes(q)) {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+function playFilmFromCatalog(id, streamUrl, title, year, backdrop, rating, duration) {
+    document.querySelectorAll('.jellyfin-catalog-item').forEach(el => {
+        el.style.borderColor = 'var(--border)';
+    });
+    if (window.event && window.event.currentTarget) {
+        window.event.currentTarget.style.borderColor = '#00A4DC';
+    }
+
+    switchMediaTab('film');
+
+    const video = document.getElementById('homeFilmVideo');
+    const poster = document.getElementById('filmHomePoster');
+    const nameEl = document.getElementById('filmHomePosterName');
+    const hintEl = document.getElementById('filmHomePosterHint');
+
+    if (video) {
+        video.dataset.stream = streamUrl;
+        video.src = streamUrl;
+        video.classList.remove('active');
+        video.pause();
+    }
+
+    if (poster) {
+        poster.style.display = 'flex';
+        if (backdrop) {
+            poster.style.backgroundImage = `url('${backdrop}')`;
+        }
+    }
+
+    if (nameEl) nameEl.textContent = `${title} (${year})`;
+    if (hintEl) {
+        hintEl.textContent = `${rating ? '⭐ ' + rating + ' • ' : ''}${duration ? duration + ' • ' : ''}Ketuk untuk Memutar Film`;
+    }
+
+    const box = document.getElementById('filmHomePlayerBox');
+    if (box) {
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 }
 </script>
