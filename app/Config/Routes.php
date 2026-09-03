@@ -281,6 +281,12 @@ $routes->group('api', function ($routes) {
         // Emergency Services Directory API
         $routes->get('emergency',                   'EmergencyController::apiList');
 
+        // My Home / Barang API
+        $routes->get('barang',                      'Api\BarangController::index');
+        $routes->post('barang/store',               'Api\BarangController::store');
+        $routes->post('barang/delete/(:segment)',   'Api\BarangController::delete/$1');
+        $routes->post('barang/sync',                'Api\BarangController::sync');
+
         // Todos API
         $routes->get('todos',                       'TodoController::apiList');
         $routes->post('todos/store',                'TodoController::apiStore');

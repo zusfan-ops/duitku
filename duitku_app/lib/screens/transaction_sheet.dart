@@ -7,6 +7,8 @@ import '../models/category.dart';
 import '../models/transaction.dart';
 import '../models/wallet.dart';
 import '../services/api_service.dart';
+import '../services/offline_cache_service.dart';
+import '../services/sync_service.dart';
 import '../services/widget_helper.dart';
 import '../theme.dart';
 import '../utils/format.dart';
@@ -147,6 +149,22 @@ class _TransactionSheetState extends State<TransactionSheet> {
       imageBase64 = await ApiService.instance.base64FromFile(_image!.path);
     }
 
+    final isOnline = SyncService.instance.isOnline;
+
+    if (!isOnline) {
+      await _saveOffline(amount, imageBase64);
+      if (!mounted) return;
+      WidgetHelper.updateDashboardWidget();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tersimpan di perangkat (Mode Offline). Akan otomatis disinkronkan saat ada internet.'),
+          backgroundColor: Color(0xFFD97706),
+        ),
+      );
+      Navigator.pop(context, true);
+      return;
+    }
+
     try {
       if (widget.transaction == null) {
         await ApiService.instance.storeTransaction(
@@ -178,7 +196,61 @@ class _TransactionSheetState extends State<TransactionSheet> {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      // Network drop during request - fallback to offline queue
+      await _saveOffline(amount, imageBase64);
+      if (!mounted) return;
+      WidgetHelper.updateDashboardWidget();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Koneksi terputus. Tersimpan offline & akan otomatis disinkronkan.'),
+          backgroundColor: Color(0xFFD97706),
+        ),
+      );
+      Navigator.pop(context, true);
     }
+  }
+
+  Future<void> _saveOffline(double amount, String? imageBase64) async {
+    final selectedCat = widget.categories.where((c) => c.id == _categoryId).firstOrNull;
+    final selectedWallet = widget.wallets.where((w) => w.id == _walletId).firstOrNull;
+
+    final tempId = DateTime.now().millisecondsSinceEpoch;
+    final offlineTx = Transaction(
+      id: widget.transaction?.id ?? -tempId,
+      walletId: _walletId,
+      categoryId: _categoryId,
+      type: _type,
+      amount: amount,
+      note: _noteCtrl.text,
+      date: _date,
+      categoryName: selectedCat?.name,
+      categoryIcon: selectedCat?.icon,
+      categoryColor: selectedCat?.color,
+      walletName: selectedWallet?.name,
+      isRecurring: _recurring,
+      isPendingSync: true,
+    );
+
+    final payload = <String, dynamic>{
+      if (widget.transaction != null) 'id': widget.transaction!.id,
+      'type': _type,
+      'amount': amount,
+      'category_id': _categoryId,
+      'wallet_id': _walletId,
+      'note': _noteCtrl.text,
+      'date': _date,
+      'is_recurring': _recurring ? 1 : 0,
+      'image_base64': imageBase64,
+    };
+
+    final actionType = widget.transaction == null ? 'transaction_store' : 'transaction_update';
+    await SyncService.instance.enqueue(actionType, payload);
+    await OfflineCacheService.instance.applyOptimisticTransaction(
+      offlineTx,
+      category: selectedCat,
+      wallet: selectedWallet,
+    );
   }
 
   void _addAmount(double add) {

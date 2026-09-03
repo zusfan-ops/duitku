@@ -1,6 +1,7 @@
 import 'bill.dart';
 import 'category.dart';
 import 'debt.dart';
+import 'tv_channel.dart';
 import 'wallet.dart';
 
 class DashboardData {
@@ -30,6 +31,8 @@ class DashboardData {
   final List<dynamic> upcomingRecurring;
   final List<dynamic> notifications;
   final Map<String, dynamic> business;
+  final List<TvChannel> tvChannels;
+  final Map<String, dynamic> myHomeSummary;
 
   DashboardData({
     this.balance = 0,
@@ -58,6 +61,8 @@ class DashboardData {
     this.upcomingRecurring = const [],
     this.notifications = const [],
     this.business = const {},
+    this.tvChannels = const [],
+    this.myHomeSummary = const {},
   });
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
@@ -95,6 +100,12 @@ class DashboardData {
       upcomingRecurring: json['upcomingRecurring'] as List<dynamic>? ?? [],
       notifications: json['notifications'] as List<dynamic>? ?? [],
       business: json['business'] as Map<String, dynamic>? ?? {},
+      tvChannels: (json['tv_channels'] as List<dynamic>? ?? [])
+          .map((e) => TvChannel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      myHomeSummary: json['my_home_summary'] as Map<String, dynamic>? ??
+          json['myHomeSummary'] as Map<String, dynamic>? ??
+          {},
     );
   }
 }

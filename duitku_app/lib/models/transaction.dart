@@ -12,6 +12,7 @@ class Transaction {
   final String? categoryColor;
   final String? walletName;
   final bool isRecurring;
+  final bool isPendingSync;
 
   Transaction({
     required this.id,
@@ -27,6 +28,7 @@ class Transaction {
     this.categoryColor,
     this.walletName,
     this.isRecurring = false,
+    this.isPendingSync = false,
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
@@ -39,6 +41,10 @@ class Transaction {
         noteStr.toLowerCase().contains('pembayaran rutin') ||
         noteStr.toLowerCase().contains('(berulang)') ||
         noteStr.toLowerCase().contains('rutin');
+
+    final isPending = json['is_pending_sync'] == true ||
+        json['is_pending_sync'] == 1 ||
+        json['is_pending_sync'] == '1';
 
     return Transaction(
       id: json['id'] is int ? json['id'] as int : int.tryParse('${json['id']}') ?? 0,
@@ -54,6 +60,24 @@ class Transaction {
       categoryColor: json['category_color']?.toString(),
       walletName: json['wallet_name']?.toString(),
       isRecurring: isRec,
+      isPendingSync: isPending,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'wallet_id': walletId,
+        'category_id': categoryId,
+        'type': type,
+        'amount': amount,
+        'note': note,
+        'date': date,
+        'image': image,
+        'category_name': categoryName,
+        'category_icon': categoryIcon,
+        'category_color': categoryColor,
+        'wallet_name': walletName,
+        'is_recurring': isRecurring ? 1 : 0,
+        'is_pending_sync': isPendingSync,
+      };
 }

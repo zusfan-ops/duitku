@@ -4,9 +4,12 @@ import 'package:provider/provider.dart';
 import '../models/wallet.dart';
 import '../providers/app_data_provider.dart';
 import '../services/api_service.dart';
+import '../services/offline_cache_service.dart';
+import '../services/sync_service.dart';
 import '../theme.dart';
 import '../utils/format.dart';
 import '../widgets/category_icon.dart';
+import '../widgets/sync_status_banner.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -268,6 +271,33 @@ class _WalletScreenState extends State<WalletScreen> {
                   onPressed: () async {
                     final amount = double.tryParse(Fmt.parseAmount(amountCtrl.text)) ?? 0;
                     if (fromId == null || toId == null || fromId == toId || amount <= 0) return;
+
+                    final isOnline = SyncService.instance.isOnline;
+                    if (!isOnline) {
+                      await SyncService.instance.enqueue('wallet_transfer', {
+                        'from_id': fromId!,
+                        'to_id': toId!,
+                        'amount': amount,
+                        'note': noteCtrl.text,
+                      });
+                      await OfflineCacheService.instance.applyOptimisticTransfer(
+                        fromId: fromId!,
+                        toId: toId!,
+                        amount: amount,
+                        note: noteCtrl.text,
+                      );
+                      if (ctx.mounted) {
+                        Navigator.pop(ctx, true);
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(
+                            content: Text('Transfer dicatat secara offline. Akan disinkronkan saat online.'),
+                            backgroundColor: Color(0xFFD97706),
+                          ),
+                        );
+                      }
+                      return;
+                    }
+
                     try {
                       await ApiService.instance.transferWallet(
                         fromId: fromId!,
@@ -279,6 +309,29 @@ class _WalletScreenState extends State<WalletScreen> {
                     } on ApiException catch (e) {
                       if (ctx.mounted) {
                         ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(e.message)));
+                      }
+                    } catch (e) {
+                      // Fallback offline
+                      await SyncService.instance.enqueue('wallet_transfer', {
+                        'from_id': fromId!,
+                        'to_id': toId!,
+                        'amount': amount,
+                        'note': noteCtrl.text,
+                      });
+                      await OfflineCacheService.instance.applyOptimisticTransfer(
+                        fromId: fromId!,
+                        toId: toId!,
+                        amount: amount,
+                        note: noteCtrl.text,
+                      );
+                      if (ctx.mounted) {
+                        Navigator.pop(ctx, true);
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(
+                            content: Text('Koneksi terputus. Transfer disimpan offline.'),
+                            backgroundColor: Color(0xFFD97706),
+                          ),
+                        );
                       }
                     }
                   },
@@ -313,13 +366,14 @@ class _WalletScreenState extends State<WalletScreen> {
               icon: const Icon(Icons.add, color: Colors.white),
               label: const Text('Tambah', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
             ),
-      body: _loading
+      body: _loading && wallets.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                 children: [
+                  const SyncStatusBanner(),
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(

@@ -20,7 +20,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
   bool _loading = true;
   String _filter = 'all';
   String _category = 'all';
-  String _search = '';
+  final String _search = '';
 
   final List<Map<String, dynamic>> _categories = [
     {'name': 'all', 'label': 'Semua', 'icon': '📋'},

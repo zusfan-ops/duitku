@@ -253,6 +253,8 @@ class HomeController extends BaseController
             'unreadCount'        => count($notifications),
             'business'           => $businessSummary,
             'todoSummary'        => (new \App\Models\TodoModel())->getSummary($userId),
+            'tvChannels'         => (new \App\Models\TvChannelModel())->getActiveChannels(),
+            'myHomeSummary'      => \App\Controllers\BarangController::getSummaryForUser($userId),
         ]);
     }
 

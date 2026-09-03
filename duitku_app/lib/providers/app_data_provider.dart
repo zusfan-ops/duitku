@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show ChangeNotifier;
 import '../models/category.dart';
 import '../models/wallet.dart';
 import '../services/api_service.dart';
+import '../services/offline_cache_service.dart';
 
 class AppDataProvider extends ChangeNotifier {
   List<Category> _categories = [];
@@ -17,6 +18,20 @@ class AppDataProvider extends ChangeNotifier {
 
   Future<void> ensureLoaded({bool force = false}) async {
     if (_loaded && !force) return;
+
+    // Load from local cache first for instant offline readiness
+    if (!_loaded) {
+      final cachedCats = await OfflineCacheService.instance.getCategories();
+      final (cachedWallets, cachedSym) = await OfflineCacheService.instance.getWallets();
+      if (cachedCats.isNotEmpty || cachedWallets.isNotEmpty) {
+        _categories = cachedCats;
+        _wallets = cachedWallets;
+        _symbol = cachedSym;
+        _loaded = true;
+        notifyListeners();
+      }
+    }
+
     try {
       final results = await Future.wait([
         ApiService.instance.categories(),
@@ -30,6 +45,10 @@ class AppDataProvider extends ChangeNotifier {
       _symbol = walletJson['symbol']?.toString() ?? _symbol;
       _loaded = true;
       notifyListeners();
+
+      // Persist to local cache
+      await OfflineCacheService.instance.saveCategories(_categories);
+      await OfflineCacheService.instance.saveWallets(_wallets, symbol: _symbol);
     } catch (_) {}
   }
 
@@ -41,6 +60,21 @@ class AppDataProvider extends ChangeNotifier {
           .toList();
       _symbol = walletJson['symbol']?.toString() ?? _symbol;
       notifyListeners();
-    } catch (_) {}
+      await OfflineCacheService.instance.saveWallets(_wallets, symbol: _symbol);
+    } catch (_) {
+      final (cachedWallets, cachedSym) = await OfflineCacheService.instance.getWallets();
+      if (cachedWallets.isNotEmpty) {
+        _wallets = cachedWallets;
+        _symbol = cachedSym;
+        notifyListeners();
+      }
+    }
+  }
+
+  void updateWalletsLocally(List<Wallet> newWallets) {
+    _wallets = newWallets;
+    notifyListeners();
+    OfflineCacheService.instance.saveWallets(_wallets, symbol: _symbol);
   }
 }
+

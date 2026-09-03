@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../models/transaction.dart';
 import '../providers/app_data_provider.dart';
 import '../services/api_service.dart';
+import '../services/offline_cache_service.dart';
 import '../theme.dart';
+import '../widgets/sync_status_banner.dart';
 import '../widgets/transaction_tile.dart';
 import 'transaction_sheet.dart';
 
@@ -78,11 +80,37 @@ class _ActivityScreenState extends State<ActivityScreen> {
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _loadingMore = false;
-        if (reset) _hasError = true;
-      });
+      // Offline fallback: load from dashboard recent transactions cache
+      final cachedDash = await OfflineCacheService.instance.getDashboard();
+      if (cachedDash != null && reset) {
+        var cachedList = cachedDash.recent
+            .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
+            .toList();
+        if (_type != 'all') {
+          cachedList = cachedList.where((t) => t.type == _type).toList();
+        }
+        final q = _searchCtrl.text.trim().toLowerCase();
+        if (q.isNotEmpty) {
+          cachedList = cachedList.where((t) {
+            final note = (t.note ?? '').toLowerCase();
+            final cat = (t.categoryName ?? '').toLowerCase();
+            return note.contains(q) || cat.contains(q);
+          }).toList();
+        }
+        setState(() {
+          _items = cachedList;
+          _symbol = cachedDash.symbol;
+          _loading = false;
+          _loadingMore = false;
+          _hasError = false;
+        });
+      } else {
+        setState(() {
+          _loading = false;
+          _loadingMore = false;
+          if (reset && _items.isEmpty) _hasError = true;
+        });
+      }
     }
   }
 
@@ -120,6 +148,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
       appBar: AppBar(title: const Text('Aktivitas')),
       body: Column(
         children: [
+          const SyncStatusBanner(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
             child: Row(

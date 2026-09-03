@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../models/debt.dart';
 import '../services/api_service.dart';
+import '../services/sync_service.dart';
 import '../theme.dart';
 import '../utils/format.dart';
+import '../widgets/sync_status_banner.dart';
 
 class DebtScreen extends StatefulWidget {
   const DebtScreen({super.key});
@@ -177,6 +179,27 @@ class _DebtScreenState extends State<DebtScreen> {
     );
 
     if (saved != null) {
+      final isOnline = SyncService.instance.isOnline;
+      if (!isOnline) {
+        await SyncService.instance.enqueue('debt_store', {
+          'type': saved['type'],
+          'person': saved['person'],
+          'amount': saved['amount'],
+          'description': (saved['description'] as String).trim(),
+          'due_date': saved['due_date'],
+          'is_past': saved['is_past'],
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Hutang/Piutang dicatat offline. Akan disinkronkan saat online.'),
+            backgroundColor: Color(0xFFD97706),
+          ),
+        );
+        _load();
+        return;
+      }
+
       try {
         await ApiService.instance.storeDebt(
           type: saved['type'] as String,
@@ -191,6 +214,22 @@ class _DebtScreenState extends State<DebtScreen> {
       } on ApiException catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      } catch (e) {
+        await SyncService.instance.enqueue('debt_store', {
+          'type': saved['type'],
+          'person': saved['person'],
+          'amount': saved['amount'],
+          'description': (saved['description'] as String).trim(),
+          'due_date': saved['due_date'],
+          'is_past': saved['is_past'],
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Koneksi terputus. Hutang/Piutang dicatat offline.'),
+            backgroundColor: Color(0xFFD97706),
+          ),
+        );
       }
       _load();
     }
@@ -340,13 +379,14 @@ class _DebtScreenState extends State<DebtScreen> {
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('Catat', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
       ),
-      body: _loading
+      body: _loading && _debts.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                 children: [
+                  const SyncStatusBanner(),
                   _SummaryCard(summary: _summary, symbol: _symbol),
                   const SizedBox(height: 12),
                   Container(

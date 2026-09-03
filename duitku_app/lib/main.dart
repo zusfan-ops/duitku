@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'providers/app_data_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/travel_provider.dart';
+import 'services/sync_service.dart';
 import 'dart:developer';
 
 import 'screens/auth/login_screen.dart';
@@ -32,6 +33,7 @@ class DuitkuApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
+        ChangeNotifierProvider(create: (_) => SyncService.instance..init()),
         ChangeNotifierProvider(create: (_) => AppDataProvider()),
         ChangeNotifierProvider(create: (_) => TravelProvider()..ensureLoaded()),
       ],

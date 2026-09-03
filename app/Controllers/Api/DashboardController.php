@@ -247,6 +247,8 @@ class DashboardController extends ApiController
             'notifications'      => $notifications,
             'business'           => $businessSummary,
             'unreadCount'        => count($notifications),
+            'tv_channels'        => (new \App\Models\TvChannelModel())->getActiveChannels(),
+            'my_home_summary'    => \App\Controllers\BarangController::getSummaryForUser($userId),
             'user'               => [
                 'name'  => session()->get('user_name') ?: '',
             ],

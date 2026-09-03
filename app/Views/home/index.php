@@ -1280,6 +1280,351 @@
     font-size: 16px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
+
+/* ── 📺 TV & Live Streaming Home Card ────────────────────────── */
+.tv-home-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.04);
+}
+.tv-home-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.tv-home-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.tv-home-title {
+    font-size: 14.5px;
+    font-weight: 800;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+.tv-badge-live-sm {
+    background: #EF4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 6px;
+    animation: tvPulse 1.6s infinite;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.tv-badge-live-sm::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #fff;
+}
+@keyframes tvPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.75; transform: scale(0.96); }
+}
+
+/* Video Player Box (No Autoplay Initial State) */
+.tv-home-player-box {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 Aspect Ratio */
+    background: #0B0F19;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.tv-home-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+}
+.tv-home-video.active {
+    display: block;
+}
+.tv-home-poster {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, #1E293B 0%, #0F172A 100%);
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    z-index: 2;
+}
+.tv-home-poster.hidden {
+    display: none !important;
+}
+.tv-home-play-btn {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+    margin-bottom: 10px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.tv-home-poster:hover .tv-home-play-btn {
+    transform: scale(1.1);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.6);
+}
+.tv-home-poster-name {
+    color: #FFFFFF;
+    font-size: 14px;
+    font-weight: 800;
+    margin-bottom: 3px;
+}
+.tv-home-poster-hint {
+    color: #94A3B8;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Channel selector chips */
+.tv-home-chips {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    scrollbar-width: none;
+}
+.tv-home-chips::-webkit-scrollbar { display: none; }
+.tv-home-chip {
+    padding: 6px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-secondary);
+    font-size: 11.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.tv-home-chip.active {
+    background: var(--primary-dim);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+.tv-home-chip:active {
+    transform: scale(0.96);
+}
+
+/* Full View Button */
+.tv-home-see-all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 800;
+    transition: all 0.2s ease;
+}
+.tv-home-see-all:hover {
+    background: var(--primary);
+    color: #FFFFFF;
+    border-color: var(--primary);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+}
+.tv-home-see-all:active {
+    transform: scale(0.98);
+}
+
+/* ── 🏡 My Home Dashboard Card ────────────────────────────── */
+.my-home-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.04);
+}
+.my-home-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.my-home-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.my-home-title {
+    font-size: 14.5px;
+    font-weight: 800;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.my-home-badge {
+    background: rgba(99,102,241,0.12);
+    color: #4F46E5;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 8px;
+}
+.my-home-hero-banner {
+    position: relative;
+    border-radius: 18px;
+    padding: 20px 16px;
+    background: linear-gradient(135deg, #F97316 0%, #D946EF 55%, #6366F1 100%);
+    color: #ffffff;
+    margin-bottom: 14px;
+    box-shadow: 0 8px 24px rgba(217, 70, 239, 0.28);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    overflow: hidden;
+}
+.my-home-hero-banner::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -20%;
+    width: 140%;
+    height: 140%;
+    background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 60%);
+    pointer-events: none;
+}
+.my-home-score-num {
+    font-size: 42px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -1px;
+    margin-bottom: 4px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.my-home-score-label {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+.my-home-score-sub {
+    font-size: 11.5px;
+    font-weight: 500;
+    opacity: 0.92;
+    max-width: 280px;
+}
+.my-home-attention-box {
+    margin-top: 10px;
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.my-home-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.my-home-tile {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.my-home-tile-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.my-home-tile-count {
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--text-primary);
+    line-height: 1.1;
+}
+.my-home-tile-lbl {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+.my-home-see-all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 800;
+    transition: all 0.2s ease;
+}
+.my-home-see-all:hover {
+    background: #6366F1;
+    color: #FFFFFF;
+    border-color: #6366F1;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
+}
+.my-home-see-all:active {
+    transform: scale(0.98);
+}
 </style>
 <?= $this->endSection() ?>
 
@@ -1631,10 +1976,13 @@
             <span class="home-qa-label">Kalkulator</span>
         </button>
         <a href="/barang" class="home-qa-btn">
-            <div class="home-qa-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            <div class="home-qa-icon" style="background:rgba(99,102,241,0.15)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18" style="color:#4F46E5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </div>
-            <span class="home-qa-label">Barang</span>
+            <span class="home-qa-label">My Home</span>
+            <?php if (!empty($myHomeSummary['attention'])): ?>
+            <span class="qa-badge" style="background:#EF4444"><?= count($myHomeSummary['attention']) ?></span>
+            <?php endif; ?>
         </a>
         <a href="/bills" class="home-qa-btn">
             <div class="home-qa-icon">
@@ -1661,6 +2009,133 @@
             <?php endif; ?>
         </a>
     </div>
+
+    <!-- ── 🏡 WIDGET MY HOME & INVENTARIS ASET (KNOW YOUR HOME AT A GLANCE) ── -->
+    <?php $hs = $myHomeSummary ?? []; ?>
+    <div class="my-home-card" id="myHomeDashboardCard">
+        <div class="my-home-header-row">
+            <div class="my-home-title-group">
+                <span class="my-home-title">🏡 My Home</span>
+                <span class="my-home-badge">Aset & Ruangan</span>
+            </div>
+            <span style="font-size:11.5px; font-weight:700; color:var(--text-muted);">
+                <?= $hs['assets_count'] ?? 0 ?> Aset Terdata
+            </span>
+        </div>
+
+        <!-- Hero Home Health Banner -->
+        <?php $hasAssets = ($hs['assets_count'] ?? 0) > 0; ?>
+        <a href="/barang" class="my-home-hero-banner" style="text-decoration:none">
+            <div class="my-home-score-num"><?= $hasAssets ? ($hs['health_score'] ?? 100) : '-' ?></div>
+            <div class="my-home-score-label">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                <span>Home Health</span>
+            </div>
+            <div class="my-home-score-sub"><?= esc($hs['health_status'] ?? 'Mulai catat aset rumah Anda untuk memantau kondisi.') ?></div>
+
+            <?php if (!$hasAssets): ?>
+            <div class="my-home-attention-box">
+                <span>➕</span> <span>Mulai Catat Aset Pertama</span>
+            </div>
+            <?php elseif (!empty($hs['attention'])): ?>
+            <div class="my-home-attention-box">
+                <span>⚠️</span> <span><?= count($hs['attention']) ?> tugas butuh perhatian Anda</span>
+            </div>
+            <?php else: ?>
+            <div class="my-home-attention-box">
+                <span>✨</span> <span>Semua perawatan & garansi aman</span>
+            </div>
+            <?php endif; ?>
+        </a>
+
+        <!-- 4-Tile Grid -->
+        <div class="my-home-grid">
+            <div class="my-home-tile">
+                <div class="my-home-tile-icon" style="background:#EFF6FF;color:#2563EB">🏢</div>
+                <div>
+                    <div class="my-home-tile-count"><?= $hs['rooms_count'] ?? 0 ?></div>
+                    <div class="my-home-tile-lbl">Ruangan</div>
+                </div>
+            </div>
+            <div class="my-home-tile">
+                <div class="my-home-tile-icon" style="background:#FEF3C7;color:#D97706">📦</div>
+                <div>
+                    <div class="my-home-tile-count"><?= $hs['assets_count'] ?? 0 ?></div>
+                    <div class="my-home-tile-lbl">Aset Barang</div>
+                </div>
+            </div>
+            <div class="my-home-tile">
+                <div class="my-home-tile-icon" style="background:#ECFDF5;color:#059669">🛠️</div>
+                <div>
+                    <div class="my-home-tile-count"><?= $hs['maintenance_count'] ?? 0 ?></div>
+                    <div class="my-home-tile-lbl">Perawatan</div>
+                </div>
+            </div>
+            <div class="my-home-tile">
+                <div class="my-home-tile-icon" style="background:#F5F3FF;color:#7C3AED">🛡️</div>
+                <div>
+                    <div class="my-home-tile-count"><?= $hs['warranties_active'] ?? $hs['warranties_count'] ?? 0 ?></div>
+                    <div class="my-home-tile-lbl">Garansi Aktif</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <a href="/barang" class="my-home-see-all">
+            <span>Buka My Home (Inventaris & Perawatan)</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+    </div>
+
+    <!-- ── 📺 WIDGET TV & LIVE STREAMING (NO AUTOPLAY) ── -->
+    <?php if (!empty($tvChannels)): 
+        $defaultChannel = $tvChannels[0];
+    ?>
+    <div class="tv-home-card" id="tvHomeCard">
+        <div class="tv-home-hdr">
+            <div class="tv-home-title-wrap">
+                <span class="tv-home-title">📺 TV & Live Streaming</span>
+                <span class="tv-badge-live-sm">LIVE</span>
+            </div>
+            <span style="font-size:11.5px; font-weight:700; color:var(--text-muted);">
+                <?= count($tvChannels) ?> Siaran
+            </span>
+        </div>
+
+        <!-- Video Player Box (No Autoplay) -->
+        <div class="tv-home-player-box" id="tvHomePlayerBox">
+            <!-- Poster Overlay (Initial State before Play) -->
+            <div class="tv-home-poster" id="tvHomePoster" onclick="startHomeTvPlay()">
+                <div class="tv-home-play-btn">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </div>
+                <div class="tv-home-poster-name" id="tvHomePosterName"><?= esc($defaultChannel['name']) ?></div>
+                <div class="tv-home-poster-hint">Ketuk untuk Memutar Siaran Langsung</div>
+            </div>
+
+            <!-- Video Element (Activated on user click) -->
+            <video id="homeTvVideo" class="tv-home-video" controls playsinline preload="none"
+                   data-stream="<?= esc($defaultChannel['stream_url']) ?>">
+            </video>
+        </div>
+
+        <!-- Channel Switcher Chips -->
+        <div class="tv-home-chips" id="tvHomeChips">
+            <?php foreach ($tvChannels as $idx => $ch): ?>
+            <button type="button" class="tv-home-chip <?= $idx === 0 ? 'active' : '' ?>"
+                    onclick="switchHomeTvChannel(<?= (int)$ch['id'] ?>, '<?= esc($ch['stream_url'], 'js') ?>', '<?= esc($ch['name'], 'js') ?>', '<?= esc($ch['category'], 'js') ?>', this)">
+                <span>📺</span> <?= esc($ch['name']) ?>
+            </button>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Action: Lihat Semua Live Streaming -->
+        <a href="<?= base_url('tv') ?>" class="tv-home-see-all">
+            <span>Lihat Semua Live Streaming</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+    </div>
+    <?php endif; ?>
 
     <!-- ── 📍 WIDGET LOKASI TERDEKAT (TOKO KELONTONG, SPBU, TAMBAL BAN) ── -->
     <div class="nearby-card" id="nearbyCard">
@@ -3706,6 +4181,72 @@ async function toggleHomeTask(event, taskId) {
         });
     } catch(e) {
         console.error('Error toggling home todo:', e);
+    }
+}
+
+/* ── TV Home Player Controller (No Autoplay) ── */
+let homeHls = null;
+let isHomeTvPlaying = false;
+
+function loadHlsScriptIfNeeded(callback) {
+    if (typeof Hls !== 'undefined') {
+        callback();
+        return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+    script.onload = callback;
+    document.head.appendChild(script);
+}
+
+function startHomeTvPlay() {
+    const poster = document.getElementById('tvHomePoster');
+    const video = document.getElementById('homeTvVideo');
+    if (!video) return;
+
+    const streamUrl = video.dataset.stream;
+    if (!streamUrl) return;
+
+    if (poster) poster.classList.add('hidden');
+    video.classList.add('active');
+    isHomeTvPlaying = true;
+
+    loadHlsScriptIfNeeded(() => {
+        playStreamUrl(video, streamUrl);
+    });
+}
+
+function playStreamUrl(video, url) {
+    if (!url) return;
+    if (homeHls) {
+        homeHls.destroy();
+        homeHls = null;
+    }
+
+    if (typeof Hls !== 'undefined' && Hls.isSupported() && (url.includes('.m3u8') || url.includes('m3u') || !url.endsWith('.mp4'))) {
+        homeHls = new Hls({ enableWorker: true, lowLatencyMode: true });
+        homeHls.loadSource(url);
+        homeHls.attachMedia(video);
+        homeHls.on(Hls.Events.MANIFEST_PARSED, () => {
+            video.play().catch(() => {});
+        });
+    } else {
+        video.src = url;
+        video.play().catch(() => {});
+    }
+}
+
+function switchHomeTvChannel(id, streamUrl, name, cat, btnEl) {
+    document.querySelectorAll('.tv-home-chip').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+
+    const video = document.getElementById('homeTvVideo');
+    const posterName = document.getElementById('tvHomePosterName');
+    if (posterName) posterName.textContent = name;
+    if (video) video.dataset.stream = streamUrl;
+
+    if (isHomeTvPlaying && video) {
+        playStreamUrl(video, streamUrl);
     }
 }
 </script>

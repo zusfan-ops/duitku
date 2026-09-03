@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../config/api_config.dart';
 import '../models/bill.dart';
 import '../models/transaction.dart';
+import '../models/tv_channel.dart';
 import '../models/wallet.dart';
 import '../providers/app_data_provider.dart';
 import '../providers/auth_provider.dart';
@@ -37,6 +38,12 @@ import 'vehicle/vehicle_screen.dart';
 import 'wallet_screen.dart';
 import 'zakat_pajak/zakat_pajak_screen.dart';
 import 'emergency/emergency_screen.dart';
+import '../services/offline_cache_service.dart';
+import '../services/sync_service.dart';
+import '../widgets/sync_status_banner.dart';
+import '../widgets/tv_streaming_card.dart';
+import '../widgets/my_home_card.dart';
+import 'barang/barang_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -56,7 +63,30 @@ class DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    _loadFromCacheFirst();
     _load();
+
+    // Listen to background sync completions
+    SyncService.instance.onSyncCompleted = () {
+      if (mounted) {
+        _load();
+      }
+    };
+  }
+
+  Future<void> _loadFromCacheFirst() async {
+    final cached = await OfflineCacheService.instance.getDashboard();
+    if (cached != null && mounted && _data == null) {
+      setState(() {
+        _data = {
+          'dashboard': cached,
+          'recent': cached.recent
+              .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
+              .toList(),
+        };
+        _loading = false;
+      });
+    }
   }
 
   Future<void> refresh() async {
@@ -64,10 +94,13 @@ class DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (_data == null) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
+
     try {
       final data = await ApiService.instance.dashboard();
       if (!mounted) return;
@@ -79,6 +112,7 @@ class DashboardScreenState extends State<DashboardScreen> {
               .toList(),
         };
         _loading = false;
+        _error = null;
       });
       context.read<AppDataProvider>().ensureLoaded(force: true);
       WidgetHelper.updateDashboardWidget(data);
@@ -88,16 +122,38 @@ class DashboardScreenState extends State<DashboardScreen> {
         context.read<AuthProvider>().logout();
         return;
       }
-      setState(() {
-        _error = e.message;
-        _loading = false;
-      });
+      if (_data == null) {
+        setState(() {
+          _error = e.message;
+          _loading = false;
+        });
+      }
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = 'Tidak dapat terhubung ke server.\n(${e.runtimeType}: $e)';
-        _loading = false;
-      });
+      // If offline or network error, fallback to cache if available
+      final cached = await OfflineCacheService.instance.getDashboard();
+      if (cached != null) {
+        setState(() {
+          _data = {
+            'dashboard': cached,
+            'recent': cached.recent
+                .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
+                .toList(),
+          };
+          _loading = false;
+          _error = null;
+        });
+      } else if (_data == null) {
+        setState(() {
+          _error = 'Tidak dapat terhubung ke server.\n(${e.runtimeType}: $e)';
+          _loading = false;
+        });
+      } else {
+        setState(() {
+          _loading = false;
+          _error = null;
+        });
+      }
     }
   }
 
@@ -256,6 +312,7 @@ class DashboardScreenState extends State<DashboardScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
+        const SyncStatusBanner(),
         // Mode Switcher Pill
         _buildWorkspaceSwitcher(),
         const SizedBox(height: 10),
@@ -289,7 +346,9 @@ class DashboardScreenState extends State<DashboardScreen> {
           if (data.budget > 0) _BudgetCard(data: data),
           if ((data.topCategories as List).isNotEmpty) _TopCategoriesCard(data: data),
           _QuickActions(data: data),
+          MyHomeDashboardCard(summary: (data.myHomeSummary as Map<String, dynamic>? ?? {})),
           const NearbyServicesCard(),
+          TvStreamingCard(initialChannels: (data.tvChannels as List<TvChannel>? ?? [])),
           if (data.savingsTarget > 0) _SavingsCard(data: data),
           if ((data.monthNote ?? '').isNotEmpty) _NotePreview(data: data),
           if ((data.debtSummary.activeCount as int) > 0) _DebtSummaryCard(data: data),
@@ -1664,6 +1723,11 @@ class _QuickActions extends StatelessWidget {
             icon: Icons.calculate_outlined,
             label: 'Kalkulator',
             onTap: () => _openCalculator(context),
+          ),
+          _QaBtn(
+            icon: Icons.home_work_rounded,
+            label: 'My Home',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BarangScreen())),
           ),
           _QaBtn(
             icon: Icons.account_balance_wallet_outlined,
