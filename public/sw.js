@@ -1,4 +1,4 @@
-const CACHE_NAME = 'duitku-v4';
+const CACHE_NAME = 'duitku-v5';
 const ASSETS = [
   '/',
   '/css/app.css',
