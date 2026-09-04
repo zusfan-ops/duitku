@@ -47,7 +47,8 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
       final res = await ApiService.instance.getMarketplaceDetail(widget.listingId);
       if (mounted) {
         setState(() {
-          _listing = res['listing'] as Map<String, dynamic>?;
+          final rawListing = res['listing'];
+          _listing = (rawListing is Map) ? Map<String, dynamic>.from(rawListing) : null;
           _isLoading = false;
         });
       }
@@ -610,7 +611,9 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
               itemCount: comments.length,
               separatorBuilder: (_, __) => const Divider(height: 18),
               itemBuilder: (context, index) {
-                final c = comments[index] as Map<String, dynamic>;
+                final rawComment = comments[index];
+                if (rawComment is! Map) return const SizedBox.shrink();
+                final c = Map<String, dynamic>.from(rawComment);
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

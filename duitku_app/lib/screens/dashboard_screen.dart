@@ -15,7 +15,6 @@ import '../services/belanja_store.dart';
 import '../services/widget_helper.dart';
 import '../theme.dart';
 import '../utils/format.dart';
-import '../widgets/calculator_sheet.dart';
 import '../widgets/category_icon.dart';
 import '../widgets/nearby_services_card.dart';
 import '../widgets/transaction_tile.dart';
@@ -29,7 +28,6 @@ import 'recurring/recurring_screen.dart';
 import 'pos/pos_cashier_screen.dart';
 import 'pos/pos_products_screen.dart';
 import 'pos/pos_reports_screen.dart';
-import 'scan/notification_detector_screen.dart';
 import 'scan/ocr_receipt_screen.dart';
 import 'search/universal_search_screen.dart';
 import 'notifications/notifications_screen.dart';
@@ -47,7 +45,10 @@ import '../widgets/tv_streaming_card.dart';
 import '../widgets/my_home_card.dart';
 import '../widgets/marketplace_featured_card.dart';
 import '../models/jellyfin_movie.dart';
-import 'barang/barang_screen.dart';
+import 'marketplace/market_screen.dart';
+import 'traveling/traveling_screen.dart';
+import 'traveling/currency_converter_sheet.dart';
+import 'games/game_hub_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -357,7 +358,7 @@ class DashboardScreenState extends State<DashboardScreen> {
           if ((data.topCategories as List).isNotEmpty) _TopCategoriesCard(data: data),
           _QuickActions(data: data),
           MarketplaceFeaturedCard(
-            items: (data.marketplaceFeatured as List<dynamic>? ?? []),
+            items: data.marketplaceFeatured,
             onRefresh: _load,
           ),
           MyHomeDashboardCard(summary: (data.myHomeSummary as Map<String, dynamic>? ?? {})),
@@ -1693,7 +1694,7 @@ class _EmergencyQuickBanner extends StatelessWidget {
   }
 }
 
-// ── Quick actions ──────────────────────────────────────────────
+// ── Quick actions (4 Kolom x 2 Baris) ──────────────────────────
 class _QuickActions extends StatelessWidget {
   final dynamic data;
   const _QuickActions({required this.data});
@@ -1701,56 +1702,168 @@ class _QuickActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final symbol = '${data.symbol ?? "Rp"}';
+    final upcomingBills = (data.upcomingBills as List?) ?? [];
+    final activeDebtCount = (data.debtSummary.activeCount as int?) ?? 0;
+
     return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+      margin: const EdgeInsets.only(top: 14, bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.borderLight),
         boxShadow: AppColors.cardShadow,
       ),
-      child: Row(
+      child: Column(
         children: [
-          _QaBtn(
-            icon: Icons.auto_awesome_rounded,
-            label: 'Deteksi SMS',
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationDetectorScreen())),
-          ),
-          _QaBtn(
-            icon: Icons.volunteer_activism_rounded,
-            label: 'Zakat & Pajak',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ZakatPajakScreen(
-                  initialBalance: Fmt.toDouble(data.balance),
-                  initialMonthlyIncome: Fmt.toDouble(data.monthlyIncome),
-                  symbol: symbol,
+          // Baris 1: 4 Kolom
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Kalkulator Zakat
+              _QaBtn(
+                icon: Icons.volunteer_activism_rounded,
+                label: 'Kalkulator\nZakat',
+                iconColor: const Color(0xFF059669),
+                bgGradient: [
+                  const Color(0xFF059669).withValues(alpha: 0.16),
+                  const Color(0xFF10B981).withValues(alpha: 0.08),
+                ],
+                borderColor: const Color(0xFF059669).withValues(alpha: 0.25),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ZakatPajakScreen(
+                      initialBalance: Fmt.toDouble(data.balance),
+                      initialMonthlyIncome: Fmt.toDouble(data.monthlyIncome),
+                      symbol: symbol,
+                    ),
+                  ),
                 ),
               ),
-            ),
+
+              // 2. Daftar Tagihan
+              _QaBtn(
+                icon: Icons.receipt_long_rounded,
+                label: 'Daftar\nTagihan',
+                iconColor: const Color(0xFF2563EB),
+                bgGradient: [
+                  const Color(0xFF2563EB).withValues(alpha: 0.16),
+                  const Color(0xFF60A5FA).withValues(alpha: 0.08),
+                ],
+                borderColor: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                badge: upcomingBills.isNotEmpty ? '${upcomingBills.length}' : null,
+                onTap: () => _openBills(context, symbol),
+              ),
+
+              // 3. Hutang Piutang
+              _QaBtn(
+                icon: Icons.account_balance_wallet_rounded,
+                label: 'Hutang\nPiutang',
+                iconColor: const Color(0xFFD97706),
+                bgGradient: [
+                  const Color(0xFFD97706).withValues(alpha: 0.16),
+                  const Color(0xFFFBBF24).withValues(alpha: 0.08),
+                ],
+                borderColor: const Color(0xFFD97706).withValues(alpha: 0.25),
+                badge: activeDebtCount > 0 ? '$activeDebtCount' : null,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DebtScreen()),
+                ),
+              ),
+
+              // 4. Jual Beli & Sewa
+              _QaBtn(
+                icon: Icons.storefront_rounded,
+                label: 'Jual Beli\n& Sewa',
+                iconColor: const Color(0xFF7C3AED),
+                bgGradient: [
+                  const Color(0xFF7C3AED).withValues(alpha: 0.16),
+                  const Color(0xFFA78BFA).withValues(alpha: 0.08),
+                ],
+                borderColor: const Color(0xFF7C3AED).withValues(alpha: 0.25),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MarketScreen()),
+                ),
+              ),
+            ],
           ),
-          _QaBtn(
-            icon: Icons.receipt_long_outlined,
-            label: 'Tagihan',
-            onTap: () => _openBills(context, symbol),
-          ),
-          _QaBtn(
-            icon: Icons.calculate_outlined,
-            label: 'Kalkulator',
-            onTap: () => _openCalculator(context),
-          ),
-          _QaBtn(
-            icon: Icons.home_work_rounded,
-            label: 'My Home',
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BarangScreen())),
-          ),
-          _QaBtn(
-            icon: Icons.account_balance_wallet_outlined,
-            label: 'Hutang',
-            badge: (data.debtSummary.activeCount as int) > 0 ? '${data.debtSummary.activeCount}' : null,
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DebtScreen())),
+
+          const SizedBox(height: 14),
+
+          // Baris 2: 4 Kolom
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 5. Kurs Terkini (kalkulator valas)
+              _QaBtn(
+                icon: Icons.currency_exchange_rounded,
+                label: 'Kurs\nTerkini',
+                iconColor: const Color(0xFF0D9488),
+                bgGradient: [
+                  const Color(0xFF0D9488).withValues(alpha: 0.16),
+                  const Color(0xFF2DD4BF).withValues(alpha: 0.08),
+                ],
+                borderColor: const Color(0xFF0D9488).withValues(alpha: 0.25),
+                onTap: () => showModalBottomSheet(
+                  context: context,
+                  useRootNavigator: true,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => const CurrencyConverterSheet(),
+                ),
+              ),
+
+              // 6. Travelling
+              _QaBtn(
+                icon: Icons.flight_takeoff_rounded,
+                label: 'Travelling\n',
+                iconColor: const Color(0xFF0284C7),
+                bgGradient: [
+                  const Color(0xFF0284C7).withValues(alpha: 0.16),
+                  const Color(0xFF38BDF8).withValues(alpha: 0.08),
+                ],
+                borderColor: const Color(0xFF0284C7).withValues(alpha: 0.25),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TravelingScreen()),
+                ),
+              ),
+
+              // 7. Game
+              _QaBtn(
+                icon: Icons.sports_esports_rounded,
+                label: 'Game\n',
+                iconColor: const Color(0xFFE11D48),
+                bgGradient: [
+                  const Color(0xFFE11D48).withValues(alpha: 0.16),
+                  const Color(0xFFFB7185).withValues(alpha: 0.08),
+                ],
+                borderColor: const Color(0xFFE11D48).withValues(alpha: 0.25),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const GameHubScreen()),
+                ),
+              ),
+
+              // 8. Kasir (POS)
+              _QaBtn(
+                icon: Icons.point_of_sale_rounded,
+                label: 'Kasir\n(POS)',
+                iconColor: const Color(0xFF4F46E5),
+                bgGradient: [
+                  const Color(0xFF4F46E5).withValues(alpha: 0.16),
+                  const Color(0xFF818CF8).withValues(alpha: 0.08),
+                ],
+                borderColor: const Color(0xFF4F46E5).withValues(alpha: 0.25),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PosCashierScreen()),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -1762,8 +1875,20 @@ class _QaBtn extends StatelessWidget {
   final IconData icon;
   final String label;
   final String? badge;
+  final Color iconColor;
+  final List<Color> bgGradient;
+  final Color borderColor;
   final VoidCallback onTap;
-  const _QaBtn({required this.icon, required this.label, this.badge, required this.onTap});
+
+  const _QaBtn({
+    required this.icon,
+    required this.label,
+    this.badge,
+    required this.iconColor,
+    required this.bgGradient,
+    required this.borderColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1772,48 +1897,76 @@ class _QaBtn extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
                     Container(
-                      width: 38,
-                      height: 38,
+                      width: 46,
+                      height: 46,
                       decoration: BoxDecoration(
-                        color: AppColors.primarySubtle,
-                        borderRadius: BorderRadius.circular(12),
+                        gradient: LinearGradient(
+                          colors: bgGradient,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: borderColor, width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: iconColor.withValues(alpha: 0.14),
+                            blurRadius: 7,
+                            offset: const Offset(0, 2.5),
+                          ),
+                        ],
                       ),
-                      child: Icon(icon, color: AppColors.primary, size: 20),
+                      child: Icon(icon, color: iconColor, size: 23),
                     ),
                     if (badge != null)
                       Positioned(
                         right: -4,
                         top: -4,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                          decoration: const BoxDecoration(color: AppColors.expense, shape: BoxShape.circle),
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: AppColors.expense,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.card, width: 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
                           child: Text(
                             badge!,
-                            style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Colors.white),
+                            style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w900, color: Colors.white),
                           ),
                         ),
                       ),
                   ],
                 ),
                 const SizedBox(height: 6),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    style: const TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
+                SizedBox(
+                  height: 28,
+                  child: Center(
+                    child: Text(
+                      label,
+                      maxLines: 2,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                        height: 1.18,
+                      ),
                     ),
                   ),
                 ),
@@ -2096,10 +2249,6 @@ class _Avatar extends StatelessWidget {
 }
 
 // ── Quick action helpers ───────────────────────────────────────
-void _openCalculator(BuildContext context) {
-  showCalculatorSheet(context);
-}
-
 void _openBills(BuildContext context, String symbol) {
   Navigator.push(context, MaterialPageRoute(builder: (_) => BillsScreen(symbol: symbol)));
 }

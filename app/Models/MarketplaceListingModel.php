@@ -114,7 +114,18 @@ class MarketplaceListingModel extends Model
         }
 
         $builder->limit($limit, $offset);
-        return $builder->get()->getResultArray();
+        $rows = $builder->get()->getResultArray();
+        foreach ($rows as &$r) {
+            $r['id'] = (int) $r['id'];
+            $r['user_id'] = (int) $r['user_id'];
+            $r['price'] = (float) $r['price'];
+            $r['views_count'] = (int) ($r['views_count'] ?? 0);
+            $r['image_count'] = (int) ($r['image_count'] ?? 0);
+            $r['comment_count'] = (int) ($r['comment_count'] ?? 0);
+        }
+        unset($r);
+
+        return $rows;
     }
 
     /**
@@ -139,6 +150,11 @@ class MarketplaceListingModel extends Model
         if (!$listing) {
             return null;
         }
+
+        $listing['id'] = (int) $listing['id'];
+        $listing['user_id'] = (int) $listing['user_id'];
+        $listing['price'] = (float) $listing['price'];
+        $listing['views_count'] = (int) ($listing['views_count'] ?? 0);
 
         // Ambil semua foto produk
         $imgBuilder = $this->db->table('marketplace_images');

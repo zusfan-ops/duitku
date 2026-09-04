@@ -348,13 +348,15 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
-        final item = items[index] as Map<String, dynamic>;
+        final rawItem = items[index];
+        if (rawItem is! Map) return const SizedBox.shrink();
+        final item = Map<String, dynamic>.from(rawItem);
         final isRent = item['type'] == 'rent';
-        final imgCount = item['image_count'] as int? ?? 1;
+        final imgCount = int.tryParse('${item['image_count']}') ?? 1;
 
         return GestureDetector(
           onTap: () async {
-            final id = item['id'] as int? ?? 0;
+            final id = int.tryParse('${item['id']}') ?? 0;
             if (id > 0) {
               Navigator.push(
                 context,
@@ -583,8 +585,10 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
         itemCount: _myListings.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
-          final item = _myListings[index] as Map<String, dynamic>;
-          final id = item['id'] as int? ?? 0;
+          final rawItem = _myListings[index];
+          if (rawItem is! Map) return const SizedBox.shrink();
+          final item = Map<String, dynamic>.from(rawItem);
+          final id = int.tryParse('${item['id']}') ?? 0;
           return Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(

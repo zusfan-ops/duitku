@@ -127,7 +127,9 @@ class DashboardData {
               [])
           .map((e) => JellyfinMovie.fromJson(e as Map<String, dynamic>))
           .toList(),
-      marketplaceFeatured: json['marketplace_featured'] as List<dynamic>? ?? [],
+      marketplaceFeatured: (json['marketplace_featured'] is List)
+          ? (json['marketplace_featured'] as List<dynamic>)
+          : const [],
     );
   }
 }

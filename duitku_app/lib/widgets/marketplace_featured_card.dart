@@ -204,7 +204,9 @@ class MarketplaceFeaturedCard extends StatelessWidget {
                   if (index == items.length) {
                     return _buildAddPromoCard(context);
                   }
-                  final item = items[index] as Map<String, dynamic>;
+                  final rawItem = items[index];
+                  if (rawItem is! Map) return const SizedBox.shrink();
+                  final item = Map<String, dynamic>.from(rawItem);
                   return _buildProductCard(context, item);
                 },
               ),
@@ -215,7 +217,7 @@ class MarketplaceFeaturedCard extends StatelessWidget {
   }
 
   Widget _buildProductCard(BuildContext context, Map<String, dynamic> item) {
-    final id = (item['id'] as num?)?.toInt() ?? 0;
+    final id = int.tryParse('${item['id']}') ?? 0;
     final title = item['title']?.toString() ?? 'Produk';
     final type = item['type']?.toString() ?? 'sale';
     final category = item['category']?.toString() ?? 'Lainnya';
