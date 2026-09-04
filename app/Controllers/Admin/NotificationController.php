@@ -5,16 +5,19 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\NotificationModel;
 use App\Models\UserModel;
+use App\Services\FcmService;
 
 class NotificationController extends BaseController
 {
     protected NotificationModel $notifModel;
     protected UserModel         $userModel;
+    protected FcmService        $fcmService;
 
     public function __construct()
     {
         $this->notifModel = new NotificationModel();
         $this->userModel  = new UserModel();
+        $this->fcmService = new FcmService();
     }
 
     public function index()
@@ -31,6 +34,7 @@ class NotificationController extends BaseController
             'activeMenu'    => 'notifications',
             'notifications' => $notifications,
             'users'         => $users,
+            'fcmConfigured' => $this->fcmService->isConfigured(),
         ];
 
         return view('admin/notifications/index', $data);
@@ -68,7 +72,48 @@ class NotificationController extends BaseController
             return redirect()->back()->withInput()->with('error', 'Gagal mengirim notifikasi.');
         }
 
-        return redirect()->to('/admin/notifications')->with('success', 'Notifikasi berhasil dikirim ke aplikasi DuitKu!');
+        $notifId = $this->notifModel->getInsertID();
+
+        // Kirim Push Notification FCM ke seluruh perangkat HP
+        $fcmNotice = '';
+        if ($this->fcmService->isConfigured()) {
+            $fcmResult = $this->fcmService->sendToTopic('duitku_broadcasts', $title, $message, [
+                'type'       => $type,
+                'action_url' => $actionUrl ?: '',
+                'notif_id'   => (string)$notifId,
+            ]);
+
+            if (!empty($fcmResult['success'])) {
+                $fcmNotice = ' 🔔 Push notification FCM berhasil dikirim ke seluruh HP pengguna!';
+            } else {
+                $errMsg = $fcmResult['message'] ?? (json_encode($fcmResult['response'] ?? ''));
+                $fcmNotice = ' (Catatan: FCM gagal dikirim: ' . esc($errMsg) . ')';
+            }
+        } else {
+            $fcmNotice = ' (Info: Service Account Firebase belum dipasang, notifikasi tersimpan di database lokal).';
+        }
+
+        return redirect()->to('/admin/notifications')->with('success', 'Notifikasi berhasil dipublikasikan ke aplikasi DuitKu!' . $fcmNotice);
+    }
+
+    public function saveFcmConfig()
+    {
+        $json = trim($this->request->getPost('service_account_json') ?? '');
+        $file = $this->request->getFile('service_account_file');
+
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $json = file_get_contents($file->getTempName());
+        }
+
+        if (empty($json)) {
+            return redirect()->back()->with('error', 'File atau teks JSON Service Account tidak boleh kosong.');
+        }
+
+        if ($this->fcmService->saveServiceAccount($json)) {
+            return redirect()->back()->with('success', 'Kredensial Firebase Service Account berhasil disimpan! Push notification FCM siap digunakan.');
+        }
+
+        return redirect()->back()->with('error', 'Format JSON Service Account tidak valid. Pastikan file JSON yang diunduh dari Firebase Console benar.');
     }
 
     public function togglePin(int $id)

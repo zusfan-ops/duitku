@@ -2,6 +2,65 @@
 
 <?= $this->section('content') ?>
 
+<div style="margin-bottom: 20px;">
+    <?php if ($fcmConfigured): ?>
+        <div style="background: #ECFDF5; border: 1px solid #10B981; border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 24px;">🚀</span>
+                <div>
+                    <strong style="color: #065F46; font-size: 14px;">Firebase Cloud Messaging (FCM) Aktif! (Project: duitku-19896)</strong>
+                    <div style="font-size: 12px; color: #047857; margin-top: 2px;">
+                        Setiap notifikasi yang Anda kirim akan langsung dikirimkan ke server Google FCM dan membunyikan push notification di seluruh HP pengguna—bahkan saat aplikasi DuitKu sedang ditutup total.
+                    </div>
+                </div>
+            </div>
+            <button type="button" onclick="document.getElementById('fcmConfigBox').style.display = document.getElementById('fcmConfigBox').style.display === 'none' ? 'block' : 'none'" class="admin-btn admin-btn-outline admin-btn-sm" style="background: white;">
+                ⚙️ Perbarui Kunci
+            </button>
+        </div>
+    <?php else: ?>
+        <div style="background: #FFFBEB; border: 1px solid #F59E0B; border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 24px;">⚠️</span>
+                <div>
+                    <strong style="color: #92400E; font-size: 14px;">Kunci Service Account Firebase Belum Dipasang</strong>
+                    <div style="font-size: 12px; color: #B45309; margin-top: 2px;">
+                        Notifikasi saat ini hanya akan muncul jika pengguna membuka aplikasi. Untuk mengaktifkan push notifikasi saat aplikasi ditutup total, unggah file <code>Service Account JSON</code> dari Firebase Console.
+                    </div>
+                </div>
+            </div>
+            <button type="button" onclick="document.getElementById('fcmConfigBox').style.display = document.getElementById('fcmConfigBox').style.display === 'none' ? 'block' : 'none'" class="admin-btn admin-btn-sm" style="background: #F59E0B; color: white;">
+                🔑 Pasang Kunci Service Account
+            </button>
+        </div>
+    <?php endif; ?>
+
+    <!-- Modal / Collapsible Form Upload Service Account -->
+    <div id="fcmConfigBox" style="display: none; margin-top: 12px; background: white; border: 1px solid var(--border-light); border-radius: 12px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+        <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 700; color: var(--text-primary);">🔧 Konfigurasi Kunci Firebase Service Account (HTTP v1)</h4>
+        <p style="margin: 0 0 12px 0; font-size: 12.5px; color: var(--text-secondary); line-height: 1.5;">
+            Dapatkan file ini dari: <strong>Firebase Console &rarr; Setelan Project (Project Settings) &rarr; Tab Akun Layanan (Service accounts) &rarr; Klik "Buat kunci privat baru" (Generate new private key)</strong>.
+        </p>
+        <form action="/admin/notifications/save-fcm" method="post" enctype="multipart/form-data">
+            <?= csrf_field() ?>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                    <label class="admin-form-label">Upload File JSON Service Account</label>
+                    <input type="file" name="service_account_file" accept=".json" class="admin-input" style="padding: 8px;">
+                </div>
+                <div>
+                    <label class="admin-form-label">Atau Paste Teks Isi File JSON</label>
+                    <textarea name="service_account_json" rows="3" class="admin-textarea" placeholder='{"type": "service_account", "project_id": "duitku-19896", ...}'></textarea>
+                </div>
+            </div>
+            <div style="margin-top: 12px; text-align: right;">
+                <button type="button" onclick="document.getElementById('fcmConfigBox').style.display='none'" class="admin-btn admin-btn-outline admin-btn-sm" style="margin-right: 8px;">Tutup</button>
+                <button type="submit" class="admin-btn admin-btn-primary admin-btn-sm">💾 Simpan Kunci Firebase</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div style="display: grid; grid-template-columns: 380px 1fr; gap: 24px; align-items: start;">
     <!-- Form Kirim Notifikasi -->
     <div class="admin-card">

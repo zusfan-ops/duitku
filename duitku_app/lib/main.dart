@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'providers/app_data_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/travel_provider.dart';
+import 'services/fcm_service.dart';
 import 'services/local_notification_service.dart';
 import 'services/sync_service.dart';
 import 'dart:developer';
@@ -21,6 +22,9 @@ void main() async {
   // Inisialisasi local notifications & widget
   LocalNotificationService.instance.init().catchError((e, st) {
     log('Notif init error: $e', stackTrace: st);
+  });
+  FcmService.instance.init().catchError((e, st) {
+    log('FCM init error: $e', stackTrace: st);
   });
   WidgetHelper.init().catchError((e, st) {
     log('Widget init error: $e', stackTrace: st);

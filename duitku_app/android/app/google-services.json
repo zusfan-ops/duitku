@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "406377563596",
+    "project_id": "duitku-19896",
+    "storage_bucket": "duitku-19896.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:406377563596:android:039b7f290925a122788969",
+        "android_client_info": {
+          "package_name": "com.duitku.duitku_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCiNTNG3KN69plil_LHgYx8WA-FCtRLQiI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -417,4 +417,11 @@ $routes->group('api', function ($routes) {
         $routes->get('backup/export',               'Api\BackupController::export');
         $routes->post('backup/restore',             'Api\BackupController::restore');
     });
+
+    // Admin Notifications & FCM Push Gateway
+    $routes->get('admin/notifications',                   'Admin\NotificationController::index');
+    $routes->post('admin/notifications/store',            'Admin\NotificationController::store');
+    $routes->post('admin/notifications/toggle-pin/(:num)','Admin\NotificationController::togglePin/$1');
+    $routes->post('admin/notifications/delete/(:num)',    'Admin\NotificationController::delete/$1');
+    $routes->post('admin/notifications/save-fcm',         'Admin\NotificationController::saveFcmConfig');
 });
