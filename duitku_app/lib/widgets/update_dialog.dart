@@ -210,8 +210,17 @@ class UpdateDialog extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       onPressed: () {
+                        UpdateCheckerService.instance.dismissRelease(release.tagName);
                         Navigator.pop(context);
                         UpdateCheckerService.instance.openDownloadUrl(downloadTargetUrl);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Mengunduh APK pembaruan. Setelah selesai, buka file di folder Download untuk menginstal.',
+                            ),
+                            duration: Duration(seconds: 4),
+                          ),
+                        );
                       },
                     ),
                   ),
@@ -223,14 +232,15 @@ class UpdateDialog extends StatelessWidget {
                         icon: const Icon(Icons.open_in_browser_rounded, size: 16),
                         label: const Text('Buka Web Release', style: TextStyle(fontSize: 12)),
                         onPressed: () {
+                          UpdateCheckerService.instance.dismissRelease(release.tagName);
                           Navigator.pop(context);
                           UpdateCheckerService.instance.openDownloadUrl(release.htmlUrl);
                         },
                       ),
                       TextButton(
                         onPressed: () {
-                          Navigator.pop(context);
                           UpdateCheckerService.instance.dismissRelease(release.tagName);
+                          Navigator.pop(context);
                         },
                         child: const Text(
                           'Nanti Saja',

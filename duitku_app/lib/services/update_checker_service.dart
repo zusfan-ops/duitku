@@ -88,10 +88,12 @@ class UpdateCheckerService {
   static const String _repo = 'zusfan-ops/duitku';
 
   static const String _prefDismissedTag = 'duitku_dismissed_update_tag';
+  static const String _prefDismissedTime = 'duitku_dismissed_update_time';
 
   DateTime? _lastCheckedAt;
   GitHubRelease? _latestRelease;
   bool _isChecking = false;
+  bool _hasPromptedThisSession = false;
 
   /// Ambil versi aplikasi secara dinamis dari package runtime
   Future<String> getAppVersion() async {
@@ -172,6 +174,7 @@ class UpdateCheckerService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefDismissedTag, tagName);
+      await prefs.setInt(_prefDismissedTime, DateTime.now().millisecondsSinceEpoch);
     } catch (_) {}
   }
 
@@ -182,6 +185,11 @@ class UpdateCheckerService {
   }) async {
     if (kIsWeb && !isManualCheck) {
       // Pada Web browser, update APK tidak perlu diprompt otomatis saat startup
+      return;
+    }
+
+    // Hindari memunculkan pop-up lebih dari sekali dalam satu sesi aplikasi yang sama
+    if (!isManualCheck && _hasPromptedThisSession) {
       return;
     }
 
@@ -209,12 +217,16 @@ class UpdateCheckerService {
     if (!context.mounted) return;
 
     if (release != null) {
-      // Cek apakah pengguna sebelumnya menekan "Nanti Saja" untuk rilis ini (hanya untuk startup check otomatis)
+      // Cek apakah pengguna sebelumnya sudah mengabaikan / menutup dialog untuk rilis ini (hanya untuk startup check otomatis)
       if (!isManualCheck) {
         try {
           final prefs = await SharedPreferences.getInstance();
           final dismissed = prefs.getString(_prefDismissedTag);
-          if (dismissed == release.tagName) {
+          final dismissedTime = prefs.getInt(_prefDismissedTime) ?? 0;
+          final diffHours = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(dismissedTime)).inHours;
+
+          // Jika versi yang sama sudah pernah diabaikan ATAU sudah di-dismiss dalam 24 jam terakhir, jangan tampilkan lagi
+          if (dismissed == release.tagName || diffHours < 24) {
             return;
           }
         } catch (_) {}
@@ -222,8 +234,10 @@ class UpdateCheckerService {
 
       if (!context.mounted) return;
 
-      // Tampilkan dialog pembaruan
-      showDialog(
+      _hasPromptedThisSession = true;
+
+      // Tampilkan dialog pembaruan dan tunggu hingga dialog ditutup
+      await showDialog(
         context: context,
         barrierDismissible: true,
         builder: (ctx) => UpdateDialog(
@@ -231,6 +245,12 @@ class UpdateCheckerService {
           currentVersion: currentVersion,
         ),
       );
+
+      // Begitu dialog ditutup oleh pengguna (baik via "Nanti Saja", tombol back HP, tap di luar modal, maupun klik download),
+      // otomatis simpan status dismiss agar tidak terus-menerus muncul setiap kali buka aplikasi.
+      if (!isManualCheck) {
+        await dismissRelease(release.tagName);
+      }
     } else if (isManualCheck) {
       // Beritahu pengguna bahwa aplikasi sudah versi terbaru
       showDialog(
