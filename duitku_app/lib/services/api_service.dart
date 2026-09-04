@@ -885,6 +885,10 @@ class ApiService {
     return post('marketplace/order-status/$orderId', {'status': status});
   }
 
+  Future<Map<String, dynamic>> deleteMarketplaceOrder(int orderId) async {
+    return post('marketplace/order/delete/$orderId', {});
+  }
+
   Future<Map<String, dynamic>> deleteMarketplaceListing(int id) async {
     return post('marketplace/delete/$id', {});
   }

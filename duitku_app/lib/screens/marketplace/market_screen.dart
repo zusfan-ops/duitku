@@ -895,6 +895,78 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
     );
   }
 
+  void _openChatWithBuyer(Map<String, dynamic> order) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MarketChatScreen(
+          listingId: int.tryParse('${order['listing_id']}') ?? 0,
+          buyerId: int.tryParse('${order['buyer_id']}') ?? 0,
+          initialListingTitle: (order['listing_title'] ?? 'Produk').toString(),
+          initialListingPrice: _formatRupiah(order['price']),
+          initialListingImage: (order['listing_image'] ?? '').toString(),
+          targetUserName: (order['buyer_name'] ?? 'Calon Pembeli').toString(),
+          targetUserPhone: (order['buyer_phone'] ?? '').toString(),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteOrder(int orderId, String buyerName, String listingTitle, int index) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_outline_rounded, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Hapus Minat Masuk?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus minat / pesanan dari "$buyerName" untuk "$listingTitle"? Pesanan yang dihapus tidak dapat dipulihkan.',
+          style: const TextStyle(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await ApiService.instance.deleteMarketplaceOrder(orderId);
+        if (mounted) {
+          setState(() {
+            _ordersReceived.removeAt(index);
+          });
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Minat / pesanan berhasil dihapus')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          messenger.showSnackBar(
+            SnackBar(content: Text('Gagal menghapus pesanan: $e')),
+          );
+        }
+      }
+    }
+  }
+
   Widget _buildOrdersReceivedContent() {
     if (_ordersReceived.isEmpty) {
       return Center(
@@ -924,7 +996,7 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 90),
       itemCount: _ordersReceived.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (ctx, i) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final rawOrder = _ordersReceived[index];
         if (rawOrder is! Map) return const SizedBox.shrink();
@@ -965,254 +1037,278 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
             statusLabel = 'Menunggu Follow-up';
         }
 
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.card,
+        return Material(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
-            boxShadow: AppColors.cardShadow,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header: Status Badge & Date
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: statusBg,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      statusLabel,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: statusColor,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    createdAt.length >= 16 ? createdAt.substring(0, 16) : createdAt,
-                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-                  ),
-                ],
+            onTap: () => _openChatWithBuyer(order),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+                boxShadow: AppColors.cardShadow,
               ),
-              const SizedBox(height: 10),
-
-              // Product Info Row
-              Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: SizedBox(
-                      width: 48,
-                      height: 48,
-                      child: listingImg.isNotEmpty
-                          ? Image.network(
-                              _fullImageUrl(listingImg),
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => _placeholderImage(),
-                            )
-                          : _placeholderImage(),
-                    ),
+                  // Header: Status Badge, Date & Chat Hint
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusBg,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          statusLabel,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: statusColor,
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.chat_bubble_outline_rounded, size: 12, color: Color(0xFF6366F1)),
+                          const SizedBox(width: 4),
+                          Text(
+                            createdAt.length >= 16 ? createdAt.substring(0, 16) : createdAt,
+                            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
+                  const SizedBox(height: 10),
+
+                  // Product Info Row
+                  Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: listingImg.isNotEmpty
+                              ? Image.network(
+                                  _fullImageUrl(listingImg),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => _placeholderImage(),
+                                )
+                              : _placeholderImage(),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              listingTitle,
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              price,
+                              style: const TextStyle(
+                                color: Color(0xFF059669),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8), size: 20),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Buyer Note Box
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          listingTitle,
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          price,
-                          style: const TextStyle(
-                            color: Color(0xFF059669),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 12.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              // Buyer Note Box
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.person_outline_rounded, size: 15, color: Color(0xFF64748B)),
-                        const SizedBox(width: 4),
-                        Text(
-                          buyerName,
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
-                        ),
-                        if (buyerPhone.isNotEmpty) ...[
-                          const SizedBox(width: 6),
-                          Text(
-                            '($buyerPhone)',
-                            style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '💬 "$notes"',
-                      style: const TextStyle(fontSize: 12.5, fontStyle: FontStyle.italic, height: 1.3),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Action Buttons: Chat di App, WhatsApp, Phone, Status Menu
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        elevation: 0,
-                      ),
-                      icon: const Icon(Icons.chat_bubble_rounded, size: 15),
-                      label: const Text(
-                        'Buka Chat',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => MarketChatScreen(
-                              listingId: int.tryParse('${order['listing_id']}') ?? 0,
-                              buyerId: int.tryParse('${order['buyer_id']}') ?? 0,
-                              initialListingTitle: listingTitle,
-                              initialListingPrice: price,
-                              initialListingImage: listingImg,
-                              targetUserName: buyerName,
-                              targetUserPhone: buyerPhone,
+                        Row(
+                          children: [
+                            const Icon(Icons.person_outline_rounded, size: 15, color: Color(0xFF64748B)),
+                            const SizedBox(width: 4),
+                            Text(
+                              buyerName,
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
                             ),
-                          ),
-                        );
-                      },
+                            if (buyerPhone.isNotEmpty) ...[
+                              const SizedBox(width: 6),
+                              Text(
+                                '($buyerPhone)',
+                                style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '💬 "$notes"',
+                          style: const TextStyle(fontSize: 12.5, fontStyle: FontStyle.italic, height: 1.3),
+                        ),
+                      ],
                     ),
                   ),
-                  if (buyerPhone.isNotEmpty) ...[
-                    const SizedBox(width: 6),
-                    Expanded(
-                      flex: 3,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF25D366),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          elevation: 0,
+                  const SizedBox(height: 12),
+
+                  // Action Buttons: Chat di App, WhatsApp, Phone, Delete, Status Menu
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            elevation: 0,
+                          ),
+                          icon: const Icon(Icons.chat_bubble_rounded, size: 15),
+                          label: const Text(
+                            'Buka Chat',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                          ),
+                          onPressed: () => _openChatWithBuyer(order),
                         ),
-                        icon: const Icon(Icons.send_rounded, size: 15),
-                        label: const Text(
-                          'WhatsApp',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                      ),
+                      if (buyerPhone.isNotEmpty) ...[
+                        const SizedBox(width: 6),
+                        Expanded(
+                          flex: 3,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF25D366),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              elevation: 0,
+                            ),
+                            icon: const Icon(Icons.send_rounded, size: 15),
+                            label: const Text(
+                              'WhatsApp',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                            ),
+                            onPressed: () async {
+                              final messenger = ScaffoldMessenger.of(context);
+                              final msg = 'Halo $buyerName, saya penjual produk "$listingTitle" di DuitKu. Menanggapi minat Anda: "$notes". Apakah Anda masih berminat?';
+                              final ok = await WhatsAppLauncher.launch(phone: buyerPhone, text: msg);
+                              if (!ok && mounted) {
+                                messenger.showSnackBar(
+                                  const SnackBar(content: Text('Tidak dapat membuka WhatsApp. Pastikan aplikasi WhatsApp terpasang.')),
+                                );
+                              }
+                            },
+                          ),
                         ),
-                        onPressed: () async {
+                        const SizedBox(width: 6),
+                        IconButton.filledTonal(
+                          tooltip: 'Telepon Langsung',
+                          icon: const Icon(Icons.phone_rounded, size: 18),
+                          onPressed: () async {
+                            final clean = buyerPhone.replaceAll(RegExp(r'[^0-9]'), '');
+                            final telUri = Uri.parse('tel:$clean');
+                            if (await canLaunchUrl(telUri)) {
+                              await launchUrl(telUri);
+                            }
+                          },
+                        ),
+                      ],
+                      const SizedBox(width: 6),
+                      IconButton.filledTonal(
+                        tooltip: 'Hapus Minat',
+                        style: IconButton.styleFrom(
+                          backgroundColor: const Color(0xFFFEE2E2),
+                          foregroundColor: const Color(0xFFDC2626),
+                        ),
+                        icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                        onPressed: () => _confirmDeleteOrder(orderId, buyerName, listingTitle, index),
+                      ),
+                      const SizedBox(width: 6),
+                      PopupMenuButton<String>(
+                        tooltip: 'Opsi & Status',
+                        icon: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.more_vert_rounded, size: 18, color: Color(0xFF475569)),
+                        ),
+                        onSelected: (newStatus) async {
+                          if (newStatus == 'delete') {
+                            await _confirmDeleteOrder(orderId, buyerName, listingTitle, index);
+                            return;
+                          }
                           final messenger = ScaffoldMessenger.of(context);
-                          final msg = 'Halo $buyerName, saya penjual produk "$listingTitle" di DuitKu. Menanggapi minat Anda: "$notes". Apakah Anda masih berminat?';
-                          final ok = await WhatsAppLauncher.launch(phone: buyerPhone, text: msg);
-                          if (!ok && mounted) {
-                            messenger.showSnackBar(
-                              const SnackBar(content: Text('Tidak dapat membuka WhatsApp. Pastikan aplikasi WhatsApp terpasang.')),
-                            );
+                          try {
+                            await ApiService.instance.updateMarketplaceOrderStatus(orderId, newStatus);
+                            if (mounted) {
+                              setState(() {
+                                order['status'] = newStatus;
+                              });
+                              messenger.showSnackBar(
+                                const SnackBar(content: Text('Status pesanan berhasil diperbarui!')),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              messenger.showSnackBar(
+                                SnackBar(content: Text('Gagal memperbarui status: $e')),
+                              );
+                            }
                           }
                         },
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    IconButton.filledTonal(
-                      tooltip: 'Telepon Langsung',
-                      icon: const Icon(Icons.phone_rounded, size: 18),
-                      onPressed: () async {
-                        final clean = buyerPhone.replaceAll(RegExp(r'[^0-9]'), '');
-                        final telUri = Uri.parse('tel:$clean');
-                        if (await canLaunchUrl(telUri)) {
-                          await launchUrl(telUri);
-                        }
-                      },
-                    ),
-                  ],
-                  const SizedBox(width: 6),
-                  PopupMenuButton<String>(
-                    tooltip: 'Ubah Status',
-                    icon: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.more_vert_rounded, size: 18, color: Color(0xFF475569)),
-                    ),
-                    onSelected: (newStatus) async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      try {
-                        await ApiService.instance.updateMarketplaceOrderStatus(orderId, newStatus);
-                        if (mounted) {
-                          setState(() {
-                            order['status'] = newStatus;
-                          });
-                          messenger.showSnackBar(
-                            const SnackBar(content: Text('Status pesanan berhasil diperbarui!')),
-                          );
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          messenger.showSnackBar(
-                            SnackBar(content: Text('Gagal memperbarui status: $e')),
-                          );
-                        }
-                      }
-                    },
-                    itemBuilder: (_) => [
-                      const PopupMenuItem(
-                        value: 'contacted',
-                        child: Text('Tandai Sudah Dihubungi'),
-                      ),
-                      const PopupMenuItem(
-                        value: 'completed',
-                        child: Text('Tandai Selesai Transaksi', style: TextStyle(color: Colors.green)),
-                      ),
-                      const PopupMenuItem(
-                        value: 'cancelled',
-                        child: Text('Batalkan Minat', style: TextStyle(color: Colors.red)),
+                        itemBuilder: (_) => [
+                          const PopupMenuItem(
+                            value: 'contacted',
+                            child: Text('Tandai Sudah Dihubungi'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'completed',
+                            child: Text('Tandai Selesai Transaksi', style: TextStyle(color: Colors.green)),
+                          ),
+                          const PopupMenuItem(
+                            value: 'cancelled',
+                            child: Text('Batalkan Minat', style: TextStyle(color: Colors.orange)),
+                          ),
+                          const PopupMenuDivider(),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                                SizedBox(width: 8),
+                                Text('Hapus Minat Masuk', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         );
       },
