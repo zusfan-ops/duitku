@@ -837,4 +837,195 @@ class MarketplaceController extends BaseController
             'releaseInfo' => $releaseInfo,
         ]);
     }
+
+    /**
+     * Hapus Pesanan / Minat Masuk
+     * POST /marketplace/order/delete/{id}
+     */
+    public function deleteOrder(int $id)
+    {
+        try {
+            $userId = session()->get('user_id');
+            if (!$userId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Silakan login terlebih dahulu.']);
+            }
+
+            $order = $this->orderModel->find($id);
+            if (!$order) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Pesanan atau minat tidak ditemukan.']);
+            }
+
+            if ((int)$order['seller_id'] !== (int)$userId && (int)$order['buyer_id'] !== (int)$userId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Anda tidak memiliki hak untuk menghapus pesanan ini.']);
+            }
+
+            $this->orderModel->delete($id);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Pesanan minat berhasil dihapus.',
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menghapus pesanan: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Ambil Riwayat Pesan Chat
+     * GET /marketplace/chat/messages?listing_id=X&buyer_id=Y
+     */
+    public function chatMessages()
+    {
+        try {
+            $userId = session()->get('user_id');
+            if (!$userId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Silakan login.']);
+            }
+
+            $listingId = (int)$this->request->getGet('listing_id');
+            $buyerId   = (int)$this->request->getGet('buyer_id');
+            $afterId   = (int)($this->request->getGet('after_id') ?? 0);
+
+            if ($listingId <= 0) {
+                return $this->response->setJSON(['success' => false, 'message' => 'ID Produk tidak valid.']);
+            }
+
+            $listing = $this->listingModel->find($listingId);
+            if (!$listing) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Produk tidak ditemukan.']);
+            }
+
+            $sellerId = (int)$listing['user_id'];
+            if ($userId === $sellerId) {
+                if ($buyerId <= 0) {
+                    return $this->response->setJSON(['success' => false, 'message' => 'Pilih calon pembeli untuk melihat obrolan.']);
+                }
+            } else {
+                $buyerId = $userId;
+            }
+
+            // Tandai sudah dibaca
+            $this->chatModel->markAsRead($listingId, $buyerId, $userId);
+
+            $messages = $this->chatModel->getMessages($listingId, $buyerId, $afterId);
+            $buyer    = $this->userModel->find($buyerId);
+            $seller   = $this->userModel->find($sellerId);
+
+            // Format buyer phone for WA if exists
+            $buyerPhoneClean = '';
+            if (!empty($buyer['phone'])) {
+                $p = preg_replace('/[^0-9]/', '', $buyer['phone']);
+                $buyerPhoneClean = str_starts_with($p, '0') ? '62' . substr($p, 1) : $p;
+            }
+
+            $sellerPhoneClean = '';
+            if (!empty($seller['phone'])) {
+                $p = preg_replace('/[^0-9]/', '', $seller['phone']);
+                $sellerPhoneClean = str_starts_with($p, '0') ? '62' . substr($p, 1) : $p;
+            }
+
+            return $this->response->setJSON([
+                'success'  => true,
+                'messages' => $messages,
+                'listing'  => [
+                    'id'    => $listingId,
+                    'title' => $listing['title'],
+                    'price' => $listing['price'],
+                ],
+                'buyer'    => [
+                    'id'    => $buyerId,
+                    'name'  => $buyer['name'] ?? 'Pembeli',
+                    'phone' => $buyerPhoneClean,
+                ],
+                'seller'   => [
+                    'id'    => $sellerId,
+                    'name'  => $seller['name'] ?? 'Penjual',
+                    'phone' => $sellerPhoneClean,
+                ],
+                'my_id'    => (int)$userId,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Gagal memuat pesan: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Kirim Pesan Chat Baru
+     * POST /marketplace/chat/send
+     */
+    public function sendChatMessage()
+    {
+        try {
+            $userId = session()->get('user_id');
+            if (!$userId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Silakan login terlebih dahulu.']);
+            }
+
+            $listingId = (int)($this->request->getPost('listing_id') ?? 0);
+            $message   = trim($this->request->getPost('message') ?? '');
+
+            if ($listingId <= 0 || $message === '') {
+                return $this->response->setJSON(['success' => false, 'message' => 'Pesan tidak boleh kosong.']);
+            }
+
+            $listing = $this->listingModel->find($listingId);
+            if (!$listing) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Produk tidak ditemukan.']);
+            }
+
+            $sellerId = (int)$listing['user_id'];
+            $buyerId  = (int)($this->request->getPost('buyer_id') ?? 0);
+
+            if ($userId === $sellerId) {
+                if ($buyerId <= 0) {
+                    return $this->response->setJSON(['success' => false, 'message' => 'Tentukan calon pembeli tujuan.']);
+                }
+                $recipientId = $buyerId;
+            } else {
+                $buyerId = $userId;
+                $recipientId = $sellerId;
+            }
+
+            $chatId = $this->chatModel->insert([
+                'listing_id' => $listingId,
+                'buyer_id'   => $buyerId,
+                'seller_id'  => $sellerId,
+                'sender_id'  => $userId,
+                'message'    => $message,
+                'is_read'    => 0,
+            ]);
+
+            $sender = $this->userModel->find($userId);
+            $senderName = $sender['name'] ?? 'Pengguna';
+
+            // In-app notifikasi penerima
+            try {
+                $this->notificationModel->insert([
+                    'title'      => '💬 Pesan Baru: ' . $listing['title'],
+                    'message'    => "{$senderName}: {$message}",
+                    'type'       => 'info',
+                    'target'     => 'user',
+                    'user_id'    => $recipientId,
+                    'action_url' => '/marketplace?tab=orders',
+                ]);
+            } catch (\Throwable $e) {}
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Pesan berhasil dikirim.',
+                'chat'    => [
+                    'id'          => $chatId,
+                    'listing_id'  => $listingId,
+                    'buyer_id'    => $buyerId,
+                    'seller_id'   => $sellerId,
+                    'sender_id'   => $userId,
+                    'sender_name' => $senderName,
+                    'message'     => esc($message),
+                    'created_at'  => date('Y-m-d H:i:s'),
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Gagal mengirim pesan: ' . $e->getMessage()]);
+        }
+    }
 }

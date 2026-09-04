@@ -270,7 +270,10 @@ $routes->get('/marketplace/item/(:num)',             'MarketplaceController::det
 $routes->get('/p/(:num)',                            'MarketplaceController::detail/$1');
 $routes->post('/marketplace/comment/(:num)',         'MarketplaceController::comment/$1', ['filter' => 'auth']);
 $routes->post('/marketplace/order/(:num)',           'MarketplaceController::order/$1',   ['filter' => 'auth']);
+$routes->post('/marketplace/order/delete/(:num)',    'MarketplaceController::deleteOrder/$1', ['filter' => 'auth']);
 $routes->post('/marketplace/order-status/(:num)',    'MarketplaceController::updateOrderStatus/$1', ['filter' => 'auth']);
+$routes->get('/marketplace/chat/messages',           'MarketplaceController::chatMessages',   ['filter' => 'auth']);
+$routes->post('/marketplace/chat/send',              'MarketplaceController::sendChatMessage', ['filter' => 'auth']);
 $routes->post('/marketplace/status/(:num)',          'MarketplaceController::updateStatus/$1', ['filter' => 'auth']);
 $routes->post('/marketplace/delete/(:num)',          'MarketplaceController::delete/$1', ['filter' => 'auth']);
 $routes->get('/u/(:segment)',                        'MarketplaceController::userStore/$1');
@@ -450,6 +453,7 @@ $routes->group('api', function ($routes) {
         $routes->post('marketplace/store',           'Api\MarketplaceController::store');
         $routes->post('marketplace/comment/(:num)',  'Api\MarketplaceController::comment/$1');
         $routes->post('marketplace/order/(:num)',        'Api\MarketplaceController::order/$1');
+        $routes->post('marketplace/order/delete/(:num)', 'Api\MarketplaceController::deleteOrder/$1');
         $routes->post('marketplace/order-status/(:num)', 'Api\MarketplaceController::updateOrderStatus/$1');
         $routes->get('marketplace/my-listings',          'Api\MarketplaceController::myListings');
         $routes->post('marketplace/status/(:num)',   'Api\MarketplaceController::updateStatus/$1');

@@ -492,6 +492,25 @@ class MarketplaceController extends ApiController
     }
 
     /**
+     * POST /api/marketplace/order/delete/{id}
+     */
+    public function deleteOrder(int $id)
+    {
+        $userId = $this->uid();
+        $order  = $this->orderModel->find($id);
+        if (!$order) {
+            return $this->fail('Pengajuan minat / pesanan tidak ditemukan.');
+        }
+
+        if ((int)$order['seller_id'] !== $userId && (int)$order['buyer_id'] !== $userId) {
+            return $this->fail('Akses ditolak.');
+        }
+
+        $this->orderModel->delete($id);
+        return $this->ok(['message' => 'Pesanan minat berhasil dihapus.']);
+    }
+
+    /**
      * GET /api/marketplace/chat/messages
      */
     public function chatMessages()

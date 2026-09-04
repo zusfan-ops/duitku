@@ -977,6 +977,9 @@
         <?php endif; ?>
 
         <?php if (!$isOwner): ?>
+            <button onclick="openDirectChat()" class="btn-action-primary" style="background:#4338CA;color:#fff;border-color:#4338CA;">
+                <span>💬 Chat Penjual</span>
+            </button>
             <button onclick="openOrderModal()" class="btn-action-primary btn-order">
                 <span><?= $listing['type'] === 'service' ? '📝 Pesan Layanan Jasa' : '📝 Ajukan Minat' ?></span>
             </button>
@@ -1075,6 +1078,46 @@
             <button onclick="closeOrderModal()" style="padding:9px 16px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-weight:700;font-size:12.5px;">Batal</button>
             <button onclick="sendOrder(<?= (int)$listing['id'] ?>)" id="btnSendOrder" style="padding:9px 18px;border-radius:10px;border:none;background:#4338CA;color:#fff;cursor:pointer;font-weight:800;font-size:12.5px;">Kirim Pengajuan</button>
         </div>
+    </div>
+</div>
+
+<!-- REAL-TIME IN-APP MARKETPLACE CHAT MODAL -->
+<div class="market-chat-modal-overlay" id="marketChatModal" style="display:none;" onclick="if(event.target===this)closeMarketChat()">
+    <div class="market-chat-modal-box">
+        <!-- Header -->
+        <div class="market-chat-header">
+            <div class="market-chat-header-info">
+                <div class="market-chat-header-title" id="chatModalListingTitle"><?= esc($listing['title']) ?></div>
+                <div class="market-chat-header-sub">
+                    <span class="market-chat-status-dot"></span>
+                    <span id="chatModalPartnerName"><?= esc($listing['seller_name']) ?></span>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <a href="#" id="chatModalWaBtn" target="_blank" class="chat-wa-header-btn" style="display:none;" title="Lanjutkan di WhatsApp">
+                    🟢 WA
+                </a>
+                <button type="button" class="market-chat-close-btn" onclick="closeMarketChat()" title="Tutup Chat">✕</button>
+            </div>
+        </div>
+
+        <!-- Messages List -->
+        <div class="market-chat-body" id="chatModalMessages">
+            <div style="text-align:center;padding:30px;color:var(--text-muted);font-size:12px;">
+                Memuat riwayat percakapan...
+            </div>
+        </div>
+
+        <!-- Input Footer -->
+        <form class="market-chat-footer" id="marketChatForm" onsubmit="sendChatMessage(event)">
+            <input type="text" id="chatInputMessage" class="market-chat-input" placeholder="Tulis pesan ke penjual..." autocomplete="off" required>
+            <button type="submit" id="btnSendChatMsg" class="market-chat-send-btn" title="Kirim Pesan">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </form>
     </div>
 </div>
 
@@ -1343,6 +1386,200 @@ function deleteListingFromDetail(id) {
         }
     })
     .catch(err => alert('Kesalahan: ' + (err.message || 'Gagal menghubungi server.')));
+}
+
+/* ══════════════════════════════════════════════════════════════
+   IN-APP CHAT ACTIONS (DETAIL PAGE)
+   ══════════════════════════════════════════════════════════════ */
+const currentUserId = <?= (int)($userId ?? 0) ?>;
+let currentChatListingId = <?= (int)$listing['id'] ?>;
+let currentChatBuyerId   = currentUserId;
+let currentChatInterval  = null;
+let currentChatMyId      = currentUserId;
+
+function openDirectChat() {
+    if (!currentUserId) {
+        alert('Silakan login terlebih dahulu untuk mengirim pesan ke penjual.');
+        window.location.href = '/login';
+        return;
+    }
+    openMarketChat(<?= (int)$listing['id'] ?>, currentUserId, '<?= esc(addslashes($listing['seller_name'])) ?>', '<?= esc(addslashes($listing['title'])) ?>');
+}
+
+function openMarketChat(listingId, buyerId, partnerName, listingTitle) {
+    currentChatListingId = listingId;
+    currentChatBuyerId   = buyerId;
+
+    const modal     = document.getElementById('marketChatModal');
+    const titleEl   = document.getElementById('chatModalListingTitle');
+    const partnerEl = document.getElementById('chatModalPartnerName');
+    const msgsEl    = document.getElementById('chatModalMessages');
+    const waBtn     = document.getElementById('chatModalWaBtn');
+
+    if (titleEl)   titleEl.textContent = listingTitle || 'Obrolan Marketplace';
+    if (partnerEl) partnerEl.textContent = partnerName || 'Penjual';
+    if (msgsEl)    msgsEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);font-size:12px;">Memuat obrolan...</div>';
+    if (waBtn)     waBtn.style.display = 'none';
+
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.offsetHeight;
+        modal.classList.add('show');
+    }
+
+    loadChatMessages(true);
+
+    if (currentChatInterval) clearInterval(currentChatInterval);
+    currentChatInterval = setInterval(() => {
+        loadChatMessages(false);
+    }, 3500);
+
+    setTimeout(() => {
+        document.getElementById('chatInputMessage')?.focus();
+    }, 200);
+}
+
+function closeMarketChat() {
+    const modal = document.getElementById('marketChatModal');
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 250);
+    }
+    if (currentChatInterval) {
+        clearInterval(currentChatInterval);
+        currentChatInterval = null;
+    }
+}
+
+function loadChatMessages(isInitial = false) {
+    if (!currentChatListingId) return;
+
+    fetch('/marketplace/chat/messages?listing_id=' + currentChatListingId + '&buyer_id=' + currentChatBuyerId, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(async r => {
+        const text = await r.text();
+        try { return JSON.parse(text); } catch(e) { throw new Error(text.substring(0, 100)); }
+    })
+    .then(res => {
+        if (!res.success) return;
+
+        currentChatMyId = res.my_id || 0;
+        const msgsEl = document.getElementById('chatModalMessages');
+        const waBtn  = document.getElementById('chatModalWaBtn');
+
+        if (waBtn) {
+            const partnerPhone = (res.my_id === res.seller.id) ? res.buyer.phone : res.seller.phone;
+            const partnerName  = (res.my_id === res.seller.id) ? res.buyer.name : res.seller.name;
+            if (partnerPhone) {
+                waBtn.href = 'https://wa.me/' + partnerPhone + '?text=Halo%20' + encodeURIComponent(partnerName) + ',%20mengenai%20produk%20' + encodeURIComponent(res.listing.title);
+                waBtn.style.display = 'inline-flex';
+            } else {
+                waBtn.style.display = 'none';
+            }
+        }
+
+        if (!res.messages || res.messages.length === 0) {
+            if (isInitial && msgsEl) {
+                msgsEl.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-muted);font-size:12.5px;">Belum ada riwayat pesan.<br>Tulis pesan di bawah untuk memulai obrolan dengan penjual.</div>';
+            }
+            return;
+        }
+
+        let html = '';
+        res.messages.forEach(m => {
+            const isMe = parseInt(m.sender_id) === currentChatMyId;
+            const timeStr = m.created_at ? new Date(m.created_at.replace(/-/g, '/')).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
+            html += `
+                <div class="chat-bubble ${isMe ? 'me' : 'other'}">
+                    <div style="font-size:11px;font-weight:700;opacity:0.85;margin-bottom:2px;">${escapeHtml(m.sender_name || 'Pengguna')}</div>
+                    <div>${escapeHtml(m.message)}</div>
+                    <div class="chat-bubble-time">${timeStr}</div>
+                </div>
+            `;
+        });
+
+        if (msgsEl) {
+            const isScrolledToBottom = msgsEl.scrollHeight - msgsEl.clientHeight <= msgsEl.scrollTop + 60;
+            msgsEl.innerHTML = html;
+            if (isInitial || isScrolledToBottom) {
+                msgsEl.scrollTop = msgsEl.scrollHeight;
+            }
+        }
+    })
+    .catch(err => {
+        console.error('Chat load error:', err);
+    });
+}
+
+function sendChatMessage(e) {
+    if (e) e.preventDefault();
+
+    const input = document.getElementById('chatInputMessage');
+    const msg = (input ? input.value : '').trim();
+    if (!msg || !currentChatListingId) return;
+
+    const fd = new URLSearchParams();
+    fd.append('listing_id', currentChatListingId);
+    fd.append('buyer_id', currentChatBuyerId);
+    fd.append('message', msg);
+    if (window.DUITKU && window.DUITKU.csrfName && window.DUITKU.csrfToken) {
+        fd.append(window.DUITKU.csrfName, window.DUITKU.csrfToken);
+    }
+
+    const headers = { 
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'XMLHttpRequest'
+    };
+    if (window.DUITKU && window.DUITKU.csrfToken) {
+        headers['X-CSRF-TOKEN'] = window.DUITKU.csrfToken;
+    }
+
+    if (input) input.value = '';
+
+    const msgsEl = document.getElementById('chatModalMessages');
+    if (msgsEl) {
+        const timeNow = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        msgsEl.insertAdjacentHTML('beforeend', `
+            <div class="chat-bubble me" style="opacity:0.85">
+                <div>${escapeHtml(msg)}</div>
+                <div class="chat-bubble-time">${timeNow} • Mengirim...</div>
+            </div>
+        `);
+        msgsEl.scrollTop = msgsEl.scrollHeight;
+    }
+
+    fetch('/marketplace/chat/send', {
+        method: 'POST',
+        headers: headers,
+        body: fd.toString()
+    })
+    .then(async r => {
+        const text = await r.text();
+        try { return JSON.parse(text); } catch(e) { throw new Error(text.substring(0, 100)); }
+    })
+    .then(res => {
+        if (res.success) {
+            loadChatMessages(true);
+        } else {
+            alert(res.message || 'Gagal mengirim pesan.');
+        }
+    })
+    .catch(err => {
+        alert('Gagal mengirim pesan: ' + (err.message || 'Kesalahan jaringan.'));
+    });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 </script>
 <?= $this->endSection() ?>
