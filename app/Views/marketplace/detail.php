@@ -1110,7 +1110,7 @@
 
         <!-- Input Footer -->
         <form class="market-chat-footer" id="marketChatForm" onsubmit="sendChatMessage(event)">
-            <input type="text" id="chatInputMessage" class="market-chat-input" placeholder="Tulis pesan ke penjual..." autocomplete="off" required>
+            <input type="text" id="chatInputMessage" class="market-chat-input" placeholder="Tulis pesan ke penjual..." style="color: #0f172a !important; background-color: #ffffff !important;" autocomplete="off" required>
             <button type="submit" id="btnSendChatMsg" class="market-chat-send-btn" title="Kirim Pesan">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="22" y1="2" x2="11" y2="13"></line>

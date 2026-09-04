@@ -2048,25 +2048,34 @@ table { max-width: 100%; }
 }
 .market-chat-footer {
     padding: 12px 14px;
-    background: var(--card, #1e293b);
-    border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    background: #182234;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
     gap: 10px;
 }
 .market-chat-input {
     flex: 1;
-    background: var(--bg, #0f172a);
-    border: 1px solid var(--border, rgba(255, 255, 255, 0.15));
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1;
     border-radius: 999px;
     padding: 10px 16px;
-    color: var(--text, #fff);
-    font-size: 13px;
+    color: #0f172a !important; /* Teks gelap pekat kontras tinggi */
+    font-size: 14px;
+    font-weight: 500;
     outline: none;
-    transition: border-color 0.2s ease;
+    caret-color: #4338ca;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.market-chat-input::placeholder {
+    color: #64748b !important;
+    opacity: 1;
 }
 .market-chat-input:focus {
-    border-color: #6366F1;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    background: #ffffff !important;
+    color: #0f172a !important;
 }
 .market-chat-send-btn {
     width: 40px;

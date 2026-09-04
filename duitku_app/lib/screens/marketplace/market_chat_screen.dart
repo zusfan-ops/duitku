@@ -471,11 +471,18 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
                         controller: _textCtrl,
                         textInputAction: TextInputAction.send,
                         onSubmitted: (_) => _sendMessage(),
+                        style: const TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        cursorColor: const Color(0xFF059669),
                         decoration: const InputDecoration(
                           hintText: 'Tulis pesan atau penawaran...',
                           hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.symmetric(vertical: 12),
+                          filled: false,
                         ),
                         maxLines: null,
                       ),
