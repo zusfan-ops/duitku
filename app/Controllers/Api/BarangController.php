@@ -83,7 +83,7 @@ class BarangController extends ApiController
                 'location_photo' => $json['location_photo'] ?? null,
                 'locationPhoto'  => $json['locationPhoto'] ?? null,
                 'maintenance'    => is_array($maint) ? $maint : [],
-                'warranties'     => is_array($warr) ? $warr : [];
+                'warranties'     => is_array($warr) ? $warr : [],
                 'created_at'     => $now,
                 'createdAt'      => $now,
                 'updated_at'     => $now,

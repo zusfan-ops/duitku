@@ -208,10 +208,11 @@ $routes->group('admin', ['filter' => 'admin'], function ($routes) {
     $routes->get('dashboard/poll',              'Admin\DashboardController::poll');
 
     // Notifications (Broadcast & Push to App)
-    $routes->get('notifications',               'Admin\NotificationController::index');
-    $routes->post('notifications/store',        'Admin\NotificationController::store');
+    $routes->get('notifications',                    'Admin\NotificationController::index');
+    $routes->post('notifications/store',             'Admin\NotificationController::store');
     $routes->post('notifications/toggle-pin/(:num)', 'Admin\NotificationController::togglePin/$1');
     $routes->post('notifications/delete/(:num)',     'Admin\NotificationController::delete/$1');
+    $routes->post('notifications/save-fcm',          'Admin\NotificationController::saveFcmConfig');
 
     // TV Streaming & M3U Playlist Manager
     $routes->get('tv',                          'Admin\TvController::index');
@@ -417,11 +418,4 @@ $routes->group('api', function ($routes) {
         $routes->get('backup/export',               'Api\BackupController::export');
         $routes->post('backup/restore',             'Api\BackupController::restore');
     });
-
-    // Admin Notifications & FCM Push Gateway
-    $routes->get('admin/notifications',                   'Admin\NotificationController::index');
-    $routes->post('admin/notifications/store',            'Admin\NotificationController::store');
-    $routes->post('admin/notifications/toggle-pin/(:num)','Admin\NotificationController::togglePin/$1');
-    $routes->post('admin/notifications/delete/(:num)',    'Admin\NotificationController::delete/$1');
-    $routes->post('admin/notifications/save-fcm',         'Admin\NotificationController::saveFcmConfig');
 });

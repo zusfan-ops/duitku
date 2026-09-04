@@ -15,7 +15,7 @@ class NotificationController extends BaseController
 
     public function index()
     {
-        $userId = session()->get('user_id');
+        $userId = (int)(session()->get('user_id') ?? 0);
         $notifications = $this->notifModel->getForUser($userId, 40);
 
         $data = [
@@ -29,8 +29,10 @@ class NotificationController extends BaseController
 
     public function markAsRead(int $id)
     {
-        $userId = session()->get('user_id');
-        $this->notifModel->markAsRead($id, $userId);
+        $userId = (int)(session()->get('user_id') ?? 0);
+        if ($userId > 0) {
+            $this->notifModel->markAsRead($id, $userId);
+        }
 
         if ($this->request->isAJAX()) {
             return $this->response->setJSON(['status' => 'success']);
@@ -41,11 +43,13 @@ class NotificationController extends BaseController
 
     public function markAllAsRead()
     {
-        $userId = session()->get('user_id');
-        $notifications = $this->notifModel->getForUser($userId, 100);
+        $userId = (int)(session()->get('user_id') ?? 0);
+        if ($userId > 0) {
+            $notifications = $this->notifModel->getForUser($userId, 100);
 
-        foreach ($notifications as $n) {
-            $this->notifModel->markAsRead((int)$n['id'], $userId);
+            foreach ($notifications as $n) {
+                $this->notifModel->markAsRead((int)$n['id'], $userId);
+            }
         }
 
         if ($this->request->isAJAX()) {

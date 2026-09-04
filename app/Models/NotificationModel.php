@@ -60,17 +60,21 @@ class NotificationModel extends Model
     /**
      * Ambil notifikasi aktif yang relevan untuk user tertentu (broadcast all + target user)
      */
-    public function getForUser(int $userId, int $limit = 30): array
+    public function getForUser(?int $userId = null, int $limit = 30): array
     {
         $this->ensureTable();
+        $safeUserId = (int)($userId ?? 0);
+
         $db = \Config\Database::connect();
         $builder = $db->table($this->table . ' n');
         $builder->select('n.*, (CASE WHEN nr.id IS NOT NULL THEN 1 ELSE 0 END) AS is_read, nr.read_at');
-        $builder->join('notification_reads nr', "nr.notification_id = n.id AND nr.user_id = {$userId}", 'left');
+        $builder->join('notification_reads nr', "nr.notification_id = n.id AND nr.user_id = {$safeUserId}", 'left');
         $builder->groupStart()
-                ->where('n.target', 'all')
-                ->orWhere('n.user_id', $userId)
-                ->groupEnd();
+                ->where('n.target', 'all');
+        if ($safeUserId > 0) {
+            $builder->orWhere('n.user_id', $safeUserId);
+        }
+        $builder->groupEnd();
         $builder->orderBy('n.is_pinned', 'DESC');
         $builder->orderBy('n.created_at', 'DESC');
         $builder->limit($limit);
@@ -81,15 +85,20 @@ class NotificationModel extends Model
     /**
      * Hitung jumlah notifikasi belum dibaca untuk user
      */
-    public function getUnreadCount(int $userId): int
+    public function getUnreadCount(?int $userId = null): int
     {
         $this->ensureTable();
+        $safeUserId = (int)($userId ?? 0);
+        if ($safeUserId <= 0) {
+            return 0;
+        }
+
         $db = \Config\Database::connect();
         $builder = $db->table($this->table . ' n');
-        $builder->join('notification_reads nr', "nr.notification_id = n.id AND nr.user_id = {$userId}", 'left');
+        $builder->join('notification_reads nr', "nr.notification_id = n.id AND nr.user_id = {$safeUserId}", 'left');
         $builder->groupStart()
                 ->where('n.target', 'all')
-                ->orWhere('n.user_id', $userId)
+                ->orWhere('n.user_id', $safeUserId)
                 ->groupEnd();
         $builder->where('nr.id IS NULL', null, false);
 

@@ -9,7 +9,29 @@ class FcmService
 
     public function __construct()
     {
-        $this->serviceAccountPath = WRITEPATH . 'firebase-service-account.json';
+        $writablePath = defined('WRITEPATH') ? WRITEPATH : dirname(__DIR__, 2) . '/writable/';
+        $rootPath     = defined('ROOTPATH') ? ROOTPATH : dirname(__DIR__, 2) . '/';
+
+        $candidates = [
+            $writablePath . 'firebase-service-account.json',
+            $rootPath . 'duitku-19896-firebase-adminsdk-fbsvc-5cb52030bc.json',
+            $rootPath . 'firebase-service-account.json',
+        ];
+
+        // Also check if any file matches *-firebase-adminsdk-*.json in root
+        $globFiles = glob($rootPath . '*-firebase-adminsdk-*.json');
+        if (!empty($globFiles)) {
+            $candidates = array_merge($candidates, $globFiles);
+        }
+
+        $this->serviceAccountPath = $writablePath . 'firebase-service-account.json';
+        foreach ($candidates as $path) {
+            if (file_exists($path) && filesize($path) > 50) {
+                $this->serviceAccountPath = $path;
+                break;
+            }
+        }
+
         if (file_exists($this->serviceAccountPath)) {
             $data = json_decode(file_get_contents($this->serviceAccountPath), true);
             if (!empty($data['project_id'])) {
