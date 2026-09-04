@@ -599,58 +599,77 @@
 [data-theme="dark"] .reminder-badge.soon   { background:#3B2A0A; color:#FCD34D; }
 [data-theme="dark"] .reminder-badge.urgent { background:#3B0A0A; color:#FCA5A5; }
 
-/* ── Quick Actions (icon grid) ────────────────────────────────── */
+/* ── Quick Actions (icon grid: 4 columns x 2 rows) ─────────────── */
 .home-quick-actions {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
     margin-bottom: 16px;
 }
 .home-qa-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    padding: 12px 4px 10px;
+    justify-content: center;
+    gap: 7px;
+    padding: 13px 6px 11px;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 16px;
-    font-size: 11px;
+    border-radius: 18px;
+    font-size: 11.5px;
     font-weight: 700;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all var(--transition);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     text-decoration: none;
     position: relative;
     box-sizing: border-box;
     min-width: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
-.home-qa-btn:hover, .home-qa-btn:active {
+.home-qa-btn:hover {
     border-color: var(--primary);
     color: var(--primary);
-    background: var(--primary-dim);
+    background: var(--bg-card);
+    transform: translateY(-2.5px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
 }
-.home-qa-btn svg { flex-shrink: 0; color: var(--primary); }
-.home-qa-btn:hover svg, .home-qa-btn:active svg { color: var(--primary); }
+.home-qa-btn:active {
+    transform: scale(0.97);
+}
+.home-qa-btn svg { flex-shrink: 0; }
 .home-qa-icon {
-    width: 36px; height: 36px;
-    border-radius: 12px;
-    background: var(--primary-dim);
+    width: 42px; height: 42px;
+    border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
+    transition: transform 0.2s ease;
+}
+.home-qa-btn:hover .home-qa-icon {
+    transform: scale(1.08);
 }
 .home-qa-btn .qa-badge {
     position: absolute;
-    top: 6px; right: 6px;
+    top: 6px; right: 8px;
     background: #EF4444;
     color: #fff;
-    font-size: 9px;
+    font-size: 9.5px;
     font-weight: 800;
-    width: 16px; height: 16px;
-    border-radius: 50%;
+    min-width: 17px; height: 17px;
+    padding: 0 4px;
+    border-radius: 999px;
     display: flex; align-items: center; justify-content: center;
     line-height: 1;
+    border: 2px solid var(--bg-card);
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
 }
-.home-qa-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.home-qa-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    text-align: center;
+    letter-spacing: -0.2px;
+}
 
 /* ── Calculator Modal Content ───────────────────────────────────── */
 .hc-tabs {
@@ -2394,58 +2413,86 @@
     </div>
     <?php endif; ?>
 
-    <!-- QUICK ACTIONS -->
+    <!-- QUICK ACTIONS (4 KOLOM x 2 BARIS) -->
     <div class="home-quick-actions">
+        <!-- 1. Scan Nota -->
         <a href="/scan" class="home-qa-btn">
-            <div class="home-qa-icon" style="background:rgba(5,150,105,0.15)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" width="18" height="18" style="color:var(--primary)"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <div class="home-qa-icon" style="background:rgba(5,150,105,0.12)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             </div>
             <span class="home-qa-label">Scan Nota</span>
         </a>
-        <button class="home-qa-btn" id="btnOpenCalc">
-            <div class="home-qa-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="12" y1="10" x2="14" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="12" y1="14" x2="14" y2="14"/><line x1="16" y1="14" x2="16" y2="18"/><line x1="14" y1="16" x2="18" y2="16"/></svg>
+
+        <!-- 2. Kalkulator -->
+        <button type="button" class="home-qa-btn" id="btnOpenCalc">
+            <div class="home-qa-icon" style="background:rgba(16,185,129,0.12)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="12" y1="10" x2="14" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="12" y1="14" x2="14" y2="14"/><line x1="16" y1="14" x2="16" y2="18"/><line x1="14" y1="16" x2="18" y2="16"/></svg>
             </div>
             <span class="home-qa-label">Kalkulator</span>
         </button>
+
+        <!-- 3. My Home -->
         <a href="/barang" class="home-qa-btn">
-            <div class="home-qa-icon" style="background:rgba(99,102,241,0.15)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18" style="color:#4F46E5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <div class="home-qa-icon" style="background:rgba(79,70,229,0.12)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </div>
             <span class="home-qa-label">My Home</span>
             <?php if (!empty($myHomeSummary['attention'])): ?>
             <span class="qa-badge" style="background:#EF4444"><?= count($myHomeSummary['attention']) ?></span>
             <?php endif; ?>
         </a>
+
+        <!-- 4. Tagihan -->
         <a href="/bills" class="home-qa-btn">
-            <div class="home-qa-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/><line x1="8" y1="13" x2="10" y2="13"/><line x1="12" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="10" y2="17"/></svg>
+            <div class="home-qa-icon" style="background:rgba(37,99,235,0.12)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/><line x1="8" y1="13" x2="10" y2="13"/><line x1="12" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="10" y2="17"/></svg>
             </div>
             <span class="home-qa-label">Tagihan</span>
             <?php if (!empty($upcomingBills)): ?>
             <span class="qa-badge"><?= count($upcomingBills) ?></span>
             <?php endif; ?>
         </a>
+
+        <!-- 5. Traveling -->
         <a href="/traveling" class="home-qa-btn">
-            <div class="home-qa-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+            <div class="home-qa-icon" style="background:rgba(6,182,212,0.12)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
             </div>
             <span class="home-qa-label">Traveling</span>
         </a>
+
+        <!-- 6. Hutang -->
         <a href="/hutang" class="home-qa-btn">
-            <div class="home-qa-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <div class="home-qa-icon" style="background:rgba(245,158,11,0.12)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <span class="home-qa-label">Hutang</span>
             <?php if (isset($debtSummary) && $debtSummary['active_count'] > 0): ?>
             <span class="qa-badge"><?= $debtSummary['active_count'] ?></span>
             <?php endif; ?>
         </a>
+
+        <!-- 7. Jual & Sewa -->
         <a href="/marketplace" class="home-qa-btn">
-            <div class="home-qa-icon" style="background:rgba(99,102,241,0.15)">
-                <span style="font-size:18px">🛍️</span>
+            <div class="home-qa-icon" style="background:rgba(124,58,237,0.12)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                    <path d="M3 6h18"/>
+                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
             </div>
             <span class="home-qa-label">Jual &amp; Sewa</span>
+        </a>
+
+        <!-- 8. Statistik & Analisis -->
+        <a href="/stats" class="home-qa-btn">
+            <div class="home-qa-icon" style="background:rgba(236,72,153,0.12)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+                    <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+                </svg>
+            </div>
+            <span class="home-qa-label">Statistik</span>
         </a>
     </div>
 
