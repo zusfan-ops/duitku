@@ -107,6 +107,7 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<?php $notifList = $appNotifications ?? $notifications ?? []; ?>
 <div class="notif-page">
     
     <div class="notif-header">
@@ -114,14 +115,14 @@
             <h2 style="margin: 0 0 2px; font-size: 20px; font-weight: 800; color: var(--text-primary);">📢 Pemberitahuan & Pesan</h2>
             <p style="margin: 0; font-size: 12px; color: var(--text-secondary);">Pusat informasi resmi, pengumuman & promo DuitKu.</p>
         </div>
-        <?php if (!empty($notifications) && ($unreadCount ?? 0) > 0): ?>
+        <?php if (!empty($notifList) && ($unreadCount ?? 0) > 0): ?>
             <a href="/notifications/read-all" class="zp-tab-btn" style="padding: 8px 12px; border: 1px solid var(--border); font-size: 11.5px; text-decoration: none; border-radius: 10px;">
                 ✓ Tandai Semua Dibaca
             </a>
         <?php endif; ?>
     </div>
 
-    <?php if (empty($notifications)): ?>
+    <?php if (empty($notifList)): ?>
         <div class="zp-card" style="text-align: center; padding: 48px 20px;">
             <div style="font-size: 48px; margin-bottom: 12px;">📭</div>
             <h4 style="margin: 0 0 6px; font-weight: 800;">Belum Ada Pemberitahuan</h4>
@@ -129,7 +130,7 @@
         </div>
     <?php else: ?>
         <div>
-            <?php foreach ($notifications as $n): ?>
+            <?php foreach ($notifList as $n): ?>
                 <?php
                     $typeClass = 'type-info';
                     $typeIcon = 'ℹ️';

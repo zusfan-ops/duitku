@@ -19,9 +19,9 @@ class NotificationController extends BaseController
         $notifications = $this->notifModel->getForUser($userId, 40);
 
         $data = [
-            'pageTitle'     => 'Pemberitahuan & Pengumuman',
-            'notifications' => $notifications,
-            'unreadCount'   => $this->notifModel->getUnreadCount($userId),
+            'pageTitle'        => 'Pemberitahuan & Pengumuman',
+            'appNotifications' => $notifications,
+            'unreadCount'      => $this->notifModel->getUnreadCount($userId),
         ];
 
         return view('notifications/index', $data);
