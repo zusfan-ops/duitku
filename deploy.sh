@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#
+# test
 # ==============================================================================
 # Deploy Script untuk Duitku (CodeIgniter 4)
 # Repo: https://github.com/zusfan-ops/duitku.git

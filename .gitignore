@@ -142,3 +142,4 @@ app/Config/Database.php
 firebase-service-account.json
 google-services.json
 
+deploy.sh
