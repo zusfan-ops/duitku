@@ -22,9 +22,36 @@ class MarketplaceChatModel extends Model
         'is_read',
     ];
 
-    protected $useTimestamps = true;
-    protected $createdField  = 'created_at';
-    protected $updatedField  = 'updated_at';
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureTable();
+    }
+
+    public function ensureTable(): void
+    {
+        try {
+            $this->db->query("
+                CREATE TABLE IF NOT EXISTS `marketplace_chats` (
+                    `id`          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `listing_id`  INT UNSIGNED NOT NULL,
+                    `buyer_id`    INT UNSIGNED NOT NULL,
+                    `seller_id`   INT UNSIGNED NOT NULL,
+                    `sender_id`   INT UNSIGNED NOT NULL,
+                    `message`     TEXT NOT NULL,
+                    `is_read`     TINYINT(1) DEFAULT 0,
+                    `created_at`  DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at`  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    KEY `idx_chat_conv` (`listing_id`, `buyer_id`),
+                    KEY `idx_chat_seller` (`seller_id`),
+                    KEY `idx_chat_buyer` (`buyer_id`),
+                    KEY `idx_chat_sender` (`sender_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+        } catch (\Throwable $e) {
+            log_message('error', 'Auto create marketplace_chats table error: ' . $e->getMessage());
+        }
+    }
 
     /**
      * Ambil riwayat chat untuk percakapan listing_id & buyer_id tertentu
@@ -69,45 +96,51 @@ class MarketplaceChatModel extends Model
      */
     public function getConversationsForUser(int $userId): array
     {
-        $db = $this->db;
-        $sql = "
-            SELECT 
-                mc.listing_id,
-                mc.buyer_id,
-                mc.seller_id,
-                l.title AS listing_title,
-                l.price AS listing_price,
-                l.status AS listing_status,
-                l.type AS listing_type,
-                (SELECT image_url FROM marketplace_images mi WHERE mi.listing_id = l.id ORDER BY mi.is_primary DESC, mi.id ASC LIMIT 1) AS listing_image,
-                ub.name AS buyer_name,
-                ub.phone AS buyer_phone,
-                us.name AS seller_name,
-                us.phone AS seller_phone,
-                last_m.message AS last_message,
-                last_m.sender_id AS last_sender_id,
-                last_m.created_at AS last_message_time,
-                (
-                    SELECT COUNT(*) 
-                    FROM marketplace_chats uc 
-                    WHERE uc.listing_id = mc.listing_id 
-                      AND uc.buyer_id = mc.buyer_id 
-                      AND uc.sender_id != ? 
-                      AND uc.is_read = 0
-                ) AS unread_count
-            FROM (
-                SELECT listing_id, buyer_id, seller_id, MAX(id) AS max_id
-                FROM marketplace_chats
-                WHERE buyer_id = ? OR seller_id = ?
-                GROUP BY listing_id, buyer_id, seller_id
-            ) mc
-            JOIN marketplace_chats last_m ON last_m.id = mc.max_id
-            JOIN marketplace_listings l ON l.id = mc.listing_id
-            JOIN users ub ON ub.id = mc.buyer_id
-            JOIN users us ON us.id = mc.seller_id
-            ORDER BY last_m.id DESC
-        ";
+        $this->ensureTable();
+        try {
+            $db = $this->db;
+            $sql = "
+                SELECT 
+                    mc.listing_id,
+                    mc.buyer_id,
+                    mc.seller_id,
+                    l.title AS listing_title,
+                    l.price AS listing_price,
+                    l.status AS listing_status,
+                    l.type AS listing_type,
+                    (SELECT image_url FROM marketplace_images mi WHERE mi.listing_id = l.id ORDER BY mi.is_primary DESC, mi.id ASC LIMIT 1) AS listing_image,
+                    ub.name AS buyer_name,
+                    ub.phone AS buyer_phone,
+                    us.name AS seller_name,
+                    us.phone AS seller_phone,
+                    last_m.message AS last_message,
+                    last_m.sender_id AS last_sender_id,
+                    last_m.created_at AS last_message_time,
+                    (
+                        SELECT COUNT(*) 
+                        FROM marketplace_chats uc 
+                        WHERE uc.listing_id = mc.listing_id 
+                          AND uc.buyer_id = mc.buyer_id 
+                          AND uc.sender_id != ? 
+                          AND uc.is_read = 0
+                    ) AS unread_count
+                FROM (
+                    SELECT listing_id, buyer_id, seller_id, MAX(id) AS max_id
+                    FROM marketplace_chats
+                    WHERE buyer_id = ? OR seller_id = ?
+                    GROUP BY listing_id, buyer_id, seller_id
+                ) mc
+                JOIN marketplace_chats last_m ON last_m.id = mc.max_id
+                JOIN marketplace_listings l ON l.id = mc.listing_id
+                JOIN users ub ON ub.id = mc.buyer_id
+                JOIN users us ON us.id = mc.seller_id
+                ORDER BY last_m.id DESC
+            ";
 
-        return $db->query($sql, [$userId, $userId, $userId])->getResultArray();
+            return $db->query($sql, [$userId, $userId, $userId])->getResultArray();
+        } catch (\Throwable $e) {
+            log_message('error', 'getConversationsForUser error: ' . $e->getMessage());
+            return [];
+        }
     }
 }

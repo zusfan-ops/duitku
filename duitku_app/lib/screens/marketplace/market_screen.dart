@@ -202,23 +202,50 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
         ),
       ),
       body: _tabController.index == 3 ? _buildSellerHubView() : _buildBrowseView(),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF059669),
-        icon: const Icon(Icons.add_photo_alternate_rounded, color: Colors.white),
-        label: const Text(
-          'Pasang Iklan',
-          style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white),
-        ),
-        onPressed: () async {
-          final refresh = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(builder: (_) => const MarketCreateScreen()),
-          );
-          if (refresh == true) {
-            _loadListings();
-            _loadMyListings();
-          }
-        },
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'fab_market_conversations',
+            backgroundColor: const Color(0xFF4338CA),
+            foregroundColor: Colors.white,
+            elevation: 4,
+            icon: const Icon(Icons.forum_rounded, color: Colors.white, size: 18),
+            label: const Text(
+              'Pesan & Chat',
+              style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 12.5),
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MarketConversationsScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+          FloatingActionButton.extended(
+            heroTag: 'fab_market_create',
+            backgroundColor: const Color(0xFF059669),
+            foregroundColor: Colors.white,
+            elevation: 4,
+            icon: const Icon(Icons.add_photo_alternate_rounded, color: Colors.white, size: 18),
+            label: const Text(
+              'Pasang Iklan',
+              style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 12.5),
+            ),
+            onPressed: () async {
+              final refresh = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => const MarketCreateScreen()),
+              );
+              if (refresh == true) {
+                _loadListings();
+                _loadMyListings();
+              }
+            },
+          ),
+        ],
       ),
     );
   }

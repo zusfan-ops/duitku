@@ -513,6 +513,29 @@
     .listing-price {
         font-size: 14px;
     }
+/* Floating Chat Shortcut Button (Marketplace) */
+.market-floating-chat-btn {
+    position: fixed;
+    bottom: 80px;
+    right: 18px;
+    background: linear-gradient(135deg, #4338CA 0%, #6366F1 100%);
+    color: #fff;
+    border-radius: 999px;
+    padding: 11px 18px;
+    box-shadow: 0 6px 20px rgba(67, 56, 202, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+    z-index: 95;
+    transition: all 0.2s ease;
+}
+.market-floating-chat-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(67, 56, 202, 0.5);
+    color: #fff;
 }
 </style>
 <?= $this->endSection() ?>
@@ -783,6 +806,17 @@
         <?php endif; ?>
 
     <?php endif; ?>
+
+    <!-- FLOATING CHAT BUTTON (MARKETPLACE - NO CONFLICT WITH TV CHAT) -->
+    <a href="/marketplace?tab=orders" class="market-floating-chat-btn" title="Buka Pesan & Minat Masuk">
+        <span>💬</span>
+        <span>Pesan & Minat</span>
+        <?php if (!empty($ordersReceived)): ?>
+            <span style="background:#EF4444;color:#fff;font-size:10px;font-weight:900;padding:2px 6px;border-radius:10px;margin-left:2px;">
+                <?= count($ordersReceived) ?>
+            </span>
+        <?php endif; ?>
+    </a>
 
 </div>
 <?= $this->endSection() ?>

@@ -466,68 +466,74 @@ class MarketplaceController extends ApiController
      */
     public function chatMessages()
     {
-        $userId = $this->uid();
-        $listingId = (int)$this->request->getGet('listing_id');
-        if ($listingId <= 0) {
-            return $this->fail('Parameter listing_id wajib diisi.');
+        try {
+            $userId    = $this->uid();
+            $this->chatModel->ensureTable();
+            $listingId = (int)$this->request->getGet('listing_id');
+            if ($listingId <= 0) {
+                return $this->fail('Parameter listing_id wajib diisi.');
+            }
+
+            $listing = $this->listingModel->find($listingId);
+            if (!$listing) {
+                return $this->fail('Produk tidak ditemukan.');
+            }
+
+            $sellerId = (int)$listing['user_id'];
+            $buyerId  = (int)($this->request->getGet('buyer_id') ?? 0);
+
+            // Jika dipanggil oleh pembeli, buyer_id otomatis userId
+            if ($userId !== $sellerId) {
+                $buyerId = $userId;
+            }
+
+            if ($buyerId <= 0) {
+                return $this->fail('Parameter buyer_id tidak valid.');
+            }
+
+            // Akses hanya untuk penjual atau pembeli
+            if ($userId !== $sellerId && $userId !== $buyerId) {
+                return $this->fail('Akses chat ditolak.');
+            }
+
+            $afterId  = (int)($this->request->getGet('after_id') ?? 0);
+            $messages = $this->chatModel->getMessages($listingId, $buyerId, $afterId);
+
+            // Tandai pesan sebagai sudah dibaca
+            $this->chatModel->markAsRead($listingId, $buyerId, $userId);
+
+            $buyer  = $this->userModel->find($buyerId);
+            $seller = $this->userModel->find($sellerId);
+            $images = $this->imageModel->where('listing_id', $listingId)->orderBy('is_primary', 'DESC')->findAll();
+
+            return $this->ok([
+                'messages' => $messages,
+                'listing'  => [
+                    'id'            => (int)$listing['id'],
+                    'title'         => $listing['title'],
+                    'price'         => (float)$listing['price'],
+                    'type'          => $listing['type'],
+                    'status'        => $listing['status'],
+                    'primary_image' => !empty($images) ? $images[0]['image_url'] : null,
+                ],
+                'buyer'    => [
+                    'id'       => $buyerId,
+                    'name'     => $buyer['name'] ?? 'Pembeli',
+                    'phone'    => $buyer['phone'] ?? '',
+                    'username' => $buyer['username'] ?? '',
+                ],
+                'seller'   => [
+                    'id'       => $sellerId,
+                    'name'     => $seller['name'] ?? 'Penjual',
+                    'phone'    => $seller['phone'] ?? '',
+                    'username' => $seller['username'] ?? '',
+                ],
+                'my_id'    => $userId,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'chatMessages error: ' . $e->getMessage());
+            return $this->fail('Gagal memuat pesan: ' . $e->getMessage());
         }
-
-        $listing = $this->listingModel->find($listingId);
-        if (!$listing) {
-            return $this->fail('Produk tidak ditemukan.');
-        }
-
-        $sellerId = (int)$listing['user_id'];
-        $buyerId  = (int)($this->request->getGet('buyer_id') ?? 0);
-
-        // Jika dipanggil oleh pembeli, buyer_id otomatis userId
-        if ($userId !== $sellerId) {
-            $buyerId = $userId;
-        }
-
-        if ($buyerId <= 0) {
-            return $this->fail('Parameter buyer_id tidak valid.');
-        }
-
-        // Akses hanya untuk penjual atau pembeli
-        if ($userId !== $sellerId && $userId !== $buyerId) {
-            return $this->fail('Akses chat ditolak.');
-        }
-
-        $afterId  = (int)($this->request->getGet('after_id') ?? 0);
-        $messages = $this->chatModel->getMessages($listingId, $buyerId, $afterId);
-
-        // Tandai pesan sebagai sudah dibaca
-        $this->chatModel->markAsRead($listingId, $buyerId, $userId);
-
-        $buyer  = $this->userModel->find($buyerId);
-        $seller = $this->userModel->find($sellerId);
-        $images = $this->imageModel->where('listing_id', $listingId)->orderBy('is_primary', 'DESC')->findAll();
-
-        return $this->ok([
-            'messages' => $messages,
-            'listing'  => [
-                'id'            => (int)$listing['id'],
-                'title'         => $listing['title'],
-                'price'         => (float)$listing['price'],
-                'type'          => $listing['type'],
-                'status'        => $listing['status'],
-                'primary_image' => !empty($images) ? $images[0]['image_url'] : null,
-            ],
-            'buyer'    => [
-                'id'       => $buyerId,
-                'name'     => $buyer['name'] ?? 'Pembeli',
-                'phone'    => $buyer['phone'] ?? '',
-                'username' => $buyer['username'] ?? '',
-            ],
-            'seller'   => [
-                'id'       => $sellerId,
-                'name'     => $seller['name'] ?? 'Penjual',
-                'phone'    => $seller['phone'] ?? '',
-                'username' => $seller['username'] ?? '',
-            ],
-            'my_id'    => $userId,
-        ]);
     }
 
     /**
@@ -636,11 +642,19 @@ class MarketplaceController extends ApiController
      */
     public function chatConversations()
     {
-        $userId = $this->uid();
-        $conversations = $this->chatModel->getConversationsForUser($userId);
-        return $this->ok([
-            'conversations' => $conversations,
-            'my_id'         => $userId,
-        ]);
+        try {
+            $userId = $this->uid();
+            $conversations = $this->chatModel->getConversationsForUser($userId);
+            return $this->ok([
+                'conversations' => $conversations,
+                'my_id'         => $userId,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'chatConversations API error: ' . $e->getMessage());
+            return $this->ok([
+                'conversations' => [],
+                'my_id'         => $this->uid(),
+            ]);
+        }
     }
 }

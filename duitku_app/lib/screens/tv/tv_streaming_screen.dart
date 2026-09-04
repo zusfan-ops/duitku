@@ -330,8 +330,8 @@ class _TvStreamingScreenState extends State<TvStreamingScreen> {
           ),
         ],
       ),
-      // ── Floating Action Button: TV Live Chat (Exclusive to TV screen) ──
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fab_tv_live_chat',
         onPressed: () => TvChatSheet.show(context),
         backgroundColor: const Color(0xFF10B981),
         elevation: 6,
