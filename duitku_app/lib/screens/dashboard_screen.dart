@@ -39,6 +39,7 @@ import 'vehicle/vehicle_screen.dart';
 import 'wallet_screen.dart';
 import 'zakat_pajak/zakat_pajak_screen.dart';
 import 'emergency/emergency_screen.dart';
+import '../services/local_notification_service.dart';
 import '../services/offline_cache_service.dart';
 import '../services/sync_service.dart';
 import '../widgets/sync_status_banner.dart';
@@ -118,6 +119,7 @@ class DashboardScreenState extends State<DashboardScreen> {
       });
       context.read<AppDataProvider>().ensureLoaded(force: true);
       WidgetHelper.updateDashboardWidget(data);
+      LocalNotificationService.instance.checkAndNotifyNewBroadcasts(data.broadcastNotifications);
     } on ApiException catch (e) {
       if (!mounted) return;
       if (e.status == 401) {

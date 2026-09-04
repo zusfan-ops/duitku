@@ -2,7 +2,7 @@ name: duitku_app
 description: "DuitKu — Aplikasi pencatat keuangan pribadi versi native."
 publish_to: 'none'
 
-version: 1.2.22+23
+version: 1.2.23+24
 
 environment:
   sdk: ^3.12.2
@@ -31,6 +31,7 @@ dependencies:
   google_mlkit_text_recognition: ^0.14.0
   package_info_plus: ^10.2.1
   video_player: ^2.14.0
+  flutter_local_notifications: ^22.3.0
 
 dev_dependencies:
   flutter_test:

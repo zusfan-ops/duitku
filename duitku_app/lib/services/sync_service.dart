@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/sync_item.dart';
 import 'api_service.dart';
+import 'local_notification_service.dart';
 import 'offline_cache_service.dart';
 
 class SyncService extends ChangeNotifier {
@@ -263,6 +264,7 @@ class SyncService extends ChangeNotifier {
       await OfflineCacheService.instance.saveDashboard(dashJson);
       await OfflineCacheService.instance.saveCategories(cats);
       await OfflineCacheService.instance.saveWallets(dashboard.wallets, symbol: dashboard.symbol);
+      LocalNotificationService.instance.checkAndNotifyNewBroadcasts(dashboard.broadcastNotifications);
     } catch (e) {
       log('[SyncService] Refresh server data error: $e');
     }

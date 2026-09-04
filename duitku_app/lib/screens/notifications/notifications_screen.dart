@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/app_notification.dart';
 import '../../services/api_service.dart';
+import '../../services/local_notification_service.dart';
 import '../../theme.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -96,6 +97,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         title: const Text('Pemberitahuan & Pesan'),
         centerTitle: false,
         actions: [
+          IconButton(
+            tooltip: 'Uji Push Notifikasi HP',
+            icon: const Icon(Icons.notifications_active_outlined, size: 20),
+            onPressed: () async {
+              await LocalNotificationService.instance.showTestNotification();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Push notifikasi sistem dikirim ke bilah status HP Anda!')),
+                );
+              }
+            },
+          ),
           if (_unreadCount > 0)
             TextButton.icon(
               onPressed: _markAllAsRead,
