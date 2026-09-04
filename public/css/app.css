@@ -126,6 +126,9 @@ table { max-width: 100%; }
     flex-direction: column;
     justify-content: center;
     gap: 2px;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
 }
 .topbar-date-label {
     font-size: 11.5px;
@@ -133,20 +136,27 @@ table { max-width: 100%; }
     color: var(--text-muted);
     letter-spacing: -0.1px;
     line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .topbar-page-title {
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 900;
     color: var(--text-primary);
     letter-spacing: -0.5px;
     margin: 0;
-    line-height: 1.15;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .topbar-actions {
     position: relative;
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-shrink: 0;
 }
 .topbar-btn-notif {
     width: 38px;

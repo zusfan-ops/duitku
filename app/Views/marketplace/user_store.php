@@ -185,6 +185,142 @@
     margin-bottom: 8px;
 }
 [data-theme="dark"] .listing-price { color: #34D399; }
+
+/* APK RECOMMEND POPUP */
+.apk-popup-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+.apk-popup-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+.apk-popup-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    max-width: 440px;
+    width: 100%;
+    padding: 24px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.25s ease;
+}
+.apk-popup-overlay.show .apk-popup-card {
+    transform: translateY(0);
+}
+.apk-popup-close {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.apk-badge-top {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(16, 185, 129, 0.12);
+    color: #10B981;
+    font-size: 11.5px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+}
+.apk-popup-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--text);
+    margin: 0 0 6px;
+    line-height: 1.3;
+}
+.apk-popup-sub {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.45;
+    margin-bottom: 16px;
+}
+.install-guide-steps {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 18px;
+}
+.install-step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.install-step-item:last-child { margin-bottom: 0; }
+.step-num {
+    background: #4338CA;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+.step-text {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.35;
+}
+.apk-actions-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.btn-dl-apk {
+    background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+    padding: 13px;
+    border-radius: 14px;
+    text-align: center;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.btn-stay-web {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    margin-top: 4px;
+}
 </style>
 <?= $this->endSection() ?>
 
@@ -274,6 +410,50 @@
     <?php endif; ?>
 
 </div>
+
+<!-- SMART POPUP REKOMENDASI INSTALL APK & PANDUAN -->
+<div class="apk-popup-overlay" id="apkRecommendModal">
+    <div class="apk-popup-card">
+        <button class="apk-popup-close" onclick="closeApkModal()" title="Tutup">✕</button>
+        
+        <div class="apk-badge-top">
+            <span>✨ Aplikasi Android Resmi</span>
+        </div>
+        
+        <h3 class="apk-popup-title">Lebih Cepat & Praktis di Aplikasi DuitKu</h3>
+        <p class="apk-popup-sub">
+            Nikmati akses marketplace jual beli sewa, notifikasi chat, OCR scan struk, dan pencatatan keuangan otomatis tanpa lemot.
+        </p>
+
+        <!-- 3 Quick Installation Steps -->
+        <div class="install-guide-steps">
+            <div style="font-size:11.5px;font-weight:800;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">
+                📖 Panduan Singkat Pasang APK:
+            </div>
+            <div class="install-step-item">
+                <div class="step-num">1</div>
+                <div class="step-text">Klik tombol <strong>Buka Halaman Rilis</strong> di bawah.</div>
+            </div>
+            <div class="install-step-item">
+                <div class="step-num">2</div>
+                <div class="step-text">Pilih & unduh file <strong>.apk</strong> yang sesuai untuk HP Anda.</div>
+            </div>
+            <div class="install-step-item">
+                <div class="step-num">3</div>
+                <div class="step-text">Pilih <strong>Izinkan dari sumber ini</strong> jika diminta, lalu klik <strong>Install</strong>. Selesai!</div>
+            </div>
+        </div>
+
+        <div class="apk-actions-grid">
+            <a href="/release" class="btn-dl-apk">
+                <span>🚀 Buka Halaman Rilis & Unduh APK</span>
+            </a>
+            <button class="btn-stay-web" onclick="closeApkModal()">
+                Tetap Lanjut Membaca di Browser Web
+            </button>
+        </div>
+    </div>
+</div>
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
@@ -286,5 +466,21 @@ function copyStoreLink() {
         prompt('Salin link berikut:', url);
     });
 }
+
+function closeApkModal() {
+    const modal = document.getElementById('apkRecommendModal');
+    if (modal) modal.classList.remove('show');
+    sessionStorage.setItem('duitku_apk_modal_dismissed', '1');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const dismissed = sessionStorage.getItem('duitku_apk_modal_dismissed');
+    if (!dismissed) {
+        setTimeout(function() {
+            const modal = document.getElementById('apkRecommendModal');
+            if (modal) modal.classList.add('show');
+        }, 1500);
+    }
+});
 </script>
 <?= $this->endSection() ?>

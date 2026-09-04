@@ -1031,11 +1031,11 @@
             </div>
             <div class="install-step-item">
                 <div class="step-num">1</div>
-                <div class="step-text">Klik tombol <strong>Unduh APK Resmi</strong> di bawah.</div>
+                <div class="step-text">Klik tombol <strong>Buka Halaman Rilis</strong> di bawah.</div>
             </div>
             <div class="install-step-item">
                 <div class="step-num">2</div>
-                <div class="step-text">Buka file <strong>.apk</strong> yang sudah terunduh di notifikasi HP.</div>
+                <div class="step-text">Pilih & unduh file <strong>.apk</strong> yang sesuai untuk HP Anda.</div>
             </div>
             <div class="install-step-item">
                 <div class="step-num">3</div>
@@ -1044,11 +1044,8 @@
         </div>
 
         <div class="apk-actions-grid">
-            <a href="<?= esc($releaseInfo['apk_download']) ?>" class="btn-dl-apk">
-                <span>📥 Unduh APK Sekarang (<?= esc($releaseInfo['latest_version']) ?>)</span>
-            </a>
-            <a href="/download" class="btn-release-page">
-                <span>📖 Halaman Rilis & Panduan Lengkap</span>
+            <a href="/release" class="btn-dl-apk">
+                <span>🚀 Buka Halaman Rilis & Unduh APK</span>
             </a>
             <button class="btn-stay-web" onclick="closeApkModal()">
                 Tetap Lanjut Membaca di Browser Web

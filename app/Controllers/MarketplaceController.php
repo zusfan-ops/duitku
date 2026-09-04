@@ -744,7 +744,7 @@ class MarketplaceController extends BaseController
         $shareUrl = site_url('u/' . ($user['username'] ?: 'toko-' . $user['id']));
 
         return view('marketplace/user_store', [
-            'pageTitle'    => 'Katalog Jual & Sewa: ' . esc($user['name']),
+            'pageTitle'    => 'Toko ' . esc($user['name']),
             'seller'       => $user,
             'avatar'       => $avatar,
             'avatarImg'    => $avatarImg,
