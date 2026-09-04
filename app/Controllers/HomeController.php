@@ -291,6 +291,18 @@ class HomeController extends BaseController
                     return [];
                 }
             })(),
+            'marketInquiriesCount' => (function () use ($userId) {
+                if (!$userId) return 0;
+                try {
+                    $orderModel = new \App\Models\MarketplaceOrderModel();
+                    $chatModel  = new \App\Models\MarketplaceChatModel();
+                    $ordersCount = count($orderModel->getOrdersForSeller($userId));
+                    $chatsCount  = $chatModel->getTotalUnreadCount($userId);
+                    return $ordersCount + $chatsCount;
+                } catch (\Throwable $e) {
+                    return 0;
+                }
+            })(),
         ]);
     }
 

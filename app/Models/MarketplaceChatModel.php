@@ -143,4 +143,25 @@ class MarketplaceChatModel extends Model
             return [];
         }
     }
+
+    /**
+     * Hitung total pesan yang belum dibaca untuk user tertentu
+     */
+    public function getTotalUnreadCount(int $userId): int
+    {
+        $this->ensureTable();
+        try {
+            $row = $this->db->query("
+                SELECT COUNT(*) AS total
+                FROM marketplace_chats
+                WHERE (buyer_id = ? OR seller_id = ?)
+                  AND sender_id != ?
+                  AND is_read = 0
+            ", [$userId, $userId, $userId])->getRowArray();
+            return (int)($row['total'] ?? 0);
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
 }
+

@@ -206,44 +206,94 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          FloatingActionButton.extended(
-            heroTag: 'fab_market_conversations',
-            backgroundColor: const Color(0xFF4338CA),
-            foregroundColor: Colors.white,
-            elevation: 4,
-            icon: const Icon(Icons.forum_rounded, color: Colors.white, size: 18),
-            label: const Text(
-              'Pesan & Chat',
-              style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 12.5),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MarketConversationsScreen()),
+                );
+              },
+              borderRadius: BorderRadius.circular(999),
+              child: Ink(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1E1B4B), Color(0xFF3730A3), Color(0xFF4F46E5)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.22), width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4338CA).withValues(alpha: 0.45),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.forum_rounded, color: Colors.white, size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      'Pesan & Chat',
+                      style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 13, letterSpacing: -0.2),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const MarketConversationsScreen()),
-              );
-            },
           ),
           const SizedBox(height: 10),
-          FloatingActionButton.extended(
-            heroTag: 'fab_market_create',
-            backgroundColor: const Color(0xFF059669),
-            foregroundColor: Colors.white,
-            elevation: 4,
-            icon: const Icon(Icons.add_photo_alternate_rounded, color: Colors.white, size: 18),
-            label: const Text(
-              'Pasang Iklan',
-              style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 12.5),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () async {
+                final refresh = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MarketCreateScreen()),
+                );
+                if (refresh == true) {
+                  _loadListings();
+                  _loadMyListings();
+                }
+              },
+              borderRadius: BorderRadius.circular(999),
+              child: Ink(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF064E3B), Color(0xFF059669), Color(0xFF10B981)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.22), width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF059669).withValues(alpha: 0.42),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_photo_alternate_rounded, color: Colors.white, size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      'Pasang Iklan',
+                      style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 13, letterSpacing: -0.2),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            onPressed: () async {
-              final refresh = await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(builder: (_) => const MarketCreateScreen()),
-              );
-              if (refresh == true) {
-                _loadListings();
-                _loadMyListings();
-              }
-            },
           ),
         ],
       ),

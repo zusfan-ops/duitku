@@ -46,6 +46,7 @@ import '../widgets/my_home_card.dart';
 import '../widgets/marketplace_featured_card.dart';
 import '../models/jellyfin_movie.dart';
 import 'marketplace/market_screen.dart';
+import 'marketplace/market_conversations_screen.dart';
 import 'traveling/traveling_screen.dart';
 import 'traveling/currency_converter_sheet.dart';
 import 'games/game_hub_screen.dart';
@@ -64,6 +65,7 @@ class DashboardScreenState extends State<DashboardScreen> {
   int _recentPage = 1;
   static const int _recentPerPage = 5;
   String _workspaceMode = 'personal'; // 'personal' or 'business'
+  int _marketplaceUnreadCount = 0;
 
   @override
   void initState() {
@@ -122,6 +124,23 @@ class DashboardScreenState extends State<DashboardScreen> {
       context.read<AppDataProvider>().ensureLoaded(force: true);
       WidgetHelper.updateDashboardWidget(data);
       LocalNotificationService.instance.checkAndNotifyNewBroadcasts(data.broadcastNotifications);
+
+      // Check marketplace chat unread count
+      try {
+        final chatRes = await ApiService.instance.getMarketplaceChatConversations();
+        final convs = (chatRes['conversations'] as List<dynamic>?) ?? [];
+        int totalUnread = 0;
+        for (final c in convs) {
+          if (c is Map) {
+            totalUnread += int.tryParse('${c['unread_count']}') ?? 0;
+          }
+        }
+        if (mounted) {
+          setState(() {
+            _marketplaceUnreadCount = totalUnread;
+          });
+        }
+      } catch (_) {}
     } on ApiException catch (e) {
       if (!mounted) return;
       if (e.status == 401) {
@@ -298,6 +317,89 @@ class DashboardScreenState extends State<DashboardScreen> {
       body: RefreshIndicator(
         onRefresh: refresh,
         child: _buildBody(),
+      ),
+      floatingActionButton: _buildMarketFloatingChat(),
+    );
+  }
+
+  Widget _buildMarketFloatingChat() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const MarketConversationsScreen()),
+          );
+          _load();
+        },
+        borderRadius: BorderRadius.circular(999),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1E1B4B), Color(0xFF3730A3), Color(0xFF4F46E5)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.22), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF4338CA).withValues(alpha: 0.45),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.forum_rounded, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              const Text(
+                'Chat Marketplace',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              if (_marketplaceUnreadCount > 0) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.5),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    '$_marketplaceUnreadCount',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
