@@ -7,6 +7,7 @@ import '../../config/api_config.dart';
 import '../../services/api_service.dart';
 import '../../theme.dart';
 import '../../utils/whatsapp_launcher.dart';
+import 'market_chat_screen.dart';
 
 class MarketDetailScreen extends StatefulWidget {
   final int listingId;
@@ -143,12 +144,28 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () async {
+              final text = notesCtrl.text.trim();
               Navigator.pop(ctx);
               try {
-                final res = await ApiService.instance.postMarketplaceOrder(widget.listingId, notesCtrl.text.trim());
+                final res = await ApiService.instance.postMarketplaceOrder(widget.listingId, text);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(res['message']?.toString() ?? 'Pengajuan minat terkirim!')),
+                    SnackBar(content: Text(res['message']?.toString() ?? 'Pengajuan minat terkirim! Membuka chat...')),
+                  );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MarketChatScreen(
+                        listingId: widget.listingId,
+                        initialListingTitle: _listing?['title']?.toString(),
+                        initialListingPrice: _formatRupiah(_listing?['price']),
+                        initialListingImage: (_listing?['images'] is List && (_listing?['images'] as List).isNotEmpty)
+                            ? (_listing?['images'][0]['image_url']?.toString())
+                            : null,
+                        targetUserName: (_listing?['seller_name'] ?? 'Penjual').toString(),
+                        targetUserPhone: (_listing?['whatsapp'] ?? _listing?['seller_phone_registered'] ?? '').toString(),
+                      ),
+                    ),
                   );
                 }
               } catch (e) {
@@ -482,6 +499,42 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
   Widget _buildActionButtons(String phone, String title, String thirdPartyUrl) {
     return Column(
       children: [
+        // Direct In-App Chat button (prominent primary)
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF059669),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 1,
+            ),
+            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 20),
+            label: const Text(
+              '💬 Chat Penjual Langsung',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MarketChatScreen(
+                    listingId: widget.listingId,
+                    initialListingTitle: _listing?['title']?.toString(),
+                    initialListingPrice: _formatRupiah(_listing?['price']),
+                    initialListingImage: (_listing?['images'] is List && (_listing?['images'] as List).isNotEmpty)
+                        ? (_listing?['images'][0]['image_url']?.toString())
+                        : null,
+                    targetUserName: (_listing?['seller_name'] ?? 'Penjual').toString(),
+                    targetUserPhone: (_listing?['whatsapp'] ?? _listing?['seller_phone_registered'] ?? '').toString(),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
         Row(
           children: [
             if (phone.isNotEmpty)
@@ -489,10 +542,10 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF22C55E),
-                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  icon: const Icon(Icons.chat_rounded, color: Colors.white, size: 18),
+                  icon: const Icon(Icons.chat_rounded, color: Colors.white, size: 17),
                   label: const Text('Chat WA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
                   onPressed: () => _openWhatsApp(phone, title),
                 ),
@@ -502,10 +555,10 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4338CA),
-                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 18),
+                icon: const Icon(Icons.handshake_outlined, color: Colors.white, size: 17),
                 label: const Text('Ajukan Minat', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
                 onPressed: _openOrderDialog,
               ),
@@ -519,7 +572,7 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFEE4D2D),
-                padding: const EdgeInsets.symmetric(vertical: 13),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               icon: const Icon(Icons.shopping_cart_rounded, color: Colors.white, size: 18),

@@ -889,6 +889,36 @@ class ApiService {
     return post('marketplace/delete/$id', {});
   }
 
+  Future<Map<String, dynamic>> getMarketplaceChatMessages({
+    required int listingId,
+    int? buyerId,
+    int? afterId,
+  }) async {
+    final query = <String, String>{
+      'listing_id': '$listingId',
+    };
+    if (buyerId != null && buyerId > 0) query['buyer_id'] = '$buyerId';
+    if (afterId != null && afterId > 0) query['after_id'] = '$afterId';
+    return get('marketplace/chat/messages', query: query);
+  }
+
+  Future<Map<String, dynamic>> sendMarketplaceChatMessage({
+    required int listingId,
+    required String message,
+    int? buyerId,
+  }) async {
+    final body = <String, dynamic>{
+      'listing_id': listingId,
+      'message': message,
+    };
+    if (buyerId != null && buyerId > 0) body['buyer_id'] = buyerId;
+    return post('marketplace/chat/send', body);
+  }
+
+  Future<Map<String, dynamic>> getMarketplaceChatConversations() async {
+    return get('marketplace/chat/conversations');
+  }
+
   // ── Upload helpers ───────────────────────────────────────────
   Future<String?> base64FromFile(String path) async {
     final file = File(path);

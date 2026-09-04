@@ -2,6 +2,7 @@
 
 namespace App\Controllers\Api;
 
+use App\Models\MarketplaceChatModel;
 use App\Models\MarketplaceCommentModel;
 use App\Models\MarketplaceImageModel;
 use App\Models\MarketplaceListingModel;
@@ -16,6 +17,7 @@ class MarketplaceController extends ApiController
     protected MarketplaceImageModel   $imageModel;
     protected MarketplaceCommentModel $commentModel;
     protected MarketplaceOrderModel   $orderModel;
+    protected MarketplaceChatModel    $chatModel;
     protected UserModel               $userModel;
     protected NotificationModel       $notificationModel;
     protected FcmService              $fcmService;
@@ -26,6 +28,7 @@ class MarketplaceController extends ApiController
         $this->imageModel         = new MarketplaceImageModel();
         $this->commentModel       = new MarketplaceCommentModel();
         $this->orderModel         = new MarketplaceOrderModel();
+        $this->chatModel          = new MarketplaceChatModel();
         $this->userModel          = new UserModel();
         $this->notificationModel  = new NotificationModel();
         $this->fcmService         = new FcmService();
@@ -308,9 +311,26 @@ class MarketplaceController extends ApiController
             log_message('error', 'Marketplace order FCM error: ' . $e->getMessage());
         }
 
+        // Otomatis inisialisasi percakapan di chat room
+        try {
+            $this->chatModel->insert([
+                'listing_id' => $id,
+                'buyer_id'   => $buyerId,
+                'seller_id'  => $sellerId,
+                'sender_id'  => $buyerId,
+                'message'    => $notes ?: 'Halo, saya berminat dengan produk ini. Apakah masih tersedia?',
+                'is_read'    => 0,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Auto first chat insert error: ' . $e->getMessage());
+        }
+
         return $this->ok([
-            'message'  => 'Pengajuan minat berhasil dikirim ke penjual!',
-            'order_id' => $orderId,
+            'message'    => 'Pengajuan minat berhasil dikirim ke penjual!',
+            'order_id'   => $orderId,
+            'listing_id' => $id,
+            'buyer_id'   => $buyerId,
+            'seller_id'  => $sellerId,
         ]);
     }
 
@@ -438,6 +458,189 @@ class MarketplaceController extends ApiController
         return $this->ok([
             'message' => 'Status pengajuan minat berhasil diperbarui!',
             'status'  => $status,
+        ]);
+    }
+
+    /**
+     * GET /api/marketplace/chat/messages
+     */
+    public function chatMessages()
+    {
+        $userId = $this->uid();
+        $listingId = (int)$this->request->getGet('listing_id');
+        if ($listingId <= 0) {
+            return $this->fail('Parameter listing_id wajib diisi.');
+        }
+
+        $listing = $this->listingModel->find($listingId);
+        if (!$listing) {
+            return $this->fail('Produk tidak ditemukan.');
+        }
+
+        $sellerId = (int)$listing['user_id'];
+        $buyerId  = (int)($this->request->getGet('buyer_id') ?? 0);
+
+        // Jika dipanggil oleh pembeli, buyer_id otomatis userId
+        if ($userId !== $sellerId) {
+            $buyerId = $userId;
+        }
+
+        if ($buyerId <= 0) {
+            return $this->fail('Parameter buyer_id tidak valid.');
+        }
+
+        // Akses hanya untuk penjual atau pembeli
+        if ($userId !== $sellerId && $userId !== $buyerId) {
+            return $this->fail('Akses chat ditolak.');
+        }
+
+        $afterId  = (int)($this->request->getGet('after_id') ?? 0);
+        $messages = $this->chatModel->getMessages($listingId, $buyerId, $afterId);
+
+        // Tandai pesan sebagai sudah dibaca
+        $this->chatModel->markAsRead($listingId, $buyerId, $userId);
+
+        $buyer  = $this->userModel->find($buyerId);
+        $seller = $this->userModel->find($sellerId);
+        $images = $this->imageModel->where('listing_id', $listingId)->orderBy('is_primary', 'DESC')->findAll();
+
+        return $this->ok([
+            'messages' => $messages,
+            'listing'  => [
+                'id'            => (int)$listing['id'],
+                'title'         => $listing['title'],
+                'price'         => (float)$listing['price'],
+                'type'          => $listing['type'],
+                'status'        => $listing['status'],
+                'primary_image' => !empty($images) ? $images[0]['image_url'] : null,
+            ],
+            'buyer'    => [
+                'id'       => $buyerId,
+                'name'     => $buyer['name'] ?? 'Pembeli',
+                'phone'    => $buyer['phone'] ?? '',
+                'username' => $buyer['username'] ?? '',
+            ],
+            'seller'   => [
+                'id'       => $sellerId,
+                'name'     => $seller['name'] ?? 'Penjual',
+                'phone'    => $seller['phone'] ?? '',
+                'username' => $seller['username'] ?? '',
+            ],
+            'my_id'    => $userId,
+        ]);
+    }
+
+    /**
+     * POST /api/marketplace/chat/send
+     */
+    public function sendChatMessage()
+    {
+        $userId = $this->uid();
+        $json   = $this->request->getJSON(true) ?? [];
+        $listingId = (int)($json['listing_id'] ?? $this->request->getPost('listing_id') ?? 0);
+        $message   = trim($json['message'] ?? $this->request->getPost('message') ?? '');
+
+        if ($listingId <= 0) {
+            return $this->fail('ID Produk tidak valid.');
+        }
+
+        if ($message === '') {
+            return $this->fail('Pesan tidak boleh kosong.');
+        }
+
+        $listing = $this->listingModel->find($listingId);
+        if (!$listing) {
+            return $this->fail('Produk tidak ditemukan.');
+        }
+
+        $sellerId = (int)$listing['user_id'];
+        $buyerId  = (int)($json['buyer_id'] ?? $this->request->getPost('buyer_id') ?? 0);
+
+        if ($userId === $sellerId) {
+            // Penjual mengirim pesan ke pembeli tertentu
+            if ($buyerId <= 0) {
+                return $this->fail('Tentukan buyer_id untuk mengirim pesan.');
+            }
+            $recipientId = $buyerId;
+        } else {
+            // Pembeli mengirim pesan ke penjual
+            $buyerId = $userId;
+            $recipientId = $sellerId;
+        }
+
+        $chatId = $this->chatModel->insert([
+            'listing_id' => $listingId,
+            'buyer_id'   => $buyerId,
+            'seller_id'  => $sellerId,
+            'sender_id'  => $userId,
+            'message'    => $message,
+            'is_read'    => 0,
+        ]);
+
+        $sender = $this->userModel->find($userId);
+        $senderName = $sender['name'] ?? 'Pengguna';
+
+        // 1. In-App Notification untuk penerima
+        try {
+            $this->notificationModel->insert([
+                'title'      => '💬 Pesan Baru dari ' . $senderName,
+                'message'    => "Pesan terkait \"{$listing['title']}\": {$message}",
+                'type'       => 'info',
+                'target'     => 'user',
+                'user_id'    => $recipientId,
+                'action_url' => '/marketplace?tab=chat&listing_id=' . $listingId . '&buyer_id=' . $buyerId,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Chat in-app notif error: ' . $e->getMessage());
+        }
+
+        // 2. Push Notification FCM untuk penerima
+        try {
+            if ($this->fcmService->isConfigured()) {
+                $this->fcmService->sendToTopic(
+                    "user_{$recipientId}",
+                    "💬 Chat dari {$senderName}",
+                    "{$listing['title']}: {$message}",
+                    [
+                        'type'        => 'marketplace_chat',
+                        'listing_id'  => (string)$listingId,
+                        'buyer_id'    => (string)$buyerId,
+                        'seller_id'   => (string)$sellerId,
+                        'sender_name' => (string)$senderName,
+                        'action_url'  => '/marketplace?tab=chat&listing_id=' . $listingId . '&buyer_id=' . $buyerId,
+                    ]
+                );
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Chat FCM error: ' . $e->getMessage());
+        }
+
+        return $this->ok([
+            'message' => 'Pesan berhasil dikirim!',
+            'chat'    => [
+                'id'              => $chatId,
+                'listing_id'      => $listingId,
+                'buyer_id'        => $buyerId,
+                'seller_id'       => $sellerId,
+                'sender_id'       => $userId,
+                'sender_name'     => $senderName,
+                'message'         => $message,
+                'created_at'      => date('Y-m-d H:i:s'),
+                'is_read'         => 0,
+            ],
+        ]);
+    }
+
+    /**
+     * GET /api/marketplace/chat/conversations
+     */
+    public function chatConversations()
+    {
+        $userId = $this->uid();
+        $conversations = $this->chatModel->getConversationsForUser($userId);
+        return $this->ok([
+            'conversations' => $conversations,
+            'my_id'         => $userId,
         ]);
     }
 }

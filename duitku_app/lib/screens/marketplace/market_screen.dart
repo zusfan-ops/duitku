@@ -7,6 +7,8 @@ import '../../theme.dart';
 import '../../utils/whatsapp_launcher.dart';
 import 'market_create_screen.dart';
 import 'market_detail_screen.dart';
+import 'market_chat_screen.dart';
+import 'market_conversations_screen.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -142,6 +144,16 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
         title: const Text('Jual Beli & Sewa'),
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.forum_outlined),
+            tooltip: 'Pesan & Chat',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MarketConversationsScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.shield_outlined),
             tooltip: 'Panduan Keamanan',
@@ -926,7 +938,7 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
                           ? Image.network(
                               _fullImageUrl(listingImg),
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _placeholderImage(),
+                              errorBuilder: (_, _, _) => _placeholderImage(),
                             )
                           : _placeholderImage(),
                     ),
@@ -997,42 +1009,71 @@ class _MarketScreenState extends State<MarketScreen> with SingleTickerProviderSt
               ),
               const SizedBox(height: 12),
 
-              // Action Buttons: Chat WhatsApp, Phone, Status Menu
+              // Action Buttons: Chat di App, WhatsApp, Phone, Status Menu
               Row(
                 children: [
                   Expanded(
+                    flex: 3,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF25D366),
+                        backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         elevation: 0,
                       ),
-                      icon: const Icon(Icons.chat_rounded, size: 16),
+                      icon: const Icon(Icons.chat_bubble_rounded, size: 15),
                       label: const Text(
-                        'Chat WhatsApp',
+                        'Buka Chat',
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                       ),
-                      onPressed: () async {
-                        final messenger = ScaffoldMessenger.of(context);
-                        if (buyerPhone.isEmpty) {
-                          messenger.showSnackBar(
-                            const SnackBar(content: Text('Nomor WhatsApp pembeli tidak tercantum.')),
-                          );
-                          return;
-                        }
-                        final msg = 'Halo $buyerName, saya penjual produk "$listingTitle" di DuitKu. Menanggapi minat Anda: "$notes". Apakah Anda masih berminat?';
-                        final ok = await WhatsAppLauncher.launch(phone: buyerPhone, text: msg);
-                        if (!ok && mounted) {
-                          messenger.showSnackBar(
-                            const SnackBar(content: Text('Tidak dapat membuka WhatsApp. Pastikan aplikasi WhatsApp terpasang.')),
-                          );
-                        }
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => MarketChatScreen(
+                              listingId: int.tryParse('${order['listing_id']}') ?? 0,
+                              buyerId: int.tryParse('${order['buyer_id']}') ?? 0,
+                              initialListingTitle: listingTitle,
+                              initialListingPrice: price,
+                              initialListingImage: listingImg,
+                              targetUserName: buyerName,
+                              targetUserPhone: buyerPhone,
+                            ),
+                          ),
+                        );
                       },
                     ),
                   ),
                   if (buyerPhone.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    Expanded(
+                      flex: 3,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF25D366),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.send_rounded, size: 15),
+                        label: const Text(
+                          'WhatsApp',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                        ),
+                        onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final msg = 'Halo $buyerName, saya penjual produk "$listingTitle" di DuitKu. Menanggapi minat Anda: "$notes". Apakah Anda masih berminat?';
+                          final ok = await WhatsAppLauncher.launch(phone: buyerPhone, text: msg);
+                          if (!ok && mounted) {
+                            messenger.showSnackBar(
+                              const SnackBar(content: Text('Tidak dapat membuka WhatsApp. Pastikan aplikasi WhatsApp terpasang.')),
+                            );
+                          }
+                        },
+                      ),
+                    ),
                     const SizedBox(width: 6),
                     IconButton.filledTonal(
                       tooltip: 'Telepon Langsung',

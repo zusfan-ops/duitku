@@ -6,6 +6,7 @@ use App\Models\MarketplaceCommentModel;
 use App\Models\MarketplaceImageModel;
 use App\Models\MarketplaceListingModel;
 use App\Models\MarketplaceOrderModel;
+use App\Models\MarketplaceChatModel;
 use App\Models\NotificationModel;
 use App\Models\SettingModel;
 use App\Models\UserModel;
@@ -17,6 +18,7 @@ class MarketplaceController extends BaseController
     protected MarketplaceImageModel   $imageModel;
     protected MarketplaceCommentModel $commentModel;
     protected MarketplaceOrderModel   $orderModel;
+    protected MarketplaceChatModel    $chatModel;
     protected UserModel               $userModel;
     protected SettingModel            $settingModel;
     protected NotificationModel       $notificationModel;
@@ -28,6 +30,7 @@ class MarketplaceController extends BaseController
         $this->imageModel         = new MarketplaceImageModel();
         $this->commentModel       = new MarketplaceCommentModel();
         $this->orderModel         = new MarketplaceOrderModel();
+        $this->chatModel          = new MarketplaceChatModel();
         $this->userModel          = new UserModel();
         $this->settingModel       = new SettingModel();
         $this->notificationModel  = new NotificationModel();
@@ -564,6 +567,20 @@ class MarketplaceController extends BaseController
             $buyer      = $this->userModel->find($buyerId);
             $buyerName  = $buyer['name'] ?? 'Calon Pembeli';
             $buyerPhone = $buyer['phone'] ?? '';
+
+            // Otomatis buat obrolan pertama di Chat Room
+            try {
+                $this->chatModel->insert([
+                    'listing_id' => $id,
+                    'buyer_id'   => $buyerId,
+                    'seller_id'  => $sellerId,
+                    'sender_id'  => $buyerId,
+                    'message'    => $notes ?: 'Halo, saya berminat dengan produk Anda.',
+                    'is_read'    => 0,
+                ]);
+            } catch (\Throwable $e) {
+                log_message('error', 'Marketplace web auto-chat error: ' . $e->getMessage());
+            }
 
             // 1. Simpan In-App Notification untuk penjual
             try {

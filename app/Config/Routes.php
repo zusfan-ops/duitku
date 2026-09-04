@@ -454,6 +454,9 @@ $routes->group('api', function ($routes) {
         $routes->get('marketplace/my-listings',          'Api\MarketplaceController::myListings');
         $routes->post('marketplace/status/(:num)',   'Api\MarketplaceController::updateStatus/$1');
         $routes->post('marketplace/delete/(:num)',   'Api\MarketplaceController::delete/$1');
+        $routes->get('marketplace/chat/messages',        'Api\MarketplaceController::chatMessages');
+        $routes->post('marketplace/chat/send',           'Api\MarketplaceController::sendChatMessage');
+        $routes->get('marketplace/chat/conversations',   'Api\MarketplaceController::chatConversations');
     });
 });
 
