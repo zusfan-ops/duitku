@@ -92,4 +92,34 @@ class FcmService {
       debugPrint('FCM init error (menunggu konfigurasi Firebase aktif): $e');
     }
   }
+
+  int? _currentSubscribedUserId;
+
+  /// Subscribe to user-specific topic (e.g. user_123) for personalized notifications like marketplace orders
+  Future<void> subscribeToUserTopic(int userId) async {
+    if (userId <= 0) return;
+    try {
+      if (_currentSubscribedUserId != null && _currentSubscribedUserId != userId) {
+        await unsubscribeFromUserTopic(_currentSubscribedUserId!);
+      }
+      await FirebaseMessaging.instance.subscribeToTopic('user_$userId');
+      _currentSubscribedUserId = userId;
+      debugPrint('FCM subscribed to topic: user_$userId');
+    } catch (e) {
+      debugPrint('FCM subscribeToUserTopic error: $e');
+    }
+  }
+
+  Future<void> unsubscribeFromUserTopic(int userId) async {
+    if (userId <= 0) return;
+    try {
+      await FirebaseMessaging.instance.unsubscribeFromTopic('user_$userId');
+      if (_currentSubscribedUserId == userId) {
+        _currentSubscribedUserId = null;
+      }
+      debugPrint('FCM unsubscribed from topic: user_$userId');
+    } catch (e) {
+      debugPrint('FCM unsubscribeFromUserTopic error: $e');
+    }
+  }
 }

@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../config/api_config.dart';
 import '../../services/api_service.dart';
 import '../../theme.dart';
+import '../../utils/whatsapp_launcher.dart';
 
 class MarketDetailScreen extends StatefulWidget {
   final int listingId;
@@ -166,21 +167,13 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
   }
 
   void _openWhatsApp(String phone, String title) async {
-    String clean = phone.replaceAll(RegExp(r'[^0-9]'), '');
-    if (clean.startsWith('0')) clean = '62${clean.substring(1)}';
-
-    final shareUrl = ApiConfig.baseUrl + '/marketplace/item/${widget.listingId}';
-    final msg = Uri.encodeComponent('Halo, saya melihat produk "$title" di DuitKu ($shareUrl). Apakah barang masih tersedia?');
-    final uri = Uri.parse('https://wa.me/$clean?text=$msg');
-
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tidak dapat membuka WhatsApp.')),
-        );
-      }
+    final shareUrl = '${ApiConfig.baseUrl}/marketplace/item/${widget.listingId}';
+    final msg = 'Halo, saya melihat produk "$title" di DuitKu ($shareUrl). Apakah barang masih tersedia?';
+    final success = await WhatsAppLauncher.launch(phone: phone, text: msg);
+    if (!success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak dapat membuka WhatsApp. Pastikan aplikasi WhatsApp terpasang di HP Anda.')),
+      );
     }
   }
 

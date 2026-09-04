@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/user.dart';
 import '../services/api_service.dart';
+import '../services/fcm_service.dart';
 import '../services/session_manager.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -25,6 +26,9 @@ class AuthProvider extends ChangeNotifier {
         Future.delayed(const Duration(milliseconds: 2500)),
       ]);
       _user = results[0] as User?;
+      if (_user != null) {
+        FcmService.instance.subscribeToUserTopic(_user!.id);
+      }
     } catch (e, st) {
       log('Session restore failed: $e', stackTrace: st);
       _user = null;
@@ -41,6 +45,7 @@ class AuthProvider extends ChangeNotifier {
       final (user, token) = await ApiService.instance.login(email, password);
       await SessionManager.save(token, user);
       _user = user;
+      FcmService.instance.subscribeToUserTopic(user.id);
       return null;
     } on ApiException catch (e) {
       return e.message;
@@ -59,6 +64,7 @@ class AuthProvider extends ChangeNotifier {
       final (user, token) = await ApiService.instance.register(name, email, phone, password, confirm);
       await SessionManager.save(token, user);
       _user = user;
+      FcmService.instance.subscribeToUserTopic(user.id);
       return null;
     } on ApiException catch (e) {
       return e.message;
@@ -71,6 +77,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    if (_user != null) {
+      FcmService.instance.unsubscribeFromUserTopic(_user!.id);
+    }
     await ApiService.instance.logout();
     await SessionManager.clear();
     _user = null;

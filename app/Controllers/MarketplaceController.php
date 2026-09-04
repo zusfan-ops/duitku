@@ -6,8 +6,10 @@ use App\Models\MarketplaceCommentModel;
 use App\Models\MarketplaceImageModel;
 use App\Models\MarketplaceListingModel;
 use App\Models\MarketplaceOrderModel;
+use App\Models\NotificationModel;
 use App\Models\SettingModel;
 use App\Models\UserModel;
+use App\Services\FcmService;
 
 class MarketplaceController extends BaseController
 {
@@ -17,15 +19,19 @@ class MarketplaceController extends BaseController
     protected MarketplaceOrderModel   $orderModel;
     protected UserModel               $userModel;
     protected SettingModel            $settingModel;
+    protected NotificationModel       $notificationModel;
+    protected FcmService              $fcmService;
 
     public function __construct()
     {
-        $this->listingModel = new MarketplaceListingModel();
-        $this->imageModel   = new MarketplaceImageModel();
-        $this->commentModel = new MarketplaceCommentModel();
-        $this->orderModel   = new MarketplaceOrderModel();
-        $this->userModel    = new UserModel();
-        $this->settingModel = new SettingModel();
+        $this->listingModel       = new MarketplaceListingModel();
+        $this->imageModel         = new MarketplaceImageModel();
+        $this->commentModel       = new MarketplaceCommentModel();
+        $this->orderModel         = new MarketplaceOrderModel();
+        $this->userModel          = new UserModel();
+        $this->settingModel       = new SettingModel();
+        $this->notificationModel  = new NotificationModel();
+        $this->fcmService         = new FcmService();
     }
 
     /**
@@ -554,6 +560,46 @@ class MarketplaceController extends BaseController
                 'status'     => 'pending',
             ]);
 
+            $sellerId   = (int)$listing['user_id'];
+            $buyer      = $this->userModel->find($buyerId);
+            $buyerName  = $buyer['name'] ?? 'Calon Pembeli';
+            $buyerPhone = $buyer['phone'] ?? '';
+
+            // 1. Simpan In-App Notification untuk penjual
+            try {
+                $this->notificationModel->insert([
+                    'title'      => '🛒 Minat Baru: ' . $listing['title'],
+                    'message'    => "{$buyerName} mengajukan minat pada produk Anda! Catatan: \"{$notes}\"",
+                    'type'       => 'info',
+                    'target'     => 'user',
+                    'user_id'    => $sellerId,
+                    'action_url' => '/marketplace?tab=orders',
+                ]);
+            } catch (\Throwable $e) {
+                log_message('error', 'Marketplace web order in-app notif error: ' . $e->getMessage());
+            }
+
+            // 2. Kirim Push Notification FCM ke topik HP penjual
+            try {
+                if ($this->fcmService->isConfigured()) {
+                    $this->fcmService->sendToTopic(
+                        "user_{$sellerId}",
+                        '🛒 Minat Baru: ' . $listing['title'],
+                        "{$buyerName} mengajukan minat pada produk Anda. Buka aplikasi DuitKu untuk hubungi pembeli via WhatsApp!",
+                        [
+                            'type'        => 'marketplace_order',
+                            'order_id'    => (string)$orderId,
+                            'listing_id'  => (string)$id,
+                            'buyer_name'  => (string)$buyerName,
+                            'buyer_phone' => (string)$buyerPhone,
+                            'action_url'  => '/marketplace?tab=orders',
+                        ]
+                    );
+                }
+            } catch (\Throwable $e) {
+                log_message('error', 'Marketplace web order FCM error: ' . $e->getMessage());
+            }
+
             return $this->response->setJSON([
                 'success' => true,
                 'message' => 'Pengajuan minat transaksi telah dikirim ke penjual. Penjual akan menghubungi Anda atau Anda dapat langsung menghubunginya via WhatsApp.',
@@ -606,6 +652,35 @@ class MarketplaceController extends BaseController
             return $this->response->setJSON(['success' => true, 'message' => 'Iklan berhasil dihapus.']);
         } catch (\Throwable $e) {
             return $this->response->setJSON(['success' => false, 'message' => 'Gagal menghapus iklan: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Update Status Order / Minat (pending, contacted, completed, cancelled)
+     * POST /marketplace/order-status/{id}
+     */
+    public function updateOrderStatus(int $id)
+    {
+        try {
+            $userId = (int)session()->get('user_id');
+            $order  = $this->orderModel->find($id);
+            if (!$order || (int)$order['seller_id'] !== $userId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Akses ditolak atau pesanan tidak ditemukan.']);
+            }
+
+            $status = $this->request->getPost('status') ?? ($this->request->getJSON(true)['status'] ?? '');
+            if (!in_array($status, ['pending', 'contacted', 'completed', 'cancelled'])) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Status tidak valid.']);
+            }
+
+            $this->orderModel->update($id, ['status' => $status]);
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Status pengajuan minat berhasil diperbarui!',
+                'status'  => $status,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Gagal mengubah status: ' . $e->getMessage()]);
         }
     }
 
