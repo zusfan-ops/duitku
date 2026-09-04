@@ -213,6 +213,8 @@ $routes->group('admin', ['filter' => 'admin'], function ($routes) {
     $routes->post('notifications/toggle-pin/(:num)', 'Admin\NotificationController::togglePin/$1');
     $routes->post('notifications/delete/(:num)',     'Admin\NotificationController::delete/$1');
     $routes->post('notifications/save-fcm',          'Admin\NotificationController::saveFcmConfig');
+    $routes->get('notifications/test-fcm',           'Admin\NotificationController::testFcm');
+    $routes->post('notifications/test-fcm',          'Admin\NotificationController::testFcm');
 
     // TV Streaming & M3U Playlist Manager
     $routes->get('tv',                          'Admin\TvController::index');

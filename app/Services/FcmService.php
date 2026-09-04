@@ -133,7 +133,8 @@ class FcmService
         $signature = '';
         $success = openssl_sign($signatureData, $signature, $privateKey, OPENSSL_ALGO_SHA256);
         if (!$success) {
-            log_message('error', 'FCM: Gagal menandatangani JWT dengan private key.');
+            $this->lastError = 'Gagal menandatangani JWT dengan OpenSSL private key.';
+            log_message('error', 'FCM: ' . $this->lastError);
             return null;
         }
 
@@ -149,13 +150,31 @@ class FcmService
         ]));
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 
-        $response = curl_exec($ch);
+        $response  = curl_exec($ch);
+        $curlError = curl_error($ch);
+        $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
+        if ($curlError) {
+            $this->lastError = 'cURL error saat request OAuth2 Google: ' . $curlError;
+            log_message('error', 'FCM: ' . $this->lastError);
+            return null;
+        }
+
         $resData = json_decode($response, true);
-        return $resData['access_token'] ?? null;
+        if ($httpCode !== 200 || empty($resData['access_token'])) {
+            $errDesc = $resData['error_description'] ?? $resData['error'] ?? ('HTTP ' . $httpCode . ': ' . $response);
+            $this->lastError = 'Google OAuth2 error: ' . $errDesc;
+            log_message('error', 'FCM: ' . $this->lastError);
+            return null;
+        }
+
+        return $resData['access_token'];
     }
+
+    public string $lastError = '';
 
     /**
      * Kirim push notifikasi massal ke Topic (misal: 'duitku_broadcasts')
@@ -164,7 +183,8 @@ class FcmService
     {
         $accessToken = $this->getAccessToken();
         if (!$accessToken) {
-            return ['success' => false, 'message' => 'Service Account Firebase belum dikonfigurasi atau Access Token gagal dibuat.'];
+            $errMsg = $this->lastError ?: 'Service Account Firebase belum dikonfigurasi atau Access Token gagal dibuat.';
+            return ['success' => false, 'message' => $errMsg];
         }
 
         $url = "https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send";
@@ -206,17 +226,71 @@ class FcmService
             'Content-Type: application/json; UTF-8',
         ]);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $response  = curl_exec($ch);
+        $curlError = curl_error($ch);
+        $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+
+        if ($curlError) {
+            return ['success' => false, 'message' => 'cURL error ke Google FCM: ' . $curlError];
+        }
 
         $resData = json_decode($response, true);
         if ($httpCode >= 200 && $httpCode < 300) {
             return ['success' => true, 'response' => $resData];
         }
 
-        return ['success' => false, 'http_code' => $httpCode, 'response' => $resData];
+        $errDetail = $resData['error']['message'] ?? json_encode($resData);
+        return ['success' => false, 'http_code' => $httpCode, 'message' => $errDetail, 'response' => $resData];
+    }
+
+    /**
+     * Diagnosis koneksi lengkap ke Google Firebase Cloud Messaging
+     */
+    public function testConnection(): array
+    {
+        $steps = [];
+
+        // 1. Cek Kredensial
+        $configured = $this->isConfigured();
+        $steps['1_credentials'] = [
+            'status'  => $configured ? 'OK' : 'FAILED',
+            'project' => $this->projectId,
+            'email'   => $this->clientEmail ? substr($this->clientEmail, 0, 10) . '...' : 'none',
+            'key'     => !empty($this->privateKey) ? 'Found (' . strlen($this->privateKey) . ' bytes)' : 'none',
+        ];
+
+        if (!$configured) {
+            return ['success' => false, 'message' => 'Kredensial Firebase belum terpasang', 'steps' => $steps];
+        }
+
+        // 2. Cek Token OAuth2
+        $token = $this->getAccessToken();
+        $steps['2_oauth2_token'] = [
+            'status' => $token ? 'OK' : 'FAILED',
+            'token'  => $token ? substr($token, 0, 20) . '...' : null,
+            'error'  => $this->lastError ?: null,
+        ];
+
+        if (!$token) {
+            return ['success' => false, 'message' => 'Gagal generate OAuth2 Access Token: ' . $this->lastError, 'steps' => $steps];
+        }
+
+        // 3. Test Kirim Ping ke FCM
+        $sendResult = $this->sendToTopic('duitku_broadcasts', '🔔 Uji Coba Koneksi FCM DuitKu', 'Ini adalah pesan tes koneksi Firebase Cloud Messaging dari Admin Panel.', [
+            'type' => 'test',
+            'timestamp' => (string)time(),
+        ]);
+
+        $steps['3_fcm_send'] = $sendResult;
+
+        return [
+            'success' => !empty($sendResult['success']),
+            'message' => !empty($sendResult['success']) ? 'Koneksi ke Google FCM Berhasil 100%!' : ($sendResult['message'] ?? 'FCM gagal kirim'),
+            'steps'   => $steps,
+        ];
     }
 
     /**

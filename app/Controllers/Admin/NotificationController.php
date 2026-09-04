@@ -132,4 +132,10 @@ class NotificationController extends BaseController
         $this->notifModel->delete($id);
         return redirect()->to('/admin/notifications')->with('success', 'Notifikasi berhasil dihapus.');
     }
+
+    public function testFcm()
+    {
+        $result = $this->fcmService->testConnection();
+        return $this->response->setJSON($result);
+    }
 }

@@ -14,9 +14,14 @@
                     </div>
                 </div>
             </div>
-            <button type="button" onclick="document.getElementById('fcmConfigBox').style.display = document.getElementById('fcmConfigBox').style.display === 'none' ? 'block' : 'none'" class="admin-btn admin-btn-outline admin-btn-sm" style="background: white;">
-                ⚙️ Perbarui Kunci
-            </button>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button type="button" id="btnTestFcm" onclick="runFcmTest()" class="admin-btn admin-btn-sm" style="background: #10B981; color: white;">
+                    🧪 Tes Koneksi FCM
+                </button>
+                <button type="button" onclick="document.getElementById('fcmConfigBox').style.display = document.getElementById('fcmConfigBox').style.display === 'none' ? 'block' : 'none'" class="admin-btn admin-btn-outline admin-btn-sm" style="background: white;">
+                    ⚙️ Perbarui Kunci
+                </button>
+            </div>
         </div>
     <?php else: ?>
         <div style="background: #FFFBEB; border: 1px solid #F59E0B; border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
@@ -29,9 +34,14 @@
                     </div>
                 </div>
             </div>
-            <button type="button" onclick="document.getElementById('fcmConfigBox').style.display = document.getElementById('fcmConfigBox').style.display === 'none' ? 'block' : 'none'" class="admin-btn admin-btn-sm" style="background: #F59E0B; color: white;">
-                🔑 Pasang Kunci Service Account
-            </button>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button type="button" id="btnTestFcm" onclick="runFcmTest()" class="admin-btn admin-btn-sm" style="background: #10B981; color: white;">
+                    🧪 Tes Koneksi FCM
+                </button>
+                <button type="button" onclick="document.getElementById('fcmConfigBox').style.display = document.getElementById('fcmConfigBox').style.display === 'none' ? 'block' : 'none'" class="admin-btn admin-btn-sm" style="background: #F59E0B; color: white;">
+                    🔑 Pasang Kunci Service Account
+                </button>
+            </div>
         </div>
     <?php endif; ?>
 
@@ -198,6 +208,28 @@
         const target = document.getElementById('notifTarget').value;
         const group = document.getElementById('userSelectGroup');
         group.style.display = target === 'user' ? 'block' : 'none';
+    }
+
+    async function runFcmTest() {
+        const btn = document.getElementById('btnTestFcm');
+        const oldText = btn.innerHTML;
+        btn.innerHTML = '⏳ Mengetes...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/admin/notifications/test-fcm');
+            const data = await res.json();
+            if (data.success) {
+                alert('✅ BERHASIL!\n\n' + data.message + '\n\nPesan tes telah dikirim ke topic "duitku_broadcasts" dan membunyikan notifikasi di HP/BlueStacks.');
+            } else {
+                alert('❌ GAGAL:\n\n' + data.message + '\n\nDetail Diagnostik:\n' + JSON.stringify(data.steps, null, 2));
+            }
+        } catch(e) {
+            alert('❌ Terjadi kesalahan saat menghubungi server: ' + e.message);
+        } finally {
+            btn.innerHTML = oldText;
+            btn.disabled = false;
+        }
     }
 </script>
 
