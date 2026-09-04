@@ -7,6 +7,7 @@
 # Desain: TAHAN "git drift", konflik lokal, dan branch divergen.
 # Mengamankan konfigurasi database (app/Config/Database.php & .env)
 # agar di-ignore dan TIDAK PERNAH tertimpa saat update dari GitHub.
+# Mendukung auto-init jika server sebelumnya diupload lewat FTP (tanpa .git).
 # ==============================================================================
 
 set -Eeuo pipefail
@@ -25,28 +26,11 @@ echo "Tanggal : $(date '+%Y-%m-%d %H:%M:%S')"
 echo "========================================================"
 
 # ------------------------------------------------------------------------------
-# 1. Pastikan Remote Origin mengarah ke repo GitHub yang benar
+# 1. Backup & Amankan Pengaturan Database Server (PERTAMA SEBELUM GIT)
 # ------------------------------------------------------------------------------
-echo "==> [1/7] Memeriksa remote git repository..."
-CURRENT_REMOTE=$(git remote get-url origin 2>/dev/null || true)
-if [ -z "$CURRENT_REMOTE" ]; then
-    echo "    Menambahkan remote origin: $REPO_URL"
-    git remote add origin "$REPO_URL"
-elif [ "$CURRENT_REMOTE" != "$REPO_URL" ]; then
-    echo "    Mengubah remote origin ke: $REPO_URL"
-    git remote set-url origin "$REPO_URL"
-fi
-
-# ------------------------------------------------------------------------------
-# 2. Backup & Amankan Pengaturan Database Server (app/Config/Database.php & .env)
-# ------------------------------------------------------------------------------
-echo "==> [2/7] Mengamankan pengaturan database server ($DB_CONFIG_FILE)..."
+echo "==> [1/7] Mengamankan pengaturan database server ($DB_CONFIG_FILE)..."
 BACKUP_DIR="$PROJECT_DIR/writable/deploy_backups"
 mkdir -p "$BACKUP_DIR"
-
-# Lepas status assume-unchanged sementara sebelum operasi git
-git update-index --no-assume-unchanged "$DB_CONFIG_FILE" 2>/dev/null || true
-git update-index --no-skip-worktree "$DB_CONFIG_FILE" 2>/dev/null || true
 
 # Backup permanen file Database.php server
 if [ -f "$PROJECT_DIR/$DB_CONFIG_FILE" ]; then
@@ -67,6 +51,32 @@ if [ -f "$PROJECT_DIR/app/Config/db_config.php" ]; then
 fi
 
 # ------------------------------------------------------------------------------
+# 2. Inisialisasi Git & Pastikan Remote Origin Terpasang
+# ------------------------------------------------------------------------------
+echo "==> [2/7] Memeriksa remote git repository..."
+
+# Tambahkan safe.directory untuk mencegah error kepemilikan user di Ubuntu
+git config --global --add safe.directory "$PROJECT_DIR" 2>/dev/null || true
+
+# Jika folder .git belum ada (awalnya upload via FTP/cPanel)
+if [ ! -d ".git" ]; then
+    echo "    Folder .git tidak ditemukan. Menginisialisasi Git repository..."
+    git init
+    git branch -M "$BRANCH" 2>/dev/null || true
+    git remote add origin "$REPO_URL"
+    echo "    ✓ Git berhasil diinisialisasi dengan remote: $REPO_URL"
+else
+    CURRENT_REMOTE=$(git remote get-url origin 2>/dev/null || true)
+    if [ -z "$CURRENT_REMOTE" ]; then
+        echo "    Menambahkan remote origin: $REPO_URL"
+        git remote add origin "$REPO_URL"
+    elif [ "$CURRENT_REMOTE" != "$REPO_URL" ]; then
+        echo "    Mengubah remote origin ke: $REPO_URL"
+        git remote set-url origin "$REPO_URL"
+    fi
+fi
+
+# ------------------------------------------------------------------------------
 # 3. Bersihkan status git yang menggantung (merge/rebase/cherry-pick lock)
 # ------------------------------------------------------------------------------
 echo "==> [3/7] Membersihkan sisa proses git jika ada..."
@@ -75,31 +85,40 @@ git rebase --abort       2>/dev/null || true
 git cherry-pick --abort  2>/dev/null || true
 rm -f .git/index.lock .git/MERGE_HEAD .git/CHERRY_PICK_HEAD .git/REBASE_HEAD 2>/dev/null || true
 
+# Lepas status assume-unchanged sementara sebelum fetch/reset
+git update-index --no-assume-unchanged "$DB_CONFIG_FILE" 2>/dev/null || true
+git update-index --no-skip-worktree "$DB_CONFIG_FILE" 2>/dev/null || true
+
 # ------------------------------------------------------------------------------
-# 4. Fetch dari GitHub & Amankan Perubahan Lokal
+# 4. Fetch dari GitHub & Sinkronisasi Repo
 # ------------------------------------------------------------------------------
 echo "==> [4/7] Mengambil update terbaru dari GitHub ($BRANCH)..."
 git fetch --prune origin "$BRANCH"
 
-# Amankan perubahan tracked lokal selain file database ke stash
 STASHED=0
-if ! git diff --quiet || ! git diff --cached --quiet; then
-    STASH_NAME="pre-deploy-$(date +%Y%m%d-%H%M%S)"
-    git stash push -m "$STASH_NAME" || true
-    STASHED=1
-    echo "    ✓ Perubahan lokal tak-commit disimpan ke stash ($STASH_NAME)"
-fi
-
-# Amankan commit lokal jika server divergen dengan origin
 LOCAL_BACKUP_BRANCH=""
-if ! git merge-base --is-ancestor HEAD "origin/$BRANCH" 2>/dev/null; then
-    LOCAL_BACKUP_BRANCH="predeploy-backup-$(date +%Y%m%d-%H%M%S)"
-    git branch -f "$LOCAL_BACKUP_BRANCH" HEAD 2>/dev/null || true
-    echo "    ✓ Commit lokal divergen diselamatkan ke branch: $LOCAL_BACKUP_BRANCH"
+
+# Hanya periksa stash dan branch divergen jika HEAD sudah ada
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+    # Amankan perubahan tracked lokal selain file database ke stash
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+        STASH_NAME="pre-deploy-$(date +%Y%m%d-%H%M%S)"
+        git stash push -m "$STASH_NAME" || true
+        STASHED=1
+        echo "    ✓ Perubahan lokal tak-commit disimpan ke stash ($STASH_NAME)"
+    fi
+
+    # Amankan commit lokal jika server divergen dengan origin
+    if ! git merge-base --is-ancestor HEAD "origin/$BRANCH" 2>/dev/null; then
+        LOCAL_BACKUP_BRANCH="predeploy-backup-$(date +%Y%m%d-%H%M%S)"
+        git branch -f "$LOCAL_BACKUP_BRANCH" HEAD 2>/dev/null || true
+        echo "    ✓ Commit lokal divergen diselamatkan ke branch: $LOCAL_BACKUP_BRANCH"
+    fi
 fi
 
-# Reset ke versi persis dari origin/main
+# Checkout dan reset persis ke origin/main
 echo "    Sinkronisasi repo ke origin/$BRANCH..."
+git checkout -f -B "$BRANCH" "origin/$BRANCH"
 git reset --hard "origin/$BRANCH"
 
 # ------------------------------------------------------------------------------
