@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DuitKu</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app-container">
+    <!-- TOP APP BAR -->
+    <header class="app-header">
+      <div class="brand">
+        <img src="icons/icon32.png" alt="DuitKu" class="brand-logo">
+        <div class="brand-text">
+          <span class="brand-title">DuitKu</span>
+          <span class="brand-subtitle" id="connection-status">Online</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-open-web" class="icon-btn" title="Buka Dashboard Web DuitKu">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </button>
+        <button id="btn-refresh" class="icon-btn" title="Muat Ulang Data">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 4v6h-6"></path>
+            <path d="M1 20v-6h6"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- VIEW: AUTH / LOGIN -->
+    <section id="view-login" class="view hidden">
+      <div class="auth-card">
+        <div class="auth-icon-wrap">
+          <img src="icons/icon128.png" alt="Logo" class="auth-hero-logo">
+        </div>
+        <h2 class="auth-title">Masuk ke DuitKu</h2>
+        <p class="auth-desc">Kelola catatan keuangan langsung dari browser Chrome Anda.</p>
+
+        <div id="login-error-msg" class="alert-box alert-error hidden"></div>
+
+        <form id="form-login">
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" class="form-control" placeholder="nama@email.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Kata Sandi</label>
+            <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+
+          <details class="server-config-details">
+            <summary>Pengaturan Server API</summary>
+            <div class="form-group mt-2">
+              <label for="login-server-url">Alamat Server (Base URL)</label>
+              <input type="url" id="login-server-url" class="form-control" placeholder="https://duitku.ordr.my.id">
+              <small class="text-muted">Ganti jika menggunakan server lokal (contoh: http://localhost/duitku)</small>
+            </div>
+          </details>
+
+          <button type="submit" id="btn-submit-login" class="btn btn-primary btn-block mt-3">
+            <span>Masuk</span>
+          </button>
+        </form>
+
+        <div class="auth-footer">
+          <span>Belum punya akun?</span>
+          <a href="#" id="link-register">Daftar di Web</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: MAIN APP (LOGGED IN) -->
+    <main id="view-main" class="view hidden">
+      <!-- TAB NAVIGATION -->
+      <nav class="tabs-nav">
+        <button class="tab-btn active" data-tab="tab-dashboard">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="9"></rect>
+            <rect x="14" y="3" width="7" height="5"></rect>
+            <rect x="14" y="12" width="7" height="9"></rect>
+            <rect x="3" y="16" width="7" height="5"></rect>
+          </svg>
+          <span>Ringkasan</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-quick-add">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="16"></line>
+            <line x1="8" y1="12" x2="16" y2="12"></line>
+          </svg>
+          <span>Catat</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-shortcuts">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          <span>Pintasan</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-settings">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>Opsi</span>
+        </button>
+      </nav>
+
+      <!-- TAB 1: DASHBOARD RINGKASAN -->
+      <section id="tab-dashboard" class="tab-pane active">
+        <!-- BALANCE CARD -->
+        <div class="card-balance">
+          <div class="card-balance-top">
+            <span class="label-muted">Total Saldo</span>
+            <button id="btn-toggle-eye" class="icon-btn-subtle" title="Sembunyikan/Tampilkan Saldo">
+              <svg id="eye-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+          <div class="balance-amount" id="dash-total-balance">Rp 0</div>
+          <div class="balance-footer">
+            <span class="wallet-badge" id="dash-wallet-name">Semua Dompet</span>
+            <span class="balance-date" id="dash-date-str">Bulan Ini</span>
+          </div>
+        </div>
+
+        <!-- STATS PILLS (INCOME & EXPENSE) -->
+        <div class="stats-grid">
+          <div class="stat-card stat-income">
+            <div class="stat-icon income-icon">↓</div>
+            <div class="stat-content">
+              <span class="stat-title">Pemasukan</span>
+              <span class="stat-value" id="dash-income">Rp 0</span>
+            </div>
+          </div>
+          <div class="stat-card stat-expense">
+            <div class="stat-icon expense-icon">↑</div>
+            <div class="stat-content">
+              <span class="stat-title">Pengeluaran</span>
+              <span class="stat-value" id="dash-expense">Rp 0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BUDGET PROGRESS (IF AVAILABLE) -->
+        <div id="dash-budget-wrap" class="budget-card hidden">
+          <div class="budget-info">
+            <span>Budget Bulanan</span>
+            <span id="dash-budget-pct">0%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div id="dash-budget-bar" class="progress-bar-fill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- RECENT TRANSACTIONS -->
+        <div class="section-block">
+          <div class="section-header">
+            <h3 class="section-title">Transaksi Terbaru</h3>
+            <button id="btn-open-activity" class="btn-link">Lihat Semua</button>
+          </div>
+          <div id="recent-transactions-list" class="transactions-list">
+            <div class="loading-state">Memuat riwayat...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: CATAT CEPAT (QUICK ADD) -->
+      <section id="tab-quick-add" class="tab-pane">
+        <form id="form-quick-add" class="quick-add-form">
+          <!-- TYPE SWITCHER -->
+          <div class="type-segmented-control">
+            <input type="radio" id="type-expense" name="tx-type" value="expense" checked>
+            <label for="type-expense" class="segment-btn segment-expense">
+              <span>Pengeluaran</span>
+            </label>
+
+            <input type="radio" id="type-income" name="tx-type" value="income">
+            <label for="type-income" class="segment-btn segment-income">
+              <span>Pemasukan</span>
+            </label>
+          </div>
+
+          <!-- NOMINAL -->
+          <div class="form-group mt-2">
+            <label for="tx-amount">Nominal (Rp)</label>
+            <div class="input-currency-wrapper">
+              <span class="currency-prefix">Rp</span>
+              <input type="text" id="tx-amount" class="form-control form-control-lg input-amount" placeholder="0" inputmode="numeric" required>
+            </div>
+          </div>
+
+          <!-- KATEGORI & DOMPET -->
+          <div class="form-row">
+            <div class="form-group col">
+              <label for="tx-category">Kategori</label>
+              <select id="tx-category" class="form-control" required>
+                <option value="">Pilih Kategori</option>
+              </select>
+            </div>
+            <div class="form-group col">
+              <label for="tx-wallet">Dompet / Akun</label>
+              <select id="tx-wallet" class="form-control" required>
+                <option value="">Pilih Dompet</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- CATATAN / KETERANGAN -->
+          <div class="form-group">
+            <label for="tx-note">Catatan / Keterangan</label>
+            <input type="text" id="tx-note" class="form-control" placeholder="Contoh: Makan siang, Kopi, Belanja...">
+          </div>
+
+          <!-- TANGGAL -->
+          <div class="form-group">
+            <label for="tx-date">Tanggal</label>
+            <input type="date" id="tx-date" class="form-control" required>
+          </div>
+
+          <button type="submit" id="btn-save-tx" class="btn btn-primary btn-block mt-3">
+            <span>Simpan Transaksi</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- TAB 3: PINTASAN MODUL (SHORTCUTS) -->
+      <section id="tab-shortcuts" class="tab-pane">
+        <div class="shortcuts-grid">
+          <a href="#" class="shortcut-item" data-path="/">
+            <div class="shortcut-icon" style="background: #E8F5E9; color: #2E7D32;">🏠</div>
+            <span class="shortcut-name">Dashboard</span>
+          </a>
+          <a href="#" class="shortcut-item" data-path="/activity">
+            <div class="shortcut-icon" style="background: #E3F2FD; color: #1565C0;">📜</div>
+            <span class="shortcut-name">Riwayat</span>
+          </a>
+          <a href="#" class="shortcut-item" data-path="/stats">
+            <div class="shortcut-icon" style="background: #F3E5F5; color: #7B1FA2;">📊</div>
+            <span class="shortcut-name">Statistik</span>
+          </a>
+          <a href="#" class="shortcut-item" data-path="/belanja">
+            <div class="shortcut-icon" style="background: #FFF3E0; color: #E65100;">🛒</div>
+            <span class="shortcut-name">Belanja</span>
+          </a>
+          <a href="#" class="shortcut-item" data-path="/savings">
+            <div class="shortcut-icon" style="background: #E0F2F1; color: #00695C;">🎯</div>
+            <span class="shortcut-name">Tabungan</span>
+          </a>
+          <a href="#" class="shortcut-item" data-path="/todo">
+            <div class="shortcut-icon" style="background: #EDE7F6; color: #512DA8;">📝</div>
+            <span class="shortcut-name">Tugas / Todo</span>
+          </a>
+          <a href="#" class="shortcut-item" data-path="/hutang">
+            <div class="shortcut-icon" style="background: #FFEBEE; color: #C62828;">🤝</div>
+            <span class="shortcut-name">Hutang</span>
+          </a>
+          <a href="#" class="shortcut-item" data-path="/features">
+            <div class="shortcut-icon" style="background: #ECEFF1; color: #37474F;">✨</div>
+            <span class="shortcut-name">Semua Fitur</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- TAB 4: PENGATURAN / OPSI -->
+      <section id="tab-settings" class="tab-pane">
+        <div class="profile-card">
+          <div class="user-avatar" id="user-avatar-initial">U</div>
+          <div class="user-info">
+            <div class="user-name" id="user-display-name">Pengguna</div>
+            <div class="user-email" id="user-display-email">email@domain.com</div>
+          </div>
+        </div>
+
+        <div class="form-group mt-3">
+          <label for="settings-server-url">Alamat Server (Base URL)</label>
+          <input type="url" id="settings-server-url" class="form-control" placeholder="https://duitku.ordr.my.id">
+          <small class="text-muted">Domain API backend yang digunakan oleh ekstensi</small>
+        </div>
+
+        <button id="btn-save-settings" class="btn btn-outline btn-block mt-2">Simpan Pengaturan Server</button>
+
+        <hr class="divider">
+
+        <button id="btn-logout" class="btn btn-danger btn-block">
+          <span>Keluar dari Akun</span>
+        </button>
+      </section>
+    </main>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
