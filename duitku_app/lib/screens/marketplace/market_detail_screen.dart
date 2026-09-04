@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../config/api_config.dart';
@@ -319,11 +320,8 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
                   'DESKRIPSI PRODUK',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.grey),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  (item['description'] ?? 'Tidak ada deskripsi.').toString(),
-                  style: const TextStyle(fontSize: 13.5, height: 1.5),
-                ),
+                const SizedBox(height: 8),
+                _buildDescriptionWidget(item['description']?.toString()),
 
                 const SizedBox(height: 18),
 
@@ -671,5 +669,76 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
       case 'used_fair': return 'Bekas Layak';
       default: return 'Bekas';
     }
+  }
+
+  Widget _buildDescriptionWidget(String? rawDesc) {
+    if (rawDesc == null || rawDesc.trim().isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: const Text(
+          'Tidak ada deskripsi dari penjual.',
+          style: TextStyle(fontSize: 13.5, fontStyle: FontStyle.italic, color: Color(0xFF94A3B8)),
+        ),
+      );
+    }
+
+    String content = rawDesc.trim();
+    // If text does not contain typical html blocks, preserve line breaks
+    if (!content.contains('<p') && !content.contains('<br') && !content.contains('<div') && !content.contains('<ul') && !content.contains('<ol>')) {
+      content = content.replaceAll('\n', '<br/>');
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: HtmlWidget(
+        content,
+        textStyle: const TextStyle(
+          fontSize: 13.5,
+          height: 1.6,
+          color: Color(0xFF1E293B),
+        ),
+        customStylesBuilder: (element) {
+          if (element.localName == 'p') {
+            return {'margin': '0 0 8px 0'};
+          }
+          if (element.localName == 'ul' || element.localName == 'ol') {
+            return {'margin': '4px 0 8px 0', 'padding-left': '20px'};
+          }
+          if (element.localName == 'li') {
+            return {'margin-bottom': '4px'};
+          }
+          if (element.localName == 'hr') {
+            return {'margin': '12px 0', 'border': 'none', 'border-top': '1px solid #E2E8F0'};
+          }
+          if (element.localName == 'strong' || element.localName == 'b') {
+            return {'font-weight': '700', 'color': '#0F172A'};
+          }
+          if (element.localName == 'a') {
+            return {'color': '#2563EB', 'text-decoration': 'underline'};
+          }
+          return null;
+        },
+        onTapUrl: (url) async {
+          final uri = Uri.tryParse(url);
+          if (uri != null && await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+            return true;
+          }
+          return false;
+        },
+      ),
+    );
   }
 }
