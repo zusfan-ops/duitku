@@ -121,6 +121,9 @@ echo "    Sinkronisasi repo ke origin/$BRANCH..."
 git checkout -f -B "$BRANCH" "origin/$BRANCH"
 git reset --hard "origin/$BRANCH"
 
+# Pastikan deploy.sh selalu tetap executable setelah git reset
+chmod +x "$PROJECT_DIR/deploy.sh" 2>/dev/null || true
+
 # ------------------------------------------------------------------------------
 # KEMBALIKAN PENGATURAN DATABASE SERVER & SET AGAR DI-IGNORE OLEH GIT
 # ------------------------------------------------------------------------------
@@ -171,13 +174,15 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# 7. Pengaturan Permission Folder Writable
+# 7. Pengaturan Permission Folder Writable & deploy.sh
 # ------------------------------------------------------------------------------
-echo "==> [7/7] Menyesuaikan permission folder writable..."
+echo "==> [7/7] Menyesuaikan permission folder writable & deploy.sh..."
 if [ -d "writable" ]; then
     chmod -R 775 writable 2>/dev/null || chmod -R 777 writable 2>/dev/null || true
     echo "    ✓ Permission folder writable berhasil disesuaikan."
 fi
+chmod +x "$PROJECT_DIR/deploy.sh" 2>/dev/null || true
+echo "    ✓ Permission deploy.sh (+x) dipastikan aktif."
 
 echo "========================================================"
 echo "✅ DEPLOY SELESAI!"
