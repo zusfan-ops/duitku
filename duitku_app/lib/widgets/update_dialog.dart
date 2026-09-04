@@ -10,11 +10,13 @@ import '../theme.dart';
 class UpdateDialog extends StatefulWidget {
   final GitHubRelease release;
   final String currentVersion;
+  final bool autoStartDownload;
 
   const UpdateDialog({
     super.key,
     required this.release,
     required this.currentVersion,
+    this.autoStartDownload = false,
   });
 
   @override
@@ -29,6 +31,19 @@ class _UpdateDialogState extends State<UpdateDialog> {
   String? _downloadedApkPath;
   String? _errorMessage;
   http.Client? _httpClient;
+
+  @override
+  void initState() {
+    super.initState();
+    final apkUrl = widget.release.apkDownloadUrl;
+    if (widget.autoStartDownload && apkUrl != null && apkUrl.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_isDownloading) {
+          _startDownload(apkUrl);
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {

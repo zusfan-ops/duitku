@@ -34,7 +34,7 @@ class NotificationModel extends Model
                     `id`         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     `title`      VARCHAR(255) NOT NULL,
                     `message`    TEXT         NOT NULL,
-                    `type`       ENUM('info', 'announcement', 'promo', 'warning', 'system') DEFAULT 'info',
+                    `type`       VARCHAR(50)  NOT NULL DEFAULT 'info',
                     `target`     ENUM('all', 'user') DEFAULT 'all',
                     `user_id`    INT UNSIGNED DEFAULT NULL,
                     `action_url` VARCHAR(255) DEFAULT NULL,
@@ -43,6 +43,13 @@ class NotificationModel extends Model
                     `updated_at` DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             ");
+        } else {
+            // Pastikan kolom type mendukung nilai fleksibel seperti 'update'
+            try {
+                $db->query("ALTER TABLE `app_notifications` MODIFY COLUMN `type` VARCHAR(50) NOT NULL DEFAULT 'info'");
+            } catch (\Throwable $e) {
+                // Abaikan jika sudah diubah
+            }
         }
         if (!$db->tableExists('notification_reads')) {
             $db->query("

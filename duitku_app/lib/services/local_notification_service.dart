@@ -1,6 +1,10 @@
+import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../main.dart';
+import 'update_checker_service.dart';
 
 class LocalNotificationService {
   LocalNotificationService._();
@@ -26,13 +30,21 @@ class LocalNotificationService {
       onDidReceiveNotificationResponse: (NotificationResponse response) async {
         final payload = response.payload;
         if (payload != null && payload.isNotEmpty) {
-          final uri = Uri.tryParse(payload);
-          if (uri != null && await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          }
+          handleNotificationClick(payload);
         }
       },
     );
+
+    // Periksa jika aplikasi dibuka dari notifikasi saat kondisi terminated (cold start)
+    try {
+      final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+      if (launchDetails?.didNotificationLaunchApp ?? false) {
+        final payload = launchDetails?.notificationResponse?.payload;
+        if (payload != null && payload.isNotEmpty) {
+          handleNotificationClick(payload);
+        }
+      }
+    } catch (_) {}
 
     // Request runtime permission for Android 13+ (POST_NOTIFICATIONS)
     await requestPermission();
@@ -124,13 +136,27 @@ class LocalNotificationService {
         final title = item['title']?.toString() ?? 'Pemberitahuan DuitKu';
         final message = item['message']?.toString() ?? item['subtitle']?.toString() ?? '';
         final actionUrl = item['action_url']?.toString();
-        final type = (item['broadcast_type'] ?? item['type'] ?? 'info').toString().toUpperCase();
+        final rawType = (item['broadcast_type'] ?? item['type'] ?? 'info').toString().toLowerCase();
+        final type = rawType.toUpperCase();
+
+        // Jika ini adalah rilis update APK, simpan payload JSON lengkap agar saat diklik langsung download in-app
+        String notifPayload = actionUrl ?? '';
+        if (rawType == 'update' || (actionUrl != null && (actionUrl.endsWith('.apk') || actionUrl.contains('.apk?')))) {
+          notifPayload = jsonEncode({
+            'type': 'update',
+            'title': title,
+            'message': message,
+            'apk_url': actionUrl,
+            'action_url': actionUrl,
+            'version': item['version'] ?? '',
+          });
+        }
 
         await showNotification(
           id: id,
           title: title,
           body: message,
-          payload: actionUrl,
+          payload: notifPayload,
           subText: 'DuitKu • $type',
         );
 
@@ -142,6 +168,67 @@ class LocalNotificationService {
 
     if (maxId > lastSeenId) {
       await prefs.setInt('last_notified_broadcast_id', maxId);
+    }
+  }
+
+  /// Tangani klik notifikasi: jika update APK maka unduh langsung di dalam aplikasi tanpa membuka browser
+  Future<void> handleNotificationClick(String payload) async {
+    bool isUpdate = false;
+    String? apkUrl;
+    String? title;
+    String? message;
+    String? version;
+
+    if (payload.startsWith('{') && payload.endsWith('}')) {
+      try {
+        final data = jsonDecode(payload) as Map<String, dynamic>;
+        if (data['type'] == 'update' ||
+            data['apk_url'] != null ||
+            (data['action_url']?.toString().toLowerCase().contains('.apk') ?? false)) {
+          isUpdate = true;
+          apkUrl = data['apk_url']?.toString() ?? data['action_url']?.toString();
+          title = data['title']?.toString();
+          message = data['message']?.toString();
+          version = data['version']?.toString();
+        }
+      } catch (_) {}
+    }
+
+    if (!isUpdate) {
+      final lower = payload.toLowerCase();
+      if (lower.contains('.apk') || payload.startsWith('update:')) {
+        isUpdate = true;
+        apkUrl = payload.replaceFirst('update:', '').trim();
+      }
+    }
+
+    // Jika ini adalah update APK, LANGSUNG BUKA IN-APP DOWNLOAD & INSTALL! (Jangan buka browser)
+    if (isUpdate && apkUrl != null && apkUrl.isNotEmpty) {
+      final context = rootNavigatorKey.currentContext;
+      if (context != null && context.mounted) {
+        UpdateCheckerService.instance.showUpdateFromNotification(
+          context,
+          title: title ?? 'Pembaruan Aplikasi DuitKu',
+          message: message ?? 'Pembaruan aplikasi telah tersedia. Mengunduh file APK...',
+          apkUrl: apkUrl,
+          version: version,
+          autoStart: true,
+        );
+      } else {
+        UpdateCheckerService.instance.setPendingUpdate({
+          'title': title,
+          'message': message,
+          'apk_url': apkUrl,
+          'version': version,
+        });
+      }
+      return;
+    }
+
+    // Bukan update APK: buka link standar di browser jika merupakan URL valid
+    final uri = Uri.tryParse(payload);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 

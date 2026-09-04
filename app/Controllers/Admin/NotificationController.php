@@ -96,6 +96,69 @@ class NotificationController extends BaseController
         return redirect()->to('/admin/notifications')->with('success', 'Notifikasi berhasil dipublikasikan ke aplikasi DuitKu!' . $fcmNotice);
     }
 
+    /**
+     * Publikasikan pemberitahuan rilis update APK ke aplikasi DuitKu
+     */
+    public function storeUpdate()
+    {
+        $version = trim($this->request->getPost('version') ?? '');
+        $title   = trim($this->request->getPost('title') ?? '');
+        $message = trim($this->request->getPost('message') ?? '');
+        $apkUrl  = trim($this->request->getPost('apk_url') ?? '');
+        $isPinned = $this->request->getPost('is_pinned') ? 1 : 0;
+
+        if (empty($apkUrl)) {
+            return redirect()->back()->withInput()->with('error', 'Link Download File APK wajib diisi.');
+        }
+
+        if (empty($message)) {
+            return redirect()->back()->withInput()->with('error', 'Keterangan atau catatan pembaruan (changelog) wajib diisi.');
+        }
+
+        if (empty($title)) {
+            $title = !empty($version) ? "Pembaruan Aplikasi DuitKu ({$version})" : 'Pembaruan Aplikasi DuitKu Tersedia!';
+        }
+
+        $inserted = $this->notifModel->insert([
+            'title'      => $title,
+            'message'    => $message,
+            'type'       => 'update',
+            'target'     => 'all',
+            'user_id'    => null,
+            'action_url' => $apkUrl,
+            'is_pinned'  => $isPinned,
+        ]);
+
+        if (!$inserted) {
+            return redirect()->back()->withInput()->with('error', 'Gagal mempublikasikan pembaruan aplikasi.');
+        }
+
+        $notifId = $this->notifModel->getInsertID();
+
+        // Kirim Push Notification FCM ke seluruh HP pengguna
+        $fcmNotice = '';
+        if ($this->fcmService->isConfigured()) {
+            $fcmResult = $this->fcmService->sendToTopic('duitku_broadcasts', $title, $message, [
+                'type'       => 'update',
+                'action_url' => $apkUrl,
+                'apk_url'    => $apkUrl,
+                'version'    => $version,
+                'notif_id'   => (string)$notifId,
+            ]);
+
+            if (!empty($fcmResult['success'])) {
+                $fcmNotice = ' 🔔 Push notification FCM update berhasil dikirim ke seluruh HP pengguna!';
+            } else {
+                $errMsg = $fcmResult['message'] ?? (json_encode($fcmResult['response'] ?? ''));
+                $fcmNotice = ' (Catatan: FCM gagal dikirim: ' . esc($errMsg) . ')';
+            }
+        } else {
+            $fcmNotice = ' (Info: Service Account Firebase belum dipasang, banner update tersimpan di database lokal).';
+        }
+
+        return redirect()->to('/admin/notifications')->with('success', '🚀 Pengumuman Update Aplikasi berhasil dipublikasikan!' . $fcmNotice);
+    }
+
     public function saveFcmConfig()
     {
         $json = trim($this->request->getPost('service_account_json') ?? '');

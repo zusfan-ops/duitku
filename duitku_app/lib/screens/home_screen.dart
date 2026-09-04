@@ -26,6 +26,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // Pengecekan otomatis update APK GitHub Releases setelah aplikasi siap
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Periksa apakah ada klik notifikasi pembaruan saat cold-start
+      UpdateCheckerService.instance.checkPendingUpdate(context);
+
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
           UpdateCheckerService.instance.checkAndShowUpdateDialog(context);

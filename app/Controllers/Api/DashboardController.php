@@ -132,11 +132,12 @@ class DashboardController extends ApiController
                     'message'        => $ub['message'] ?? '',
                     'amount'         => 0.0,
                     'days_left'      => $isPinned ? -999 : -100, // Prioritas paling atas
-                    'urgency'        => $ub['type'] === 'warning' ? 'urgent' : ($ub['type'] === 'promo' ? 'warning' : 'info'),
+                    'urgency'        => $ub['type'] === 'warning' ? 'urgent' : ($ub['type'] === 'update' ? 'warning' : ($ub['type'] === 'promo' ? 'warning' : 'info')),
                     'is_pinned'      => $isPinned,
                     'is_read'        => $isRead,
                     'action_url'     => $ub['action_url'] ?? null,
                     'icon'           => match($ub['type'] ?? 'info') {
+                        'update'       => '🚀',
                         'warning'      => '⚠️',
                         'promo'        => '🎁',
                         'announcement' => '📢',

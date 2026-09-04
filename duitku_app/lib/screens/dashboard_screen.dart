@@ -43,6 +43,7 @@ import '../services/sync_service.dart';
 import '../widgets/sync_status_banner.dart';
 import '../widgets/tv_streaming_card.dart';
 import '../widgets/my_home_card.dart';
+import '../services/update_checker_service.dart';
 import '../widgets/marketplace_featured_card.dart';
 import '../models/jellyfin_movie.dart';
 import 'marketplace/market_screen.dart';
@@ -3393,6 +3394,23 @@ void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback on
                                         } catch (_) {}
                                       }
                                       final actionUrl = item['action_url']?.toString();
+                                      final broadcastType = (item['broadcast_type'] ?? '').toString().toLowerCase();
+                                      final isUpdate = broadcastType == 'update' ||
+                                          (actionUrl != null && (actionUrl.toLowerCase().endsWith('.apk') || actionUrl.toLowerCase().contains('.apk?')));
+
+                                      // Jika ini pengumuman update aplikasi, langsung unduh di dalam aplikasi & buka installer (tanpa browser)
+                                      if (isUpdate && actionUrl != null && actionUrl.isNotEmpty) {
+                                        if (!context.mounted) return;
+                                         UpdateCheckerService.instance.showUpdateFromNotification(
+                                          context,
+                                          title: item['title']?.toString() ?? 'Pembaruan Aplikasi DuitKu',
+                                          message: item['message']?.toString() ?? item['subtitle']?.toString() ?? '',
+                                          apkUrl: actionUrl,
+                                          autoStart: true,
+                                        );
+                                        return;
+                                      }
+
                                       if (actionUrl != null && actionUrl.isNotEmpty) {
                                         final uri = Uri.tryParse(actionUrl);
                                         if (uri != null && await canLaunchUrl(uri)) {
@@ -3416,7 +3434,7 @@ void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback on
                                   child: Text(
                                     item['type'] == 'broadcast'
                                         ? (item['action_url'] != null && item['action_url'].toString().isNotEmpty
-                                            ? (item['action_url'].toString().contains('.apk') || item['action_url'].toString().contains('download') ? 'Unduh' : 'Buka Link')
+                                            ? ((item['broadcast_type'] == 'update' || (item['action_url'] != null && item['action_url'].toString().contains('.apk'))) ? 'Update Sekarang' : (item['action_url'] != null && item['action_url'].toString().isNotEmpty ? 'Buka Link' : 'Baca'))
                                             : 'Baca')
                                         : (item['type'] == 'bill' || item['type'] == 'debt' ? 'Bayar' : 'Buka'),
                                     style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),

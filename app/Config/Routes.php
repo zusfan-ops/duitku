@@ -210,6 +210,7 @@ $routes->group('admin', ['filter' => 'admin'], function ($routes) {
     // Notifications (Broadcast & Push to App)
     $routes->get('notifications',                    'Admin\NotificationController::index');
     $routes->post('notifications/store',             'Admin\NotificationController::store');
+    $routes->post('notifications/store-update',      'Admin\NotificationController::storeUpdate');
     $routes->post('notifications/toggle-pin/(:num)', 'Admin\NotificationController::togglePin/$1');
     $routes->post('notifications/delete/(:num)',     'Admin\NotificationController::delete/$1');
     $routes->post('notifications/save-fcm',          'Admin\NotificationController::saveFcmConfig');

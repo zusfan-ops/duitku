@@ -297,4 +297,77 @@ class UpdateCheckerService {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
+
+  Map<String, dynamic>? _pendingUpdatePayload;
+
+  /// Simpan payload update jika aplikasi belum siap menampilkan dialog (misal saat cold start / splash)
+  void setPendingUpdate(Map<String, dynamic> payload) {
+    _pendingUpdatePayload = payload;
+  }
+
+  /// Periksa dan tampilkan pending update jika ada (dipanggil saat HomeScreen siap)
+  void checkPendingUpdate(BuildContext context) {
+    if (_pendingUpdatePayload != null && context.mounted) {
+      final p = _pendingUpdatePayload!;
+      _pendingUpdatePayload = null;
+      showUpdateFromNotification(
+        context,
+        title: p['title']?.toString() ?? 'Pembaruan Aplikasi',
+        message: p['message']?.toString() ?? '',
+        apkUrl: p['apk_url']?.toString() ?? p['action_url']?.toString() ?? '',
+        version: p['version']?.toString(),
+        autoStart: true,
+      );
+    }
+  }
+
+  /// Tampilkan dialog update langsung dari push notifikasi / dashboard dan langsung proses unduh in-app
+  Future<void> showUpdateFromNotification(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required String apkUrl,
+    String? version,
+    bool autoStart = true,
+  }) async {
+    if (apkUrl.isEmpty) return;
+    await getAppVersion();
+
+    String cleanVer = version?.trim() ?? '';
+    if (cleanVer.isEmpty) {
+      final match = RegExp(r'(v?[0-9]+\.[0-9]+(\.[0-9]+)?)', caseSensitive: false).firstMatch(apkUrl);
+      cleanVer = match?.group(1) ?? 'Terbaru';
+    }
+
+    String fileName = 'duitku_update.apk';
+    try {
+      final uri = Uri.parse(apkUrl);
+      final lastSeg = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : 'duitku_update.apk';
+      if (lastSeg.toLowerCase().endsWith('.apk')) {
+        fileName = lastSeg;
+      }
+    } catch (_) {}
+
+    final release = GitHubRelease(
+      tagName: cleanVer.startsWith('v') || cleanVer.startsWith('V') ? cleanVer : 'v$cleanVer',
+      name: title,
+      body: message.isNotEmpty ? message : 'Pembaruan fitur baru dan perbaikan performa aplikasi DuitKu.',
+      publishedAt: DateTime.now(),
+      htmlUrl: apkUrl,
+      apkDownloadUrl: apkUrl,
+      apkFileName: fileName,
+    );
+
+    if (!context.mounted) return;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => UpdateDialog(
+        release: release,
+        currentVersion: currentVersion,
+        autoStartDownload: autoStart,
+      ),
+    );
+  }
 }

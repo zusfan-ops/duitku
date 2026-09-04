@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import '../firebase_options.dart';
+import '../main.dart';
 import 'local_notification_service.dart';
+import 'update_checker_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -16,11 +19,27 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     if (message.notification == null && data.isNotEmpty) {
       final title = data['title']?.toString() ?? 'Pemberitahuan DuitKu';
       final body = data['message']?.toString() ?? data['body']?.toString() ?? '';
+      final rawType = (data['type'] ?? data['broadcast_type'] ?? 'info').toString().toLowerCase();
+      final actionUrl = data['action_url']?.toString();
+      final apkUrl = data['apk_url']?.toString() ?? actionUrl;
+
+      String notifPayload = actionUrl ?? '';
+      if (rawType == 'update' || (apkUrl != null && apkUrl.contains('.apk'))) {
+        notifPayload = jsonEncode({
+          'type': 'update',
+          'title': title,
+          'message': body,
+          'apk_url': apkUrl,
+          'action_url': actionUrl,
+          'version': data['version'] ?? '',
+        });
+      }
+
       await LocalNotificationService.instance.showNotification(
         id: message.messageId.hashCode,
         title: title,
         body: body,
-        payload: data['action_url']?.toString(),
+        payload: notifPayload,
         subText: 'DuitKu Push',
       );
     }
@@ -69,6 +88,21 @@ class FcmService {
         debugPrint('FCM getToken error: $e');
       }
 
+      // Tangani pesan saat aplikasi dibuka dari background (user tap push notification)
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        _handleRemoteMessageClick(message);
+      });
+
+      // Tangani pesan saat aplikasi baru dibuka dari kondisi mati total (cold start)
+      try {
+        final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+        if (initialMessage != null) {
+          _handleRemoteMessageClick(initialMessage);
+        }
+      } catch (e) {
+        debugPrint('FCM getInitialMessage error: $e');
+      }
+
       // Tangani pesan saat aplikasi aktif di FOREGROUND (terbuka di layar)
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         final notif = message.notification;
@@ -76,13 +110,27 @@ class FcmService {
 
         final title = notif?.title ?? data['title']?.toString() ?? 'Pemberitahuan DuitKu';
         final body = notif?.body ?? data['message']?.toString() ?? data['body']?.toString() ?? '';
+        final rawType = (data['type'] ?? data['broadcast_type'] ?? 'info').toString().toLowerCase();
         final actionUrl = data['action_url']?.toString();
+        final apkUrl = data['apk_url']?.toString() ?? actionUrl;
+
+        String notifPayload = actionUrl ?? '';
+        if (rawType == 'update' || (apkUrl != null && apkUrl.contains('.apk'))) {
+          notifPayload = jsonEncode({
+            'type': 'update',
+            'title': title,
+            'message': body,
+            'apk_url': apkUrl,
+            'action_url': actionUrl,
+            'version': data['version'] ?? '',
+          });
+        }
 
         LocalNotificationService.instance.showNotification(
           id: message.messageId.hashCode,
           title: title,
           body: body,
-          payload: actionUrl,
+          payload: notifPayload,
           subText: 'DuitKu Push',
         );
       });
@@ -90,6 +138,46 @@ class FcmService {
       _initialized = true;
     } catch (e) {
       debugPrint('FCM init error (menunggu konfigurasi Firebase aktif): $e');
+    }
+  }
+
+  /// Penanganan saat pengguna mengklik notifikasi FCM dari bilah status Android
+  void _handleRemoteMessageClick(RemoteMessage message) {
+    final data = message.data;
+    final notif = message.notification;
+    final title = notif?.title ?? data['title']?.toString() ?? 'Pemberitahuan DuitKu';
+    final body = notif?.body ?? data['message']?.toString() ?? data['body']?.toString() ?? '';
+    final rawType = (data['type'] ?? data['broadcast_type'] ?? '').toString().toLowerCase();
+    final actionUrl = data['action_url']?.toString();
+    final apkUrl = data['apk_url']?.toString() ?? actionUrl;
+    final version = data['version']?.toString();
+
+    final isUpdate = rawType == 'update' || (apkUrl != null && (apkUrl.endsWith('.apk') || apkUrl.contains('.apk?')));
+
+    if (isUpdate && apkUrl != null && apkUrl.isNotEmpty) {
+      final context = rootNavigatorKey.currentContext;
+      if (context != null && context.mounted) {
+        UpdateCheckerService.instance.showUpdateFromNotification(
+          context,
+          title: title,
+          message: body,
+          apkUrl: apkUrl,
+          version: version,
+          autoStart: true,
+        );
+      } else {
+        UpdateCheckerService.instance.setPendingUpdate({
+          'title': title,
+          'message': body,
+          'apk_url': apkUrl,
+          'version': version,
+        });
+      }
+      return;
+    }
+
+    if (actionUrl != null && actionUrl.isNotEmpty) {
+      LocalNotificationService.instance.handleNotificationClick(actionUrl);
     }
   }
 

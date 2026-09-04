@@ -16,6 +16,8 @@ import 'screens/splash_screen.dart';
 import 'services/widget_helper.dart';
 import 'theme.dart';
 
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
@@ -47,6 +49,7 @@ class DuitkuApp extends StatelessWidget {
       child: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           return MaterialApp(
+            navigatorKey: rootNavigatorKey,
             title: 'DuitKu',
             debugShowCheckedModeBanner: false,
             theme: buildLightTheme(),

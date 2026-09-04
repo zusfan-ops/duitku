@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/app_notification.dart';
 import '../../services/api_service.dart';
 import '../../services/local_notification_service.dart';
+import '../../services/update_checker_service.dart';
 import '../../theme.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -81,8 +82,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Future<void> _handleAction(AppNotification notif) async {
     await _markAsRead(notif);
-    if (notif.actionUrl != null && notif.actionUrl!.isNotEmpty) {
-      final uri = Uri.tryParse(notif.actionUrl!);
+    final actionUrl = notif.actionUrl;
+    final isUpdate = notif.type.toLowerCase() == 'update' ||
+        (actionUrl != null && (actionUrl.toLowerCase().endsWith('.apk') || actionUrl.toLowerCase().contains('.apk?')));
+
+    // Jika ini notifikasi pembaruan aplikasi, proses unduhan in-app dan pasang langsung (tanpa buka browser)
+    if (isUpdate && actionUrl != null && actionUrl.isNotEmpty) {
+      if (!mounted) return;
+      UpdateCheckerService.instance.showUpdateFromNotification(
+        context,
+        title: notif.title,
+        message: notif.message,
+        apkUrl: actionUrl,
+        autoStart: true,
+      );
+      return;
+    }
+
+    if (actionUrl != null && actionUrl.isNotEmpty) {
+      final uri = Uri.tryParse(actionUrl);
       if (uri != null && await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
@@ -184,7 +202,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     IconData typeIcon = Icons.info_outline_rounded;
     String typeLabel = 'INFO';
 
+    final isUpdateNotif = notif.type.toLowerCase() == 'update' ||
+        (notif.actionUrl != null && (notif.actionUrl!.toLowerCase().endsWith('.apk') || notif.actionUrl!.toLowerCase().contains('.apk?')));
+
     switch (notif.type.toLowerCase()) {
+      case 'update':
+        typeColor = const Color(0xFF059669);
+        typeIcon = Icons.system_update_alt_rounded;
+        typeLabel = 'UPDATE APK';
+        break;
       case 'announcement':
         typeColor = const Color(0xFF10B981);
         typeIcon = Icons.campaign_rounded;
@@ -205,6 +231,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         typeIcon = Icons.settings_rounded;
         typeLabel = 'SISTEM';
         break;
+    }
+
+    if (isUpdateNotif && notif.type.toLowerCase() != 'update') {
+      typeColor = const Color(0xFF059669);
+      typeIcon = Icons.system_update_alt_rounded;
+      typeLabel = 'UPDATE APK';
     }
 
     return InkWell(
@@ -318,7 +350,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Row(
                       children: [
                         Text(
-                          'Buka tautan →',
+                          isUpdateNotif ? 'Perbarui Langsung di Aplikasi →' : 'Buka tautan →',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w700,
