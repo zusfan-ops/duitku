@@ -182,9 +182,49 @@
 }
 .detail-desc-text {
     font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.65;
     color: var(--text);
-    white-space: pre-line;
+    word-break: break-word;
+}
+.detail-desc-text p {
+    margin: 0 0 10px;
+}
+.detail-desc-text p:last-child {
+    margin-bottom: 0;
+}
+.detail-desc-text ul, .detail-desc-text ol {
+    margin: 6px 0 10px 22px;
+    padding: 0;
+}
+.detail-desc-text li {
+    margin-bottom: 3px;
+}
+.detail-desc-text h1, .detail-desc-text h2, .detail-desc-text h3 {
+    margin: 14px 0 6px;
+    color: var(--text);
+    font-weight: 800;
+}
+.detail-desc-text blockquote {
+    border-left: 3px solid #059669;
+    background: rgba(5, 150, 105, 0.08);
+    padding: 6px 12px;
+    margin: 10px 0;
+    border-radius: 4px;
+    font-style: italic;
+    color: var(--text);
+}
+.detail-desc-text code {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    font-family: monospace;
+}
+.detail-desc-text hr {
+    border: none;
+    border-top: 1px dashed var(--border);
+    margin: 14px 0;
 }
 
 /* ANTI-SCAM SAFETY WARNING (CRITICAL REQUIREMENT) */
@@ -625,6 +665,73 @@
     width: 100%;
     padding: 20px;
 }
+
+/* Owner Manage Banner */
+.owner-manage-banner {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.08) 0%, rgba(67, 56, 202, 0.08) 100%);
+    border: 2px solid rgba(5, 150, 105, 0.35);
+    border-radius: 18px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.owner-manage-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.owner-badge {
+    background: #059669;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+.owner-manage-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.btn-owner-action {
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+}
+.btn-owner-action.edit {
+    background: #4338CA;
+    color: #fff;
+    border-color: #4338CA;
+}
+.btn-owner-action.edit:hover {
+    background: #3730A3;
+}
+.btn-owner-action.status:hover {
+    background: var(--border);
+}
+.btn-owner-action.delete {
+    color: #DC2626;
+    border-color: rgba(220, 38, 38, 0.3);
+}
+.btn-owner-action.delete:hover {
+    background: #DC2626;
+    color: #fff;
+}
 </style>
 <?= $this->endSection() ?>
 
@@ -639,6 +746,35 @@
         <span>›</span>
         <span style="color:var(--text);"><?= esc(mb_strimwidth($listing['title'], 0, 30, '...')) ?></span>
     </div>
+
+    <?php if ($isOwner): ?>
+        <!-- OWNER MANAGEMENT CARD -->
+        <div class="owner-manage-banner">
+            <div class="owner-manage-info">
+                <span class="owner-badge">👑 Iklan Anda</span>
+                <span style="font-size:12px;color:var(--text-muted);">
+                    Status: <strong style="color:#059669;text-transform:capitalize;" id="ownerStatusBadge"><?= esc($listing['status']) ?></strong>
+                </span>
+            </div>
+            <div class="owner-manage-actions">
+                <a href="/marketplace/edit/<?= esc($listing['id']) ?>" class="btn-owner-action edit">
+                    ✏️ Edit Iklan
+                </a>
+                <?php if ($listing['status'] === 'active'): ?>
+                    <button type="button" class="btn-owner-action status" onclick="changeListingStatus(<?= esc($listing['id']) ?>, '<?= $listing['type'] === 'rent' ? 'rented' : 'sold' ?>')">
+                        Tandai <?= $listing['type'] === 'rent' ? 'Disewa' : 'Terjual' ?>
+                    </button>
+                <?php else: ?>
+                    <button type="button" class="btn-owner-action status" onclick="changeListingStatus(<?= esc($listing['id']) ?>, 'active')">
+                        Aktifkan Lagi
+                    </button>
+                <?php endif; ?>
+                <button type="button" class="btn-owner-action delete" onclick="deleteListingFromDetail(<?= esc($listing['id']) ?>)">
+                    🗑️ Hapus
+                </button>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- 1. IMAGE GALLERY (SUPPORTS > 1 PHOTO) -->
     <div class="gallery-container">
@@ -704,7 +840,21 @@
         </div>
 
         <div class="detail-desc-title">Deskripsi Produk:</div>
-        <div class="detail-desc-text"><?= esc($listing['description'] ?: 'Tidak ada deskripsi tambahan dari penjual.') ?></div>
+        <div class="detail-desc-text" id="detailDescText">
+            <?php
+                $raw = $listing['description'] ?? '';
+                if (!empty($raw)) {
+                    if (strip_tags($raw) !== $raw) {
+                        $allowedTags = '<p><br><b><strong><i><em><u><s><del><h1><h2><h3><h4><h5><h6><ul><ol><li><blockquote><pre><code><hr><a>';
+                        echo strip_tags($raw, $allowedTags);
+                    } else {
+                        echo nl2br(esc($raw));
+                    }
+                } else {
+                    echo '<span style="color:var(--text-muted);font-style:italic;">Tidak ada deskripsi tambahan dari penjual.</span>';
+                }
+            ?>
+        </div>
     </div>
 
     <!-- 3. CRITICAL ANTI-SCAM WARNING BOX (REQUIREMENT 2) -->
@@ -758,9 +908,15 @@
             </a>
         <?php endif; ?>
 
-        <button onclick="openOrderModal()" class="btn-action-primary btn-order">
-            <span>📝 Ajukan Minat</span>
-        </button>
+        <?php if (!$isOwner): ?>
+            <button onclick="openOrderModal()" class="btn-action-primary btn-order">
+                <span>📝 Ajukan Minat</span>
+            </button>
+        <?php else: ?>
+            <a href="/marketplace/edit/<?= esc($listing['id']) ?>" class="btn-action-primary btn-order" style="background:#4338CA;">
+                <span>✏️ Edit Iklan Ini</span>
+            </a>
+        <?php endif; ?>
 
         <?php if (!empty($listing['third_party_url'])): ?>
             <a href="<?= esc($listing['third_party_url']) ?>" target="_blank" rel="noopener noreferrer" class="btn-action-primary btn-shopee">
@@ -930,12 +1086,29 @@ function postComment(e, listingId) {
     const btn = document.getElementById('btnComment');
     btn.disabled = true;
 
+    const fd = new URLSearchParams();
+    fd.append('comment', comment);
+    if (window.DUITKU && window.DUITKU.csrfName && window.DUITKU.csrfToken) {
+        fd.append(window.DUITKU.csrfName, window.DUITKU.csrfToken);
+    }
+
+    const headers = { 
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'XMLHttpRequest'
+    };
+    if (window.DUITKU && window.DUITKU.csrfToken) {
+        headers['X-CSRF-TOKEN'] = window.DUITKU.csrfToken;
+    }
+
     fetch('/marketplace/comment/' + listingId, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'comment=' + encodeURIComponent(comment)
+        headers: headers,
+        body: fd.toString()
     })
-    .then(r => r.json())
+    .then(async r => {
+        const text = await r.text();
+        try { return JSON.parse(text); } catch(e) { throw new Error(text.replace(/<[^>]*>?/gm, '').substring(0, 100)); }
+    })
     .then(res => {
         btn.disabled = false;
         if (res.success) {
@@ -962,9 +1135,9 @@ function postComment(e, listingId) {
             alert(res.message || 'Gagal mengirim komentar.');
         }
     })
-    .catch(() => {
+    .catch(err => {
         btn.disabled = false;
-        alert('Gagal menghubungi server.');
+        alert('Gagal mengirim komentar: ' + (err.message || 'Terjadi kesalahan sistem.'));
     });
 }
 
@@ -988,12 +1161,29 @@ function sendOrder(listingId) {
     btn.disabled = true;
     btn.innerText = 'Mengirim...';
 
+    const fd = new URLSearchParams();
+    fd.append('notes', notes);
+    if (window.DUITKU && window.DUITKU.csrfName && window.DUITKU.csrfToken) {
+        fd.append(window.DUITKU.csrfName, window.DUITKU.csrfToken);
+    }
+
+    const headers = { 
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'XMLHttpRequest'
+    };
+    if (window.DUITKU && window.DUITKU.csrfToken) {
+        headers['X-CSRF-TOKEN'] = window.DUITKU.csrfToken;
+    }
+
     fetch('/marketplace/order/' + listingId, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'notes=' + encodeURIComponent(notes)
+        headers: headers,
+        body: fd.toString()
     })
-    .then(r => r.json())
+    .then(async r => {
+        const text = await r.text();
+        try { return JSON.parse(text); } catch(e) { throw new Error(text.replace(/<[^>]*>?/gm, '').substring(0, 100)); }
+    })
     .then(res => {
         btn.disabled = false;
         btn.innerText = 'Kirim Pengajuan';
@@ -1004,10 +1194,10 @@ function sendOrder(listingId) {
             alert(res.message || 'Gagal mengirim pengajuan.');
         }
     })
-    .catch(() => {
+    .catch(err => {
         btn.disabled = false;
         btn.innerText = 'Kirim Pengajuan';
-        alert('Gagal menghubungi server.');
+        alert('Gagal mengirim pengajuan: ' + (err.message || 'Terjadi kesalahan sistem.'));
     });
 }
 
@@ -1027,5 +1217,67 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1200);
     }
 });
+
+// Owner Actions: Status Change & Delete
+function changeListingStatus(id, newStatus) {
+    if (!confirm('Ubah status iklan ini?')) return;
+    const fd = new URLSearchParams();
+    fd.append('status', newStatus);
+    if (window.DUITKU && window.DUITKU.csrfName && window.DUITKU.csrfToken) {
+        fd.append(window.DUITKU.csrfName, window.DUITKU.csrfToken);
+    }
+    fetch('/marketplace/status/' + id, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': (window.DUITKU && window.DUITKU.csrfToken) ? window.DUITKU.csrfToken : ''
+        },
+        body: fd.toString()
+    })
+    .then(async r => {
+        const text = await r.text();
+        return JSON.parse(text);
+    })
+    .then(res => {
+        if (res.success) {
+            alert('Status iklan berhasil diperbarui!');
+            location.reload();
+        } else {
+            alert(res.message || 'Gagal mengubah status.');
+        }
+    })
+    .catch(err => alert('Kesalahan: ' + (err.message || 'Gagal menghubungi server.')));
+}
+
+function deleteListingFromDetail(id) {
+    if (!confirm('Yakin ingin menghapus iklan ini secara permanen? Tindakan ini tidak dapat dibatalkan.')) return;
+    const fd = new URLSearchParams();
+    if (window.DUITKU && window.DUITKU.csrfName && window.DUITKU.csrfToken) {
+        fd.append(window.DUITKU.csrfName, window.DUITKU.csrfToken);
+    }
+    fetch('/marketplace/delete/' + id, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': (window.DUITKU && window.DUITKU.csrfToken) ? window.DUITKU.csrfToken : ''
+        },
+        body: fd.toString()
+    })
+    .then(async r => {
+        const text = await r.text();
+        return JSON.parse(text);
+    })
+    .then(res => {
+        if (res.success) {
+            alert('Iklan berhasil dihapus.');
+            window.location.href = '/marketplace?tab=my_listings';
+        } else {
+            alert(res.message || 'Gagal menghapus iklan.');
+        }
+    })
+    .catch(err => alert('Kesalahan: ' + (err.message || 'Gagal menghubungi server.')));
+}
 </script>
 <?= $this->endSection() ?>

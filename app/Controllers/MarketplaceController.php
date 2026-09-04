@@ -111,120 +111,327 @@ class MarketplaceController extends BaseController
      */
     public function store()
     {
+        try {
+            $userId = session()->get('user_id');
+            if (!$userId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Sesi berakhir, silakan login kembali.']);
+            }
+
+            $title       = trim($this->request->getPost('title') ?? '');
+            $type        = $this->request->getPost('type') === 'rent' ? 'rent' : 'sale';
+            $category    = trim($this->request->getPost('category') ?? 'Lainnya');
+            $condition   = $this->request->getPost('condition') ?: 'used_good';
+            $price       = (float)str_replace(['.', ','], ['', '.'], $this->request->getPost('price') ?? '0');
+            $rentPeriod  = trim($this->request->getPost('rent_period') ?? '');
+            $location    = trim($this->request->getPost('location') ?? '');
+            $whatsapp    = trim($this->request->getPost('whatsapp') ?? '');
+            $thirdParty  = trim($this->request->getPost('third_party_url') ?? '');
+            
+            // Rich WYSIWYG HTML description sanitization
+            $rawDesc     = $this->request->getPost('description') ?? '';
+            $allowedTags = '<p><br><b><strong><i><em><u><s><del><h1><h2><h3><h4><h5><h6><ul><ol><li><blockquote><pre><code><hr><a>';
+            $cleanDesc   = strip_tags($rawDesc, $allowedTags);
+            $cleanDesc   = preg_replace('/<(?:script|iframe|style|object|embed)[^>]*?>.*?<\/(?:script|iframe|style|object|embed)>/si', '', $cleanDesc);
+            $cleanDesc   = preg_replace('/<([a-z0-9]+)[^>]*?(on[a-z]+)\s*=[^>]*?>/i', '<$1>', $cleanDesc);
+            $cleanDesc   = preg_replace('/href\s*=\s*(["\'])\s*javascript:[^"\']*\1/i', 'href="#"', $cleanDesc);
+            $description = trim($cleanDesc);
+
+            if (strlen($title) < 4) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Judul iklan minimal 4 karakter.']);
+            }
+            if ($price <= 0) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Harga wajib lebih dari 0.']);
+            }
+            if (empty($location)) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Lokasi / Wilayah COD wajib diisi.']);
+            }
+
+            // Generate slug
+            $baseSlug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $title), '-'));
+            $slug = $baseSlug . '-' . time();
+
+            $listingData = [
+                'user_id'         => $userId,
+                'title'           => $title,
+                'slug'            => $slug,
+                'type'            => $type,
+                'category'        => $category,
+                'condition'       => $condition,
+                'price'           => $price,
+                'rent_period'     => ($type === 'rent' && !empty($rentPeriod)) ? $rentPeriod : null,
+                'location'        => $location,
+                'whatsapp'        => $whatsapp,
+                'third_party_url' => $thirdParty ?: null,
+                'description'     => $description,
+                'status'          => 'active',
+            ];
+
+            $listingId = $this->listingModel->insert($listingData);
+            if (!$listingId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan data iklan ke database.']);
+            }
+
+            // Upload folder
+            $uploadDir = FCPATH . 'uploads/marketplace/';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0777, true);
+            }
+
+            // Handle uploaded images (multiple files)
+            $files = $this->request->getFileMultiple('images');
+            if (empty($files)) {
+                $allFiles = $this->request->getFiles();
+                $files = $allFiles['images'] ?? [];
+            }
+
+            $isPrimary = 1;
+            $sortOrder = 0;
+
+            if (!empty($files) && is_array($files)) {
+                foreach ($files as $file) {
+                    if (is_object($file) && method_exists($file, 'isValid') && $file->isValid() && !$file->hasMoved()) {
+                        $ext = strtolower($file->getClientExtension());
+                        if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic'])) {
+                            $newName = 'mkt_' . $listingId . '_' . uniqid() . '.' . ($ext === 'jpeg' ? 'jpg' : $ext);
+                            $file->move($uploadDir, $newName);
+
+                            $this->imageModel->insert([
+                                'listing_id' => $listingId,
+                                'image_url'  => '/uploads/marketplace/' . $newName,
+                                'is_primary' => $isPrimary,
+                                'sort_order' => $sortOrder,
+                            ]);
+
+                            $isPrimary = 0;
+                            $sortOrder++;
+                        }
+                    }
+                }
+            }
+
+            // If user also sent photo URLs or base64 (from camera capture or fallback)
+            $extraImages = $this->request->getPost('extra_images');
+            if (!empty($extraImages) && is_array($extraImages)) {
+                foreach ($extraImages as $base64) {
+                    if (preg_match('/^data:image\/(png|jpe?g|webp);base64,(.+)$/i', $base64, $m)) {
+                        $raw = base64_decode($m[2]);
+                        if ($raw !== false) {
+                            $ext = strtolower($m[1]) === 'jpeg' ? 'jpg' : strtolower($m[1]);
+                            $newName = 'mkt_' . $listingId . '_' . uniqid() . '.' . $ext;
+                            file_put_contents($uploadDir . $newName, $raw);
+
+                            $this->imageModel->insert([
+                                'listing_id' => $listingId,
+                                'image_url'  => '/uploads/marketplace/' . $newName,
+                                'is_primary' => $isPrimary,
+                                'sort_order' => $sortOrder,
+                            ]);
+                            $isPrimary = 0;
+                            $sortOrder++;
+                        }
+                    }
+                }
+            }
+
+            return $this->response->setJSON([
+                'success'    => true,
+                'message'    => 'Iklan berhasil ditayangkan!',
+                'listing_id' => $listingId,
+                'redirect'   => '/marketplace/item/' . $listingId,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', '[MarketplaceController::store] ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Gagal memproses iklan: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Halaman Edit Iklan (GET /marketplace/edit/{id})
+     */
+    public function edit(int $id)
+    {
         $userId = session()->get('user_id');
         if (!$userId) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Sesi berakhir, silakan login kembali.']);
+            return redirect()->to('/login')->with('error', 'Silakan login terlebih dahulu.');
         }
 
-        $title       = trim($this->request->getPost('title') ?? '');
-        $type        = $this->request->getPost('type') === 'rent' ? 'rent' : 'sale';
-        $category    = trim($this->request->getPost('category') ?? 'Lainnya');
-        $condition   = $this->request->getPost('condition') ?: 'used_good';
-        $price       = (float)str_replace(['.', ','], ['', '.'], $this->request->getPost('price') ?? '0');
-        $rentPeriod  = trim($this->request->getPost('rent_period') ?? '');
-        $location    = trim($this->request->getPost('location') ?? '');
-        $whatsapp    = trim($this->request->getPost('whatsapp') ?? '');
-        $thirdParty  = trim($this->request->getPost('third_party_url') ?? '');
-        $description = trim($this->request->getPost('description') ?? '');
-
-        if (strlen($title) < 4) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Judul iklan minimal 4 karakter.']);
-        }
-        if ($price <= 0) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Harga wajib lebih dari 0.']);
-        }
-        if (empty($location)) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Lokasi / Wilayah COD wajib diisi.']);
+        $listing = $this->listingModel->find($id);
+        if (!$listing || (int)$listing['user_id'] !== (int)$userId) {
+            return redirect()->to('/marketplace')->with('error', 'Iklan tidak ditemukan atau bukan milik Anda.');
         }
 
-        // Generate slug
-        $baseSlug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $title), '-'));
-        $slug = $baseSlug . '-' . time();
+        $images = $this->imageModel->getForListing($id);
+        $user = $this->userModel->find($userId);
+        $symbol = $this->settingModel->get($userId, 'currency_symbol', 'Rp');
 
-        $listingData = [
-            'user_id'         => $userId,
-            'title'           => $title,
-            'slug'            => $slug,
-            'type'            => $type,
-            'category'        => $category,
-            'condition'       => $condition,
-            'price'           => $price,
-            'rent_period'     => ($type === 'rent' && !empty($rentPeriod)) ? $rentPeriod : null,
-            'location'        => $location,
-            'whatsapp'        => $whatsapp,
-            'third_party_url' => $thirdParty ?: null,
-            'description'     => $description,
-            'status'          => 'active',
-        ];
-
-        $listingId = $this->listingModel->insert($listingData);
-        if (!$listingId) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan data iklan.']);
-        }
-
-        // Upload folder
-        $uploadDir = FCPATH . 'uploads/marketplace/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
-
-        // Handle uploaded images (multiple files)
-        $files = $this->request->getFiles()['images'] ?? [];
-        $isPrimary = 1;
-        $sortOrder = 0;
-
-        if (!empty($files)) {
-            foreach ($files as $file) {
-                if ($file->isValid() && !$file->hasMoved()) {
-                    $ext = strtolower($file->getClientExtension());
-                    if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
-                        $newName = 'mkt_' . $listingId . '_' . uniqid() . '.' . $ext;
-                        $file->move($uploadDir, $newName);
-
-                        $this->imageModel->insert([
-                            'listing_id' => $listingId,
-                            'image_url'  => '/uploads/marketplace/' . $newName,
-                            'is_primary' => $isPrimary,
-                            'sort_order' => $sortOrder,
-                        ]);
-
-                        $isPrimary = 0;
-                        $sortOrder++;
-                    }
-                }
-            }
-        }
-
-        // If user also sent photo URLs or base64 (from camera capture or fallback)
-        $extraImages = $this->request->getPost('extra_images');
-        if (!empty($extraImages) && is_array($extraImages)) {
-            foreach ($extraImages as $base64) {
-                if (preg_match('/^data:image\/(png|jpe?g|webp);base64,(.+)$/i', $base64, $m)) {
-                    $raw = base64_decode($m[2]);
-                    if ($raw !== false) {
-                        $ext = strtolower($m[1]) === 'jpeg' ? 'jpg' : strtolower($m[1]);
-                        $newName = 'mkt_' . $listingId . '_' . uniqid() . '.' . $ext;
-                        file_put_contents($uploadDir . $newName, $raw);
-
-                        $this->imageModel->insert([
-                            'listing_id' => $listingId,
-                            'image_url'  => '/uploads/marketplace/' . $newName,
-                            'is_primary' => $isPrimary,
-                            'sort_order' => $sortOrder,
-                        ]);
-                        $isPrimary = 0;
-                        $sortOrder++;
-                    }
-                }
-            }
-        }
-
-        return $this->response->setJSON([
-            'success'    => true,
-            'message'    => 'Iklan berhasil ditayangkan!',
-            'listing_id' => $listingId,
-            'redirect'   => '/marketplace/item/' . $listingId,
+        return view('marketplace/edit', [
+            'pageTitle'  => 'Edit Iklan: ' . esc($listing['title']),
+            'listing'    => $listing,
+            'images'     => $images,
+            'user'       => $user,
+            'symbol'     => $symbol,
+            'categories' => MarketplaceListingModel::getCategoriesList(),
         ]);
+    }
+
+    /**
+     * Simpan Pembaruan Iklan (POST /marketplace/update/{id})
+     */
+    public function update(int $id)
+    {
+        try {
+            $userId = session()->get('user_id');
+            if (!$userId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Sesi berakhir, silakan login kembali.']);
+            }
+
+            $listing = $this->listingModel->find($id);
+            if (!$listing || (int)$listing['user_id'] !== (int)$userId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Iklan tidak ditemukan atau akses ditolak.']);
+            }
+
+            $title       = trim($this->request->getPost('title') ?? '');
+            $type        = $this->request->getPost('type') === 'rent' ? 'rent' : 'sale';
+            $category    = trim($this->request->getPost('category') ?? 'Lainnya');
+            $condition   = $this->request->getPost('condition') ?: 'used_good';
+            $price       = (float)str_replace(['.', ','], ['', '.'], $this->request->getPost('price') ?? '0');
+            $rentPeriod  = trim($this->request->getPost('rent_period') ?? '');
+            $location    = trim($this->request->getPost('location') ?? '');
+            $whatsapp    = trim($this->request->getPost('whatsapp') ?? '');
+            $thirdParty  = trim($this->request->getPost('third_party_url') ?? '');
+
+            // Rich WYSIWYG HTML description sanitization
+            $rawDesc     = $this->request->getPost('description') ?? '';
+            $allowedTags = '<p><br><b><strong><i><em><u><s><del><h1><h2><h3><h4><h5><h6><ul><ol><li><blockquote><pre><code><hr><a>';
+            $cleanDesc   = strip_tags($rawDesc, $allowedTags);
+            $cleanDesc   = preg_replace('/<(?:script|iframe|style|object|embed)[^>]*?>.*?<\/(?:script|iframe|style|object|embed)>/si', '', $cleanDesc);
+            $cleanDesc   = preg_replace('/<([a-z0-9]+)[^>]*?(on[a-z]+)\s*=[^>]*?>/i', '<$1>', $cleanDesc);
+            $cleanDesc   = preg_replace('/href\s*=\s*(["\'])\s*javascript:[^"\']*\1/i', 'href="#"', $cleanDesc);
+            $description = trim($cleanDesc);
+
+            if (strlen($title) < 4) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Judul iklan minimal 4 karakter.']);
+            }
+            if ($price <= 0) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Harga wajib lebih dari 0.']);
+            }
+            if (empty($location)) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Lokasi / Wilayah COD wajib diisi.']);
+            }
+
+            $updateData = [
+                'title'           => $title,
+                'type'            => $type,
+                'category'        => $category,
+                'condition'       => $condition,
+                'price'           => $price,
+                'rent_period'     => ($type === 'rent' && !empty($rentPeriod)) ? $rentPeriod : null,
+                'location'        => $location,
+                'whatsapp'        => $whatsapp,
+                'third_party_url' => $thirdParty ?: null,
+                'description'     => $description,
+            ];
+
+            $this->listingModel->update($id, $updateData);
+
+            // Handle additional uploaded images if any
+            $uploadDir = FCPATH . 'uploads/marketplace/';
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0777, true);
+            }
+
+            $files = $this->request->getFileMultiple('images');
+            if (empty($files)) {
+                $allFiles = $this->request->getFiles();
+                $files = $allFiles['images'] ?? [];
+            }
+
+            // Count current images
+            $existingCount = $this->imageModel->where('listing_id', $id)->countAllResults();
+            $isPrimary = $existingCount === 0 ? 1 : 0;
+            $sortOrder = $existingCount;
+
+            if (!empty($files) && is_array($files)) {
+                foreach ($files as $file) {
+                    if (is_object($file) && method_exists($file, 'isValid') && $file->isValid() && !$file->hasMoved()) {
+                        $ext = strtolower($file->getClientExtension());
+                        if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic'])) {
+                            $newName = 'mkt_' . $id . '_' . uniqid() . '.' . ($ext === 'jpeg' ? 'jpg' : $ext);
+                            $file->move($uploadDir, $newName);
+
+                            $this->imageModel->insert([
+                                'listing_id' => $id,
+                                'image_url'  => '/uploads/marketplace/' . $newName,
+                                'is_primary' => $isPrimary,
+                                'sort_order' => $sortOrder,
+                            ]);
+
+                            $isPrimary = 0;
+                            $sortOrder++;
+                        }
+                    }
+                }
+            }
+
+            return $this->response->setJSON([
+                'success'    => true,
+                'message'    => 'Iklan berhasil diperbarui!',
+                'redirect'   => '/marketplace/item/' . $id,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', '[MarketplaceController::update] ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Gagal memperbarui iklan: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Hapus Gambar Iklan Individual (POST /marketplace/image/delete/{id})
+     */
+    public function deleteImage(int $imageId)
+    {
+        try {
+            $userId = session()->get('user_id');
+            if (!$userId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Sesi berakhir.']);
+            }
+
+            $image = $this->imageModel->find($imageId);
+            if (!$image) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Gambar tidak ditemukan.']);
+            }
+
+            // Verify owner
+            $listing = $this->listingModel->find($image['listing_id']);
+            if (!$listing || (int)$listing['user_id'] !== (int)$userId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Akses ditolak.']);
+            }
+
+            // Delete physical file
+            $filePath = FCPATH . ltrim($image['image_url'], '/');
+            if (file_exists($filePath)) {
+                @unlink($filePath);
+            }
+
+            $this->imageModel->delete($imageId);
+
+            // If deleted image was primary, set another image as primary
+            if (!empty($image['is_primary'])) {
+                $nextImg = $this->imageModel->where('listing_id', $listing['id'])->first();
+                if ($nextImg) {
+                    $this->imageModel->update($nextImg['id'], ['is_primary' => 1]);
+                }
+            }
+
+            return $this->response->setJSON(['success' => true, 'message' => 'Gambar berhasil dihapus.']);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menghapus gambar: ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -275,40 +482,44 @@ class MarketplaceController extends BaseController
      */
     public function comment(int $id)
     {
-        $userId = session()->get('user_id');
-        if (!$userId) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Silakan login untuk memberikan komentar atau pertanyaan.']);
+        try {
+            $userId = session()->get('user_id');
+            if (!$userId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Silakan login untuk memberikan komentar atau pertanyaan.']);
+            }
+
+            $comment = trim($this->request->getPost('comment') ?? '');
+            if (strlen($comment) < 2) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Komentar tidak boleh kosong.']);
+            }
+
+            $listing = $this->listingModel->find($id);
+            if (!$listing) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Produk tidak ditemukan.']);
+            }
+
+            $this->commentModel->insert([
+                'listing_id' => $id,
+                'user_id'    => $userId,
+                'comment'    => $comment,
+            ]);
+
+            $user = $this->userModel->find($userId);
+            $avatarData = $user ? json_decode($user['avatar'], true) : ['initials' => 'U', 'color' => '#2D5A27'];
+
+            return $this->response->setJSON([
+                'success' => true,
+                'comment' => [
+                    'user_name'     => $user['name'] ?? 'Pengguna',
+                    'user_username' => $user['username'] ?? '',
+                    'avatar'        => $avatarData,
+                    'comment'       => esc($comment),
+                    'created_at'    => date('d M Y H:i'),
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Gagal mengirim komentar: ' . $e->getMessage()]);
         }
-
-        $comment = trim($this->request->getPost('comment') ?? '');
-        if (strlen($comment) < 2) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Komentar tidak boleh kosong.']);
-        }
-
-        $listing = $this->listingModel->find($id);
-        if (!$listing) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Produk tidak ditemukan.']);
-        }
-
-        $this->commentModel->insert([
-            'listing_id' => $id,
-            'user_id'    => $userId,
-            'comment'    => $comment,
-        ]);
-
-        $user = $this->userModel->find($userId);
-        $avatarData = $user ? json_decode($user['avatar'], true) : ['initials' => 'U', 'color' => '#2D5A27'];
-
-        return $this->response->setJSON([
-            'success' => true,
-            'comment' => [
-                'user_name'     => $user['name'] ?? 'Pengguna',
-                'user_username' => $user['username'] ?? '',
-                'avatar'        => $avatarData,
-                'comment'       => esc($comment),
-                'created_at'    => date('d M Y H:i'),
-            ],
-        ]);
     }
 
     /**
@@ -317,36 +528,40 @@ class MarketplaceController extends BaseController
      */
     public function order(int $id)
     {
-        $buyerId = session()->get('user_id');
-        if (!$buyerId) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Silakan login untuk memesan atau mengajukan minat.']);
+        try {
+            $buyerId = session()->get('user_id');
+            if (!$buyerId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Silakan login untuk memesan atau mengajukan minat.']);
+            }
+
+            $listing = $this->listingModel->find($id);
+            if (!$listing) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Produk tidak ditemukan.']);
+            }
+
+            if ((int)$listing['user_id'] === (int)$buyerId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Anda tidak dapat memesan barang milik sendiri.']);
+            }
+
+            $notes = trim($this->request->getPost('notes') ?? '');
+            $orderId = $this->orderModel->insert([
+                'listing_id' => $id,
+                'buyer_id'   => $buyerId,
+                'seller_id'  => $listing['user_id'],
+                'order_type' => $listing['type'] === 'rent' ? 'rent' : 'buy',
+                'price'      => $listing['price'],
+                'notes'      => $notes ?: 'Saya berminat untuk transaksi COD atau lewat platform ketiga.',
+                'status'     => 'pending',
+            ]);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Pengajuan minat transaksi telah dikirim ke penjual. Penjual akan menghubungi Anda atau Anda dapat langsung menghubunginya via WhatsApp.',
+                'order_id'=> $orderId,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Gagal memproses pengajuan: ' . $e->getMessage()]);
         }
-
-        $listing = $this->listingModel->find($id);
-        if (!$listing) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Produk tidak ditemukan.']);
-        }
-
-        if ((int)$listing['user_id'] === (int)$buyerId) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Anda tidak dapat memesan barang milik sendiri.']);
-        }
-
-        $notes = trim($this->request->getPost('notes') ?? '');
-        $orderId = $this->orderModel->insert([
-            'listing_id' => $id,
-            'buyer_id'   => $buyerId,
-            'seller_id'  => $listing['user_id'],
-            'order_type' => $listing['type'] === 'rent' ? 'rent' : 'buy',
-            'price'      => $listing['price'],
-            'notes'      => $notes ?: 'Saya berminat untuk transaksi COD atau lewat platform ketiga.',
-            'status'     => 'pending',
-        ]);
-
-        return $this->response->setJSON([
-            'success' => true,
-            'message' => 'Pengajuan minat transaksi telah dikirim ke penjual. Penjual akan menghubungi Anda atau Anda dapat langsung menghubunginya via WhatsApp.',
-            'order_id'=> $orderId,
-        ]);
     }
 
     /**
@@ -355,19 +570,23 @@ class MarketplaceController extends BaseController
      */
     public function updateStatus(int $id)
     {
-        $userId = session()->get('user_id');
-        $status = $this->request->getPost('status');
-        if (!in_array($status, ['active', 'sold', 'rented', 'inactive'])) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Status tidak valid.']);
-        }
+        try {
+            $userId = session()->get('user_id');
+            $status = $this->request->getPost('status');
+            if (!in_array($status, ['active', 'sold', 'rented', 'inactive'])) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Status tidak valid.']);
+            }
 
-        $listing = $this->listingModel->find($id);
-        if (!$listing || (int)$listing['user_id'] !== (int)$userId) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Akses ditolak.']);
-        }
+            $listing = $this->listingModel->find($id);
+            if (!$listing || (int)$listing['user_id'] !== (int)$userId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Akses ditolak.']);
+            }
 
-        $this->listingModel->update($id, ['status' => $status]);
-        return $this->response->setJSON(['success' => true, 'status' => $status]);
+            $this->listingModel->update($id, ['status' => $status]);
+            return $this->response->setJSON(['success' => true, 'status' => $status]);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Gagal mengubah status: ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -376,14 +595,18 @@ class MarketplaceController extends BaseController
      */
     public function delete(int $id)
     {
-        $userId = session()->get('user_id');
-        $listing = $this->listingModel->find($id);
-        if (!$listing || (int)$listing['user_id'] !== (int)$userId) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Iklan tidak ditemukan atau bukan milik Anda.']);
-        }
+        try {
+            $userId = session()->get('user_id');
+            $listing = $this->listingModel->find($id);
+            if (!$listing || (int)$listing['user_id'] !== (int)$userId) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Iklan tidak ditemukan atau bukan milik Anda.']);
+            }
 
-        $this->listingModel->delete($id);
-        return $this->response->setJSON(['success' => true, 'message' => 'Iklan berhasil dihapus.']);
+            $this->listingModel->delete($id);
+            return $this->response->setJSON(['success' => true, 'message' => 'Iklan berhasil dihapus.']);
+        } catch (\Throwable $e) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menghapus iklan: ' . $e->getMessage()]);
+        }
     }
 
     /**

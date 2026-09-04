@@ -263,6 +263,9 @@ $routes->get('/marketplace',                         'MarketplaceController::ind
 $routes->get('/jual-beli-sewa',                      'MarketplaceController::index');
 $routes->get('/marketplace/create',                  'MarketplaceController::create', ['filter' => 'auth']);
 $routes->post('/marketplace/store',                 'MarketplaceController::store',  ['filter' => 'auth']);
+$routes->get('/marketplace/edit/(:num)',             'MarketplaceController::edit/$1',   ['filter' => 'auth']);
+$routes->post('/marketplace/update/(:num)',          'MarketplaceController::update/$1', ['filter' => 'auth']);
+$routes->post('/marketplace/image/delete/(:num)',    'MarketplaceController::deleteImage/$1', ['filter' => 'auth']);
 $routes->get('/marketplace/item/(:num)',             'MarketplaceController::detail/$1');
 $routes->get('/p/(:num)',                            'MarketplaceController::detail/$1');
 $routes->post('/marketplace/comment/(:num)',         'MarketplaceController::comment/$1', ['filter' => 'auth']);

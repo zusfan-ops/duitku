@@ -718,6 +718,9 @@
                         </div>
                         <div class="my-listing-actions">
                             <a href="/marketplace/item/<?= esc($my['id']) ?>" class="btn-sm-action">Buka</a>
+                            <a href="/marketplace/edit/<?= esc($my['id']) ?>" class="btn-sm-action" style="color:#4338CA;border-color:rgba(67,56,202,0.35);">
+                                ✏️ Edit
+                            </a>
                             <?php if ($my['status'] === 'active'): ?>
                                 <button onclick="changeStatus(<?= esc($my['id']) ?>, '<?= $my['type'] === 'rent' ? 'rented' : 'sold' ?>')" class="btn-sm-action">
                                     Tandai <?= $my['type'] === 'rent' ? 'Disewa' : 'Terjual' ?>
@@ -798,12 +801,30 @@ function setTypeFilter(type) {
 
 function changeStatus(id, newStatus) {
     if (!confirm('Ubah status iklan ini?')) return;
+
+    const fd = new URLSearchParams();
+    fd.append('status', newStatus);
+    if (window.DUITKU && window.DUITKU.csrfName && window.DUITKU.csrfToken) {
+        fd.append(window.DUITKU.csrfName, window.DUITKU.csrfToken);
+    }
+
+    const headers = { 
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'XMLHttpRequest'
+    };
+    if (window.DUITKU && window.DUITKU.csrfToken) {
+        headers['X-CSRF-TOKEN'] = window.DUITKU.csrfToken;
+    }
+
     fetch('/marketplace/status/' + id, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'status=' + encodeURIComponent(newStatus)
+        headers: headers,
+        body: fd.toString()
     })
-    .then(r => r.json())
+    .then(async r => {
+        const text = await r.text();
+        try { return JSON.parse(text); } catch(e) { throw new Error(text.replace(/<[^>]*>?/gm, '').substring(0, 100)); }
+    })
     .then(res => {
         if (res.success) {
             alert('Status iklan berhasil diperbarui.');
@@ -811,22 +832,46 @@ function changeStatus(id, newStatus) {
         } else {
             alert(res.message || 'Gagal mengubah status.');
         }
+    })
+    .catch(err => {
+        alert('Gagal mengubah status: ' + (err.message || 'Kesalahan server.'));
     });
 }
 
 function deleteListing(id) {
     if (!confirm('Yakin ingin menghapus iklan ini? Tindakan ini tidak dapat dibatalkan.')) return;
+
+    const fd = new URLSearchParams();
+    if (window.DUITKU && window.DUITKU.csrfName && window.DUITKU.csrfToken) {
+        fd.append(window.DUITKU.csrfName, window.DUITKU.csrfToken);
+    }
+
+    const headers = { 
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'XMLHttpRequest'
+    };
+    if (window.DUITKU && window.DUITKU.csrfToken) {
+        headers['X-CSRF-TOKEN'] = window.DUITKU.csrfToken;
+    }
+
     fetch('/marketplace/delete/' + id, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        headers: headers,
+        body: fd.toString()
     })
-    .then(r => r.json())
+    .then(async r => {
+        const text = await r.text();
+        try { return JSON.parse(text); } catch(e) { throw new Error(text.replace(/<[^>]*>?/gm, '').substring(0, 100)); }
+    })
     .then(res => {
         if (res.success) {
             document.getElementById('card-' + id)?.remove();
         } else {
             alert(res.message || 'Gagal menghapus iklan.');
         }
+    })
+    .catch(err => {
+        alert('Gagal menghapus iklan: ' + (err.message || 'Kesalahan server.'));
     });
 }
 </script>

@@ -102,16 +102,41 @@
 }
 .type-toggle-btn.active.sale {
     border-color: #059669;
-    background: rgba(5, 150, 105, 0.08);
+    background: rgba(5, 150, 105, 0.1);
     color: #059669;
 }
 .type-toggle-btn.active.rent {
-    border-color: #6D28D9;
-    background: rgba(109, 40, 217, 0.08);
-    color: #6D28D9;
+    border-color: #3B82F6;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3B82F6;
 }
 
-/* Photo Upload Zone */
+/* Category Grid Pills */
+.category-select-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.cat-pill-btn {
+    padding: 9px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.cat-pill-btn.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+}
+
+/* Photo Upload */
 .photo-upload-zone {
     border: 2px dashed var(--border);
     border-radius: 16px;
@@ -141,7 +166,7 @@
     margin-top: 4px;
 }
 
-/* Preview Grid */
+/* Existing & Preview Grids */
 .photo-preview-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
@@ -169,17 +194,23 @@
     position: absolute;
     top: 4px;
     right: 4px;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(220, 38, 38, 0.85);
     color: #fff;
     border: none;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     font-size: 11px;
+    font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    z-index: 2;
+    transition: background 0.15s ease;
+}
+.photo-preview-del:hover {
+    background: #dc2626;
 }
 .photo-preview-primary {
     position: absolute;
@@ -192,45 +223,6 @@
     font-weight: 800;
     text-align: center;
     padding: 2px 0;
-}
-
-/* Safety Tip Box */
-.safety-tip-box {
-    background: #FEF3C7;
-    border: 1px solid #FDE68A;
-    border-radius: 14px;
-    padding: 12px 14px;
-    margin-bottom: 18px;
-    font-size: 12px;
-    color: #92400E;
-    line-height: 1.45;
-}
-[data-theme="dark"] .safety-tip-box {
-    background: rgba(245, 158, 11, 0.12);
-    border-color: rgba(245, 158, 11, 0.25);
-    color: #FBBF24;
-}
-
-.btn-submit-listing {
-    width: 100%;
-    padding: 14px;
-    background: #059669;
-    color: #fff;
-    border: none;
-    border-radius: 14px;
-    font-size: 14.5px;
-    font-weight: 800;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    box-shadow: 0 4px 16px rgba(5, 150, 105, 0.35);
-    transition: transform 0.15s ease, background 0.15s ease;
-}
-.btn-submit-listing:hover {
-    background: #047857;
-    transform: translateY(-1px);
 }
 
 /* WYSIWYG & Markdown Editor */
@@ -532,6 +524,28 @@
     align-items: center;
     gap: 6px;
 }
+
+.btn-submit-listing {
+    width: 100%;
+    padding: 14px;
+    background: #059669;
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-size: 14.5px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 16px rgba(5, 150, 105, 0.35);
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+.btn-submit-listing:hover {
+    background: #047857;
+    transform: translateY(-1px);
+}
 </style>
 <?= $this->endSection() ?>
 
@@ -539,94 +553,114 @@
 <div class="market-create-page">
 
     <div class="create-header">
-        <a href="/marketplace" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--text-muted);text-decoration:none;margin-bottom:8px;">
-            ← Kembali ke Pasar
+        <a href="/marketplace/item/<?= esc($listing['id']) ?>" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--text-muted);text-decoration:none;margin-bottom:8px;">
+            ← Kembali ke Detail Iklan
         </a>
-        <h2><span>🏷️</span> Pasang Iklan Jual / Sewa</h2>
-        <p>Iklankan motor, mobil, rumah, gadget, atau barang bekas Anda langsung ke komunitas pengguna DuitKu.</p>
+        <h2><span>✏️</span> Edit Iklan</h2>
+        <p>Perbarui informasi barang, harga, foto, atau deskripsi iklan Anda.</p>
     </div>
 
-    <form id="createListingForm" onsubmit="submitListing(event)" enctype="multipart/form-data">
+    <form id="editListingForm" onsubmit="submitEditListing(event)" enctype="multipart/form-data">
         <?= csrf_field() ?>
 
         <!-- 1. TIPE TRANSAKSI -->
         <div class="form-card">
             <div class="form-section-title">1. Tipe Transaksi</div>
             <div class="type-toggle-group">
-                <div class="type-toggle-btn active sale" id="btnTypeSale" onclick="selectType('sale')">
-                    🏷️ Dijual (Barang Bekas / Baru)
+                <div class="type-toggle-btn <?= $listing['type'] === 'sale' ? 'active sale' : '' ?>" id="btnTypeSale" onclick="selectType('sale')">
+                    🏷️ Dijual
                 </div>
-                <div class="type-toggle-btn rent" id="btnTypeRent" onclick="selectType('rent')">
-                    🔑 Disewakan (Rental / Kontrak)
+                <div class="type-toggle-btn <?= $listing['type'] === 'rent' ? 'active rent' : '' ?>" id="btnTypeRent" onclick="selectType('rent')">
+                    🔑 Disewakan
                 </div>
             </div>
-            <input type="hidden" name="type" id="listingType" value="sale">
+            <input type="hidden" name="type" id="listingType" value="<?= esc($listing['type']) ?>">
 
-            <div class="form-group" id="rentPeriodGroup" style="display:none;">
+            <div class="form-group" id="rentPeriodGroup" style="<?= $listing['type'] === 'rent' ? 'display:block;' : 'display:none;' ?>">
                 <label class="form-label">Periode Sewa <span class="req">*</span></label>
-                <select name="rent_period" id="rentPeriod" class="form-control">
-                    <option value="hari">Per Hari</option>
-                    <option value="bulan" selected>Per Bulan</option>
-                    <option value="tahun">Per Tahun</option>
+                <select name="rent_period" class="form-control">
+                    <option value="hari" <?= ($listing['rent_period'] ?? '') === 'hari' ? 'selected' : '' ?>>Per Hari</option>
+                    <option value="minggu" <?= ($listing['rent_period'] ?? '') === 'minggu' ? 'selected' : '' ?>>Per Minggu</option>
+                    <option value="bulan" <?= ($listing['rent_period'] ?? '') === 'bulan' ? 'selected' : '' ?>>Per Bulan</option>
+                    <option value="tahun" <?= ($listing['rent_period'] ?? '') === 'tahun' ? 'selected' : '' ?>>Per Tahun</option>
                 </select>
             </div>
         </div>
 
-        <!-- 2. FOTO PRODUK (MULTIPLE IMAGES) -->
+        <!-- 2. FOTO PRODUK (MULTI-PHOTO) -->
         <div class="form-card">
-            <div class="form-section-title">2. Foto Produk (Bisa Lebih dari 1 Foto)</div>
-            
+            <div class="form-section-title">2. Foto Produk</div>
+
+            <!-- Existing Photos -->
+            <?php if (!empty($images)): ?>
+                <label class="form-label">Foto yang Sudah Ada:</label>
+                <div class="photo-preview-grid" id="existingImagesGrid">
+                    <?php foreach ($images as $img): ?>
+                        <div class="photo-preview-item" id="img-box-<?= esc($img['id']) ?>">
+                            <img src="<?= esc($img['image_url']) ?>" class="photo-preview-img" alt="Foto">
+                            <button type="button" class="photo-preview-del" title="Hapus foto ini" onclick="deleteExistingPhoto(<?= esc($img['id']) ?>)">✕</button>
+                            <?php if (!empty($img['is_primary'])): ?>
+                                <div class="photo-preview-primary">UTAMA</div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <label class="form-label">Tambah Foto Baru (Bisa Pilih Lebih Dari 1):</label>
             <div class="photo-upload-zone" onclick="document.getElementById('fileInput').click()">
                 <div class="photo-upload-icon">📸</div>
-                <div class="photo-upload-text">+ Tambah Foto (Pilih dari Galeri / Kamera)</div>
-                <div class="photo-upload-hint">Format JPG, PNG, atau WebP. Foto pertama otomatis jadi sampul utama.</div>
+                <div class="photo-upload-text">Klik di sini untuk menambah foto baru</div>
+                <div class="photo-upload-hint">Format JPG, PNG, WEBP. Maks 5MB per foto.</div>
             </div>
-            <input type="file" id="fileInput" name="images[]" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
+            <input type="file" id="fileInput" name="images[]" multiple accept="image/*" style="display:none;" onchange="handleFiles(this.files)">
 
-            <!-- Preview Grid -->
+            <!-- New Photos Preview Grid -->
             <div class="photo-preview-grid" id="previewGrid"></div>
         </div>
 
-        <!-- 3. DETAIL PRODUK -->
+        <!-- 3. INFORMASI PRODUK -->
         <div class="form-card">
-            <div class="form-section-title">3. Informasi Produk</div>
+            <div class="form-section-title">3. Informasi & Spesifikasi Barang</div>
 
             <div class="form-group">
                 <label class="form-label">Judul Iklan <span class="req">*</span></label>
-                <input type="text" name="title" class="form-control" placeholder="Contoh: Honda Vario 150 2021 Mulus Siap Pakai" required>
+                <input type="text" name="title" class="form-control" placeholder="Contoh: Honda Vario 160cc 2023 Mulus Pajak Hidup" value="<?= esc($listing['title']) ?>" required>
             </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                <div class="form-group">
-                    <label class="form-label">Kategori <span class="req">*</span></label>
-                    <select name="category" class="form-control" required>
-                        <?php foreach ($categories as $cat): ?>
-                            <option value="<?= esc($cat) ?>"><?= esc($cat) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+            <div class="form-group">
+                <label class="form-label">Kategori <span class="req">*</span></label>
+                <input type="hidden" name="category" id="selectedCategory" value="<?= esc($listing['category']) ?>">
+                <div class="category-select-grid">
+                    <?php foreach ($categories as $cat): ?>
+                        <div class="cat-pill-btn <?= $listing['category'] === $cat ? 'active' : '' ?>" onclick="selectCategory('<?= esc($cat) ?>', this)">
+                            <?= esc($cat) ?>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label class="form-label">Kondisi <span class="req">*</span></label>
-                    <select name="condition" class="form-control" required>
-                        <option value="used_good" selected>Bekas (Mulus / Siap Pakai)</option>
-                        <option value="like_new">Bekas (Seperti Baru)</option>
-                        <option value="used_fair">Bekas (Layak Pakai / Minus)</option>
-                        <option value="new">Baru (Belum Pernah Dipakai)</option>
-                    </select>
-                </div>
+            <div class="form-group">
+                <label class="form-label">Kondisi Barang <span class="req">*</span></label>
+                <select name="condition" class="form-control">
+                    <option value="used_good" <?= $listing['condition'] === 'used_good' ? 'selected' : '' ?>>Bekas - Sangat Baik / Terawat</option>
+                    <option value="like_new" <?= $listing['condition'] === 'like_new' ? 'selected' : '' ?>>Bekas - Seperti Baru (Mulus 99%)</option>
+                    <option value="used_fair" <?= $listing['condition'] === 'used_fair' ? 'selected' : '' ?>>Bekas - Normal Pemakaian / Wajar</option>
+                    <option value="new" <?= $listing['condition'] === 'new' ? 'selected' : '' ?>>Baru (Segel / Belum Pernah Dipakai)</option>
+                </select>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Harga (<?= esc($symbol) ?>) <span class="req">*</span></label>
-                <input type="number" name="price" class="form-control" placeholder="Contoh: 14500000" min="1000" required>
+                <input type="number" name="price" class="form-control" value="<?= (int)$listing['price'] ?>" min="1000" required>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Lokasi / Area COD <span class="req">*</span></label>
-                <input type="text" name="location" class="form-control" placeholder="Contoh: Tebet, Jakarta Selatan / Sekitarnya" required>
+                <input type="text" name="location" class="form-control" value="<?= esc($listing['location']) ?>" required>
             </div>
 
+            <!-- WYSIWYG & Markdown Description Editor -->
             <div class="form-group">
                 <div class="desc-editor-label-row">
                     <label class="form-label" style="margin-bottom:0;">Deskripsi Lengkap</label>
@@ -641,7 +675,6 @@
                 </div>
 
                 <div class="wysiwyg-wrapper" id="wysiwygWrapper">
-                    <!-- Toolbar -->
                     <div class="wysiwyg-toolbar" id="wysiwygToolbar">
                         <div class="toolbar-group">
                             <button type="button" class="tb-btn" onclick="execCmd('bold')" title="Tebal (Ctrl+B)"><b>B</b></button>
@@ -675,7 +708,7 @@
                     </div>
 
                     <!-- WYSIWYG Visual Canvas -->
-                    <div id="wysiwygEditor" class="wysiwyg-content" contenteditable="true" spellcheck="false" data-placeholder="Tulis deskripsi atau langsung Paste teks berformat Markdown di sini... (contoh: **tebal**, ## judul, - poin)"></div>
+                    <div id="wysiwygEditor" class="wysiwyg-content" contenteditable="true" spellcheck="false" data-placeholder="Tulis deskripsi atau paste teks Markdown..."><?= $listing['description'] ?? '' ?></div>
 
                     <!-- Markdown Source Textarea -->
                     <textarea id="markdownSourceEditor" class="markdown-source-area" style="display:none;" placeholder="Tulis atau paste teks berformat Markdown di sini..."></textarea>
@@ -685,38 +718,27 @@
                 </div>
 
                 <div class="editor-hint">
-                    💡 <strong>Tips Markdown:</strong> Anda bisa langsung <code>Ctrl + V</code> (Paste) teks Markdown ke editor ini. Sistem otomatis mendeteksi dan mengonversinya menjadi teks visual!
+                    💡 <strong>Tips Markdown:</strong> Anda bisa langsung <code>Ctrl + V</code> (Paste) teks Markdown ke editor ini. Sistem otomatis mengonversinya ke format visual!
                 </div>
             </div>
         </div>
 
-        <!-- 4. KONTAK & KEAMANAN TRANSAKSI -->
+        <!-- 4. KONTAK & PEMBAYARAN PIHAK KETIGA -->
         <div class="form-card">
             <div class="form-section-title">4. Kontak & Pembayaran Online Aman</div>
 
             <div class="form-group">
                 <label class="form-label">Nomor WhatsApp untuk Dihubungi Pembeli <span class="req">*</span></label>
-                <input type="tel" name="whatsapp" class="form-control" placeholder="08xxxxxxxxxx" value="<?= esc($user['phone'] ?? '') ?>" required>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
-                    Calon pembeli dapat mengklik tombol WhatsApp langsung dari halaman iklan Anda.
-                </div>
+                <input type="tel" name="whatsapp" class="form-control" value="<?= esc($listing['whatsapp']) ?>" required>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Link Shopee / Tokopedia (Opsional - Sangat Dianjurkan)</label>
-                <input type="url" name="third_party_url" class="form-control" placeholder="https://shopee.co.id/... atau https://tokopedia.com/...">
-                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
-                    Sertakan link produk Anda di Shopee/Tokopedia jika pembeli ingin transaksi jarak jauh dengan pembayaran rekening bersama yang aman.
-                </div>
-            </div>
-
-            <div class="safety-tip-box">
-                🛡️ <strong>Ketentuan Transaksi Komunitas:</strong><br>
-                Pastikan Anda bersedia bertemu langsung (COD) di lokasi umum yang aman atau bertransaksi menggunakan platform pihak ketiga bergaransi. Jangan meminta uang muka (DP) kepada calon pembeli sebelum bertemu.
+                <input type="url" name="third_party_url" class="form-control" value="<?= esc($listing['third_party_url'] ?? '') ?>" placeholder="https://shopee.co.id/... atau https://tokopedia.com/...">
             </div>
 
             <button type="submit" class="btn-submit-listing" id="btnSubmit">
-                🚀 Tayangkan Iklan Sekarang
+                💾 Simpan Perubahan Iklan
             </button>
         </div>
 
@@ -726,8 +748,8 @@
     <div id="pasteMarkdownModal" class="md-paste-overlay" onclick="if(event.target===this) closePasteMarkdownModal()">
         <div class="md-paste-card">
             <div class="md-paste-title">📋 Tempel Format Markdown</div>
-            <div class="md-paste-sub">Tempel teks Markdown Anda di bawah ini (misal hasil dari ChatGPT, Notion, atau catatan). Teks akan langsung dikonversi ke format visual yang rapi.</div>
-            <textarea id="modalMarkdownInput" class="md-paste-textarea" placeholder="Contoh:&#10;## Spesifikasi & Kondisi&#10;- Fisik mulus 99%&#10;- Baterai **sangat awet**&#10;> Siap COD hari ini"></textarea>
+            <div class="md-paste-sub">Tempel teks Markdown Anda di bawah ini. Teks akan langsung dikonversi ke format visual.</div>
+            <textarea id="modalMarkdownInput" class="md-paste-textarea" placeholder="Contoh:&#10;## Spesifikasi&#10;- Mulus 99%&#10;- Garansi **aktif**"></textarea>
             <div class="md-paste-actions">
                 <button type="button" class="btn-md-cancel" onclick="closePasteMarkdownModal()">Batal</button>
                 <button type="button" class="btn-md-apply" onclick="applyPastedMarkdown()">
@@ -743,6 +765,7 @@
 <?= $this->section('scripts') ?>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
+const listingId = <?= (int)$listing['id'] ?>;
 let selectedFiles = [];
 let currentEditorMode = 'wysiwyg';
 
@@ -774,16 +797,14 @@ function escapeHtml(str) {
 
 function convertMarkdownToHtml(md) {
     if (!md) return '';
-    // If marked library is available from CDN, use it
     if (window.marked && typeof window.marked.parse === 'function') {
         try {
             return window.marked.parse(md, { breaks: true, gfm: true });
         } catch(e) {
-            console.warn('marked.js failed, fallback to native regex:', e);
+            console.warn('marked fallback:', e);
         }
     }
 
-    // High fidelity regex Markdown parser
     let html = md
         .replace(/```([a-z0-9_-]*)\n([\s\S]*?)```/g, (m, lang, code) => `<pre><code>${escapeHtml(code.trim())}</code></pre>`)
         .replace(/`([^`]+)`/g, (m, code) => `<code>${escapeHtml(code)}</code>`)
@@ -940,7 +961,40 @@ function applyPastedMarkdown() {
     closePasteMarkdownModal();
 }
 
-// Select Type (Sale vs Rent)
+// Delete existing image via AJAX
+function deleteExistingPhoto(imageId) {
+    if (!confirm('Hapus foto ini dari iklan?')) return;
+
+    const fd = new URLSearchParams();
+    if (window.DUITKU && window.DUITKU.csrfName && window.DUITKU.csrfToken) {
+        fd.append(window.DUITKU.csrfName, window.DUITKU.csrfToken);
+    }
+
+    fetch('/marketplace/image/delete/' + imageId, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': (window.DUITKU && window.DUITKU.csrfToken) ? window.DUITKU.csrfToken : ''
+        },
+        body: fd.toString()
+    })
+    .then(async r => {
+        const text = await r.text();
+        return JSON.parse(text);
+    })
+    .then(res => {
+        if (res.success) {
+            document.getElementById('img-box-' + imageId)?.remove();
+        } else {
+            alert(res.message || 'Gagal menghapus gambar.');
+        }
+    })
+    .catch(err => {
+        alert('Gagal menghapus foto: ' + (err.message || 'Kesalahan jaringan.'));
+    });
+}
+
 function selectType(type) {
     document.getElementById('listingType').value = type;
     const btnSale = document.getElementById('btnTypeSale');
@@ -948,14 +1002,20 @@ function selectType(type) {
     const rentGroup = document.getElementById('rentPeriodGroup');
 
     if (type === 'sale') {
-        btnSale.classList.add('active');
-        btnRent.classList.remove('active');
+        btnSale.classList.add('active', 'sale');
+        btnRent.classList.remove('active', 'rent');
         rentGroup.style.display = 'none';
     } else {
-        btnRent.classList.add('active');
-        btnSale.classList.remove('active');
+        btnRent.classList.add('active', 'rent');
+        btnSale.classList.remove('active', 'sale');
         rentGroup.style.display = 'block';
     }
+}
+
+function selectCategory(cat, elem) {
+    document.getElementById('selectedCategory').value = cat;
+    document.querySelectorAll('.cat-pill-btn').forEach(btn => btn.classList.remove('active'));
+    elem.classList.add('active');
 }
 
 function handleFiles(files) {
@@ -977,7 +1037,6 @@ function renderPreviews() {
             div.innerHTML = `
                 <img src="${e.target.result}" class="photo-preview-img" alt="Preview">
                 <button type="button" class="photo-preview-del" onclick="removePhoto(${idx})">✕</button>
-                ${idx === 0 ? '<div class="photo-preview-primary">UTAMA</div>' : ''}
             `;
             grid.appendChild(div);
         };
@@ -990,19 +1049,17 @@ function removePhoto(idx) {
     renderPreviews();
 }
 
-function submitListing(e) {
+function submitEditListing(e) {
     e.preventDefault();
     const btn = document.getElementById('btnSubmit');
     btn.disabled = true;
-    btn.innerText = 'Sedang Mengunggah & Memproses...';
+    btn.innerText = 'Sedang Menyimpan Perubahan...';
 
-    // Ensure description is properly synced
     syncDescription();
 
-    const form = document.getElementById('createListingForm');
+    const form = document.getElementById('editListingForm');
     const formData = new FormData(form);
 
-    // Explicitly set description from hidden field
     const descVal = document.getElementById('hiddenDescription').value;
     formData.set('description', descVal);
 
@@ -1012,19 +1069,16 @@ function submitListing(e) {
         formData.append('images[]', file);
     });
 
-    // Ensure CSRF token is attached
     if (window.DUITKU && window.DUITKU.csrfName && window.DUITKU.csrfToken) {
         formData.set(window.DUITKU.csrfName, window.DUITKU.csrfToken);
     }
 
-    const headers = {
-        'X-Requested-With': 'XMLHttpRequest'
-    };
+    const headers = { 'X-Requested-With': 'XMLHttpRequest' };
     if (window.DUITKU && window.DUITKU.csrfToken) {
         headers['X-CSRF-TOKEN'] = window.DUITKU.csrfToken;
     }
 
-    fetch('/marketplace/store', {
+    fetch('/marketplace/update/' + listingId, {
         method: 'POST',
         headers: headers,
         body: formData
@@ -1035,25 +1089,25 @@ function submitListing(e) {
         try {
             res = JSON.parse(text);
         } catch (jsonErr) {
-            console.error('Server non-JSON response:', text);
-            throw new Error('Respon server (' + r.status + '): ' + (text.replace(/<[^>]*>?/gm, '').substring(0, 120) || 'Gagal memproses data.'));
+            throw new Error('Respon server (' + r.status + '): ' + text.substring(0, 100));
         }
         return res;
     })
     .then(res => {
         if (res.success) {
-            window.location.href = res.redirect || '/marketplace';
+            alert(res.message || 'Iklan berhasil diperbarui!');
+            window.location.href = res.redirect || ('/marketplace/item/' + listingId);
         } else {
-            alert(res.message || 'Gagal memasang iklan.');
+            alert(res.message || 'Gagal memperbarui iklan.');
             btn.disabled = false;
-            btn.innerText = '🚀 Tayangkan Iklan Sekarang';
+            btn.innerText = '💾 Simpan Perubahan Iklan';
         }
     })
     .catch(err => {
-        console.error('Submit listing error:', err);
-        alert('Gagal memasang iklan: ' + (err.message || 'Terjadi gangguan jaringan atau server.'));
+        console.error('Submit edit error:', err);
+        alert('Gagal memperbarui iklan: ' + (err.message || 'Terjadi gangguan jaringan atau server.'));
         btn.disabled = false;
-        btn.innerText = '🚀 Tayangkan Iklan Sekarang';
+        btn.innerText = '💾 Simpan Perubahan Iklan';
     });
 }
 
@@ -1064,15 +1118,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (editor) {
         editor.addEventListener('input', syncDescription);
+        syncDescription();
 
-        // Smart Markdown Paste Interceptor
         editor.addEventListener('paste', function(e) {
             const clipboardData = e.clipboardData || window.clipboardData;
             if (!clipboardData) return;
             const plainText = clipboardData.getData('text/plain');
             if (!plainText) return;
 
-            // If text matches markdown syntax, convert directly to HTML
             if (isMarkdown(plainText)) {
                 e.preventDefault();
                 const html = convertMarkdownToHtml(plainText);

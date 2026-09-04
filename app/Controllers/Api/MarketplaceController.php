@@ -289,6 +289,48 @@ class MarketplaceController extends ApiController
     }
 
     /**
+     * POST /api/marketplace/update/{id}
+     */
+    public function update(int $id)
+    {
+        $userId = $this->uid();
+        $listing = $this->listingModel->find($id);
+        if (!$listing || (int)$listing['user_id'] !== $userId) {
+            return $this->fail('Akses ditolak atau iklan tidak ditemukan.');
+        }
+
+        $json = $this->request->getJSON(true) ?? [];
+        $title       = trim($json['title'] ?? $this->request->getPost('title') ?? '');
+        $type        = ($json['type'] ?? $this->request->getPost('type')) === 'rent' ? 'rent' : 'sale';
+        $category    = trim($json['category'] ?? $this->request->getPost('category') ?? 'Lainnya');
+        $condition   = $json['condition'] ?? $this->request->getPost('condition') ?: 'used_good';
+        $price       = (float)($json['price'] ?? $this->request->getPost('price') ?? 0);
+        $rentPeriod  = trim($json['rent_period'] ?? $this->request->getPost('rent_period') ?? '');
+        $location    = trim($json['location'] ?? $this->request->getPost('location') ?? '');
+        $whatsapp    = trim($json['whatsapp'] ?? $this->request->getPost('whatsapp') ?? '');
+        $thirdParty  = trim($json['third_party_url'] ?? $this->request->getPost('third_party_url') ?? '');
+        $description = trim($json['description'] ?? $this->request->getPost('description') ?? '');
+
+        if (strlen($title) < 4) return $this->fail('Judul minimal 4 karakter.');
+        if ($price <= 0) return $this->fail('Harga harus lebih dari 0.');
+
+        $this->listingModel->update($id, [
+            'title'           => $title,
+            'type'            => $type,
+            'category'        => $category,
+            'condition'       => $condition,
+            'price'           => $price,
+            'rent_period'     => ($type === 'rent' && !empty($rentPeriod)) ? $rentPeriod : null,
+            'location'        => $location,
+            'whatsapp'        => $whatsapp,
+            'third_party_url' => $thirdParty ?: null,
+            'description'     => $description,
+        ]);
+
+        return $this->ok(['message' => 'Iklan berhasil diperbarui!']);
+    }
+
+    /**
      * POST /api/marketplace/status/{id}
      */
     public function updateStatus(int $id)
