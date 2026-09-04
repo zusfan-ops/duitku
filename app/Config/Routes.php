@@ -256,6 +256,26 @@ $routes->post('/toko/(:segment)/verify-voucher',           'PublicMenuController
 $routes->get('/toko/(:segment)/stamps',                     'PublicMenuController::checkStamps/$1');
 $routes->post('/toko/(:segment)/order',                     'PublicMenuController::placeOrder/$1');
 
+// ─────────────────────────────────────────────────────────────────────────────
+// MARKETPLACE — JUAL BELI & SEWA (Public & Member)
+// ─────────────────────────────────────────────────────────────────────────────
+$routes->get('/marketplace',                         'MarketplaceController::index');
+$routes->get('/jual-beli-sewa',                      'MarketplaceController::index');
+$routes->get('/marketplace/create',                  'MarketplaceController::create', ['filter' => 'auth']);
+$routes->post('/marketplace/store',                 'MarketplaceController::store',  ['filter' => 'auth']);
+$routes->get('/marketplace/item/(:num)',             'MarketplaceController::detail/$1');
+$routes->get('/p/(:num)',                            'MarketplaceController::detail/$1');
+$routes->post('/marketplace/comment/(:num)',         'MarketplaceController::comment/$1', ['filter' => 'auth']);
+$routes->post('/marketplace/order/(:num)',           'MarketplaceController::order/$1',   ['filter' => 'auth']);
+$routes->post('/marketplace/status/(:num)',          'MarketplaceController::updateStatus/$1', ['filter' => 'auth']);
+$routes->post('/marketplace/delete/(:num)',          'MarketplaceController::delete/$1', ['filter' => 'auth']);
+$routes->get('/u/(:segment)',                        'MarketplaceController::userStore/$1');
+
+// Unduh APK & Panduan Instalasi
+$routes->get('/download',                            'MarketplaceController::downloadPage');
+$routes->get('/release',                             'MarketplaceController::downloadPage');
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API (mobile app — Bearer token auth)
@@ -419,5 +439,21 @@ $routes->group('api', function ($routes) {
         // Backup & Restore
         $routes->get('backup/export',               'Api\BackupController::export');
         $routes->post('backup/restore',             'Api\BackupController::restore');
+
+        // Marketplace (Jual Beli & Sewa)
+        $routes->get('marketplace',                  'Api\MarketplaceController::index');
+        $routes->get('marketplace/item/(:num)',      'Api\MarketplaceController::show/$1');
+        $routes->post('marketplace/store',           'Api\MarketplaceController::store');
+        $routes->post('marketplace/comment/(:num)',  'Api\MarketplaceController::comment/$1');
+        $routes->post('marketplace/order/(:num)',    'Api\MarketplaceController::order/$1');
+        $routes->get('marketplace/my-listings',      'Api\MarketplaceController::myListings');
+        $routes->post('marketplace/status/(:num)',   'Api\MarketplaceController::updateStatus/$1');
+        $routes->post('marketplace/delete/(:num)',   'Api\MarketplaceController::delete/$1');
     });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// USER STORE DOMAIN FALLBACK (e.g. domain/{username})
+// ─────────────────────────────────────────────────────────────────────────────
+$routes->get('(:segment)', 'MarketplaceController::userStore/$1');
+

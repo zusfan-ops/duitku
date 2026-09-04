@@ -153,7 +153,9 @@
                 str_starts_with($currentPath, '/arcade') ||
                 str_starts_with($currentPath, '/notifications') ||
                 str_starts_with($currentPath, '/tv') ||
-                str_starts_with($currentPath, '/pos')
+                str_starts_with($currentPath, '/pos') ||
+                str_starts_with($currentPath, '/marketplace') ||
+                str_starts_with($currentPath, '/jual-beli-sewa')
             );
             $isEmergency = (str_starts_with($currentPath, '/emergency') || str_starts_with($currentPath, '/layanan-darurat'));
             $isSettings  = str_starts_with($currentPath, '/settings');

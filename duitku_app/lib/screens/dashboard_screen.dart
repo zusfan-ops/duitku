@@ -45,6 +45,7 @@ import '../services/sync_service.dart';
 import '../widgets/sync_status_banner.dart';
 import '../widgets/tv_streaming_card.dart';
 import '../widgets/my_home_card.dart';
+import '../widgets/marketplace_featured_card.dart';
 import '../models/jellyfin_movie.dart';
 import 'barang/barang_screen.dart';
 
@@ -355,6 +356,10 @@ class DashboardScreenState extends State<DashboardScreen> {
           if (data.budget > 0) _BudgetCard(data: data),
           if ((data.topCategories as List).isNotEmpty) _TopCategoriesCard(data: data),
           _QuickActions(data: data),
+          MarketplaceFeaturedCard(
+            items: (data.marketplaceFeatured as List<dynamic>? ?? []),
+            onRefresh: _load,
+          ),
           MyHomeDashboardCard(summary: (data.myHomeSummary as Map<String, dynamic>? ?? {})),
           const NearbyServicesCard(),
           TvStreamingCard(

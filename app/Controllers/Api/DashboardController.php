@@ -299,6 +299,13 @@ class DashboardController extends ApiController
             'tv_channels'        => (new \App\Models\TvChannelModel())->getActiveChannels(),
             'my_home_summary'    => \App\Controllers\BarangController::getSummaryForUser($userId),
             'jellyfin_movies'    => \App\Services\JellyfinService::getMovies(24),
+            'marketplace_featured' => (function () {
+                try {
+                    return (new \App\Models\MarketplaceListingModel())->getListings(['status' => 'active'], 10);
+                } catch (\Throwable $e) {
+                    return [];
+                }
+            })(),
             'user'               => [
                 'name'  => session()->get('user_name') ?: '',
             ],

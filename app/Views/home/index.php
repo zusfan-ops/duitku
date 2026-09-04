@@ -1745,6 +1745,319 @@
 .my-home-see-all:active {
     transform: scale(0.98);
 }
+
+/* ── 🛍️ Marketplace Products Dashboard Showcase ────────────── */
+.market-dash-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.04);
+    position: relative;
+    overflow: hidden;
+}
+.market-dash-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.market-dash-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.market-dash-title {
+    font-size: 14.5px;
+    font-weight: 800;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.market-dash-badge {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+    color: #4F46E5;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 2.5px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(79, 70, 229, 0.2);
+}
+[data-theme="dark"] .market-dash-badge {
+    color: #818CF8;
+}
+.market-dash-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.market-dash-btn-add {
+    background: #10B981;
+    color: #FFFFFF !important;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 999px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    transition: all 0.15s ease;
+}
+.market-dash-btn-add:hover {
+    background: #059669;
+    transform: translateY(-1px);
+    color: #FFFFFF;
+}
+.market-dash-see-all-link {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: opacity 0.15s;
+}
+.market-dash-see-all-link:hover {
+    opacity: 0.8;
+}
+.market-dash-safety-tip {
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 12px;
+    padding: 7px 12px;
+    margin-bottom: 12px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    line-height: 1.35;
+}
+.market-dash-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+.market-dash-scroll::-webkit-scrollbar {
+    height: 4px;
+}
+.market-dash-scroll::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+.market-item-card {
+    flex: 0 0 220px;
+    scroll-snap-align: start;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+}
+.market-item-card:hover {
+    transform: translateY(-4px);
+    border-color: #6366F1;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.14);
+}
+.market-item-thumb-box {
+    position: relative;
+    width: 100%;
+    height: 130px;
+    background: #1E293B;
+    overflow: hidden;
+}
+.market-item-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+.market-item-card:hover .market-item-img {
+    transform: scale(1.06);
+}
+.market-item-img-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    background: linear-gradient(135deg, #334155 0%, #1E293B 100%);
+}
+.market-badge-type {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.market-badge-type.sale {
+    background: #10B981;
+}
+.market-badge-type.rent {
+    background: #6366F1;
+}
+.market-badge-cond {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.62);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2.5px 7px;
+    border-radius: 6px;
+}
+.market-floating-price {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.9) 100%);
+    padding: 16px 10px 5px;
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+}
+.market-price-val {
+    font-size: 13.5px;
+    font-weight: 900;
+    color: #34D399;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+.market-price-unit {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+}
+.market-item-info {
+    padding: 10px 10px 8px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 3px;
+}
+.market-item-cat {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.market-item-title {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 2px;
+}
+.market-item-footer {
+    margin-top: auto;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: var(--text-muted);
+}
+.market-item-loc {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+.market-item-seller {
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+.market-promo-card {
+    flex: 0 0 190px;
+    scroll-snap-align: start;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(16, 185, 129, 0.06) 100%);
+    border: 1.5px dashed rgba(99, 102, 241, 0.35);
+    border-radius: 16px;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+}
+.market-promo-card:hover {
+    border-color: #6366F1;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(16, 185, 129, 0.12) 100%);
+    transform: translateY(-3px);
+}
+.market-promo-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: #6366F1;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+.market-promo-title {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+.market-promo-sub {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    line-height: 1.35;
+    margin-bottom: 10px;
+}
+.market-promo-btn {
+    font-size: 11px;
+    font-weight: 800;
+    color: #6366F1;
+    background: rgba(99, 102, 241, 0.12);
+    padding: 4px 10px;
+    border-radius: 20px;
+}
 </style>
 <?= $this->endSection() ?>
 
@@ -2128,6 +2441,117 @@
             <span class="qa-badge"><?= $debtSummary['active_count'] ?></span>
             <?php endif; ?>
         </a>
+        <a href="/marketplace" class="home-qa-btn">
+            <div class="home-qa-icon" style="background:rgba(99,102,241,0.15)">
+                <span style="font-size:18px">🛍️</span>
+            </div>
+            <span class="home-qa-label">Jual &amp; Sewa</span>
+        </a>
+    </div>
+
+    <!-- ── 🛍️ WIDGET JUAL BELI & SEWA (MARKETPLACE SHOWCASE) ── -->
+    <?php
+        $mfItems = $marketplaceFeatured ?? [];
+        $mfCatIcons = [
+            'Motor' => '🏍️', 'Mobil' => '🚗', 'Properti' => '🏠',
+            'Elektronik' => '💻', 'Gadget' => '📱', 'Fashion' => '👕',
+            'Hobi' => '🎸', 'Lainnya' => '📦'
+        ];
+        $mfCondLabels = [
+            'new' => 'Baru', 'like_new' => 'Spt Baru',
+            'used_good' => 'Bekas Bagus', 'used_fair' => 'Bekas Layak'
+        ];
+    ?>
+    <div class="market-dash-card" id="marketplaceDashboardCard">
+        <div class="market-dash-hdr">
+            <div class="market-dash-title-group">
+                <span class="market-dash-title">🛍️ Jual Beli &amp; Sewa</span>
+                <span class="market-dash-badge"><?= count($mfItems) > 0 ? count($mfItems) . ' Pilihan' : 'Komunitas' ?></span>
+            </div>
+            <div class="market-dash-actions">
+                <a href="<?= base_url('marketplace/create') ?>" class="market-dash-btn-add">
+                    <span>+</span> Pasang Iklan
+                </a>
+                <a href="<?= base_url('marketplace') ?>" class="market-dash-see-all-link">
+                    Semua ›
+                </a>
+            </div>
+        </div>
+
+        <!-- Safety Pill -->
+        <div class="market-dash-safety-tip">
+            <span style="font-size:14px">🛡️</span>
+            <span><strong>Bebas Biaya:</strong> Utamakan COD &amp; cek fisik barang secara langsung. Jangan kirim DP untuk keamanan bersama!</span>
+        </div>
+
+        <!-- Product Cards Carousel / Row -->
+        <?php if (empty($mfItems)): ?>
+        <div style="background:var(--bg);border:1.5px dashed var(--border);border-radius:16px;padding:24px 16px;text-align:center;">
+            <div style="font-size:32px;margin-bottom:6px">🛵 📱 🏠</div>
+            <div style="font-size:13px;font-weight:800;color:var(--text-primary);margin-bottom:4px">Belum Ada Iklan Aktif</div>
+            <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:12px;max-width:320px;margin-left:auto;margin-right:auto">Jual barang bekas Anda atau sewakan properti / kendaraan langsung ke sesama pengguna.</div>
+            <a href="<?= base_url('marketplace/create') ?>" class="market-dash-btn-add" style="padding:7px 16px;font-size:12px">
+                <span>+</span> Pasang Iklan Pertama Anda
+            </a>
+        </div>
+        <?php else: ?>
+        <div class="market-dash-scroll">
+            <?php foreach ($mfItems as $p): 
+                $pIcon = $mfCatIcons[$p['category']] ?? '📦';
+                $pCond = $mfCondLabels[$p['condition']] ?? 'Bekas';
+                $pTypeLabel = ($p['type'] ?? 'sale') === 'rent' ? 'SEWA' : 'JUAL';
+                $pTypeClass = ($p['type'] ?? 'sale') === 'rent' ? 'rent' : 'sale';
+                $pPeriod = !empty($p['rent_period']) ? '/' . esc($p['rent_period']) : '';
+                $pImg = !empty($p['primary_image']) ? base_url($p['primary_image']) : null;
+            ?>
+            <a href="<?= base_url('marketplace/item/' . $p['id']) ?>" class="market-item-card">
+                <div class="market-item-thumb-box">
+                    <?php if ($pImg): ?>
+                        <img src="<?= esc($pImg) ?>" alt="<?= esc($p['title']) ?>" class="market-item-img" loading="lazy">
+                    <?php else: ?>
+                        <div class="market-item-img-placeholder">
+                            <?= $pIcon ?>
+                        </div>
+                    <?php endif; ?>
+                    <span class="market-badge-type <?= $pTypeClass ?>"><?= $pTypeLabel ?></span>
+                    <span class="market-badge-cond"><?= $pCond ?></span>
+                    <div class="market-floating-price">
+                        <span class="market-price-val"><?= esc($symbol) ?> <?= number_format((float)$p['price'], 0, ',', '.') ?></span>
+                        <?php if ($pPeriod): ?>
+                            <span class="market-price-unit"><?= $pPeriod ?></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="market-item-info">
+                    <div class="market-item-cat">
+                        <span><?= $pIcon ?></span>
+                        <span><?= esc($p['category']) ?></span>
+                    </div>
+                    <div class="market-item-title" title="<?= esc($p['title']) ?>"><?= esc($p['title']) ?></div>
+                    <div class="market-item-footer">
+                        <div class="market-item-loc" title="<?= esc($p['location'] ?: 'Indonesia') ?>">
+                            <span>📍</span>
+                            <span><?= esc($p['location'] ?: 'Indonesia') ?></span>
+                        </div>
+                        <div class="market-item-seller">
+                            @<?= esc($p['seller_username'] ?: 'user') ?>
+                        </div>
+                    </div>
+                </div>
+            </a>
+            <?php endforeach; ?>
+
+            <!-- End Card: Pasang Iklan CTA -->
+            <a href="<?= base_url('marketplace/create') ?>" class="market-promo-card">
+                <div class="market-promo-icon">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </div>
+                <div class="market-promo-title">Jual / Sewakan</div>
+                <div class="market-promo-sub">Punya barang tak terpakai? Pasang iklan gratis sekarang!</div>
+                <div class="market-promo-btn">+ Pasang Iklan</div>
+            </a>
+        </div>
+        <?php endif; ?>
     </div>
 
     <!-- ── 🏡 WIDGET MY HOME & INVENTARIS ASET (KNOW YOUR HOME AT A GLANCE) ── -->

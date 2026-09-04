@@ -39,6 +39,38 @@
                     </svg>
                 </div>
             </div>
+
+            <!-- DOMAIN TOKO PRIBADI ITEM -->
+            <?php
+                $myUsername = esc($user['username'] ?? '');
+                $myStoreUrl = site_url('u/' . $myUsername);
+                $myCleanDomain = site_url($myUsername);
+            ?>
+            <div class="settings-item" style="cursor:default;flex-direction:column;align-items:flex-start;gap:8px;padding:14px 16px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span style="font-size:18px;">🌐</span>
+                        <div>
+                            <div style="font-size:13px;font-weight:800;color:var(--text);">Domain / Link Toko Saya</div>
+                            <div style="font-size:11.5px;color:var(--text-muted);">Tautan publik etalase jual beli & sewa Anda</div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="document.getElementById('profileItem').click()" style="background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:8px;cursor:pointer;">
+                        Ubah Username
+                    </button>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;width:100%;background:var(--bg);padding:8px 12px;border-radius:10px;border:1px solid var(--border);box-sizing:border-box;">
+                    <code style="font-size:12px;color:#4338CA;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="displayStoreUrl">
+                        <?= esc($myCleanDomain) ?>
+                    </code>
+                    <button type="button" onclick="navigator.clipboard.writeText('<?= esc($myCleanDomain) ?>').then(()=>showToast('Link toko disalin!'))" style="background:#4338CA;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">
+                        Salin
+                    </button>
+                    <a href="<?= esc($myStoreUrl) ?>" target="_blank" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;">
+                        Buka
+                    </a>
+                </div>
+            </div>
         </div>
         <!-- Hidden file input for avatar upload -->
         <input type="file" id="avatarFileInput" accept="image/*" style="display:none">
@@ -47,10 +79,22 @@
     <!-- Edit Profile Modal -->
     <div class="mini-modal-overlay" id="profileModalOverlay">
         <div class="mini-modal">
-            <h3>Edit Profil</h3>
+            <h3>Edit Profil & Domain Toko</h3>
             <div class="form-group">
                 <label class="form-label" for="editName">NAMA</label>
                 <input type="text" id="editName" class="form-input" value="<?= esc($user['name'] ?? '') ?>" placeholder="Nama kamu">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="editUsername">DOMAIN / USERNAME TOKO (domain/nama_akun)</label>
+                <div style="display:flex;align-items:center;gap:4px;">
+                    <span style="font-size:12px;color:var(--text-muted);font-weight:700;">domain/</span>
+                    <input type="text" id="editUsername" class="form-input" value="<?= esc($user['username'] ?? '') ?>" placeholder="username_unik">
+                </div>
+                <small style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px;">Hanya huruf, angka, minus (-), dan underscore (_). Minimal 3 karakter.</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="editPhone">NOMOR WHATSAPP (UNTUK PEMBELI / COD)</label>
+                <input type="tel" id="editPhone" class="form-input" value="<?= esc($user['phone'] ?? '') ?>" placeholder="08xxxxxxxxxx">
             </div>
             <div class="form-group">
                 <label class="form-label" for="editEmail">EMAIL</label>
@@ -465,19 +509,25 @@
         profileSave.addEventListener('click', async () => {
             const name     = $('editName').value.trim();
             const email    = $('editEmail').value.trim();
+            const username = $('editUsername').value.trim();
+            const phone    = $('editPhone').value.trim();
             const password = $('editPassword').value;
-            const res  = await fetch('/settings/profile', { method: 'POST', headers: csrfHeaders(), body: csrfBody({ name, email, password }) });
+            const res  = await fetch('/settings/profile', { method: 'POST', headers: csrfHeaders(), body: csrfBody({ name, email, username, phone, password }) });
             const data = await res.json();
             if (data.success) {
                 profileOverlay.classList.remove('open');
                 $('profileNameDisplay').textContent  = data.name;
                 $('profileEmailDisplay').textContent = data.email;
+                if ($('displayStoreUrl') && data.username) {
+                    $('displayStoreUrl').textContent = window.location.origin + '/' + data.username;
+                }
                 // Update topbar
                 const topbarName  = document.querySelector('.user-menu-info strong');
                 const topbarEmail = document.querySelector('.user-menu-info small');
                 if (topbarName)  topbarName.textContent  = data.name;
                 if (topbarEmail) topbarEmail.textContent = data.email;
-                showToast('Profil diperbarui!');
+                showToast('Profil & Domain Toko diperbarui!');
+                setTimeout(() => location.reload(), 1000);
             } else {
                 showToast(data.message || 'Gagal.', 'error');
             }

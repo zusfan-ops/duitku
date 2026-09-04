@@ -33,6 +33,7 @@ import 'emergency/emergency_screen.dart';
 import 'nearby/nearby_places_screen.dart';
 import 'wallet_screen.dart';
 import 'zakat_pajak/zakat_pajak_screen.dart';
+import 'marketplace/market_screen.dart';
 
 class FeaturesScreen extends StatelessWidget {
   const FeaturesScreen({super.key});
@@ -167,9 +168,20 @@ class FeaturesScreen extends StatelessWidget {
           const SizedBox(height: 18),
 
           // Section: Gaya Hidup & Rencana
-          _buildSectionHeader('GAYA HIDUP & BELANJA'),
+          _buildSectionHeader('GAYA HIDUP & PASAR KOMUNITAS'),
           const SizedBox(height: 8),
           _buildFeatureGrid(context, [
+            _FeatureItem(
+              title: 'Jual Beli & Sewa',
+              subtitle: 'Pasar motor, mobil, properti',
+              icon: Icons.storefront_rounded,
+              gradient: const [Color(0xFF1E1B4B), Color(0xFF4338CA)],
+              shadowColor: const Color(0xFF4338CA),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MarketScreen()),
+              ),
+            ),
             _FeatureItem(
               title: 'Kalkulator Valas',
               subtitle: 'Kurs USD, SGD, SAR real-time',

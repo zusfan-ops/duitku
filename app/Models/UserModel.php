@@ -14,7 +14,7 @@ class UserModel extends Model
     protected $protectFields    = true;
 
     protected $allowedFields = [
-        'name', 'email', 'phone', 'password', 'avatar', 'role'
+        'name', 'username', 'email', 'phone', 'password', 'avatar', 'role'
     ];
 
     protected $useTimestamps  = true;
@@ -43,6 +43,11 @@ class UserModel extends Model
         return $this->where('phone', $phone)->first();
     }
 
+    public function findByUsername(string $username): ?array
+    {
+        return $this->where('LOWER(username)', strtolower(trim($username)))->first();
+    }
+
     public function findByIdentifier(string $val): ?array
     {
         return $this->groupStart()
@@ -59,4 +64,52 @@ class UserModel extends Model
         $colorIndex = ord($name[0]) % count($colors);
         return json_encode(['initials' => $initials, 'color' => $colors[$colorIndex]]);
     }
+
+    public static function getReservedUsernames(): array
+    {
+        return [
+            'login', 'register', 'logout', 'admin', 'api', 'features', 'fitur',
+            'settings', 'pos', 'tv', 'barang', 'kendaraan', 'bills', 'hutang',
+            'stats', 'activity', 'scan', 'emergency', 'zakat-pajak', 'pajak-zakat',
+            'arcade', 'games', 'notifications', 'belanja', 'todo', 'savings',
+            'wallets', 'marketplace', 'jual-beli-sewa', 'download', 'release',
+            'migrate', 'u', 'p', 'm', 'menu', 'shop', 'toko', 'export', 'import',
+            'search', 'backup', 'public', 'uploads', 'assets', 'css', 'js', 'images'
+        ];
+    }
+
+    public function generateUniqueUsername(string $name, int $userId): string
+    {
+        $base = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '', $name)));
+        if (strlen($base) < 3) {
+            $base = 'user' . $userId;
+        }
+
+        $reserved = self::getReservedUsernames();
+        $candidate = $base;
+        $counter = 1;
+
+        while (in_array($candidate, $reserved) ||
+               $this->where('LOWER(username)', $candidate)->where('id !=', $userId)->countAllResults() > 0) {
+            $candidate = $base . $counter;
+            $counter++;
+        }
+
+        return $candidate;
+    }
+
+    public function ensureUsername(int $userId): string
+    {
+        $user = $this->find($userId);
+        if (!$user) return '';
+
+        if (!empty($user['username'])) {
+            return $user['username'];
+        }
+
+        $newUsername = $this->generateUniqueUsername($user['name'] ?? 'user', $userId);
+        $this->update($userId, ['username' => $newUsername]);
+        return $newUsername;
+    }
 }
+

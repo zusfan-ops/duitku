@@ -284,6 +284,13 @@ class HomeController extends BaseController
             'tvChannels'         => (new \App\Models\TvChannelModel())->getActiveChannels(),
             'myHomeSummary'      => \App\Controllers\BarangController::getSummaryForUser($userId),
             'jellyfinMovies'     => \App\Services\JellyfinService::getMovies(24),
+            'marketplaceFeatured'=> (function () {
+                try {
+                    return (new \App\Models\MarketplaceListingModel())->getListings(['status' => 'active'], 10);
+                } catch (\Throwable $e) {
+                    return [];
+                }
+            })(),
         ]);
     }
 

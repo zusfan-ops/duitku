@@ -840,6 +840,51 @@ class ApiService {
     return post('todos/delete/$id', {});
   }
 
+  // ── Marketplace (Jual Beli & Sewa) API ────────────────────────
+  Future<Map<String, dynamic>> getMarketplaceListings({
+    String? type,
+    String? category,
+    String? search,
+    String? sort,
+    int? userId,
+  }) async {
+    final query = <String, String>{};
+    if (type != null && type.isNotEmpty) query['type'] = type;
+    if (category != null && category.isNotEmpty && category != 'Semua') query['category'] = category;
+    if (search != null && search.isNotEmpty) query['search'] = search;
+    if (sort != null && sort.isNotEmpty) query['sort'] = sort;
+    if (userId != null) query['user_id'] = '$userId';
+    return get('marketplace', query: query.isNotEmpty ? query : null);
+  }
+
+  Future<Map<String, dynamic>> getMarketplaceDetail(int id) async {
+    return get('marketplace/item/$id');
+  }
+
+  Future<Map<String, dynamic>> createMarketplaceListing(Map<String, dynamic> data) async {
+    return post('marketplace/store', data);
+  }
+
+  Future<Map<String, dynamic>> postMarketplaceComment(int id, String comment) async {
+    return post('marketplace/comment/$id', {'comment': comment});
+  }
+
+  Future<Map<String, dynamic>> postMarketplaceOrder(int id, String notes) async {
+    return post('marketplace/order/$id', {'notes': notes});
+  }
+
+  Future<Map<String, dynamic>> getMyMarketplaceListings() async {
+    return get('marketplace/my-listings');
+  }
+
+  Future<Map<String, dynamic>> updateMarketplaceStatus(int id, String status) async {
+    return post('marketplace/status/$id', {'status': status});
+  }
+
+  Future<Map<String, dynamic>> deleteMarketplaceListing(int id) async {
+    return post('marketplace/delete/$id', {});
+  }
+
   // ── Upload helpers ───────────────────────────────────────────
   Future<String?> base64FromFile(String path) async {
     final file = File(path);
@@ -848,4 +893,5 @@ class ApiService {
     return base64Encode(bytes);
   }
 }
+
 

@@ -24,6 +24,7 @@ class SettingsController extends BaseController
         $userId     = session()->get('user_id');
         $settings   = $this->settingModel->getAll($userId);
         $categories = $this->catModel->getForUser($userId);
+        $this->userModel->ensureUsername($userId);
         $user       = $this->userModel->find($userId);
         $now        = date('Y-m');
 
@@ -91,9 +92,11 @@ class SettingsController extends BaseController
     // POST /settings/profile
     public function saveProfile()
     {
-        $userId = session()->get('user_id');
-        $name   = trim($this->request->getPost('name') ?? '');
-        $email  = trim($this->request->getPost('email') ?? '');
+        $userId   = session()->get('user_id');
+        $name     = trim($this->request->getPost('name') ?? '');
+        $email    = trim($this->request->getPost('email') ?? '');
+        $phone    = trim($this->request->getPost('phone') ?? '');
+        $username = strtolower(trim($this->request->getPost('username') ?? ''));
 
         if (strlen($name) < 2) {
             return $this->response->setJSON(['success' => false, 'message' => 'Nama minimal 2 karakter.']);
@@ -102,13 +105,37 @@ class SettingsController extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Format email tidak valid.']);
         }
 
+        // Validate username if provided
+        if (!empty($username)) {
+            if (!preg_match('/^[a-z0-9_\-]+$/', $username)) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Username hanya boleh huruf, angka, tanda minus (-), dan underscore (_).']);
+            }
+            if (strlen($username) < 3 || strlen($username) > 50) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Username minimal 3 karakter dan maksimal 50 karakter.']);
+            }
+            if (in_array($username, UserModel::getReservedUsernames())) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Username "' . $username . '" sudah dipesan oleh sistem. Silakan pilih username lain.']);
+            }
+            $existingUser = $this->userModel->where('LOWER(username)', $username)->where('id !=', $userId)->first();
+            if ($existingUser) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Username/domain "' . $username . '" sudah digunakan akun lain.']);
+            }
+        } else {
+            $username = $this->userModel->ensureUsername($userId);
+        }
+
         // Check if email is taken by another user
         $existing = $this->userModel->where('email', $email)->where('id !=', $userId)->first();
         if ($existing) {
             return $this->response->setJSON(['success' => false, 'message' => 'Email sudah digunakan.']);
         }
 
-        $data = ['name' => $name, 'email' => $email];
+        $data = [
+            'name'     => $name,
+            'email'    => $email,
+            'phone'    => $phone,
+            'username' => $username,
+        ];
 
         $password = $this->request->getPost('password');
         if ($password && strlen($password) >= 6) {
@@ -120,18 +147,25 @@ class SettingsController extends BaseController
         $this->userModel->update($userId, $data);
 
         // Regenerate avatar if name changed
-        $user = $this->userModel->find($userId);
         $newAvatar = $this->userModel->generateAvatar($name);
         $this->userModel->update($userId, ['avatar' => $newAvatar]);
 
         // Update session
         session()->set([
-            'user_name'   => $name,
-            'user_email'  => $email,
-            'user_avatar' => $newAvatar,
+            'user_name'     => $name,
+            'user_email'    => $email,
+            'user_avatar'   => $newAvatar,
+            'user_username' => $username,
         ]);
 
-        return $this->response->setJSON(['success' => true, 'name' => $name, 'email' => $email, 'avatar' => $newAvatar]);
+        return $this->response->setJSON([
+            'success'  => true,
+            'name'     => $name,
+            'email'    => $email,
+            'phone'    => $phone,
+            'username' => $username,
+            'avatar'   => $newAvatar
+        ]);
     }
 
     // POST /settings/avatar

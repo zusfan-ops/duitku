@@ -186,6 +186,10 @@
     background: linear-gradient(135deg, #DC2626 0%, #EF4444 50%, #B91C1C 100%);
     box-shadow: 0 6px 18px rgba(220, 38, 38, 0.28);
 }
+.feat-marketplace {
+    background: linear-gradient(135deg, #1E1B4B 0%, #4338CA 50%, #6366F1 100%);
+    box-shadow: 0 6px 18px rgba(67, 56, 202, 0.28);
+}
 .feat-activity {
     background: linear-gradient(135deg, #334155 0%, #64748B 100%);
     box-shadow: 0 6px 18px rgba(100, 116, 139, 0.25);
@@ -327,8 +331,24 @@
     </div>
 
     <!-- ── 2. HIBURAN & GAYA HIDUP ── -->
-    <div class="features-section-title">HIBURAN & GAYA HIDUP</div>
+    <div class="features-section-title">PASAR KOMUNITAS & GAYA HIDUP</div>
     <div class="features-grid">
+
+        <!-- 0. Jual Beli & Sewa -->
+        <a href="/marketplace" class="feature-card feat-marketplace" style="grid-column: span 2;">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            <div class="feature-card-icon">
+                <span style="font-size: 16px;">🛍️</span>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Jual Beli & Sewa</div>
+                <div class="feature-card-desc">Pasar barang bekas, motor, mobil, rumah/properti & rental komunitas</div>
+            </div>
+        </a>
 
         <!-- 1. Layanan Darurat 24 Jam -->
         <a href="/emergency" class="feature-card feat-emergency" style="grid-column: span 2;">

@@ -57,7 +57,9 @@ class SettingController extends ApiController
             'user'         => [
                 'id'         => (int) ($user['id'] ?? 0),
                 'name'       => $user['name'] ?? '',
+                'username'   => $user['username'] ?? $this->userModel->ensureUsername($userId),
                 'email'      => $user['email'] ?? '',
+                'phone'      => $user['phone'] ?? '',
                 'initials'   => $avatarJson['initials'] ?? 'U',
                 'color'      => $avatarJson['color'] ?? '#2D5A27',
                 'avatarImage'=> $avatarImage,
@@ -111,10 +113,12 @@ class SettingController extends ApiController
 
     public function saveProfile()
     {
-        $userId = $this->uid();
-        $json   = $this->request->getJSON(true) ?? [];
-        $name   = trim($json['name'] ?? '');
-        $email  = trim($json['email'] ?? '');
+        $userId   = $this->uid();
+        $json     = $this->request->getJSON(true) ?? [];
+        $name     = trim($json['name'] ?? '');
+        $email    = trim($json['email'] ?? '');
+        $phone    = trim($json['phone'] ?? '');
+        $username = strtolower(trim($json['username'] ?? ''));
 
         if (strlen($name) < 2) {
             return $this->fail('Nama minimal 2 karakter.');
@@ -123,12 +127,35 @@ class SettingController extends ApiController
             return $this->fail('Format email tidak valid.');
         }
 
+        if (!empty($username)) {
+            if (!preg_match('/^[a-z0-9_\-]+$/', $username)) {
+                return $this->fail('Username hanya boleh huruf, angka, tanda minus (-), dan underscore (_).');
+            }
+            if (strlen($username) < 3 || strlen($username) > 50) {
+                return $this->fail('Username minimal 3 karakter dan maksimal 50 karakter.');
+            }
+            if (in_array($username, UserModel::getReservedUsernames())) {
+                return $this->fail('Username tersebut sudah dipesan oleh sistem.');
+            }
+            $existingUser = $this->userModel->where('LOWER(username)', $username)->where('id !=', $userId)->first();
+            if ($existingUser) {
+                return $this->fail('Username/domain sudah digunakan akun lain.');
+            }
+        } else {
+            $username = $this->userModel->ensureUsername($userId);
+        }
+
         $existing = $this->userModel->where('email', $email)->where('id !=', $userId)->first();
         if ($existing) {
             return $this->fail('Email sudah digunakan.');
         }
 
-        $data = ['name' => $name, 'email' => $email];
+        $data = [
+            'name'     => $name,
+            'email'    => $email,
+            'phone'    => $phone,
+            'username' => $username,
+        ];
 
         $password = $json['password'] ?? '';
         if ($password && strlen($password) >= 6) {
@@ -142,7 +169,13 @@ class SettingController extends ApiController
 
         $this->userModel->update($userId, $data);
 
-        return $this->ok(['name' => $name, 'email' => $email, 'avatar' => $newAvatar]);
+        return $this->ok([
+            'name'     => $name,
+            'email'    => $email,
+            'phone'    => $phone,
+            'username' => $username,
+            'avatar'   => $newAvatar,
+        ]);
     }
 
     public function saveAvatar()
