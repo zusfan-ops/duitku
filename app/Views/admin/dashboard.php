@@ -87,7 +87,13 @@
     <div class="admin-card">
         <div class="admin-card-header">
             <h3 class="admin-card-title">👥 Pengguna Terdaftar Terbaru</h3>
-            <a href="/admin/users" class="admin-btn admin-btn-outline admin-btn-sm">Kelola Semua →</a>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="live-sync-indicator" id="liveSyncStatus" title="Otomatis sinkronisasi data pengguna terbaru">
+                    <span class="live-sync-dot"></span> Live
+                </span>
+                <button type="button" onclick="refreshDashboardUsers()" class="admin-btn admin-btn-outline admin-btn-sm" style="padding: 4px 8px;" title="Refresh Data Sekarang">🔄</button>
+                <a href="/admin/users" class="admin-btn admin-btn-outline admin-btn-sm">Kelola Semua →</a>
+            </div>
         </div>
         <div style="overflow-x: auto;">
             <table class="admin-table">
@@ -98,7 +104,7 @@
                         <th>Terdaftar</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="recentUsersTbody">
                     <?php foreach ($recentUsers as $u): ?>
                         <tr>
                             <td>
@@ -111,7 +117,7 @@
                                 </span>
                             </td>
                             <td style="font-size: 12px; color: var(--text-secondary);">
-                                <?= date('d M Y', strtotime($u['created_at'])) ?>
+                                <?= !empty($u['created_at']) ? date('d M Y', strtotime($u['created_at'])) : '-' ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -120,5 +126,84 @@
         </div>
     </div>
 </div>
+
+<style>
+.live-sync-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #16A34A;
+    background: #DCFCE7;
+    padding: 3px 8px;
+    border-radius: 9999px;
+    border: 1px solid #BBF7D0;
+    transition: opacity 0.3s;
+}
+.live-sync-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #16A34A;
+    animation: pulseSync 2s infinite;
+}
+@keyframes pulseSync {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.8; }
+}
+</style>
+
+<script>
+function refreshDashboardUsers() {
+    const statusEl = document.getElementById('liveSyncStatus');
+    if (statusEl) statusEl.style.opacity = '0.5';
+    fetch('/admin/dashboard/poll')
+        .then(res => res.json())
+        .then(data => {
+            if (!data || !data.success) return;
+            const usersEl = document.getElementById('metric-total-users');
+            const adminsEl = document.getElementById('metric-total-admins');
+            if (usersEl) usersEl.textContent = Number(data.totalUsers).toLocaleString('id-ID');
+            if (adminsEl) adminsEl.textContent = 'Admin: ' + Number(data.totalAdmins).toLocaleString('id-ID');
+
+            const tbody = document.getElementById('recentUsersTbody');
+            if (tbody && data.recentUsers && data.recentUsers.length > 0) {
+                tbody.innerHTML = data.recentUsers.map(u => {
+                    const badgeClass = u.is_admin ? 'success' : 'info';
+                    return `
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700;">${escapeHtml(u.name)}</div>
+                                <div style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(u.email)}</div>
+                            </td>
+                            <td>
+                                <span class="badge-admin ${badgeClass}">
+                                    ${escapeHtml(u.role)}
+                                </span>
+                            </td>
+                            <td style="font-size: 12px; color: var(--text-secondary);">
+                                ${escapeHtml(u.created_at)}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        })
+        .catch(err => console.error('Live poll error:', err))
+        .finally(() => {
+            if (statusEl) statusEl.style.opacity = '1';
+        });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+// Jalankan auto-update setiap 12 detik
+setInterval(refreshDashboardUsers, 12000);
+</script>
 
 <?= $this->endSection() ?>

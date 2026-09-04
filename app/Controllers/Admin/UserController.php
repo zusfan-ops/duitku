@@ -30,7 +30,7 @@ class UserController extends BaseController
         }
 
         $search = trim($this->request->getGet('q') ?? '');
-        $builder = $this->userModel->orderBy('created_at', 'DESC');
+        $builder = $this->userModel->orderBy('id', 'DESC');
 
         if (!empty($search)) {
             $builder->groupStart()

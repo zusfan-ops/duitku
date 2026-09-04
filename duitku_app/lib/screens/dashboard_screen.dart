@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../config/api_config.dart';
 import '../models/bill.dart';
@@ -322,6 +323,11 @@ class DashboardScreenState extends State<DashboardScreen> {
           _BusinessWorkspace(data: data, onRefresh: refresh),
         ] else ...[
           const _EmergencyQuickBanner(),
+          if (data.pinnedAnnouncement != null)
+            _PinnedAnnouncementBanner(
+              announcement: data.pinnedAnnouncement!,
+              onRefresh: refresh,
+            ),
           if (urgentCount > 0)
             _UrgentAlertBanner(
               count: urgentCount,
@@ -2656,6 +2662,183 @@ class _NotificationBell extends StatelessWidget {
   }
 }
 
+// ── Pinned Announcement Banner ──────────────────────────────────
+class _PinnedAnnouncementBanner extends StatefulWidget {
+  final Map<String, dynamic> announcement;
+  final VoidCallback onRefresh;
+
+  const _PinnedAnnouncementBanner({
+    required this.announcement,
+    required this.onRefresh,
+  });
+
+  @override
+  State<_PinnedAnnouncementBanner> createState() => _PinnedAnnouncementBannerState();
+}
+
+class _PinnedAnnouncementBannerState extends State<_PinnedAnnouncementBanner> {
+  bool _dismissed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_dismissed) return const SizedBox.shrink();
+
+    final a = widget.announcement;
+    final title = a['title']?.toString() ?? 'Pemberitahuan Penting';
+    final message = a['message']?.toString() ?? '';
+    final actionUrl = a['action_url']?.toString();
+    final type = a['broadcast_type']?.toString() ?? a['type']?.toString() ?? 'info';
+    final isWarning = type == 'warning';
+    final isPromo = type == 'promo';
+
+    final gradientColors = isWarning
+        ? const [Color(0xFFDC2626), Color(0xFFEA580C)]
+        : (isPromo
+            ? const [Color(0xFF7C3AED), Color(0xFFA855F7)]
+            : const [Color(0xFF0284C7), Color(0xFF0EA5E9)]);
+
+    final badgeText = isWarning ? 'PEMBARUAN APLIKASI' : (isPromo ? 'PROMO & EVENT' : 'PENGUMUMAN RESMI');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradientColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: gradientColors.first.withValues(alpha: 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    badgeText,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 18, color: Colors.white70),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: 'Tutup Banner',
+                  onPressed: () {
+                    setState(() => _dismissed = true);
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              message,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.92),
+                fontSize: 12,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                if (actionUrl != null && actionUrl.isNotEmpty) ...[
+                  ElevatedButton.icon(
+                    icon: Icon(
+                      actionUrl.contains('.apk') || actionUrl.contains('download')
+                          ? Icons.download_rounded
+                          : Icons.open_in_new_rounded,
+                      size: 16,
+                    ),
+                    label: Text(
+                      actionUrl.contains('.apk') || actionUrl.contains('download')
+                          ? 'Unduh Pembaruan'
+                          : 'Buka Tautan',
+                    ),
+                    onPressed: () async {
+                      final notifId = (a['notif_id'] as num?)?.toInt();
+                      if (notifId != null) {
+                        try {
+                          await ApiService.instance.markNotificationRead(notifId);
+                        } catch (_) {}
+                      }
+                      final uri = Uri.tryParse(actionUrl);
+                      if (uri != null && await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: gradientColors.first,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                    ).then((_) => widget.onRefresh());
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.4)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text('Semua Pesan'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Urgent Alert Banner ─────────────────────────────────────────
 class _UrgentAlertBanner extends StatelessWidget {
   final int count;
@@ -2933,7 +3116,7 @@ void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback on
                                 ),
                                 const SizedBox(width: 8),
                                 ElevatedButton(
-                                  onPressed: () {
+                                  onPressed: () async {
                                     Navigator.pop(ctx);
                                     final type = item['type']?.toString();
                                     if (type == 'bill') {
@@ -2944,6 +3127,23 @@ void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback on
                                       Navigator.push(context, MaterialPageRoute(builder: (_) => const VehicleScreen())).then((_) => onRefresh());
                                     } else if (type == 'recurring') {
                                       Navigator.push(context, MaterialPageRoute(builder: (_) => const RecurringScreen())).then((_) => onRefresh());
+                                    } else if (type == 'broadcast') {
+                                      final notifId = (item['notif_id'] as num?)?.toInt();
+                                      if (notifId != null) {
+                                        try {
+                                          await ApiService.instance.markNotificationRead(notifId);
+                                        } catch (_) {}
+                                      }
+                                      final actionUrl = item['action_url']?.toString();
+                                      if (actionUrl != null && actionUrl.isNotEmpty) {
+                                        final uri = Uri.tryParse(actionUrl);
+                                        if (uri != null && await canLaunchUrl(uri)) {
+                                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                          return;
+                                        }
+                                      }
+                                      if (!context.mounted) return;
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())).then((_) => onRefresh());
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
@@ -2956,7 +3156,11 @@ void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback on
                                     ),
                                   ),
                                   child: Text(
-                                    item['type'] == 'bill' || item['type'] == 'debt' ? 'Bayar' : 'Buka',
+                                    item['type'] == 'broadcast'
+                                        ? (item['action_url'] != null && item['action_url'].toString().isNotEmpty
+                                            ? (item['action_url'].toString().contains('.apk') || item['action_url'].toString().contains('download') ? 'Unduh' : 'Buka Link')
+                                            : 'Baca')
+                                        : (item['type'] == 'bill' || item['type'] == 'debt' ? 'Bayar' : 'Buka'),
                                     style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
                                   ),
                                 ),

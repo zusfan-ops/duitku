@@ -31,6 +31,9 @@ class DashboardData {
   final List<dynamic> upcomingTaxes;
   final List<dynamic> upcomingRecurring;
   final List<dynamic> notifications;
+  final Map<String, dynamic>? pinnedAnnouncement;
+  final List<dynamic> broadcastNotifications;
+  final int unreadNotifCount;
   final Map<String, dynamic> business;
   final List<TvChannel> tvChannels;
   final Map<String, dynamic> myHomeSummary;
@@ -62,6 +65,9 @@ class DashboardData {
     this.upcomingTaxes = const [],
     this.upcomingRecurring = const [],
     this.notifications = const [],
+    this.pinnedAnnouncement,
+    this.broadcastNotifications = const [],
+    this.unreadNotifCount = 0,
     this.business = const {},
     this.tvChannels = const [],
     this.myHomeSummary = const {},
@@ -102,6 +108,11 @@ class DashboardData {
       upcomingTaxes: json['upcomingTaxes'] as List<dynamic>? ?? [],
       upcomingRecurring: json['upcomingRecurring'] as List<dynamic>? ?? [],
       notifications: json['notifications'] as List<dynamic>? ?? [],
+      pinnedAnnouncement: json['pinned_announcement'] as Map<String, dynamic>?,
+      broadcastNotifications: json['broadcast_notifications'] as List<dynamic>? ?? [],
+      unreadNotifCount: (json['unread_notifications_count'] as num?)?.toInt() ??
+          (json['unreadCount'] as num?)?.toInt() ??
+          0,
       business: json['business'] as Map<String, dynamic>? ?? {},
       tvChannels: (json['tv_channels'] as List<dynamic>? ?? [])
           .map((e) => TvChannel.fromJson(e as Map<String, dynamic>))

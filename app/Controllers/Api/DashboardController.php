@@ -108,6 +108,52 @@ class DashboardController extends ApiController
 
         // Consolidated Notifications Array
         $notifications = [];
+
+        // Broadcast / Admin Announcements
+        $pinnedAnnouncement   = null;
+        $broadcastNotifs      = [];
+        $unreadBroadcastCount = 0;
+        try {
+            $notifModel = new \App\Models\NotificationModel();
+            $broadcastNotifs = $notifModel->getForUser($userId, 15);
+            $unreadBroadcastCount = $notifModel->getUnreadCount($userId);
+
+            foreach ($broadcastNotifs as $ub) {
+                $isPinned = !empty($ub['is_pinned']);
+                $isRead   = !empty($ub['is_read']);
+
+                $bItem = [
+                    'id'             => 'broadcast_' . $ub['id'],
+                    'notif_id'       => (int) $ub['id'],
+                    'type'           => 'broadcast',
+                    'broadcast_type' => $ub['type'] ?? 'info',
+                    'title'          => $ub['title'] ?? 'Pengumuman',
+                    'subtitle'       => $ub['message'] ?? '',
+                    'message'        => $ub['message'] ?? '',
+                    'amount'         => 0.0,
+                    'days_left'      => $isPinned ? -999 : -100, // Prioritas paling atas
+                    'urgency'        => $ub['type'] === 'warning' ? 'urgent' : ($ub['type'] === 'promo' ? 'warning' : 'info'),
+                    'is_pinned'      => $isPinned,
+                    'is_read'        => $isRead,
+                    'action_url'     => $ub['action_url'] ?? null,
+                    'icon'           => match($ub['type'] ?? 'info') {
+                        'warning'      => '⚠️',
+                        'promo'        => '🎁',
+                        'announcement' => '📢',
+                        'system'       => '⚙️',
+                        default        => 'ℹ️',
+                    },
+                    'created_at'     => $ub['created_at'] ?? '',
+                ];
+
+                $notifications[] = $bItem;
+
+                if ($isPinned && $pinnedAnnouncement === null) {
+                    $pinnedAnnouncement = $bItem;
+                }
+            }
+        } catch (\Throwable $e) {}
+
         foreach ($upcomingBills as $b) {
             $notifications[] = [
                 'id'         => 'bill_' . ($b['id'] ?? uniqid()),
@@ -245,6 +291,9 @@ class DashboardController extends ApiController
             'upcomingTaxes'      => $upcomingTaxes,
             'upcomingRecurring'  => $upcomingRecurring,
             'notifications'      => $notifications,
+            'pinned_announcement' => $pinnedAnnouncement,
+            'broadcast_notifications' => $broadcastNotifs,
+            'unread_notifications_count' => $unreadBroadcastCount,
             'business'           => $businessSummary,
             'unreadCount'        => count($notifications),
             'tv_channels'        => (new \App\Models\TvChannelModel())->getActiveChannels(),

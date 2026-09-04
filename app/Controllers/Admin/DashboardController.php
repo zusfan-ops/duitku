@@ -35,7 +35,7 @@ class DashboardController extends BaseController
                                            ->orWhere('role', 'admin')
                                            ->groupEnd()
                                            ->countAllResults();
-            $recentUsers = $this->userModel->orderBy('created_at', 'DESC')->limit(8)->findAll();
+            $recentUsers = $this->userModel->orderBy('id', 'DESC')->limit(8)->findAll();
         } catch (\Throwable $e) {}
 
         // 2. Metrik Transaksi
@@ -97,5 +97,43 @@ class DashboardController extends BaseController
         ];
 
         return view('admin/dashboard', $data);
+    }
+
+    /**
+     * AJAX Live Polling untuk auto-update dashboard & daftar pengguna
+     */
+    public function poll()
+    {
+        $totalUsers  = 0;
+        $totalAdmins = 0;
+        $recentUsers = [];
+        try {
+            $totalUsers  = $this->userModel->countAllResults();
+            $totalAdmins = $this->userModel->groupStart()
+                                           ->where('role', 'administrator')
+                                           ->orWhere('role', 'admin')
+                                           ->groupEnd()
+                                           ->countAllResults();
+            $recentUsers = $this->userModel->orderBy('id', 'DESC')->limit(8)->findAll();
+        } catch (\Throwable $e) {}
+
+        $formattedUsers = array_map(function ($u) {
+            return [
+                'id'         => (int) $u['id'],
+                'name'       => $u['name'] ?? '',
+                'email'      => $u['email'] ?: ($u['phone'] ?: '-'),
+                'role'       => strtoupper($u['role'] ?? 'USER'),
+                'is_admin'   => in_array(($u['role'] ?? ''), ['administrator', 'admin'], true),
+                'created_at' => !empty($u['created_at']) ? date('d M Y', strtotime($u['created_at'])) : '-',
+            ];
+        }, $recentUsers);
+
+        return $this->response->setJSON([
+            'success'     => true,
+            'totalUsers'  => $totalUsers,
+            'totalAdmins' => $totalAdmins,
+            'recentUsers' => $formattedUsers,
+            'timestamp'   => date('H:i:s'),
+        ]);
     }
 }

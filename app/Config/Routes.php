@@ -205,6 +205,7 @@ $routes->group('admin', ['filter' => 'admin'], function ($routes) {
     // Dashboard
     $routes->get('',                            'Admin\DashboardController::index');
     $routes->get('dashboard',                   'Admin\DashboardController::index');
+    $routes->get('dashboard/poll',              'Admin\DashboardController::poll');
 
     // Notifications (Broadcast & Push to App)
     $routes->get('notifications',               'Admin\NotificationController::index');

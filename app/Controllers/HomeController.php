@@ -113,6 +113,34 @@ class HomeController extends BaseController
 
         // Consolidated Notifications Array
         $notifications = [];
+
+        // Broadcast / Admin Announcements
+        try {
+            $notifModel = new \App\Models\NotificationModel();
+            $broadcastNotifs = $notifModel->getForUser($userId, 10);
+            foreach ($broadcastNotifs as $ub) {
+                if (empty($ub['is_read']) || !empty($ub['is_pinned'])) {
+                    $notifications[] = [
+                        'id'         => 'broadcast_' . $ub['id'],
+                        'type'       => 'broadcast',
+                        'title'      => $ub['title'] ?? 'Pengumuman',
+                        'subtitle'   => $ub['message'] ?? '',
+                        'amount'     => 0,
+                        'days_left'  => !empty($ub['is_pinned']) ? -999 : -100,
+                        'urgency'    => $ub['type'] === 'warning' ? 'urgent' : ($ub['type'] === 'promo' ? 'warning' : 'info'),
+                        'icon'       => match($ub['type'] ?? 'info') {
+                            'warning'      => '⚠️',
+                            'promo'        => '🎁',
+                            'announcement' => '📢',
+                            'system'       => '⚙️',
+                            default        => 'ℹ️',
+                        },
+                        'action_url' => $ub['action_url'] ?? '/notifications',
+                        'raw'        => $ub,
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {}
         foreach ($upcomingBills as $b) {
             $notifications[] = [
                 'id'         => 'bill_' . ($b['id'] ?? uniqid()),
