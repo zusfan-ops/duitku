@@ -110,6 +110,11 @@
     background: rgba(109, 40, 217, 0.08);
     color: #6D28D9;
 }
+.type-toggle-btn.active.service {
+    border-color: #2563EB;
+    background: rgba(37, 99, 235, 0.08);
+    color: #2563EB;
+}
 
 /* Photo Upload Zone */
 .photo-upload-zone {
@@ -542,8 +547,8 @@
         <a href="/marketplace" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--text-muted);text-decoration:none;margin-bottom:8px;">
             ← Kembali ke Pasar
         </a>
-        <h2><span>🏷️</span> Pasang Iklan Jual / Sewa</h2>
-        <p>Iklankan motor, mobil, rumah, gadget, atau barang bekas Anda langsung ke komunitas pengguna DuitKu.</p>
+        <h2><span>🏷️</span> Pasang Iklan Jual, Sewa & Jasa</h2>
+        <p id="pageSubHeader">Iklankan barang bekas, properti, atau tawarkan keahlian layanan jasa panggilan Anda langsung ke komunitas.</p>
     </div>
 
     <form id="createListingForm" onsubmit="submitListing(event)" enctype="multipart/form-data">
@@ -551,13 +556,16 @@
 
         <!-- 1. TIPE TRANSAKSI -->
         <div class="form-card">
-            <div class="form-section-title">1. Tipe Transaksi</div>
+            <div class="form-section-title">1. Tipe Iklan / Penawaran</div>
             <div class="type-toggle-group">
                 <div class="type-toggle-btn active sale" id="btnTypeSale" onclick="selectType('sale')">
-                    🏷️ Dijual (Barang Bekas / Baru)
+                    🏷️ Jual Barang
                 </div>
                 <div class="type-toggle-btn rent" id="btnTypeRent" onclick="selectType('rent')">
-                    🔑 Disewakan (Rental / Kontrak)
+                    🔑 Sewa / Rental
+                </div>
+                <div class="type-toggle-btn service" id="btnTypeService" onclick="selectType('service')">
+                    🛠️ Layanan Jasa
                 </div>
             </div>
             <input type="hidden" name="type" id="listingType" value="sale">
@@ -574,12 +582,12 @@
 
         <!-- 2. FOTO PRODUK (MULTIPLE IMAGES) -->
         <div class="form-card">
-            <div class="form-section-title">2. Foto Produk (Bisa Lebih dari 1 Foto)</div>
+            <div class="form-section-title" id="photoSectionTitle">2. Foto Produk / Dokumentasi Layanan</div>
             
             <div class="photo-upload-zone" onclick="document.getElementById('fileInput').click()">
                 <div class="photo-upload-icon">📸</div>
                 <div class="photo-upload-text">+ Tambah Foto (Pilih dari Galeri / Kamera)</div>
-                <div class="photo-upload-hint">Format JPG, PNG, atau WebP. Foto pertama otomatis jadi sampul utama.</div>
+                <div class="photo-upload-hint">Format JPG, PNG, atau WebP. Foto pertama otomatis jadi sampul utama iklan.</div>
             </div>
             <input type="file" id="fileInput" name="images[]" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
 
@@ -587,28 +595,28 @@
             <div class="photo-preview-grid" id="previewGrid"></div>
         </div>
 
-        <!-- 3. DETAIL PRODUK -->
+        <!-- 3. DETAIL PRODUK / JASA -->
         <div class="form-card">
-            <div class="form-section-title">3. Informasi Produk</div>
+            <div class="form-section-title" id="infoSectionTitle">3. Informasi Iklan</div>
 
             <div class="form-group">
-                <label class="form-label">Judul Iklan <span class="req">*</span></label>
-                <input type="text" name="title" class="form-control" placeholder="Contoh: Honda Vario 150 2021 Mulus Siap Pakai" required>
+                <label class="form-label" id="titleLabel">Judul Iklan <span class="req">*</span></label>
+                <input type="text" name="title" id="titleInput" class="form-control" placeholder="Contoh: Honda Vario 150 2021 Mulus Siap Pakai" required>
             </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                <div class="form-group">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" id="catCondGrid">
+                <div class="form-group" id="categoryGroup">
                     <label class="form-label">Kategori <span class="req">*</span></label>
-                    <select name="category" class="form-control" required>
+                    <select name="category" id="categorySelect" class="form-control" required>
                         <?php foreach ($categories as $cat): ?>
                             <option value="<?= esc($cat) ?>"><?= esc($cat) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Kondisi <span class="req">*</span></label>
-                    <select name="condition" class="form-control" required>
+                <div class="form-group" id="conditionGroup">
+                    <label class="form-label">Kondisi Barang <span class="req">*</span></label>
+                    <select name="condition" id="conditionSelect" class="form-control">
                         <option value="used_good" selected>Bekas (Mulus / Siap Pakai)</option>
                         <option value="like_new">Bekas (Seperti Baru)</option>
                         <option value="used_fair">Bekas (Layak Pakai / Minus)</option>
@@ -617,14 +625,66 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Harga (<?= esc($symbol) ?>) <span class="req">*</span></label>
-                <input type="number" name="price" class="form-control" placeholder="Contoh: 14500000" min="1000" required>
+            <!-- KHUSUS DETAIL LAYANAN JASA (DYNAMIC) -->
+            <div id="serviceFieldsGroup" style="display:none;background:rgba(37,99,235,0.04);border:1px dashed rgba(37,99,235,0.3);border-radius:16px;padding:16px;margin-bottom:16px;">
+                <div style="font-size:12px;font-weight:800;color:#2563EB;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                    🛠️ Detail & Ketentuan Layanan Jasa
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group">
+                        <label class="form-label">Sistem / Tipe Layanan <span class="req">*</span></label>
+                        <select name="service_type" id="serviceTypeSelect" class="form-control">
+                            <option value="panggilan" selected>🛵 Panggilan ke Tempat Konsumen</option>
+                            <option value="di_tempat">🏢 Datang ke Bengkel / Tempat Penyedia</option>
+                            <option value="keduanya">🔄 Bisa Panggilan & Datang ke Tempat</option>
+                            <option value="online">💻 Layanan Online / Jarak Jauh</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Skema / Satuan Tarif <span class="req">*</span></label>
+                        <select name="rate_unit" id="rateUnitSelect" class="form-control">
+                            <option value="per_sesi" selected>Per Sesi (Pijat / Terapi)</option>
+                            <option value="per_panggilan">Per Panggilan / Kunjungan</option>
+                            <option value="per_jam">Per Jam</option>
+                            <option value="per_unit">Per Unit / Titik (AC / Ban / Alat)</option>
+                            <option value="per_pekerjaan">Per Pekerjaan / Borongan</option>
+                            <option value="mulai_dari">Tarif Mulai Dari (Bisa Nego)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group">
+                        <label class="form-label">Jangkauan Area Panggilan / Layanan <span class="req">*</span></label>
+                        <input type="text" name="service_area" id="serviceAreaInput" class="form-control" placeholder="Contoh: Semarang Kota & Sekitarnya (radius 15 km)">
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Wilayah yang dapat Anda layani.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Jam Operasional / Ketersediaan <span class="req">*</span></label>
+                        <input type="text" name="service_hours" id="serviceHoursInput" class="form-control" placeholder="Contoh: 24 Jam Siap Dipanggil / 08:00 - 21:00">
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Kapan Anda siap menerima panggilan/pesanan.</div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Pengalaman, Keahlian & Garansi</label>
+                    <input type="text" name="experience_years" class="form-control" placeholder="Contoh: Pengalaman 5+ tahun, bawa alat lengkap, bergaransi 30 hari">
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Opsional tapi meningkatkan kepercayaan calon pelanggan.</div>
+                </div>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Lokasi / Area COD <span class="req">*</span></label>
-                <input type="text" name="location" class="form-control" placeholder="Contoh: Tebet, Jakarta Selatan / Sekitarnya" required>
+                <label class="form-label" id="priceLabel">Harga (<?= esc($symbol) ?>) <span class="req">*</span></label>
+                <input type="number" name="price" id="priceInput" class="form-control" placeholder="Contoh: 14500000" min="1000" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" id="locationLabel">Lokasi / Area COD <span class="req">*</span></label>
+                <input type="text" name="location" id="locationInput" class="form-control" placeholder="Contoh: Tebet, Jakarta Selatan / Sekitarnya" required>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:3px;" id="locationHint">Lokasi utama atau titik pangkalan Anda.</div>
             </div>
 
             <div class="form-group">
@@ -940,21 +1000,92 @@ function applyPastedMarkdown() {
     closePasteMarkdownModal();
 }
 
-// Select Type (Sale vs Rent)
+const productCategories = <?= json_encode($productCategories ?? []) ?>;
+const serviceCategories = <?= json_encode($serviceCategories ?? []) ?>;
+
+function updateCategoryOptions(cats, selectedVal = '') {
+    const sel = document.getElementById('categorySelect');
+    if (!sel || !cats || cats.length === 0) return;
+    sel.innerHTML = '';
+    cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        if (c === selectedVal) opt.selected = true;
+        sel.appendChild(opt);
+    });
+}
+
+// Select Type (Sale vs Rent vs Service)
 function selectType(type) {
     document.getElementById('listingType').value = type;
     const btnSale = document.getElementById('btnTypeSale');
     const btnRent = document.getElementById('btnTypeRent');
+    const btnService = document.getElementById('btnTypeService');
     const rentGroup = document.getElementById('rentPeriodGroup');
+    const conditionGroup = document.getElementById('conditionGroup');
+    const conditionSelect = document.getElementById('conditionSelect');
+    const serviceGroup = document.getElementById('serviceFieldsGroup');
+    const priceLabel = document.getElementById('priceLabel');
+    const priceInput = document.getElementById('priceInput');
+    const titleInput = document.getElementById('titleInput');
+    const locationLabel = document.getElementById('locationLabel');
+    const locationInput = document.getElementById('locationInput');
+    const locationHint = document.getElementById('locationHint');
+    const infoTitle = document.getElementById('infoSectionTitle');
 
-    if (type === 'sale') {
-        btnSale.classList.add('active');
-        btnRent.classList.remove('active');
+    btnSale.classList.remove('active');
+    btnRent.classList.remove('active');
+    btnService.classList.remove('active');
+
+    if (type === 'service') {
+        btnService.classList.add('active');
         rentGroup.style.display = 'none';
-    } else {
+        conditionGroup.style.display = 'none';
+        conditionSelect.removeAttribute('required');
+        serviceGroup.style.display = 'block';
+
+        updateCategoryOptions(serviceCategories);
+
+        infoTitle.textContent = '3. Informasi Layanan Jasa';
+        priceLabel.innerHTML = 'Tarif / Biaya Jasa (<?= esc($symbol) ?>) <span class="req">*</span>';
+        priceInput.placeholder = 'Contoh: 100000';
+        titleInput.placeholder = 'Contoh: Pijat Tradisional & Refleksi Panggilan 24 Jam';
+        locationLabel.innerHTML = 'Kota / Lokasi Asal Penyedia Jasa <span class="req">*</span>';
+        locationInput.placeholder = 'Contoh: Semarang Selatan, Kota Semarang';
+        locationHint.textContent = 'Titik pangkalan atau domisili asal penyedia jasa.';
+    } else if (type === 'rent') {
         btnRent.classList.add('active');
-        btnSale.classList.remove('active');
         rentGroup.style.display = 'block';
+        conditionGroup.style.display = 'block';
+        conditionSelect.setAttribute('required', 'required');
+        serviceGroup.style.display = 'none';
+
+        updateCategoryOptions(productCategories);
+
+        infoTitle.textContent = '3. Informasi Produk Sewa';
+        priceLabel.innerHTML = 'Harga Sewa (<?= esc($symbol) ?>) <span class="req">*</span>';
+        priceInput.placeholder = 'Contoh: 2500000';
+        titleInput.placeholder = 'Contoh: Sewa Kamera Sony A7III + Lensa Siap Pakai';
+        locationLabel.innerHTML = 'Lokasi / Area Pengambilan & COD <span class="req">*</span>';
+        locationInput.placeholder = 'Contoh: Tebet, Jakarta Selatan';
+        locationHint.textContent = 'Lokasi pengambilan barang atau COD.';
+    } else {
+        btnSale.classList.add('active');
+        rentGroup.style.display = 'none';
+        conditionGroup.style.display = 'block';
+        conditionSelect.setAttribute('required', 'required');
+        serviceGroup.style.display = 'none';
+
+        updateCategoryOptions(productCategories);
+
+        infoTitle.textContent = '3. Informasi Produk';
+        priceLabel.innerHTML = 'Harga Jual (<?= esc($symbol) ?>) <span class="req">*</span>';
+        priceInput.placeholder = 'Contoh: 14500000';
+        titleInput.placeholder = 'Contoh: Honda Vario 150 2021 Mulus Siap Pakai';
+        locationLabel.innerHTML = 'Lokasi / Area COD <span class="req">*</span>';
+        locationInput.placeholder = 'Contoh: Tebet, Jakarta Selatan / Sekitarnya';
+        locationHint.textContent = 'Lokasi utama untuk bertemu calon pembeli.';
     }
 }
 

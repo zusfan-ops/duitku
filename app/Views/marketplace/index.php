@@ -330,6 +330,11 @@
     background: #6D28D9;
     color: #fff;
 }
+.badge-type.service {
+    background: #2563EB;
+    color: #fff;
+}
+
 .badge-img-count {
     position: absolute;
     bottom: 8px;
@@ -610,11 +615,12 @@
                 </div>
 
                 <div class="filter-row">
-                    <!-- Type Pills: Semua / Jual / Sewa -->
+                    <!-- Type Pills: Semua / Jual / Sewa / Jasa -->
                     <div class="type-pills">
                         <a href="javascript:void(0)" onclick="setTypeFilter('')" class="type-pill <?= empty($selectedType) ? 'active' : '' ?>">Semua</a>
                         <a href="javascript:void(0)" onclick="setTypeFilter('sale')" class="type-pill <?= $selectedType === 'sale' ? 'active' : '' ?>">🏷️ Jual</a>
                         <a href="javascript:void(0)" onclick="setTypeFilter('rent')" class="type-pill <?= $selectedType === 'rent' ? 'active' : '' ?>">🔑 Sewa</a>
+                        <a href="javascript:void(0)" onclick="setTypeFilter('service')" class="type-pill <?= $selectedType === 'service' ? 'active' : '' ?>">🛠️ Layanan Jasa</a>
                     </div>
 
                     <!-- Sort -->
@@ -644,8 +650,8 @@
         <?php if (empty($listings)): ?>
             <div class="market-empty">
                 <div class="market-empty-icon">📦</div>
-                <div class="market-empty-title">Belum ada barang di kategori ini</div>
-                <div class="market-empty-sub">Jadilah yang pertama memasang iklan barang bekas atau properti untuk dijual / disewakan!</div>
+                <div class="market-empty-title">Belum ada listing di kategori ini</div>
+                <div class="market-empty-sub">Jadilah yang pertama memasang iklan barang bekas, properti, atau penawaran jasa!</div>
                 <a href="/marketplace/create" class="btn-post-ad">Pasang Iklan Sekarang</a>
             </div>
         <?php else: ?>
@@ -656,11 +662,11 @@
                             <?php if (!empty($item['primary_image'])): ?>
                                 <img src="<?= esc($item['primary_image']) ?>" alt="<?= esc($item['title']) ?>" class="listing-thumb" loading="lazy">
                             <?php else: ?>
-                                <div class="listing-thumb-placeholder">🏷️</div>
+                                <div class="listing-thumb-placeholder"><?= $item['type'] === 'service' ? '🛠️' : '🏷️' ?></div>
                             <?php endif; ?>
 
                             <div class="badge-type <?= esc($item['type']) ?>">
-                                <?= $item['type'] === 'rent' ? 'SEWA' : 'JUAL' ?>
+                                <?= $item['type'] === 'service' ? '🛠️ JASA' : ($item['type'] === 'rent' ? 'SEWA' : 'JUAL') ?>
                             </div>
 
                             <?php if (!empty($item['image_count']) && $item['image_count'] > 1): ?>
@@ -675,8 +681,18 @@
                                 <span><?= esc($item['category']) ?></span>
                                 <span>
                                     <?php
-                                        $condMap = ['new' => 'Baru', 'like_new' => 'Seperti Baru', 'used_good' => 'Bekas Baik', 'used_fair' => 'Bekas Layak'];
-                                        echo $condMap[$item['condition']] ?? 'Bekas';
+                                        if ($item['type'] === 'service') {
+                                            $stMap = [
+                                                'panggilan' => '🛵 Panggilan',
+                                                'di_tempat' => '🏢 Di Tempat',
+                                                'keduanya'  => '🔄 Fleksibel',
+                                                'online'    => '💻 Online',
+                                            ];
+                                            echo $stMap[$item['service_type'] ?? ''] ?? '🛠️ Jasa';
+                                        } else {
+                                            $condMap = ['new' => 'Baru', 'like_new' => 'Seperti Baru', 'used_good' => 'Bekas Baik', 'used_fair' => 'Bekas Layak'];
+                                            echo $condMap[$item['condition']] ?? 'Bekas';
+                                        }
                                     ?>
                                 </span>
                             </div>
@@ -687,6 +703,18 @@
                                 <?= $symbol ?> <?= number_format($item['price'], 0, ',', '.') ?>
                                 <?php if ($item['type'] === 'rent' && !empty($item['rent_period'])): ?>
                                     <span class="listing-price-period">/<?= esc($item['rent_period']) ?></span>
+                                <?php elseif ($item['type'] === 'service' && !empty($item['rate_unit'])): ?>
+                                    <?php
+                                        $rateUnitsMap = [
+                                            'per_sesi'       => '/sesi',
+                                            'per_panggilan'  => '/panggilan',
+                                            'per_jam'        => '/jam',
+                                            'per_unit'       => '/unit',
+                                            'per_pekerjaan'  => '/borong',
+                                            'mulai_dari'     => '(mulai dari)',
+                                        ];
+                                        echo '<span class="listing-price-period">' . esc($rateUnitsMap[$item['rate_unit']] ?? ('/' . $item['rate_unit'])) . '</span>';
+                                    ?>
                                 <?php endif; ?>
                             </div>
 

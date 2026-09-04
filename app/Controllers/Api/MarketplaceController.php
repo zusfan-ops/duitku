@@ -57,8 +57,12 @@ class MarketplaceController extends ApiController
         $listings = $this->listingModel->getListings($filters, 60);
 
         return $this->ok([
-            'listings'   => $listings,
-            'categories' => MarketplaceListingModel::getCategoriesList(),
+            'listings'           => $listings,
+            'categories'         => MarketplaceListingModel::getCategoriesList(),
+            'product_categories' => MarketplaceListingModel::getProductCategoriesList(),
+            'service_categories' => MarketplaceListingModel::getServiceCategoriesList(),
+            'rate_units'         => MarketplaceListingModel::getRateUnitsList(),
+            'service_types'      => MarketplaceListingModel::getServiceTypesList(),
         ]);
     }
 
@@ -101,44 +105,70 @@ class MarketplaceController extends ApiController
         $json   = $this->request->getJSON(true);
 
         // Can receive JSON or multipart
+        $rawType     = $json['type'] ?? $this->request->getPost('type') ?? 'sale';
+        $type        = in_array($rawType, ['sale', 'rent', 'service']) ? $rawType : 'sale';
         $title       = trim($json['title'] ?? $this->request->getPost('title') ?? '');
-        $type        = ($json['type'] ?? $this->request->getPost('type')) === 'rent' ? 'rent' : 'sale';
         $category    = trim($json['category'] ?? $this->request->getPost('category') ?? 'Lainnya');
-        $condition   = $json['condition'] ?? $this->request->getPost('condition') ?: 'used_good';
         $price       = $this->amount($json['price'] ?? $this->request->getPost('price') ?? 0);
-        $rentPeriod  = trim($json['rent_period'] ?? $this->request->getPost('rent_period') ?? '');
         $location    = trim($json['location'] ?? $this->request->getPost('location') ?? '');
         $whatsapp    = trim($json['whatsapp'] ?? $this->request->getPost('whatsapp') ?? '');
         $thirdParty  = trim($json['third_party_url'] ?? $this->request->getPost('third_party_url') ?? '');
         $description = trim($json['description'] ?? $this->request->getPost('description') ?? '');
 
+        // Specific fields
+        $condition        = null;
+        $rentPeriod       = null;
+        $serviceType      = null;
+        $serviceArea      = null;
+        $serviceHours     = null;
+        $rateUnit         = null;
+        $experienceYears  = null;
+
+        if ($type === 'service') {
+            $serviceType     = trim($json['service_type'] ?? $this->request->getPost('service_type') ?? 'panggilan');
+            $serviceArea     = trim($json['service_area'] ?? $this->request->getPost('service_area') ?? '');
+            $serviceHours    = trim($json['service_hours'] ?? $this->request->getPost('service_hours') ?? '');
+            $rateUnit        = trim($json['rate_unit'] ?? $this->request->getPost('rate_unit') ?? 'per_panggilan');
+            $experienceYears = trim($json['experience_years'] ?? $this->request->getPost('experience_years') ?? '');
+        } else {
+            $condition  = $json['condition'] ?? $this->request->getPost('condition') ?: 'used_good';
+            if ($type === 'rent') {
+                $rentPeriod = trim($json['rent_period'] ?? $this->request->getPost('rent_period') ?? 'bulan');
+            }
+        }
+
         if (strlen($title) < 4) {
             return $this->fail('Judul iklan minimal 4 karakter.');
         }
         if ($price <= 0) {
-            return $this->fail('Harga wajib lebih dari 0.');
+            return $this->fail('Harga / Tarif wajib lebih dari 0.');
         }
         if (empty($location)) {
-            return $this->fail('Lokasi / Wilayah COD wajib diisi.');
+            return $this->fail($type === 'service' ? 'Lokasi / Kota asal penyedia jasa wajib diisi.' : 'Lokasi / Wilayah COD wajib diisi.');
         }
 
         $baseSlug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $title), '-'));
         $slug = $baseSlug . '-' . time();
 
         $listingId = $this->listingModel->insert([
-            'user_id'         => $userId,
-            'title'           => $title,
-            'slug'            => $slug,
-            'type'            => $type,
-            'category'        => $category,
-            'condition'       => $condition,
-            'price'           => $price,
-            'rent_period'     => ($type === 'rent' && !empty($rentPeriod)) ? $rentPeriod : null,
-            'location'        => $location,
-            'whatsapp'        => $whatsapp,
-            'third_party_url' => $thirdParty ?: null,
-            'description'     => $description,
-            'status'          => 'active',
+            'user_id'          => $userId,
+            'title'            => $title,
+            'slug'             => $slug,
+            'type'             => $type,
+            'category'         => $category,
+            'condition'        => $condition,
+            'price'            => $price,
+            'rent_period'      => $rentPeriod,
+            'service_type'     => $serviceType,
+            'service_area'     => $serviceArea,
+            'service_hours'    => $serviceHours,
+            'rate_unit'        => $rateUnit,
+            'experience_years' => $experienceYears,
+            'location'         => $location,
+            'whatsapp'         => $whatsapp,
+            'third_party_url'  => $thirdParty ?: null,
+            'description'      => $description,
+            'status'           => 'active',
         ]);
 
         if (!$listingId) {

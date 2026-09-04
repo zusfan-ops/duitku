@@ -17,11 +17,16 @@ class MarketplaceListingModel extends Model
         'user_id',
         'title',
         'slug',
-        'type',             // 'sale', 'rent'
-        'category',         // Motor, Mobil, Properti, Elektronik, Gadget, dll
-        'condition',        // 'new', 'like_new', 'used_good', 'used_fair'
+        'type',             // 'sale', 'rent', 'service'
+        'category',         // Motor, Mobil, Properti, Elektronik, Pijat, Kebersihan, dll
+        'condition',        // 'new', 'like_new', 'used_good', 'used_fair', or null for service
         'price',
         'rent_period',      // 'hari', 'bulan', 'tahun'
+        'service_type',     // 'panggilan', 'di_tempat', 'keduanya', 'online'
+        'service_area',     // Jangkauan radius/area, misal: Semarang & Sekitarnya
+        'service_hours',    // Jam kerja / operasional, misal: 24 Jam, 08:00 - 21:00
+        'rate_unit',        // 'per_sesi', 'per_panggilan', 'per_jam', 'per_unit', 'per_pekerjaan', 'mulai_dari'
+        'experience_years', // Pengalaman, garansi, keahlian
         'description',
         'location',
         'whatsapp',
@@ -59,8 +64,8 @@ class MarketplaceListingModel extends Model
             $builder->where('l.status', 'active');
         }
 
-        // Tipe filter: sale atau rent
-        if (!empty($filters['type']) && in_array($filters['type'], ['sale', 'rent'])) {
+        // Tipe filter: sale, rent, atau service
+        if (!empty($filters['type']) && in_array($filters['type'], ['sale', 'rent', 'service'])) {
             $builder->where('l.type', $filters['type']);
         }
 
@@ -192,9 +197,9 @@ class MarketplaceListingModel extends Model
     }
 
     /**
-     * Ambil daftar kategori produk yang tersedia
+     * Ambil daftar kategori produk barang (jual / sewa)
      */
-    public static function getCategoriesList(): array
+    public static function getProductCategoriesList(): array
     {
         return [
             'Motor & Skuter',
@@ -207,6 +212,64 @@ class MarketplaceListingModel extends Model
             'Hobi, Musik & Olahraga',
             'Peralatan Usaha / Bisnis',
             'Lainnya',
+        ];
+    }
+
+    /**
+     * Ambil daftar kategori khusus layanan jasa (pijat, cleaning, tambal ban, service, dll)
+     */
+    public static function getServiceCategoriesList(): array
+    {
+        return [
+            'Pijat & Refleksi Panggilan',
+            'Kebersihan Rumah & Kantor (Cleaning)',
+            'Bengkel & Tambal Ban Panggilan',
+            'Service AC & Pendingin',
+            'Service Elektronik & Kelistrikan',
+            'Pertukangan & Renovasi Rumah',
+            'Angkutan Barang & Pindahan',
+            'Guru Les & Kursus Privat',
+            'Salon & Barbershop Panggilan',
+            'Servis Komputer & Gadget Panggilan',
+            'Laundry & Cuci Kasur / Sepatu',
+            'Jasa Desain, Foto & Video',
+            'Jasa Lainnya',
+        ];
+    }
+
+    /**
+     * Ambil semua kategori (barang + jasa)
+     */
+    public static function getCategoriesList(): array
+    {
+        return array_merge(self::getProductCategoriesList(), self::getServiceCategoriesList());
+    }
+
+    /**
+     * Ambil daftar satuan tarif jasa
+     */
+    public static function getRateUnitsList(): array
+    {
+        return [
+            'per_sesi'       => 'Per Sesi (Pijat / Terapi)',
+            'per_panggilan'  => 'Per Panggilan / Kunjungan',
+            'per_jam'        => 'Per Jam',
+            'per_unit'       => 'Per Unit / Titik (AC / Ban / Alat)',
+            'per_pekerjaan'  => 'Per Pekerjaan / Borongan',
+            'mulai_dari'     => 'Tarif Mulai Dari (Bisa Nego)',
+        ];
+    }
+
+    /**
+     * Ambil daftar sistem layanan jasa
+     */
+    public static function getServiceTypesList(): array
+    {
+        return [
+            'panggilan' => '🛵 Panggilan ke Rumah / Lokasi Konsumen (Home Service)',
+            'di_tempat' => '🏢 Datang ke Bengkel / Tempat Penyedia',
+            'keduanya'  => '🔄 Bisa Panggilan & Datang ke Tempat',
+            'online'    => '💻 Layanan Online / Jarak Jauh',
         ];
     }
 }

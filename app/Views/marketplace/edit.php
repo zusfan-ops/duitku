@@ -110,6 +110,12 @@
     background: rgba(59, 130, 246, 0.1);
     color: #3B82F6;
 }
+.type-toggle-btn.active.service {
+    border-color: #2563EB;
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563EB;
+}
+
 
 /* Category Grid Pills */
 .category-select-grid {
@@ -565,13 +571,16 @@
 
         <!-- 1. TIPE TRANSAKSI -->
         <div class="form-card">
-            <div class="form-section-title">1. Tipe Transaksi</div>
+            <div class="form-section-title">1. Tipe Iklan / Penawaran</div>
             <div class="type-toggle-group">
                 <div class="type-toggle-btn <?= $listing['type'] === 'sale' ? 'active sale' : '' ?>" id="btnTypeSale" onclick="selectType('sale')">
                     🏷️ Dijual
                 </div>
                 <div class="type-toggle-btn <?= $listing['type'] === 'rent' ? 'active rent' : '' ?>" id="btnTypeRent" onclick="selectType('rent')">
                     🔑 Disewakan
+                </div>
+                <div class="type-toggle-btn <?= $listing['type'] === 'service' ? 'active service' : '' ?>" id="btnTypeService" onclick="selectType('service')">
+                    🛠️ Layanan Jasa
                 </div>
             </div>
             <input type="hidden" name="type" id="listingType" value="<?= esc($listing['type']) ?>">
@@ -589,7 +598,7 @@
 
         <!-- 2. FOTO PRODUK (MULTI-PHOTO) -->
         <div class="form-card">
-            <div class="form-section-title">2. Foto Produk</div>
+            <div class="form-section-title" id="photoSectionTitle">2. Foto Produk / Dokumentasi Layanan</div>
 
             <!-- Existing Photos -->
             <?php if (!empty($images)): ?>
@@ -619,20 +628,23 @@
             <div class="photo-preview-grid" id="previewGrid"></div>
         </div>
 
-        <!-- 3. INFORMASI PRODUK -->
+        <!-- 3. INFORMASI PRODUK / JASA -->
         <div class="form-card">
-            <div class="form-section-title">3. Informasi & Spesifikasi Barang</div>
+            <div class="form-section-title" id="infoSectionTitle">3. <?= $listing['type'] === 'service' ? 'Informasi Layanan Jasa' : 'Informasi & Spesifikasi Barang' ?></div>
 
             <div class="form-group">
-                <label class="form-label">Judul Iklan <span class="req">*</span></label>
-                <input type="text" name="title" class="form-control" placeholder="Contoh: Honda Vario 160cc 2023 Mulus Pajak Hidup" value="<?= esc($listing['title']) ?>" required>
+                <label class="form-label" id="titleLabel">Judul Iklan <span class="req">*</span></label>
+                <input type="text" name="title" id="titleInput" class="form-control" placeholder="Contoh: Honda Vario 160cc 2023 Mulus Pajak Hidup" value="<?= esc($listing['title']) ?>" required>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Kategori <span class="req">*</span></label>
                 <input type="hidden" name="category" id="selectedCategory" value="<?= esc($listing['category']) ?>">
-                <div class="category-select-grid">
-                    <?php foreach ($categories as $cat): ?>
+                <div class="category-select-grid" id="categoryGrid">
+                    <?php 
+                        $catsToShow = $listing['type'] === 'service' ? ($serviceCategories ?? $categories) : ($productCategories ?? $categories);
+                        foreach ($catsToShow as $cat): 
+                    ?>
                         <div class="cat-pill-btn <?= $listing['category'] === $cat ? 'active' : '' ?>" onclick="selectCategory('<?= esc($cat) ?>', this)">
                             <?= esc($cat) ?>
                         </div>
@@ -640,9 +652,9 @@
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" id="conditionGroup" style="<?= $listing['type'] === 'service' ? 'display:none;' : 'display:block;' ?>">
                 <label class="form-label">Kondisi Barang <span class="req">*</span></label>
-                <select name="condition" class="form-control">
+                <select name="condition" id="conditionSelect" class="form-control">
                     <option value="used_good" <?= $listing['condition'] === 'used_good' ? 'selected' : '' ?>>Bekas - Sangat Baik / Terawat</option>
                     <option value="like_new" <?= $listing['condition'] === 'like_new' ? 'selected' : '' ?>>Bekas - Seperti Baru (Mulus 99%)</option>
                     <option value="used_fair" <?= $listing['condition'] === 'used_fair' ? 'selected' : '' ?>>Bekas - Normal Pemakaian / Wajar</option>
@@ -650,14 +662,65 @@
                 </select>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Harga (<?= esc($symbol) ?>) <span class="req">*</span></label>
-                <input type="number" name="price" class="form-control" value="<?= (int)$listing['price'] ?>" min="1000" required>
+            <!-- KHUSUS DETAIL LAYANAN JASA (DYNAMIC) -->
+            <div id="serviceFieldsGroup" style="<?= $listing['type'] === 'service' ? 'display:block;' : 'display:none;' ?>background:rgba(37,99,235,0.04);border:1px dashed rgba(37,99,235,0.3);border-radius:16px;padding:16px;margin-bottom:16px;">
+                <div style="font-size:12px;font-weight:800;color:#2563EB;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                    🛠️ Detail & Ketentuan Layanan Jasa
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group">
+                        <label class="form-label">Sistem / Tipe Layanan <span class="req">*</span></label>
+                        <select name="service_type" id="serviceTypeSelect" class="form-control">
+                            <option value="panggilan" <?= ($listing['service_type'] ?? '') === 'panggilan' ? 'selected' : '' ?>>🛵 Panggilan ke Tempat Konsumen</option>
+                            <option value="di_tempat" <?= ($listing['service_type'] ?? '') === 'di_tempat' ? 'selected' : '' ?>>🏢 Datang ke Bengkel / Tempat Penyedia</option>
+                            <option value="keduanya" <?= ($listing['service_type'] ?? '') === 'keduanya' ? 'selected' : '' ?>>🔄 Bisa Panggilan & Datang ke Tempat</option>
+                            <option value="online" <?= ($listing['service_type'] ?? '') === 'online' ? 'selected' : '' ?>>💻 Layanan Online / Jarak Jauh</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Skema / Satuan Tarif <span class="req">*</span></label>
+                        <select name="rate_unit" id="rateUnitSelect" class="form-control">
+                            <option value="per_sesi" <?= ($listing['rate_unit'] ?? '') === 'per_sesi' ? 'selected' : '' ?>>Per Sesi (Pijat / Terapi)</option>
+                            <option value="per_panggilan" <?= ($listing['rate_unit'] ?? '') === 'per_panggilan' ? 'selected' : '' ?>>Per Panggilan / Kunjungan</option>
+                            <option value="per_jam" <?= ($listing['rate_unit'] ?? '') === 'per_jam' ? 'selected' : '' ?>>Per Jam</option>
+                            <option value="per_unit" <?= ($listing['rate_unit'] ?? '') === 'per_unit' ? 'selected' : '' ?>>Per Unit / Titik (AC / Ban / Alat)</option>
+                            <option value="per_pekerjaan" <?= ($listing['rate_unit'] ?? '') === 'per_pekerjaan' ? 'selected' : '' ?>>Per Pekerjaan / Borongan</option>
+                            <option value="mulai_dari" <?= ($listing['rate_unit'] ?? '') === 'mulai_dari' ? 'selected' : '' ?>>Tarif Mulai Dari (Bisa Nego)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group">
+                        <label class="form-label">Jangkauan Area Panggilan / Layanan <span class="req">*</span></label>
+                        <input type="text" name="service_area" id="serviceAreaInput" class="form-control" placeholder="Contoh: Semarang Kota & Sekitarnya (radius 15 km)" value="<?= esc($listing['service_area'] ?? '') ?>">
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Wilayah yang dapat Anda layani.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Jam Operasional / Ketersediaan <span class="req">*</span></label>
+                        <input type="text" name="service_hours" id="serviceHoursInput" class="form-control" placeholder="Contoh: 24 Jam Siap Dipanggil / 08:00 - 21:00" value="<?= esc($listing['service_hours'] ?? '') ?>">
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Kapan Anda siap menerima panggilan/pesanan.</div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Pengalaman, Keahlian & Garansi</label>
+                    <input type="text" name="experience_years" class="form-control" placeholder="Contoh: Pengalaman 5+ tahun, bawa alat lengkap, bergaransi 30 hari" value="<?= esc($listing['experience_years'] ?? '') ?>">
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Opsional tapi meningkatkan kepercayaan calon pelanggan.</div>
+                </div>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Lokasi / Area COD <span class="req">*</span></label>
-                <input type="text" name="location" class="form-control" value="<?= esc($listing['location']) ?>" required>
+                <label class="form-label" id="priceLabel"><?= $listing['type'] === 'service' ? 'Tarif / Biaya Jasa' : 'Harga' ?> (<?= esc($symbol) ?>) <span class="req">*</span></label>
+                <input type="number" name="price" id="priceInput" class="form-control" value="<?= (int)$listing['price'] ?>" min="1000" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" id="locationLabel"><?= $listing['type'] === 'service' ? 'Kota / Lokasi Asal Penyedia Jasa' : 'Lokasi / Area COD' ?> <span class="req">*</span></label>
+                <input type="text" name="location" id="locationInput" class="form-control" value="<?= esc($listing['location']) ?>" required>
             </div>
 
             <!-- WYSIWYG & Markdown Description Editor -->
@@ -995,20 +1058,73 @@ function deleteExistingPhoto(imageId) {
     });
 }
 
+const productCategories = <?= json_encode($productCategories ?? []) ?>;
+const serviceCategories = <?= json_encode($serviceCategories ?? []) ?>;
+
+function renderCategoryPills(cats) {
+    const grid = document.getElementById('categoryGrid');
+    const hidden = document.getElementById('selectedCategory');
+    if (!grid || !hidden || !cats) return;
+    const current = hidden.value;
+    grid.innerHTML = '';
+    let found = false;
+    cats.forEach(cat => {
+        const div = document.createElement('div');
+        div.className = 'cat-pill-btn' + (cat === current ? ' active' : '');
+        div.textContent = cat;
+        div.onclick = function() { selectCategory(cat, div); };
+        grid.appendChild(div);
+        if (cat === current) found = true;
+    });
+    if (!found && cats.length > 0) {
+        hidden.value = cats[0];
+        grid.firstElementChild?.classList.add('active');
+    }
+}
+
 function selectType(type) {
     document.getElementById('listingType').value = type;
     const btnSale = document.getElementById('btnTypeSale');
     const btnRent = document.getElementById('btnTypeRent');
+    const btnService = document.getElementById('btnTypeService');
     const rentGroup = document.getElementById('rentPeriodGroup');
+    const conditionGroup = document.getElementById('conditionGroup');
+    const serviceGroup = document.getElementById('serviceFieldsGroup');
+    const priceLabel = document.getElementById('priceLabel');
+    const locationLabel = document.getElementById('locationLabel');
+    const infoTitle = document.getElementById('infoSectionTitle');
 
-    if (type === 'sale') {
-        btnSale.classList.add('active', 'sale');
-        btnRent.classList.remove('active', 'rent');
+    btnSale.classList.remove('active', 'sale');
+    btnRent.classList.remove('active', 'rent');
+    btnService.classList.remove('active', 'service');
+
+    if (type === 'service') {
+        btnService.classList.add('active', 'service');
         rentGroup.style.display = 'none';
-    } else {
+        conditionGroup.style.display = 'none';
+        serviceGroup.style.display = 'block';
+        infoTitle.textContent = '3. Informasi Layanan Jasa';
+        priceLabel.innerHTML = 'Tarif / Biaya Jasa (<?= esc($symbol) ?>) <span class="req">*</span>';
+        locationLabel.innerHTML = 'Kota / Lokasi Asal Penyedia Jasa <span class="req">*</span>';
+        renderCategoryPills(serviceCategories);
+    } else if (type === 'rent') {
         btnRent.classList.add('active', 'rent');
-        btnSale.classList.remove('active', 'sale');
         rentGroup.style.display = 'block';
+        conditionGroup.style.display = 'block';
+        serviceGroup.style.display = 'none';
+        infoTitle.textContent = '3. Informasi & Spesifikasi Sewa';
+        priceLabel.innerHTML = 'Harga Sewa (<?= esc($symbol) ?>) <span class="req">*</span>';
+        locationLabel.innerHTML = 'Lokasi / Area COD <span class="req">*</span>';
+        renderCategoryPills(productCategories);
+    } else {
+        btnSale.classList.add('active', 'sale');
+        rentGroup.style.display = 'none';
+        conditionGroup.style.display = 'block';
+        serviceGroup.style.display = 'none';
+        infoTitle.textContent = '3. Informasi & Spesifikasi Barang';
+        priceLabel.innerHTML = 'Harga (<?= esc($symbol) ?>) <span class="req">*</span>';
+        locationLabel.innerHTML = 'Lokasi / Area COD <span class="req">*</span>';
+        renderCategoryPills(productCategories);
     }
 }
 

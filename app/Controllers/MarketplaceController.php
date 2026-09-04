@@ -75,20 +75,24 @@ class MarketplaceController extends BaseController
         $currencySymbol = $userId ? $this->settingModel->get($userId, 'currency_symbol', 'Rp') : 'Rp';
 
         return view('marketplace/index', [
-            'pageTitle'       => 'Jual Beli & Sewa',
-            'listings'        => $listings,
-            'myListings'      => $myListings,
-            'ordersReceived'  => $ordersReceived,
-            'ordersPlaced'    => $ordersPlaced,
-            'categories'      => MarketplaceListingModel::getCategoriesList(),
-            'selectedType'    => $type,
-            'selectedCategory'=> $category ?: 'Semua',
-            'searchQuery'     => $search,
-            'currentSort'     => $sort,
-            'activeTab'       => $tab,
-            'symbol'          => $currencySymbol,
-            'userId'          => $userId,
-            'myUsername'      => $myUsername,
+            'pageTitle'         => 'Jual Beli, Sewa & Jasa',
+            'listings'          => $listings,
+            'myListings'        => $myListings,
+            'ordersReceived'    => $ordersReceived,
+            'ordersPlaced'      => $ordersPlaced,
+            'categories'        => MarketplaceListingModel::getCategoriesList(),
+            'productCategories' => MarketplaceListingModel::getProductCategoriesList(),
+            'serviceCategories' => MarketplaceListingModel::getServiceCategoriesList(),
+            'rateUnits'         => MarketplaceListingModel::getRateUnitsList(),
+            'serviceTypes'      => MarketplaceListingModel::getServiceTypesList(),
+            'selectedType'      => $type,
+            'selectedCategory'  => $category ?: 'Semua',
+            'searchQuery'       => $search,
+            'currentSort'       => $sort,
+            'activeTab'         => $tab,
+            'symbol'            => $currencySymbol,
+            'userId'            => $userId,
+            'myUsername'        => $myUsername,
         ]);
     }
 
@@ -108,10 +112,14 @@ class MarketplaceController extends BaseController
         $symbol = $this->settingModel->get($userId, 'currency_symbol', 'Rp');
 
         return view('marketplace/create', [
-            'pageTitle'  => 'Pasang Iklan Jual / Sewa',
-            'user'       => $user,
-            'symbol'     => $symbol,
-            'categories' => MarketplaceListingModel::getCategoriesList(),
+            'pageTitle'         => 'Pasang Iklan Jual, Sewa & Jasa',
+            'user'              => $user,
+            'symbol'            => $symbol,
+            'productCategories' => MarketplaceListingModel::getProductCategoriesList(),
+            'serviceCategories' => MarketplaceListingModel::getServiceCategoriesList(),
+            'categories'        => MarketplaceListingModel::getCategoriesList(),
+            'rateUnits'         => MarketplaceListingModel::getRateUnitsList(),
+            'serviceTypes'      => MarketplaceListingModel::getServiceTypesList(),
         ]);
     }
 
@@ -126,15 +134,36 @@ class MarketplaceController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'Sesi berakhir, silakan login kembali.']);
             }
 
+            $rawType     = $this->request->getPost('type');
+            $type        = in_array($rawType, ['sale', 'rent', 'service']) ? $rawType : 'sale';
             $title       = trim($this->request->getPost('title') ?? '');
-            $type        = $this->request->getPost('type') === 'rent' ? 'rent' : 'sale';
             $category    = trim($this->request->getPost('category') ?? 'Lainnya');
-            $condition   = $this->request->getPost('condition') ?: 'used_good';
             $price       = (float)str_replace(['.', ','], ['', '.'], $this->request->getPost('price') ?? '0');
-            $rentPeriod  = trim($this->request->getPost('rent_period') ?? '');
             $location    = trim($this->request->getPost('location') ?? '');
             $whatsapp    = trim($this->request->getPost('whatsapp') ?? '');
             $thirdParty  = trim($this->request->getPost('third_party_url') ?? '');
+
+            // Field kondisional sesuai tipe
+            $condition        = null;
+            $rentPeriod       = null;
+            $serviceType      = null;
+            $serviceArea      = null;
+            $serviceHours     = null;
+            $rateUnit         = null;
+            $experienceYears  = null;
+
+            if ($type === 'service') {
+                $serviceType     = trim($this->request->getPost('service_type') ?? 'panggilan');
+                $serviceArea     = trim($this->request->getPost('service_area') ?? '');
+                $serviceHours    = trim($this->request->getPost('service_hours') ?? '');
+                $rateUnit        = trim($this->request->getPost('rate_unit') ?? 'per_panggilan');
+                $experienceYears = trim($this->request->getPost('experience_years') ?? '');
+            } else {
+                $condition  = $this->request->getPost('condition') ?: 'used_good';
+                if ($type === 'rent') {
+                    $rentPeriod = trim($this->request->getPost('rent_period') ?? 'bulan');
+                }
+            }
             
             // Rich WYSIWYG HTML description sanitization
             $rawDesc     = $this->request->getPost('description') ?? '';
@@ -149,10 +178,10 @@ class MarketplaceController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'Judul iklan minimal 4 karakter.']);
             }
             if ($price <= 0) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Harga wajib lebih dari 0.']);
+                return $this->response->setJSON(['success' => false, 'message' => 'Harga / Tarif wajib lebih dari 0.']);
             }
             if (empty($location)) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Lokasi / Wilayah COD wajib diisi.']);
+                return $this->response->setJSON(['success' => false, 'message' => ($type === 'service' ? 'Lokasi / Kota asal penyedia jasa wajib diisi.' : 'Lokasi / Wilayah COD wajib diisi.')]);
             }
 
             // Generate slug
@@ -160,19 +189,24 @@ class MarketplaceController extends BaseController
             $slug = $baseSlug . '-' . time();
 
             $listingData = [
-                'user_id'         => $userId,
-                'title'           => $title,
-                'slug'            => $slug,
-                'type'            => $type,
-                'category'        => $category,
-                'condition'       => $condition,
-                'price'           => $price,
-                'rent_period'     => ($type === 'rent' && !empty($rentPeriod)) ? $rentPeriod : null,
-                'location'        => $location,
-                'whatsapp'        => $whatsapp,
-                'third_party_url' => $thirdParty ?: null,
-                'description'     => $description,
-                'status'          => 'active',
+                'user_id'          => $userId,
+                'title'            => $title,
+                'slug'             => $slug,
+                'type'             => $type,
+                'category'         => $category,
+                'condition'        => $condition,
+                'price'            => $price,
+                'rent_period'      => $rentPeriod,
+                'service_type'     => $serviceType,
+                'service_area'     => $serviceArea,
+                'service_hours'    => $serviceHours,
+                'rate_unit'        => $rateUnit,
+                'experience_years' => $experienceYears,
+                'location'         => $location,
+                'whatsapp'         => $whatsapp,
+                'third_party_url'  => $thirdParty ?: null,
+                'description'      => $description,
+                'status'           => 'active',
             ];
 
             $listingId = $this->listingModel->insert($listingData);
@@ -277,12 +311,16 @@ class MarketplaceController extends BaseController
         $symbol = $this->settingModel->get($userId, 'currency_symbol', 'Rp');
 
         return view('marketplace/edit', [
-            'pageTitle'  => 'Edit Iklan: ' . esc($listing['title']),
-            'listing'    => $listing,
-            'images'     => $images,
-            'user'       => $user,
-            'symbol'     => $symbol,
-            'categories' => MarketplaceListingModel::getCategoriesList(),
+            'pageTitle'         => 'Edit Iklan: ' . esc($listing['title']),
+            'listing'           => $listing,
+            'images'            => $images,
+            'user'              => $user,
+            'symbol'            => $symbol,
+            'productCategories' => MarketplaceListingModel::getProductCategoriesList(),
+            'serviceCategories' => MarketplaceListingModel::getServiceCategoriesList(),
+            'categories'        => MarketplaceListingModel::getCategoriesList(),
+            'rateUnits'         => MarketplaceListingModel::getRateUnitsList(),
+            'serviceTypes'      => MarketplaceListingModel::getServiceTypesList(),
         ]);
     }
 
@@ -302,15 +340,36 @@ class MarketplaceController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'Iklan tidak ditemukan atau akses ditolak.']);
             }
 
+            $rawType     = $this->request->getPost('type');
+            $type        = in_array($rawType, ['sale', 'rent', 'service']) ? $rawType : 'sale';
             $title       = trim($this->request->getPost('title') ?? '');
-            $type        = $this->request->getPost('type') === 'rent' ? 'rent' : 'sale';
             $category    = trim($this->request->getPost('category') ?? 'Lainnya');
-            $condition   = $this->request->getPost('condition') ?: 'used_good';
             $price       = (float)str_replace(['.', ','], ['', '.'], $this->request->getPost('price') ?? '0');
-            $rentPeriod  = trim($this->request->getPost('rent_period') ?? '');
             $location    = trim($this->request->getPost('location') ?? '');
             $whatsapp    = trim($this->request->getPost('whatsapp') ?? '');
             $thirdParty  = trim($this->request->getPost('third_party_url') ?? '');
+
+            // Field kondisional sesuai tipe
+            $condition        = null;
+            $rentPeriod       = null;
+            $serviceType      = null;
+            $serviceArea      = null;
+            $serviceHours     = null;
+            $rateUnit         = null;
+            $experienceYears  = null;
+
+            if ($type === 'service') {
+                $serviceType     = trim($this->request->getPost('service_type') ?? 'panggilan');
+                $serviceArea     = trim($this->request->getPost('service_area') ?? '');
+                $serviceHours    = trim($this->request->getPost('service_hours') ?? '');
+                $rateUnit        = trim($this->request->getPost('rate_unit') ?? 'per_panggilan');
+                $experienceYears = trim($this->request->getPost('experience_years') ?? '');
+            } else {
+                $condition  = $this->request->getPost('condition') ?: 'used_good';
+                if ($type === 'rent') {
+                    $rentPeriod = trim($this->request->getPost('rent_period') ?? 'bulan');
+                }
+            }
 
             // Rich WYSIWYG HTML description sanitization
             $rawDesc     = $this->request->getPost('description') ?? '';
@@ -325,23 +384,28 @@ class MarketplaceController extends BaseController
                 return $this->response->setJSON(['success' => false, 'message' => 'Judul iklan minimal 4 karakter.']);
             }
             if ($price <= 0) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Harga wajib lebih dari 0.']);
+                return $this->response->setJSON(['success' => false, 'message' => 'Harga / Tarif wajib lebih dari 0.']);
             }
             if (empty($location)) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Lokasi / Wilayah COD wajib diisi.']);
+                return $this->response->setJSON(['success' => false, 'message' => ($type === 'service' ? 'Lokasi / Kota asal penyedia jasa wajib diisi.' : 'Lokasi / Wilayah COD wajib diisi.')]);
             }
 
             $updateData = [
-                'title'           => $title,
-                'type'            => $type,
-                'category'        => $category,
-                'condition'       => $condition,
-                'price'           => $price,
-                'rent_period'     => ($type === 'rent' && !empty($rentPeriod)) ? $rentPeriod : null,
-                'location'        => $location,
-                'whatsapp'        => $whatsapp,
-                'third_party_url' => $thirdParty ?: null,
-                'description'     => $description,
+                'title'            => $title,
+                'type'             => $type,
+                'category'         => $category,
+                'condition'        => $condition,
+                'price'            => $price,
+                'rent_period'      => $rentPeriod,
+                'service_type'     => $serviceType,
+                'service_area'     => $serviceArea,
+                'service_hours'    => $serviceHours,
+                'rate_unit'        => $rateUnit,
+                'experience_years' => $experienceYears,
+                'location'         => $location,
+                'whatsapp'         => $whatsapp,
+                'third_party_url'  => $thirdParty ?: null,
+                'description'      => $description,
             ];
 
             $this->listingModel->update($id, $updateData);

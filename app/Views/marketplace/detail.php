@@ -70,6 +70,11 @@
     background: #6D28D9;
     color: #fff;
 }
+.gallery-badge-type.service {
+    background: #2563EB;
+    color: #fff;
+}
+
 
 /* Thumbnails row */
 .thumb-row {
@@ -790,7 +795,7 @@
             <?php endif; ?>
 
             <div class="gallery-badge-type <?= esc($listing['type']) ?>">
-                <?= $listing['type'] === 'rent' ? 'SEWA' : 'JUAL' ?>
+                <?= $listing['type'] === 'service' ? 'LAYANAN JASA' : ($listing['type'] === 'rent' ? 'SEWA' : 'JUAL') ?>
             </div>
         </div>
 
@@ -805,16 +810,30 @@
         <?php endif; ?>
     </div>
 
-    <!-- 2. PRODUCT DETAILS -->
+    <!-- 2. PRODUCT / SERVICE DETAILS -->
     <div class="detail-main-card">
         <div class="detail-cat-cond">
             <span class="detail-pill">📁 <?= esc($listing['category']) ?></span>
-            <span class="detail-pill">
-                <?php
-                    $condMap = ['new' => 'Baru', 'like_new' => 'Seperti Baru', 'used_good' => 'Bekas Mulus', 'used_fair' => 'Bekas Layak'];
-                    echo '✨ ' . ($condMap[$listing['condition']] ?? 'Bekas');
-                ?>
-            </span>
+            <?php if ($listing['type'] === 'service'): ?>
+                <span class="detail-pill" style="background:rgba(37,99,235,0.08);color:#2563EB;border-color:rgba(37,99,235,0.25);">
+                    <?php
+                        $stMap = [
+                            'panggilan' => '🛵 Siap Panggilan (Home Service)',
+                            'di_tempat' => '🏢 Di Tempat / Workshop',
+                            'keduanya'  => '🔄 Panggilan & Di Tempat',
+                            'online'    => '💻 Online / Jarak Jauh',
+                        ];
+                        echo esc($stMap[$listing['service_type'] ?? ''] ?? '🛠️ Layanan Jasa');
+                    ?>
+                </span>
+            <?php else: ?>
+                <span class="detail-pill">
+                    <?php
+                        $condMap = ['new' => 'Baru', 'like_new' => 'Seperti Baru', 'used_good' => 'Bekas Mulus', 'used_fair' => 'Bekas Layak'];
+                        echo '✨ ' . ($condMap[$listing['condition']] ?? 'Bekas');
+                    ?>
+                </span>
+            <?php endif; ?>
             <span class="detail-pill">👁️ <?= (int)$listing['views_count'] ?> dilihat</span>
             <span class="detail-pill">🕒 <?= date('d M Y', strtotime($listing['created_at'])) ?></span>
         </div>
@@ -825,21 +844,60 @@
             <?= $symbol ?> <?= number_format($listing['price'], 0, ',', '.') ?>
             <?php if ($listing['type'] === 'rent' && !empty($listing['rent_period'])): ?>
                 <span class="detail-period">/ <?= esc($listing['rent_period']) ?></span>
+            <?php elseif ($listing['type'] === 'service' && !empty($listing['rate_unit'])): ?>
+                <?php
+                    $rateNames = [
+                        'per_sesi'       => 'per sesi (pijat/terapi)',
+                        'per_panggilan'  => 'per panggilan',
+                        'per_jam'        => 'per jam',
+                        'per_unit'       => 'per unit / titik',
+                        'per_pekerjaan'  => 'per pekerjaan / borongan',
+                        'mulai_dari'     => '(mulai dari)',
+                    ];
+                    echo '<span class="detail-period">/ ' . esc($rateNames[$listing['rate_unit']] ?? $listing['rate_unit']) . '</span>';
+                ?>
             <?php endif; ?>
         </div>
 
-        <div class="detail-meta-grid">
-            <div class="meta-item">
-                Lokasi COD:
-                <strong>📍 <?= esc($listing['location']) ?></strong>
+        <?php if ($listing['type'] === 'service'): ?>
+            <!-- INFORMASI KHUSUS JASA -->
+            <div style="background:rgba(37,99,235,0.04);border:1px solid rgba(37,99,235,0.18);border-radius:14px;padding:14px;margin-bottom:16px;">
+                <div style="font-size:12.5px;font-weight:800;color:#2563EB;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                    🛠️ Ketentuan Layanan Jasa
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12.5px;">
+                    <div>
+                        <span style="color:var(--text-muted);display:block;font-size:11px;">Jangkauan Area Panggilan:</span>
+                        <strong>📍 <?= !empty($listing['service_area']) ? esc($listing['service_area']) : esc($listing['location']) ?></strong>
+                    </div>
+                    <div>
+                        <span style="color:var(--text-muted);display:block;font-size:11px;">Jam Operasional / Ketersediaan:</span>
+                        <strong>⏰ <?= !empty($listing['service_hours']) ? esc($listing['service_hours']) : 'Siap Dihubungi' ?></strong>
+                    </div>
+                    <div>
+                        <span style="color:var(--text-muted);display:block;font-size:11px;">Sistem Layanan:</span>
+                        <strong><?= esc($stMap[$listing['service_type'] ?? ''] ?? 'Panggilan / Di Tempat') ?></strong>
+                    </div>
+                    <div>
+                        <span style="color:var(--text-muted);display:block;font-size:11px;">Keahlian / Garansi:</span>
+                        <strong>🛡️ <?= !empty($listing['experience_years']) ? esc($listing['experience_years']) : 'Sesuai Kesepakatan' ?></strong>
+                    </div>
+                </div>
             </div>
-            <div class="meta-item">
-                Status Produk:
-                <strong style="color:#059669;text-transform:capitalize;"><?= esc($listing['status']) ?></strong>
+        <?php else: ?>
+            <div class="detail-meta-grid">
+                <div class="meta-item">
+                    Lokasi COD:
+                    <strong>📍 <?= esc($listing['location']) ?></strong>
+                </div>
+                <div class="meta-item">
+                    Status Produk:
+                    <strong style="color:#059669;text-transform:capitalize;"><?= esc($listing['status']) ?></strong>
+                </div>
             </div>
-        </div>
+        <?php endif; ?>
 
-        <div class="detail-desc-title">Deskripsi Produk:</div>
+        <div class="detail-desc-title"><?= $listing['type'] === 'service' ? 'Deskripsi Layanan Jasa:' : 'Deskripsi Produk:' ?></div>
         <div class="detail-desc-text" id="detailDescText">
             <?php
                 $raw = $listing['description'] ?? '';
@@ -851,7 +909,7 @@
                         echo nl2br(esc($raw));
                     }
                 } else {
-                    echo '<span style="color:var(--text-muted);font-style:italic;">Tidak ada deskripsi tambahan dari penjual.</span>';
+                    echo '<span style="color:var(--text-muted);font-style:italic;">Tidak ada deskripsi tambahan dari penyedia.</span>';
                 }
             ?>
         </div>
@@ -863,9 +921,15 @@
         <div class="anti-scam-content">
             <h4>PANDUAN TRANSAKSI AMAN (ANTI-PENIPUAN)</h4>
             <ul>
-                <li><strong>JANGAN PERNAH mengirim DP / Uang Muka</strong> dalam bentuk apapun sebelum melihat dan mengecek langsung fisik barang!</li>
-                <li><strong>Wajib COD (Ketemu Langsung)</strong> di tempat umum yang aman (seperti SPBU ramai, mall, mini market, atau kantor polisi).</li>
-                <li>Jika berjarak jauh, <strong>gunakan transaksi lewat pihak ketiga (Shopee / Tokopedia)</strong> agar dana Anda aman tersimpan di rekening bersama sampai barang terbukti sampai & sesuai.</li>
+                <?php if ($listing['type'] === 'service'): ?>
+                    <li><strong>Pembayaran dilakukan setelah jasa/pekerjaan selesai</strong> atau sesuai kesepakatan tertulis yang jelas.</li>
+                    <li>Pastikan identitas dan detail alamat sudah disepakati sebelum penyedia jasa berangkat ke lokasi Anda.</li>
+                    <li>Simpan riwayat percakapan dan bukti pembayaran untuk kenyamanan bersama.</li>
+                <?php else: ?>
+                    <li><strong>JANGAN PERNAH mengirim DP / Uang Muka</strong> dalam bentuk apapun sebelum melihat dan mengecek langsung fisik barang!</li>
+                    <li><strong>Wajib COD (Ketemu Langsung)</strong> di tempat umum yang aman (seperti SPBU ramai, mall, mini market, atau kantor polisi).</li>
+                    <li>Jika berjarak jauh, <strong>gunakan transaksi lewat pihak ketiga (Shopee / Tokopedia)</strong> agar dana Anda aman tersimpan di rekening bersama.</li>
+                <?php endif; ?>
             </ul>
         </div>
     </div>
@@ -883,7 +947,7 @@
             <div class="seller-details">
                 <h4><?= esc($listing['seller_name']) ?></h4>
                 <a href="<?= esc($userStoreUrl) ?>" class="seller-domain-link" title="Buka etalase profil penjual">
-                    <span>🏪 Kunjungi Toko (<?= esc($listing['seller_username'] ?: 'toko-' . $listing['user_id']) ?>)</span>
+                    <span>🏪 Kunjungi Profil (<?= esc($listing['seller_username'] ?: 'toko-' . $listing['user_id']) ?>)</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
                         <polyline points="9 18 15 12 9 6"/>
                     </svg>
@@ -900,17 +964,21 @@
         <?php
             $waNumber = preg_replace('/[^0-9]/', '', $listing['whatsapp'] ?: ($listing['seller_phone_registered'] ?? ''));
             if (str_starts_with($waNumber, '0')) $waNumber = '62' . substr($waNumber, 1);
-            $waMsg = 'Halo ' . $listing['seller_name'] . ', saya berminat dengan produk "' . $listing['title'] . '" di DuitKu (Link: ' . $shareUrl . '). Apakah barang masih tersedia?';
+            if ($listing['type'] === 'service') {
+                $waMsg = 'Halo ' . $listing['seller_name'] . ', saya ingin bertanya / memesan layanan jasa "' . $listing['title'] . '" di DuitKu (Link: ' . $shareUrl . '). Apakah Anda siap melayani?';
+            } else {
+                $waMsg = 'Halo ' . $listing['seller_name'] . ', saya berminat dengan produk "' . $listing['title'] . '" di DuitKu (Link: ' . $shareUrl . '). Apakah barang masih tersedia?';
+            }
         ?>
         <?php if (!empty($waNumber)): ?>
             <a href="https://wa.me/<?= $waNumber ?>?text=<?= urlencode($waMsg) ?>" target="_blank" class="btn-action-primary btn-wa">
-                <span>💬 Chat WhatsApp</span>
+                <span><?= $listing['type'] === 'service' ? '📞 Panggil / Hubungi WhatsApp' : '💬 Chat WhatsApp' ?></span>
             </a>
         <?php endif; ?>
 
         <?php if (!$isOwner): ?>
             <button onclick="openOrderModal()" class="btn-action-primary btn-order">
-                <span>📝 Ajukan Minat</span>
+                <span><?= $listing['type'] === 'service' ? '📝 Pesan Layanan Jasa' : '📝 Ajukan Minat' ?></span>
             </button>
         <?php else: ?>
             <a href="/marketplace/edit/<?= esc($listing['id']) ?>" class="btn-action-primary btn-order" style="background:#4338CA;">
