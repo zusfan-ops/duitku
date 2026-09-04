@@ -7,18 +7,35 @@ class FcmService
     protected string $serviceAccountPath;
     protected string $projectId = 'duitku-19896';
 
+    protected ?string $clientEmail = null;
+    protected ?string $privateKey  = null;
+
     public function __construct()
     {
         $writablePath = defined('WRITEPATH') ? WRITEPATH : dirname(__DIR__, 2) . '/writable/';
         $rootPath     = defined('ROOTPATH') ? ROOTPATH : dirname(__DIR__, 2) . '/';
 
+        // 1. Coba ambil dari Config\Firebase jika tersedia
+        try {
+            if (class_exists('Config\Firebase')) {
+                $firebaseConfig = config('Firebase') ?? new \Config\Firebase();
+                if (!empty($firebaseConfig->privateKey) && !empty($firebaseConfig->clientEmail)) {
+                    $this->projectId   = $firebaseConfig->projectId ?? 'duitku-19896';
+                    $this->clientEmail = $firebaseConfig->clientEmail;
+                    $this->privateKey  = $firebaseConfig->privateKey;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Abaikan jika helper config belum aktif
+        }
+
+        // 2. Cek file-file JSON candidate
         $candidates = [
             $writablePath . 'firebase-service-account.json',
             $rootPath . 'duitku-19896-firebase-adminsdk-fbsvc-5cb52030bc.json',
             $rootPath . 'firebase-service-account.json',
         ];
 
-        // Also check if any file matches *-firebase-adminsdk-*.json in root
         $globFiles = glob($rootPath . '*-firebase-adminsdk-*.json');
         if (!empty($globFiles)) {
             $candidates = array_merge($candidates, $globFiles);
@@ -37,6 +54,12 @@ class FcmService
             if (!empty($data['project_id'])) {
                 $this->projectId = $data['project_id'];
             }
+            if (empty($this->clientEmail) && !empty($data['client_email'])) {
+                $this->clientEmail = $data['client_email'];
+            }
+            if (empty($this->privateKey) && !empty($data['private_key'])) {
+                $this->privateKey = $data['private_key'];
+            }
         }
     }
 
@@ -45,6 +68,10 @@ class FcmService
      */
     public function isConfigured(): bool
     {
+        if (!empty($this->clientEmail) && !empty($this->privateKey)) {
+            return true;
+        }
+
         return file_exists($this->serviceAccountPath) && filesize($this->serviceAccountPath) > 20;
     }
 
@@ -56,6 +83,12 @@ class FcmService
         $decoded = json_decode($jsonContent, true);
         if (!$decoded || empty($decoded['private_key']) || empty($decoded['client_email'])) {
             return false;
+        }
+
+        $this->clientEmail = $decoded['client_email'];
+        $this->privateKey  = $decoded['private_key'];
+        if (!empty($decoded['project_id'])) {
+            $this->projectId = $decoded['project_id'];
         }
 
         return file_put_contents($this->serviceAccountPath, $jsonContent) !== false;
@@ -70,11 +103,16 @@ class FcmService
             return null;
         }
 
-        $serviceAccount = json_decode(file_get_contents($this->serviceAccountPath), true);
-        if (!$serviceAccount) return null;
+        $clientEmail = $this->clientEmail;
+        $privateKey  = $this->privateKey;
 
-        $clientEmail = $serviceAccount['client_email'] ?? '';
-        $privateKey  = $serviceAccount['private_key'] ?? '';
+        if (empty($clientEmail) || empty($privateKey)) {
+            if (file_exists($this->serviceAccountPath)) {
+                $serviceAccount = json_decode(file_get_contents($this->serviceAccountPath), true);
+                $clientEmail = $serviceAccount['client_email'] ?? '';
+                $privateKey  = $serviceAccount['private_key'] ?? '';
+            }
+        }
 
         if (empty($clientEmail) || empty($privateKey)) return null;
 
