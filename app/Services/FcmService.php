@@ -181,6 +181,67 @@ class FcmService
         return ['success' => false, 'http_code' => $httpCode, 'response' => $resData];
     }
 
+    /**
+     * Kirim push notifikasi langsung ke Token Perangkat tertentu
+     */
+    public function sendToToken(string $deviceToken, string $title, string $body, array $data = []): array
+    {
+        $accessToken = $this->getAccessToken();
+        if (!$accessToken) {
+            return ['success' => false, 'message' => 'Service Account Firebase belum dikonfigurasi atau Access Token gagal dibuat.'];
+        }
+
+        $url = "https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send";
+
+        $stringData = [];
+        foreach ($data as $k => $v) {
+            $stringData[(string)$k] = (string)$v;
+        }
+        $stringData['title'] = $title;
+        $stringData['message'] = $body;
+
+        $payload = [
+            'message' => [
+                'token' => $deviceToken,
+                'notification' => [
+                    'title' => $title,
+                    'body'  => $body,
+                ],
+                'data' => $stringData,
+                'android' => [
+                    'priority' => 'high',
+                    'notification' => [
+                        'channel_id' => 'duitku_broadcast_channel',
+                        'sound'      => 'default',
+                        'default_vibrate_timings' => true,
+                        'default_sound'           => true,
+                    ],
+                ],
+            ],
+        ];
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $accessToken,
+            'Content-Type: application/json; UTF-8',
+        ]);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $resData = json_decode($response, true);
+        if ($httpCode >= 200 && $httpCode < 300) {
+            return ['success' => true, 'response' => $resData];
+        }
+
+        return ['success' => false, 'http_code' => $httpCode, 'response' => $resData];
+    }
+
     protected function base64UrlEncode(string $data): string
     {
         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');

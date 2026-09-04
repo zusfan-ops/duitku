@@ -115,11 +115,16 @@
             <h2 style="margin: 0 0 2px; font-size: 20px; font-weight: 800; color: var(--text-primary);">📢 Pemberitahuan & Pesan</h2>
             <p style="margin: 0; font-size: 12px; color: var(--text-secondary);">Pusat informasi resmi, pengumuman & promo DuitKu.</p>
         </div>
-        <?php if (!empty($notifList) && ($unreadCount ?? 0) > 0): ?>
-            <a href="/notifications/read-all" class="zp-tab-btn" style="padding: 8px 12px; border: 1px solid var(--border); font-size: 11.5px; text-decoration: none; border-radius: 10px;">
-                ✓ Tandai Semua Dibaca
-            </a>
-        <?php endif; ?>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="button" onclick="testBrowserNotification()" class="zp-tab-btn" style="padding: 8px 12px; border: 1px solid var(--border); font-size: 11.5px; border-radius: 10px; cursor: pointer; background: var(--card); color: var(--text-primary);">
+                🔔 Tes Notif Browser
+            </button>
+            <?php if (!empty($notifList) && ($unreadCount ?? 0) > 0): ?>
+                <a href="/notifications/read-all" class="zp-tab-btn" style="padding: 8px 12px; border: 1px solid var(--border); font-size: 11.5px; text-decoration: none; border-radius: 10px;">
+                    ✓ Tandai Semua Dibaca
+                </a>
+            <?php endif; ?>
+        </div>
     </div>
 
     <?php if (empty($notifList)): ?>
@@ -195,6 +200,23 @@
 <script>
 function markRead(id) {
     fetch('/notifications/read/' + id, { credentials: 'same-origin' });
+}
+
+function testBrowserNotification() {
+    if (!('Notification' in window)) {
+        alert('Browser ini tidak mendukung Web Notification API.');
+        return;
+    }
+    Notification.requestPermission().then(function(perm) {
+        if (perm === 'granted') {
+            new Notification('DuitKu Notification Test 🔔', {
+                body: 'Push notifikasi browser DuitKu berhasil bekerja dengan normal!',
+                icon: '/images/logo.png'
+            });
+        } else {
+            alert('Izin notifikasi belum diaktifkan. Silakan ubah izin notifikasi di address bar browser Anda (ikon gembok/setelan).');
+        }
+    });
 }
 </script>
 <?= $this->endSection() ?>
