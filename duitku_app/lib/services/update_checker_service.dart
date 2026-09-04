@@ -78,7 +78,7 @@ class UpdateCheckerService {
   static final UpdateCheckerService instance = UpdateCheckerService._();
 
   /// Versi aplikasi fallback jika package_info belum termuat
-  static const String fallbackVersion = '1.2.31';
+  static const String fallbackVersion = '1.2.32';
   String _cachedVersion = fallbackVersion;
 
   /// Versi aplikasi saat ini
