@@ -2646,13 +2646,25 @@ function refreshConversationsListSilently(detectNew = false) {
    STATUS / STORIES (KHUSUS TEMAN & 24 JAM) PWA JAVASCRIPT
    ═══════════════════════════════════════════════════════════════ */
 function openCreateStatusModal() {
+    const form = document.getElementById('createStatusForm');
+    if (form) form.reset();
+    switchStatusType('text');
+    selectStatusColor('#2563EB', document.querySelector('.color-pill[data-color="#2563EB"]'));
+    const photoWrap = document.getElementById('statusPhotoPreviewWrap');
+    if (photoWrap) photoWrap.style.display = 'none';
     const overlay = document.getElementById('createStatusModalOverlay');
-    if (overlay) overlay.style.display = 'flex';
+    if (overlay) {
+        overlay.style.display = 'flex';
+        overlay.classList.add('open');
+    }
 }
 
 function closeCreateStatusModal() {
     const overlay = document.getElementById('createStatusModalOverlay');
-    if (overlay) overlay.style.display = 'none';
+    if (overlay) {
+        overlay.classList.remove('open');
+        overlay.style.display = 'none';
+    }
 }
 
 function switchStatusType(type) {
@@ -2708,9 +2720,18 @@ function submitCreateStatus(e) {
     const mediaType = document.getElementById('statusMediaType').value;
     const formData = new FormData();
     formData.append('media_type', mediaType);
+    formData.append('type', mediaType);
+    formData.append(csrfTokenName, getCsrfToken());
 
     if (mediaType === 'text') {
-        formData.append('caption', document.getElementById('statusCaptionText').value.trim());
+        const textVal = (document.getElementById('statusCaptionText')?.value || '').trim();
+        if (!textVal) {
+            alert('Silakan tulis status Anda terlebih dahulu.');
+            btn.disabled = false;
+            btn.innerHTML = origText;
+            return;
+        }
+        formData.append('caption', textVal);
         formData.append('background_color', document.getElementById('statusBgColor').value);
     } else {
         const fileInput = document.getElementById('statusImageInput');
@@ -2721,19 +2742,23 @@ function submitCreateStatus(e) {
             return;
         }
         formData.append('media', fileInput.files[0]);
-        formData.append('caption', document.getElementById('statusPhotoCaption').value.trim());
+        formData.append('image', fileInput.files[0]);
+        formData.append('caption', (document.getElementById('statusPhotoCaption')?.value || '').trim());
     }
 
-    fetch('/chat/status/create', {
+    fetch('<?= base_url('chat/status/create') ?>', {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': getCsrfToken()
+        },
         body: formData
     })
     .then(r => r.json())
     .then(data => {
         btn.disabled = false;
         btn.innerHTML = origText;
-        if (data.status === 'success') {
+        if (data.status === 'success' || data.success) {
             closeCreateStatusModal();
             location.reload();
         } else {
@@ -2743,7 +2768,8 @@ function submitCreateStatus(e) {
     .catch(err => {
         btn.disabled = false;
         btn.innerHTML = origText;
-        alert('Terjadi kesalahan jaringan.');
+        console.error('Create status error:', err);
+        alert('Terjadi kesalahan jaringan atau server.');
     });
 }
 
@@ -2758,7 +2784,10 @@ function openStatusViewerModal(stories) {
     currentStoryIdx = 0;
 
     const overlay = document.getElementById('statusViewerModalOverlay');
-    if (overlay) overlay.style.display = 'flex';
+    if (overlay) {
+        overlay.style.display = 'flex';
+        overlay.classList.add('open', 'show');
+    }
 
     // Reset drawer komentar
     const drawer = document.getElementById('viewerCommentsDrawer');
@@ -2770,7 +2799,10 @@ function openStatusViewerModal(stories) {
 function closeStatusViewerModal() {
     clearTimeout(storyAutoTimer);
     const overlay = document.getElementById('statusViewerModalOverlay');
-    if (overlay) overlay.style.display = 'none';
+    if (overlay) {
+        overlay.classList.remove('open', 'show');
+        overlay.style.display = 'none';
+    }
 }
 
 function renderCurrentStory() {
@@ -2878,12 +2910,12 @@ function loadActiveStatusComments() {
     const st = activeStoryList[currentStoryIdx];
     if (!st || !st.id) return;
 
-    fetch(`/chat/status/comments/${st.id}`, {
+    fetch(`<?= base_url('chat/status/comments') ?>/${st.id}`, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
     .then(r => r.json())
     .then(data => {
-        if (data.status === 'success') {
+        if (data.status === 'success' || data.success) {
             const comments = data.comments || [];
             const countLabel = document.getElementById('viewerCommentsCountLabel');
             if (countLabel) {
@@ -2927,15 +2959,19 @@ function submitStatusComment(e) {
     const formData = new FormData();
     formData.append('status_id', st.id);
     formData.append('comment', comment);
+    formData.append(csrfTokenName, getCsrfToken());
 
-    fetch('/chat/status/comment', {
+    fetch('<?= base_url('chat/status/comment') ?>', {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': getCsrfToken()
+        },
         body: formData
     })
     .then(r => r.json())
     .then(data => {
-        if (data.status === 'success') {
+        if (data.status === 'success' || data.success) {
             const drawer = document.getElementById('viewerCommentsDrawer');
             if (drawer) drawer.style.display = 'block';
             loadActiveStatusComments();
@@ -2953,13 +2989,20 @@ function deleteActiveStatus() {
     if (!st || !st.id) return;
     if (!confirm('Hapus status ini?')) return;
 
-    fetch(`/chat/status/delete/${st.id}`, {
+    const formData = new FormData();
+    formData.append(csrfTokenName, getCsrfToken());
+
+    fetch(`<?= base_url('chat/status/delete') ?>/${st.id}`, {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': getCsrfToken()
+        },
+        body: formData
     })
     .then(r => r.json())
     .then(data => {
-        if (data.status === 'success') {
+        if (data.status === 'success' || data.success) {
             closeStatusViewerModal();
             location.reload();
         } else {

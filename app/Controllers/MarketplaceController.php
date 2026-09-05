@@ -1700,15 +1700,15 @@ class MarketplaceController extends BaseController
     public function createStatus()
     {
         $userId = session()->get('user_id');
-        if (!$userId) return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
+        if (!$userId) return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Unauthorized']);
 
-        $type = $this->request->getPost('type') ?: 'text';
+        $type = $this->request->getPost('media_type') ?: ($this->request->getPost('type') ?: 'text');
         $caption = trim((string)($this->request->getPost('caption') ?? ''));
         $bgColor = trim((string)($this->request->getPost('background_color') ?? '#2563EB'));
         $mediaUrl = null;
 
         if ($type === 'image') {
-            $file = $this->request->getFile('image');
+            $file = $this->request->getFile('media') ?: $this->request->getFile('image');
             if ($file && $file->isValid() && !$file->hasMoved()) {
                 $dir = FCPATH . 'uploads/statuses';
                 if (!is_dir($dir)) mkdir($dir, 0755, true);
@@ -1716,16 +1716,21 @@ class MarketplaceController extends BaseController
                 $file->move($dir, $newName);
                 $mediaUrl = 'uploads/statuses/' . $newName;
             } else {
-                return $this->response->setJSON(['success' => false, 'message' => 'Foto status wajib diunggah.']);
+                return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Foto status wajib diunggah.']);
             }
         } else {
             if (empty($caption)) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Teks status tidak boleh kosong.']);
+                return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Teks status tidak boleh kosong.']);
             }
         }
 
         $status = $this->statusModel->createStatus($userId, $type, $mediaUrl, $caption, $bgColor);
-        return $this->response->setJSON(['success' => true, 'message' => 'Status berhasil dibuat!', 'status' => $status]);
+        return $this->response->setJSON([
+            'status'      => 'success',
+            'success'     => true,
+            'message'     => 'Status berhasil dibagikan ke teman!',
+            'status_data' => $status,
+        ]);
     }
 
     /**
@@ -1734,18 +1739,18 @@ class MarketplaceController extends BaseController
     public function commentStatus()
     {
         $userId = session()->get('user_id');
-        if (!$userId) return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
+        if (!$userId) return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Unauthorized']);
 
         $statusId = (int)$this->request->getPost('status_id');
         $commentText = trim((string)($this->request->getPost('comment') ?? ''));
 
         if ($statusId <= 0 || empty($commentText)) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Status dan komentar wajib diisi.']);
+            return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Status dan komentar wajib diisi.']);
         }
 
         $status = $this->statusModel->getStatusIfAllowed($statusId, $userId);
         if (!$status) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Akses ditolak atau status sudah kedaluwarsa.']);
+            return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Akses ditolak atau status sudah kedaluwarsa.']);
         }
 
         $commentModel = new \App\Models\UserStatusCommentModel();
@@ -1767,7 +1772,12 @@ class MarketplaceController extends BaseController
             } catch (\Throwable $e) {}
         }
 
-        return $this->response->setJSON(['success' => true, 'message' => 'Komentar terkirim!', 'comment' => $saved]);
+        return $this->response->setJSON([
+            'status'  => 'success',
+            'success' => true,
+            'message' => 'Komentar terkirim!',
+            'comment' => $saved,
+        ]);
     }
 
     /**
@@ -1776,11 +1786,11 @@ class MarketplaceController extends BaseController
     public function statusComments(int $statusId)
     {
         $userId = session()->get('user_id');
-        if (!$userId) return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
+        if (!$userId) return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Unauthorized']);
 
         $status = $this->statusModel->getStatusIfAllowed($statusId, $userId);
         if (!$status) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Akses ditolak atau status tidak ditemukan.']);
+            return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Akses ditolak atau status tidak ditemukan.']);
         }
 
         $commentModel = new \App\Models\UserStatusCommentModel();
@@ -1793,6 +1803,26 @@ class MarketplaceController extends BaseController
             $c['user_avatar_url'] = ($img && file_exists(FCPATH . 'uploads/avatars/' . $img)) ? ('/uploads/avatars/' . $img) : '';
         }
 
-        return $this->response->setJSON(['success' => true, 'comments' => $comments]);
+        return $this->response->setJSON([
+            'status'   => 'success',
+            'success'  => true,
+            'comments' => $comments,
+        ]);
+    }
+
+    /**
+     * POST /chat/status/delete/(:num) or /status/delete/(:num) (Web PWA)
+     */
+    public function deleteStatus(int $statusId)
+    {
+        $userId = session()->get('user_id');
+        if (!$userId) return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Unauthorized']);
+
+        $this->statusModel->deleteStatus($statusId, $userId);
+        return $this->response->setJSON([
+            'status'  => 'success',
+            'success' => true,
+            'message' => 'Status berhasil dihapus',
+        ]);
     }
 }
