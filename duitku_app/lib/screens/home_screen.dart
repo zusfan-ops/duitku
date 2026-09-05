@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -7,8 +8,8 @@ import '../theme.dart';
 import 'activity_screen.dart';
 import 'dashboard_screen.dart';
 import 'features_screen.dart';
+import 'marketplace/market_conversations_screen.dart';
 import 'settings_screen.dart';
-import 'transaction_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,14 +21,15 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _index = 0;
   final _dashKey = GlobalKey<DashboardScreenState>();
+  Timer? _unreadTimer;
 
   @override
   void initState() {
     super.initState();
     // Pengecekan otomatis update APK GitHub Releases setelah aplikasi siap
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Periksa apakah ada klik notifikasi pembaruan saat cold-start
       UpdateCheckerService.instance.checkPendingUpdate(context);
+      context.read<AppDataProvider>().refreshMarketChatUnread();
 
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
@@ -35,9 +37,22 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       });
     });
+
+    _unreadTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      if (mounted) {
+        context.read<AppDataProvider>().refreshMarketChatUnread();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _unreadTimer?.cancel();
+    super.dispose();
   }
 
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
+    GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
@@ -59,11 +74,16 @@ class _HomeScreenState extends State<HomeScreen> {
       _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
     } else {
       setState(() => _index = index);
+      if (index == 2) {
+        context.read<AppDataProvider>().refreshMarketChatUnread();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final unreadChat = context.watch<AppDataProvider>().marketChatUnread;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -83,34 +103,10 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             _buildTabNavigator(0, DashboardScreen(key: _dashKey)),
             _buildTabNavigator(1, const ActivityScreen()),
-            _buildTabNavigator(2, const FeaturesScreen()),
-            _buildTabNavigator(3, const SettingsScreen()),
+            _buildTabNavigator(2, const MarketConversationsScreen(isRootTab: true)),
+            _buildTabNavigator(3, const FeaturesScreen()),
+            _buildTabNavigator(4, const SettingsScreen()),
           ],
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        floatingActionButton: Container(
-          height: 56,
-          width: 56,
-          margin: const EdgeInsets.only(top: 24),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: AppColors.fabShadow,
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _openTransactionSheet,
-              customBorder: const CircleBorder(),
-              child: const Center(
-                child: Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 26),
-              ),
-            ),
-          ),
         ),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
@@ -132,9 +128,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   _navItem(0, Icons.grid_view_rounded, Icons.grid_view_outlined, 'Dashboard'),
                   _navItem(1, Icons.receipt_long_rounded, Icons.receipt_long_outlined, 'Aktivitas'),
-                  const SizedBox(width: 56), // Spacing for centered FAB
-                  _navItem(2, Icons.widgets_rounded, Icons.widgets_outlined, 'Fitur'),
-                  _navItem(3, Icons.person_rounded, Icons.person_outline_rounded, 'Akun'),
+                  _navItem(2, Icons.forum_rounded, Icons.forum_outlined, 'Pesan', badgeCount: unreadChat),
+                  _navItem(3, Icons.widgets_rounded, Icons.widgets_outlined, 'Fitur'),
+                  _navItem(4, Icons.person_rounded, Icons.person_outline_rounded, 'Akun'),
                 ],
               ),
             ),
@@ -144,7 +140,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _navItem(int index, IconData activeIcon, IconData inactiveIcon, String label) {
+  Widget _navItem(
+    int index,
+    IconData activeIcon,
+    IconData inactiveIcon,
+    String label, {
+    int badgeCount = 0,
+  }) {
     final active = _index == index;
     return Expanded(
       child: Material(
@@ -156,18 +158,54 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
-                decoration: BoxDecoration(
-                  color: active ? const Color(0xFFEFF6FF) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(
-                  active ? activeIcon : inactiveIcon,
-                  size: 22,
-                  color: active ? const Color(0xFF2563EB) : AppColors.textMuted,
-                ),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: active ? const Color(0xFFEFF6FF) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      active ? activeIcon : inactiveIcon,
+                      size: 22,
+                      color: active ? const Color(0xFF2563EB) : AppColors.textMuted,
+                    ),
+                  ),
+                  if (badgeCount > 0)
+                    Positioned(
+                      top: -2,
+                      right: 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x33EF4444),
+                              blurRadius: 4,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        child: Text(
+                          badgeCount > 99 ? '99+' : '$badgeCount',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 3),
               Text(
@@ -186,25 +224,5 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _openTransactionSheet() async {
-    final data = context.read<AppDataProvider>();
-    await data.ensureLoaded();
-    if (!mounted) return;
-    final saved = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => TransactionSheet(categories: data.categories, wallets: data.wallets),
-    );
-    if (saved == true && mounted) {
-      _dashKey.currentState?.refresh();
-      await data.reloadWallets();
-    }
   }
 }

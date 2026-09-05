@@ -4,7 +4,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../config/api_config.dart';
 import '../../services/api_service.dart';
-import '../../theme.dart';
 import '../../utils/whatsapp_launcher.dart';
 import 'market_detail_screen.dart';
 
@@ -196,6 +195,26 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
     return 'Rp $s';
   }
 
+  String _formatDateChip(String dateStr) {
+    if (dateStr.length < 10) return '';
+    try {
+      final dt = DateTime.parse(dateStr.substring(0, 10));
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final msgDay = DateTime(dt.year, dt.month, dt.day);
+      final diff = today.difference(msgDay).inDays;
+      if (diff == 0) return 'HARI INI';
+      if (diff == 1) return 'KEMARIN';
+      const months = [
+        '', 'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
+        'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
+      ];
+      return '${dt.day} ${months[dt.month]} ${dt.year}';
+    } catch (_) {
+      return dateStr.substring(0, 10);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isSeller = _myId > 0 && _sellerInfo != null && _parseInt(_sellerInfo?['id']) == _myId;
@@ -213,20 +232,43 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
     final listingImg = (_listingInfo?['primary_image'] ?? widget.initialListingImage ?? '').toString();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFEFEAE2), // WhatsApp Classic Wallpaper Color
       appBar: AppBar(
         titleSpacing: 0,
         backgroundColor: Colors.white,
-        elevation: 0.5,
+        elevation: 1,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1E293B)),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: isSeller ? const Color(0xFF3B82F6) : const Color(0xFF059669),
-              child: Text(
-                partnerName.isNotEmpty ? partnerName[0].toUpperCase() : 'U',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14),
-              ),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: isSeller ? const Color(0xFF2563EB) : const Color(0xFF00A884),
+                  child: Text(
+                    partnerName.isNotEmpty ? partnerName[0].toUpperCase() : 'U',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15),
+                  ),
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 11,
+                    height: 11,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF22C55E),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -236,13 +278,35 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
                 children: [
                   Text(
                     partnerName,
-                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  Text(
-                    isSeller ? 'Calon Pembeli' : 'Penjual Produk',
-                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  const SizedBox(height: 1),
+                  Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF22C55E),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isSeller ? 'Calon Pembeli • Online' : 'Penjual Marketplace • Online',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -275,7 +339,7 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
       ),
       body: Column(
         children: [
-          // Pinned Product Summary Banner
+          // Pinned Product Summary Banner (WhatsApp / Marketplace style)
           InkWell(
             onTap: () {
               Navigator.push(
@@ -286,23 +350,36 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+                color: Colors.white.withValues(alpha: 0.95),
+                border: const Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 0.8)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: SizedBox(
-                      width: 44,
-                      height: 44,
+                      width: 42,
+                      height: 42,
                       child: listingImg.isNotEmpty
                           ? Image.network(
                               _fullImageUrl(listingImg),
                               fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => const Icon(Icons.image, color: Colors.grey),
+                              errorBuilder: (_, _, _) => Container(
+                                color: const Color(0xFFF1F5F9),
+                                child: const Icon(Icons.image, color: Colors.grey, size: 20),
+                              ),
                             )
-                          : const Icon(Icons.inventory_2_outlined, color: Colors.grey),
+                          : Container(
+                              color: const Color(0xFFF1F5F9),
+                              child: const Icon(Icons.inventory_2_outlined, color: Colors.grey, size: 20),
+                            ),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -312,7 +389,7 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
                       children: [
                         Text(
                           listingTitle,
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF1E293B)),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -320,7 +397,7 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
                           Text(
                             listingPrice,
                             style: const TextStyle(
-                              color: Color(0xFF059669),
+                              color: Color(0xFF00A884),
                               fontWeight: FontWeight.w800,
                               fontSize: 12,
                             ),
@@ -328,25 +405,32 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                     decoration: BoxDecoration(
-                      color: AppColors.bg,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: AppColors.border),
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFCBD5E1)),
                     ),
-                    child: const Text('Detail ➔', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Detail', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                        SizedBox(width: 2),
+                        Icon(Icons.chevron_right_rounded, size: 14, color: Color(0xFF64748B)),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
           ),
 
-          // Message List Area
+          // Message List Area (WhatsApp / Telegram style)
           Expanded(
             child: _isLoading && _messages.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF00A884)))
                 : _messages.isEmpty
                     ? Center(
                         child: Padding(
@@ -354,17 +438,34 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text('💬', style: TextStyle(fontSize: 48)),
-                              const SizedBox(height: 10),
+                              Container(
+                                width: 72,
+                                height: 72,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  shape: BoxShape.circle,
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x10000000),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.chat_bubble_outline_rounded, size: 36, color: Color(0xFF00A884)),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
                               const Text(
-                                'Mulai Percakapan',
-                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                                'Belum Ada Pesan',
+                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1E293B)),
                               ),
                               const SizedBox(height: 6),
-                              Text(
-                                'Kirim pesan atau gunakan pilihan cepat di bawah untuk menanyakan produk.',
+                              const Text(
+                                'Kirim pesan atau gunakan pilihan cepat di bawah untuk menanyakan ketersediaan produk.',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: AppColors.textMuted, fontSize: 12.5),
+                                style: TextStyle(color: Color(0xFF64748B), fontSize: 12.5, height: 1.4),
                               ),
                             ],
                           ),
@@ -372,156 +473,169 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
                       )
                     : ListView.builder(
                         controller: _scrollCtrl,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         itemCount: _messages.length,
                         itemBuilder: (context, index) {
                           final msg = _messages[index];
                           final senderId = _parseInt(msg['sender_id']);
                           final isMine = _myId > 0 && senderId == _myId;
-                          final text = (msg['message'] ?? '').toString();
                           final createdAt = (msg['created_at'] ?? '').toString();
-                          final timeStr = createdAt.length >= 16 ? createdAt.substring(11, 16) : '';
 
-                          return Align(
-                            alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 10),
-                              constraints: BoxConstraints(
-                                maxWidth: MediaQuery.of(context).size.width * 0.78,
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: isMine ? const Color(0xFF059669) : Colors.white,
-                                borderRadius: BorderRadius.only(
-                                  topLeft: const Radius.circular(16),
-                                  topRight: const Radius.circular(16),
-                                  bottomLeft: Radius.circular(isMine ? 16 : 4),
-                                  bottomRight: Radius.circular(isMine ? 4 : 16),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withAlpha(isMine ? 20 : 10),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment:
-                                    isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    text,
-                                    style: TextStyle(
-                                      color: isMine ? Colors.white : const Color(0xFF1E293B),
-                                      fontSize: 13.5,
-                                      height: 1.4,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        timeStr,
-                                        style: TextStyle(
-                                          color: isMine ? Colors.white70 : Colors.grey.shade500,
-                                          fontSize: 10,
-                                        ),
-                                      ),
-                                      if (isMine) ...[
-                                        const SizedBox(width: 4),
-                                        Icon(
-                                          (_parseInt(msg['is_read']) == 1)
-                                              ? Icons.done_all_rounded
-                                              : Icons.done_rounded,
-                                          size: 14,
-                                          color: (_parseInt(msg['is_read']) == 1)
-                                              ? const Color(0xFF38BDF8)
-                                              : Colors.white70,
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
+                          // Check if date chip is needed
+                          bool showDateChip = false;
+                          String dateChipText = '';
+                          if (createdAt.length >= 10) {
+                            dateChipText = _formatDateChip(createdAt);
+                            if (index == 0) {
+                              showDateChip = true;
+                            } else {
+                              final prevCreatedAt = (_messages[index - 1]['created_at'] ?? '').toString();
+                              if (prevCreatedAt.length >= 10) {
+                                final prevChipText = _formatDateChip(prevCreatedAt);
+                                if (prevChipText != dateChipText) {
+                                  showDateChip = true;
+                                }
+                              }
+                            }
+                          }
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (showDateChip && dateChipText.isNotEmpty)
+                                _buildDateBadge(dateChipText),
+                              _buildMessageBubble(msg, isMine),
+                            ],
                           );
                         },
                       ),
           ),
 
-          // Quick Suggestion Chips (especially helpful when starting conversation)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: Row(
-              children: [
-                _buildQuickChip('Apakah barang masih ada?'),
-                const SizedBox(width: 6),
-                _buildQuickChip('Bisa nego harganya?'),
-                const SizedBox(width: 6),
-                _buildQuickChip('Bisa COD di mana?'),
-                const SizedBox(width: 6),
-                _buildQuickChip('Kondisi barangnya bagaimana?'),
-              ],
+          // Quick Suggestion Chips (WhatsApp / Telegram style)
+          Container(
+            color: Colors.transparent,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              child: Row(
+                children: [
+                  _buildQuickChip('Apakah barang masih ada?'),
+                  const SizedBox(width: 6),
+                  _buildQuickChip('Bisa nego harganya?'),
+                  const SizedBox(width: 6),
+                  _buildQuickChip('Bisa COD di mana?'),
+                  const SizedBox(width: 6),
+                  _buildQuickChip('Kondisi barang bagaimana?'),
+                ],
+              ),
             ),
           ),
 
-          // Bottom Chat Input Bar
+          // Bottom Chat Input Bar (WhatsApp / Telegram Style)
           Container(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Colors.grey.shade200)),
-            ),
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 10),
+            color: Colors.transparent,
             child: SafeArea(
               top: false,
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  // WhatsApp Rounded Capsule
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(24),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x18000000),
+                            blurRadius: 4,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: TextField(
-                        controller: _textCtrl,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => _sendMessage(),
-                        style: const TextStyle(
-                          color: Color(0xFF0F172A),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        cursorColor: const Color(0xFF059669),
-                        decoration: const InputDecoration(
-                          hintText: 'Tulis pesan atau penawaran...',
-                          hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 12),
-                          filled: false,
-                        ),
-                        maxLines: null,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.sentiment_satisfied_alt_outlined, color: Color(0xFF8696A0), size: 24),
+                            onPressed: () {},
+                            padding: const EdgeInsets.all(6),
+                            constraints: const BoxConstraints(),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: TextField(
+                              controller: _textCtrl,
+                              textInputAction: TextInputAction.send,
+                              onSubmitted: (_) => _sendMessage(),
+                              keyboardType: TextInputType.multiline,
+                              maxLines: 5,
+                              minLines: 1,
+                              style: const TextStyle(
+                                color: Color(0xFF111B21),
+                                fontSize: 14.5,
+                                height: 1.3,
+                              ),
+                              cursorColor: const Color(0xFF00A884),
+                              decoration: const InputDecoration(
+                                hintText: 'Ketik pesan...',
+                                hintStyle: TextStyle(fontSize: 14, color: Color(0xFF8696A0)),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(vertical: 9),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.attach_file_rounded, color: Color(0xFF8696A0), size: 22),
+                            onPressed: () {},
+                            padding: const EdgeInsets.all(6),
+                            constraints: const BoxConstraints(),
+                          ),
+                          const SizedBox(width: 2),
+                          IconButton(
+                            icon: const Icon(Icons.camera_alt_rounded, color: Color(0xFF8696A0), size: 22),
+                            onPressed: () {},
+                            padding: const EdgeInsets.all(6),
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
+                  // Detached Circular Send Button (WhatsApp Green)
                   Container(
+                    width: 46,
+                    height: 46,
                     decoration: const BoxDecoration(
+                      color: Color(0xFF00A884),
                       shape: BoxShape.circle,
-                      color: Color(0xFF059669),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0x3300A884),
+                          blurRadius: 6,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: IconButton(
-                      icon: _isSending
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                            )
-                          : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                      onPressed: _isSending ? null : () => _sendMessage(),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _isSending ? null : () => _sendMessage(),
+                        customBorder: const CircleBorder(),
+                        child: Center(
+                          child: _isSending
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.2),
+                                )
+                              : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -533,12 +647,121 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
     );
   }
 
+  Widget _buildDateBadge(String label) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4.5),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x10000000),
+              blurRadius: 3,
+              offset: Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF54656F),
+            letterSpacing: 0.2,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(Map<String, dynamic> msg, bool isMine) {
+    final text = (msg['message'] ?? '').toString();
+    final createdAt = (msg['created_at'] ?? '').toString();
+    final timeStr = createdAt.length >= 16 ? createdAt.substring(11, 16) : '';
+    final isRead = _parseInt(msg['is_read']) == 1;
+
+    return Align(
+      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.78,
+        ),
+        decoration: BoxDecoration(
+          color: isMine ? const Color(0xFFE7FFDB) : Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(12),
+            topRight: Radius.circular(isMine ? 2 : 12),
+            bottomLeft: Radius.circular(isMine ? 12 : 2),
+            bottomRight: const Radius.circular(12),
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x14000000),
+              blurRadius: 2,
+              offset: Offset(0, 1),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+        child: Wrap(
+          alignment: WrapAlignment.end,
+          crossAxisAlignment: WrapCrossAlignment.end,
+          spacing: 8,
+          runSpacing: 2,
+          children: [
+            Text(
+              text,
+              style: const TextStyle(
+                fontSize: 14.5,
+                color: Color(0xFF111B21),
+                height: 1.35,
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  timeStr,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    color: Color(0xFF667781),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (isMine) ...[
+                  const SizedBox(width: 3),
+                  Icon(
+                    isRead ? Icons.done_all_rounded : Icons.done_rounded,
+                    size: 15,
+                    color: isRead ? const Color(0xFF53BDEB) : const Color(0xFF8696A0),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildQuickChip(String text) {
     return ActionChip(
-      label: Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+      label: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF334155),
+        ),
+      ),
       backgroundColor: Colors.white,
-      side: BorderSide(color: Colors.grey.shade300),
+      side: const BorderSide(color: Color(0xFFCBD5E1), width: 0.8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0.5,
+      shadowColor: Colors.black.withValues(alpha: 0.08),
       onPressed: () => _sendMessage(text),
     );
   }

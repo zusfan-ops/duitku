@@ -11,10 +11,34 @@ class AppDataProvider extends ChangeNotifier {
   String _symbol = 'Rp';
   bool _loaded = false;
 
+  int _marketChatUnread = 0;
+
   List<Category> get categories => _categories;
   List<Wallet> get wallets => _wallets;
   String get symbol => _symbol;
   bool get loaded => _loaded;
+  int get marketChatUnread => _marketChatUnread;
+
+  void setMarketChatUnread(int count) {
+    if (_marketChatUnread != count) {
+      _marketChatUnread = count;
+      notifyListeners();
+    }
+  }
+
+  Future<void> refreshMarketChatUnread() async {
+    try {
+      final res = await ApiService.instance.getMarketplaceChatConversations();
+      final convs = (res['conversations'] as List<dynamic>?) ?? [];
+      int total = 0;
+      for (final c in convs) {
+        if (c is Map) {
+          total += int.tryParse('${c['unread_count']}') ?? 0;
+        }
+      }
+      setMarketChatUnread(total);
+    } catch (_) {}
+  }
 
   Future<void> ensureLoaded({bool force = false}) async {
     if (_loaded && !force) return;

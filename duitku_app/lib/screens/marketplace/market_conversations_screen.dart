@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../config/api_config.dart';
+import '../../providers/app_data_provider.dart';
 import '../../services/api_service.dart';
 import '../../theme.dart';
 import 'market_chat_screen.dart';
 
 class MarketConversationsScreen extends StatefulWidget {
-  const MarketConversationsScreen({super.key});
+  final bool isRootTab;
+  const MarketConversationsScreen({super.key, this.isRootTab = false});
 
   @override
   State<MarketConversationsScreen> createState() => _MarketConversationsScreenState();
@@ -56,6 +59,13 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
       final list = (res['conversations'] as List<dynamic>?) ?? [];
 
       if (mounted) {
+        int totalUnread = 0;
+        for (final c in list) {
+          if (c is Map) {
+            totalUnread += int.tryParse('${c['unread_count']}') ?? 0;
+          }
+        }
+        context.read<AppDataProvider>().setMarketChatUnread(totalUnread);
         setState(() {
           _conversations = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
           _isLoading = false;
@@ -95,13 +105,14 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: const Text('Pesan & Chat'),
+        automaticallyImplyLeading: !widget.isRootTab,
+        title: const Text('Pesan & Obrolan'),
         elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Segarkan',
-            onPressed: _loadData,
+            onPressed: () => _loadData(),
           ),
         ],
       ),
