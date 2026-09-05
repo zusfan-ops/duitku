@@ -159,9 +159,19 @@
             );
             $isEmergency = (str_starts_with($currentPath, '/emergency') || str_starts_with($currentPath, '/layanan-darurat'));
             $isSettings  = str_starts_with($currentPath, '/settings');
+            $isChat      = (str_starts_with($currentPath, '/chat') || str_starts_with($currentPath, '/pesan'));
+
+            $unreadChatCount = 0;
+            $currentUserId   = session()->get('user_id');
+            if ($currentUserId) {
+                try {
+                    $unreadChatCount = (new \App\Models\MarketplaceChatModel())->getTotalUnreadCount((int)$currentUserId);
+                } catch (\Throwable $e) {}
+            }
 
             $navTitle = 'Dashboard';
             if ($isActivity) $navTitle = 'Aktivitas';
+            elseif ($isChat) $navTitle = 'Pesan & Obrolan';
             elseif ($isEmergency) $navTitle = 'Layanan Darurat';
             elseif ($isFeatures) $navTitle = 'Fitur';
             elseif ($isSettings) $navTitle = 'Pengaturan';
@@ -353,7 +363,7 @@
         <?= $this->renderSection('content') ?>
     </main>
 
-    <!-- BOTTOM NAVIGATION (Native 4 Tabs + Center Elevated FAB) -->
+    <!-- BOTTOM NAVIGATION (Dynamic Island 5 Native Tabs matching mobile app) -->
     <nav class="bottom-nav" id="bottomNav">
         <a href="/" class="bottom-nav-item <?= $isHome ? 'active' : '' ?>" id="nav-home">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -375,14 +385,16 @@
             <span>Aktivitas</span>
         </a>
         
-        <!-- Center Docked FAB Slot -->
-        <div class="bottom-nav-fab-slot">
-            <button class="fab" id="fabBtn" type="button" title="Tambah Transaksi" aria-label="Tambah Transaksi" onclick="if(window.openTransactionModal){window.openTransactionModal();}else if(window.openModal){window.openModal();}else{document.getElementById('txModalOverlay')?.classList.add('open');}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        <!-- Native Tab 3: Pesan (Marketplace Chat) with Live Badge -->
+        <a href="/chat" class="bottom-nav-item <?= $isChat ? 'active' : '' ?>" id="nav-chat">
+            <div class="nav-icon-wrap" style="position:relative;display:inline-flex;align-items:center;justify-content:center;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                 </svg>
-            </button>
-        </div>
+                <span class="nav-chat-badge" id="navChatBadge" style="<?= ($unreadChatCount > 0) ? '' : 'display:none;' ?>"><?= $unreadChatCount > 99 ? '99+' : $unreadChatCount ?></span>
+            </div>
+            <span>Pesan</span>
+        </a>
 
         <a href="/features" class="bottom-nav-item <?= $isFeatures ? 'active' : '' ?>" id="nav-features">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

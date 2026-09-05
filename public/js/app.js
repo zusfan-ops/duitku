@@ -710,4 +710,34 @@
         });
     })();
 
+    // ════════════════════════════════════════════════════════════════════════
+    //  REAL-TIME CHAT UNREAD BADGE POLLING
+    // ════════════════════════════════════════════════════════════════════════
+    (function initChatUnreadPolling() {
+        const badge = document.getElementById('navChatBadge');
+        if (!badge) return;
+
+        function checkUnread() {
+            fetch('/marketplace/chat/unread-count', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.status === 'success') {
+                    if (data.unread_count > 0) {
+                        badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
+                        badge.style.display = '';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            })
+            .catch(() => {});
+        }
+
+        // Check after 3s, then poll every 7s
+        setTimeout(checkUnread, 3000);
+        setInterval(checkUnread, 7000);
+    })();
+
 })();

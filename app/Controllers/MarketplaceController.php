@@ -819,6 +819,46 @@ class MarketplaceController extends BaseController
     }
 
     /**
+     * Halaman Daftar Obrolan (Pesan & Obrolan) di PWA
+     * GET /chat or /pesan
+     */
+    public function conversations()
+    {
+        $userId = session()->get('user_id');
+        if (!$userId) {
+            return redirect()->to('/login');
+        }
+
+        $conversations = $this->chatModel->getConversationsForUser($userId);
+        $totalUnread   = $this->chatModel->getTotalUnreadCount($userId);
+
+        return view('marketplace/conversations', [
+            'pageTitle'     => 'Pesan & Obrolan',
+            'conversations' => $conversations,
+            'totalUnread'   => $totalUnread,
+            'userId'        => $userId,
+        ]);
+    }
+
+    /**
+     * Endpoint Polling Total Unread Chat Count
+     * GET /marketplace/chat/unread-count
+     */
+    public function unreadChatCount()
+    {
+        $userId = session()->get('user_id');
+        if (!$userId) {
+            return $this->response->setJSON(['status' => 'error', 'unread_count' => 0]);
+        }
+
+        $count = $this->chatModel->getTotalUnreadCount($userId);
+        return $this->response->setJSON([
+            'status'       => 'success',
+            'unread_count' => $count,
+        ]);
+    }
+
+    /**
      * Halaman Panduan & Download Rilis APK Android
      * GET /download or /release
      */

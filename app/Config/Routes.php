@@ -275,6 +275,9 @@ $routes->post('/marketplace/order/delete/(:num)',    'MarketplaceController::del
 $routes->post('/marketplace/order-status/(:num)',    'MarketplaceController::updateOrderStatus/$1', ['filter' => 'auth']);
 $routes->get('/marketplace/chat/messages',           'MarketplaceController::chatMessages',   ['filter' => 'auth']);
 $routes->post('/marketplace/chat/send',              'MarketplaceController::sendChatMessage', ['filter' => 'auth']);
+$routes->get('/marketplace/chat/unread-count',       'MarketplaceController::unreadChatCount', ['filter' => 'auth']);
+$routes->get('/chat',                                'MarketplaceController::conversations',   ['filter' => 'auth']);
+$routes->get('/pesan',                               'MarketplaceController::conversations',   ['filter' => 'auth']);
 $routes->post('/marketplace/status/(:num)',          'MarketplaceController::updateStatus/$1', ['filter' => 'auth']);
 $routes->post('/marketplace/delete/(:num)',          'MarketplaceController::delete/$1', ['filter' => 'auth']);
 $routes->get('/u/(:segment)',                        'MarketplaceController::userStore/$1');

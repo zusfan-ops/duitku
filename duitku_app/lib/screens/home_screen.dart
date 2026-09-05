@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -108,30 +109,47 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildTabNavigator(4, const SettingsScreen()),
           ],
         ),
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            border: const Border(top: BorderSide(color: AppColors.border, width: 1)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x08000000),
-                blurRadius: 20,
-                offset: Offset(0, -4),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            top: false,
-            child: SizedBox(
-              height: 64,
-              child: Row(
-                children: [
-                  _navItem(0, Icons.grid_view_rounded, Icons.grid_view_outlined, 'Dashboard'),
-                  _navItem(1, Icons.receipt_long_rounded, Icons.receipt_long_outlined, 'Aktivitas'),
-                  _navItem(2, Icons.forum_rounded, Icons.forum_outlined, 'Pesan', badgeCount: unreadChat),
-                  _navItem(3, Icons.widgets_rounded, Icons.widgets_outlined, 'Fitur'),
-                  _navItem(4, Icons.person_rounded, Icons.person_outline_rounded, 'Akun'),
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 14, right: 14, bottom: 12),
+            child: Container(
+              height: 62,
+              decoration: BoxDecoration(
+                color: AppColors.card.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.8),
+                  width: 1.2,
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x1F0F172A),
+                    blurRadius: 28,
+                    offset: Offset(0, 10),
+                    spreadRadius: -2,
+                  ),
+                  BoxShadow(
+                    color: Color(0x0A0F172A),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
                 ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(32),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                  child: Row(
+                    children: [
+                      _navItem(0, Icons.grid_view_rounded, Icons.grid_view_outlined, 'Dashboard'),
+                      _navItem(1, Icons.receipt_long_rounded, Icons.receipt_long_outlined, 'Aktivitas'),
+                      _navItem(2, Icons.forum_rounded, Icons.forum_outlined, 'Pesan', badgeCount: unreadChat),
+                      _navItem(3, Icons.widgets_rounded, Icons.widgets_outlined, 'Fitur'),
+                      _navItem(4, Icons.person_rounded, Icons.person_outline_rounded, 'Akun'),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -153,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _onTabSelected(index),
-          splashColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
+          splashColor: const Color(0xFF2563EB).withValues(alpha: 0.08),
           highlightColor: Colors.transparent,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -162,22 +180,37 @@ class _HomeScreenState extends State<HomeScreen> {
                 clipBehavior: Clip.none,
                 children: [
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                     decoration: BoxDecoration(
                       color: active ? const Color(0xFFEFF6FF) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: active
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFF2563EB).withValues(alpha: 0.12),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              )
+                            ]
+                          : null,
                     ),
-                    child: Icon(
-                      active ? activeIcon : inactiveIcon,
-                      size: 22,
-                      color: active ? const Color(0xFF2563EB) : AppColors.textMuted,
+                    child: AnimatedScale(
+                      scale: active ? 1.08 : 1.0,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOutBack,
+                      child: Icon(
+                        active ? activeIcon : inactiveIcon,
+                        size: 21,
+                        color: active ? const Color(0xFF2563EB) : AppColors.textMuted,
+                      ),
                     ),
                   ),
                   if (badgeCount > 0)
                     Positioned(
-                      top: -2,
-                      right: 2,
+                      top: -1,
+                      right: 1,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                         decoration: BoxDecoration(
@@ -207,16 +240,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                 ],
               ),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              const SizedBox(height: 2),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
                 style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: active ? FontWeight.w800 : FontWeight.w500,
+                  fontSize: 10,
+                  fontWeight: active ? FontWeight.w800 : FontWeight.w600,
                   color: active ? const Color(0xFF2563EB) : AppColors.textSecondary,
                   letterSpacing: -0.1,
+                  fontFamily: 'sans-serif',
+                ),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
