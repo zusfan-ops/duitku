@@ -1132,7 +1132,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
       children: [
         // 1. Status Saya Card
         Container(
-          margin: const EdgeInsets.only(bottom: 14),
+          margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(20),
@@ -1154,6 +1154,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                     }
                   },
                   child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
                       Container(
                         padding: const EdgeInsets.all(2.5),
@@ -1170,23 +1171,41 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                           child: Icon(Icons.person_rounded, color: Color(0xFF2563EB), size: 28),
                         ),
                       ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: _showCreateStatusSheet,
+                      if (myStatuses.length > 1)
+                        Positioned(
+                          top: -2,
+                          right: -2,
                           child: Container(
-                            width: 20,
-                            height: 20,
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                             decoration: BoxDecoration(
                               color: const Color(0xFF10B981),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.white, width: 1.5),
                             ),
-                            child: const Icon(Icons.add, size: 13, color: Colors.white),
+                            child: Text(
+                              '${myStatuses.length}',
+                              style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        )
+                      else
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: _showCreateStatusSheet,
+                            child: Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: const Icon(Icons.add, size: 13, color: Colors.white),
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -1203,9 +1222,9 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Status Saya',
-                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                        Text(
+                          myStatuses.isNotEmpty ? 'Status Saya (${myStatuses.length})' : 'Status Saya',
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
                         ),
                         const SizedBox(height: 3),
                         Text(
@@ -1233,6 +1252,118 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
             ),
           ),
         ),
+
+        // 1.1 Daftar Rincian Status Saya
+        if (myStatuses.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200, style: BorderStyle.solid),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'DAFTAR STATUS ANDA (${myStatuses.length})',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.grey.shade700, letterSpacing: 0.5),
+                    ),
+                    const Text('● Aktif 24 Jam', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF10B981))),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...myStatuses.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final st = entry.value;
+                  final isImg = st['media_type'] == 'image';
+                  final cap = (st['caption'] ?? '').toString();
+                  final preview = isImg ? '📷 [Foto] ${cap.isNotEmpty ? cap : 'Foto Status'}' : '📝 ${cap.isNotEmpty ? cap : 'Status Teks'}';
+                  final stId = int.tryParse('${st['id']}') ?? 0;
+                  final timeStr = _formatTimeAgo(st['created_at']);
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => _openStatusViewer(myStatuses, idx),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Cerita ${idx + 1}: $preview',
+                                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  timeStr.isNotEmpty ? timeStr : 'Baru saja',
+                                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF2563EB)),
+                          tooltip: 'Lihat Cerita Ini',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _openStatusViewer(myStatuses, idx),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
+                          tooltip: 'Hapus Cerita Ini',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (dCtx) => AlertDialog(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                title: const Text('Hapus Cerita Ini?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                                content: const Text('Cerita status ini akan dihapus permanen.', style: TextStyle(fontSize: 13)),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(dCtx, false), child: const Text('Batal')),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                                    onPressed: () => Navigator.pop(dCtx, true),
+                                    child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              try {
+                                await ApiService.instance.deleteStatus(stId);
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cerita berhasil dihapus')));
+                                  _loadData(isSilent: true);
+                                }
+                              } catch (e) {
+                                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                              }
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
 
         // 2. Pembaruan Terkini Section Header
         Padding(
@@ -1691,21 +1822,43 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                       margin: const EdgeInsets.only(right: 10),
                       child: Column(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(2.5),
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(2.5),
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                ),
+                                child: const CircleAvatar(
+                                  radius: 24,
+                                  backgroundColor: Color(0xFFEFF6FF),
+                                  child: Icon(Icons.person_rounded, color: Color(0xFF2563EB), size: 28),
+                                ),
                               ),
-                            ),
-                            child: const CircleAvatar(
-                              radius: 24,
-                              backgroundColor: Color(0xFFEFF6FF),
-                              child: Icon(Icons.person_rounded, color: Color(0xFF2563EB), size: 28),
-                            ),
+                              if (myStatuses.length > 1)
+                                Positioned(
+                                  top: -2,
+                                  right: -2,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: Colors.white, width: 1.5),
+                                    ),
+                                    child: Text(
+                                      '${myStatuses.length}',
+                                      style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w800),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(height: 5),
                           Text(
@@ -1727,6 +1880,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                   final name = (latest['author_name'] ?? 'Teman').toString();
                   final avatarUrl = (latest['author_avatar_url'] ?? '').toString();
                   final init = name.isNotEmpty ? name[0].toUpperCase() : 'T';
+                  final fCount = list.length;
 
                   return GestureDetector(
                     onTap: () => _openStatusViewer(list, 0),
@@ -1735,39 +1889,61 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                       margin: const EdgeInsets.only(right: 10),
                       child: Column(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(2.5),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF2563EB), Color(0xFF10B981)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(2.5),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF2563EB), Color(0xFF10B981)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                ),
+                                child: ClipOval(
+                                  child: avatarUrl.isNotEmpty
+                                      ? Image.network(
+                                          _fullImageUrl(avatarUrl),
+                                          width: 48,
+                                          height: 48,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) => CircleAvatar(
+                                            radius: 24,
+                                            backgroundColor: const Color(0xFF3B82F6),
+                                            child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                                          ),
+                                        )
+                                      : CircleAvatar(
+                                          radius: 24,
+                                          backgroundColor: const Color(0xFF3B82F6),
+                                          child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                                        ),
+                                ),
                               ),
-                            ),
-                            child: ClipOval(
-                              child: avatarUrl.isNotEmpty
-                                  ? Image.network(
-                                      _fullImageUrl(avatarUrl),
-                                      width: 48,
-                                      height: 48,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => CircleAvatar(
-                                        radius: 24,
-                                        backgroundColor: const Color(0xFF3B82F6),
-                                        child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
-                                      ),
-                                    )
-                                  : CircleAvatar(
-                                      radius: 24,
-                                      backgroundColor: const Color(0xFF3B82F6),
-                                      child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                              if (fCount > 1)
+                                Positioned(
+                                  top: -2,
+                                  right: -2,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: Colors.white, width: 1.5),
                                     ),
-                            ),
+                                    child: Text(
+                                      '$fCount',
+                                      style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w800),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           const SizedBox(height: 5),
                           Text(
-                            name,
+                            fCount > 1 ? '$name ($fCount)' : name,
                             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -2078,7 +2254,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14),
                             ),
                             Text(
-                              timeStr.isNotEmpty ? '$timeStr • Hanya Teman' : 'Hanya Teman • 24 Jam',
+                              'Cerita ${currentIndex + 1} dari ${statuses.length} • ${timeStr.isNotEmpty ? timeStr : '24 Jam'}',
                               style: const TextStyle(color: Colors.white70, fontSize: 11),
                             ),
                           ],

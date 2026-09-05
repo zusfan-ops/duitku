@@ -59,6 +59,40 @@
         </div>
     <?php endif; ?>
 
+    <?php
+        $groupedStatuses = [];
+        $myStatuses = [];
+        $friendsStatuses = [];
+        if (!empty($statuses)) {
+            foreach ($statuses as $st) {
+                $uid = (int)$st['user_id'];
+                if (!isset($groupedStatuses[$uid])) {
+                    $groupedStatuses[$uid] = [];
+                }
+                $groupedStatuses[$uid][] = $st;
+                if ($uid === (int)$userId) {
+                    $myStatuses[] = $st;
+                } else {
+                    $friendsStatuses[$uid][] = $st;
+                }
+            }
+            // Sort stories chronologically: story 1 -> story 2 -> story 3
+            foreach ($groupedStatuses as &$uList) {
+                usort($uList, fn($a, $b) => (int)$a['id'] <=> (int)$b['id']);
+            }
+            unset($uList);
+            foreach ($friendsStatuses as &$fList) {
+                usort($fList, fn($a, $b) => (int)$a['id'] <=> (int)$b['id']);
+            }
+            unset($fList);
+            usort($myStatuses, fn($a, $b) => (int)$a['id'] <=> (int)$b['id']);
+        }
+    ?>
+    <script>
+        window.storiesDataByUser = <?= json_encode($groupedStatuses, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        window.myStatusesList = <?= json_encode($myStatuses, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    </script>
+
     <!-- Status Stories Tray (Khusus Teman & 24 Jam) -->
     <div class="status-tray-container">
         <div class="status-tray-title-bar">
@@ -79,18 +113,8 @@
                 <span class="status-bubble-label">Status Saya</span>
             </div>
 
-            <!-- Bubble Status Teman-Teman -->
-            <?php if (!empty($statuses)): ?>
-                <?php
-                    $groupedStatuses = [];
-                    foreach ($statuses as $st) {
-                        $uid = $st['user_id'];
-                        if (!isset($groupedStatuses[$uid])) {
-                            $groupedStatuses[$uid] = [];
-                        }
-                        $groupedStatuses[$uid][] = $st;
-                    }
-                ?>
+            <!-- Bubble Status Teman & Status Anda -->
+            <?php if (!empty($groupedStatuses)): ?>
                 <?php foreach ($groupedStatuses as $stUserId => $userStList): ?>
                     <?php
                         $firstSt = $userStList[0];
@@ -98,10 +122,10 @@
                         $authorName = $isMe ? 'Status Anda' : ($firstSt['author_name'] ?: ($firstSt['author_username'] ?: 'Teman'));
                         $authorAvatar = $firstSt['author_avatar_url'] ?? '';
                         $initial = strtoupper(mb_substr($firstSt['author_name'] ?: ($firstSt['author_username'] ?: 'T'), 0, 1));
-                        $payloadJson = htmlspecialchars(json_encode($userStList), ENT_QUOTES, 'UTF-8');
+                        $stCount = count($userStList);
                     ?>
-                    <div class="status-bubble-item" onclick='openStatusViewerModal(<?= $payloadJson ?>)' title="Lihat Status <?= esc($authorName) ?>">
-                        <div class="status-ring-wrap active-story-ring">
+                    <div class="status-bubble-item" onclick="openUserStories(<?= (int)$stUserId ?>)" title="Lihat Status <?= esc($authorName) ?> (<?= $stCount ?> cerita)">
+                        <div class="status-ring-wrap active-story-ring" style="position:relative;">
                             <div class="status-ring-avatar">
                                 <?php if (!empty($authorAvatar)): ?>
                                     <img src="<?= esc($authorAvatar) ?>" alt="<?= esc($authorName) ?>" class="conv-avatar-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
@@ -110,8 +134,11 @@
                                     <span><?= esc($initial) ?></span>
                                 <?php endif; ?>
                             </div>
+                            <?php if ($stCount > 1): ?>
+                                <span class="status-story-badge" title="<?= $stCount ?> status aktif"><?= $stCount ?></span>
+                            <?php endif; ?>
                         </div>
-                        <span class="status-bubble-label"><?= esc($authorName) ?></span>
+                        <span class="status-bubble-label"><?= esc($authorName) ?><?= $stCount > 1 ? ' (' . $stCount . ')' : '' ?></span>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -139,40 +166,29 @@
 
     <!-- Dedicated WhatsApp Status Tab View -->
     <div id="statusWhatsAppView" style="display: none; margin-top: 14px;">
-        <?php
-            $myStatuses = [];
-            $friendsStatuses = [];
-            if (!empty($statuses)) {
-                foreach ($statuses as $st) {
-                    if ((int)$st['user_id'] === (int)$userId) {
-                        $myStatuses[] = $st;
-                    } else {
-                        $friendsStatuses[$st['user_id']][] = $st;
-                    }
-                }
-            }
-            $myStatusesJson = htmlspecialchars(json_encode($myStatuses), ENT_QUOTES, 'UTF-8');
-        ?>
-
         <!-- Card Status Saya (WhatsApp Style) -->
-        <div class="wa-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:14px 16px;display:flex;align-items:center;gap:14px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.02);">
-            <div class="status-ring-wrap <?= !empty($myStatuses) ? 'active-story-ring' : 'me-ring' ?>" style="width:52px;height:52px;cursor:pointer;" onclick="<?= !empty($myStatuses) ? 'openStatusViewerModal(' . $myStatusesJson . ')' : 'openCreateStatusModal()' ?>">
+        <div class="wa-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:14px 16px;display:flex;align-items:center;gap:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+            <div class="status-ring-wrap <?= !empty($myStatuses) ? 'active-story-ring' : 'me-ring' ?>" style="width:52px;height:52px;cursor:pointer;position:relative;" onclick="openMyStories()">
                 <div class="status-ring-avatar">
                     <span style="font-size:22px;"><?= !empty($myStatuses) ? '👤' : '➕' ?></span>
                 </div>
-                <?php if (empty($myStatuses)): ?>
+                <?php if (!empty($myStatuses) && count($myStatuses) > 1): ?>
+                    <span class="status-story-badge" title="<?= count($myStatuses) ?> cerita"><?= count($myStatuses) ?></span>
+                <?php elseif (empty($myStatuses)): ?>
                     <span class="status-add-badge">+</span>
                 <?php endif; ?>
             </div>
-            <div style="flex:1;min-width:0;cursor:pointer;" onclick="<?= !empty($myStatuses) ? 'openStatusViewerModal(' . $myStatusesJson . ')' : 'openCreateStatusModal()' ?>">
-                <div style="font-weight:800;font-size:15px;color:var(--text-primary);">Status Saya</div>
+            <div style="flex:1;min-width:0;cursor:pointer;" onclick="openMyStories()">
+                <div style="font-weight:800;font-size:15px;color:var(--text-primary);">
+                    Status Saya <?= !empty($myStatuses) ? '(' . count($myStatuses) . ' Cerita)' : '' ?>
+                </div>
                 <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
-                    <?= !empty($myStatuses) ? count($myStatuses) . ' pembaruan aktif • Ketuk untuk melihat' : 'Ketuk untuk menambahkan pembaruan status' ?>
+                    <?= !empty($myStatuses) ? count($myStatuses) . ' pembaruan aktif • Ketuk untuk melihat semua' : 'Ketuk untuk menambahkan pembaruan status' ?>
                 </div>
             </div>
             <div style="display:flex;align-items:center;gap:6px;">
                 <?php if (!empty($myStatuses)): ?>
-                    <button type="button" class="btn-wa-status-action" onclick='openStatusViewerModal(<?= $myStatusesJson ?>)' title="Lihat Status">
+                    <button type="button" class="btn-wa-status-action" onclick="openMyStories()" title="Lihat Status">
                         👁️
                     </button>
                 <?php endif; ?>
@@ -181,6 +197,38 @@
                 </button>
             </div>
         </div>
+
+        <!-- Rincian Tiap Status Milik Sendiri (Agar Pengguna Bisa Melihat Setiap Statusnya) -->
+        <?php if (!empty($myStatuses)): ?>
+            <div class="my-status-breakdown-card" style="background:var(--bg);border:1px dashed var(--border);border-radius:18px;padding:12px 14px;margin-bottom:18px;">
+                <div style="font-size:12px;font-weight:800;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:center;justify-content:space-between;">
+                    <span>Daftar Status Anda (<?= count($myStatuses) ?>)</span>
+                    <span style="font-weight:700;font-size:11px;color:#10B981;">● Aktif 24 Jam</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <?php foreach ($myStatuses as $idx => $mySt): ?>
+                        <?php
+                            $timeSt = !empty($mySt['created_at']) ? date('H:i', strtotime($mySt['created_at'])) : '';
+                            $preview = ($mySt['media_type'] === 'image') ? '📷 [Foto] ' . ($mySt['caption'] ?: 'Foto Status') : '📝 ' . ($mySt['caption'] ?: 'Status Teks');
+                        ?>
+                        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:9px 12px;gap:10px;">
+                            <div style="cursor:pointer;flex:1;min-width:0;" onclick="openMyStories(<?= $idx ?>)">
+                                <div style="font-weight:700;font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                    Cerita <?= $idx + 1 ?>: <?= esc($preview) ?>
+                                </div>
+                                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+                                    Jam <?= esc($timeSt) ?> • <?= (int)($mySt['comment_count'] ?? 0) ?> komentar teman
+                                </div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <button type="button" class="btn-wa-status-action" onclick="openMyStories(<?= $idx ?>)" title="Lihat Cerita Ini" style="width:32px;height:32px;font-size:14px;">👁️</button>
+                                <button type="button" class="btn-wa-status-action" onclick="deleteStatusById(<?= (int)$mySt['id'] ?>)" title="Hapus Cerita Ini" style="width:32px;height:32px;font-size:14px;color:#EF4444;background:rgba(239,68,68,0.1);">🗑️</button>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <!-- Pembaruan Terkini Header -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 4px;">
@@ -206,11 +254,11 @@
             <div style="display:flex;flex-direction:column;gap:8px;">
                 <?php foreach ($friendsStatuses as $fUid => $fStories): ?>
                     <?php
-                        $latestStory = $fStories[0];
+                        $latestStory = $fStories[count($fStories) - 1]; // newest preview
                         $fName = $latestStory['author_name'] ?: ($latestStory['author_username'] ?: 'Teman');
                         $fAvatar = $latestStory['author_avatar_url'] ?? '';
                         $fInit = strtoupper(mb_substr($fName, 0, 1));
-                        $fStoriesJson = htmlspecialchars(json_encode($fStories), ENT_QUOTES, 'UTF-8');
+                        $fCount = count($fStories);
                         $timeAgo = '';
                         if (!empty($latestStory['created_at'])) {
                             $diff = time() - strtotime($latestStory['created_at']);
@@ -220,8 +268,8 @@
                             else $timeAgo = floor($diff / 86400) . ' hari lalu';
                         }
                     ?>
-                    <div class="wa-friend-status-item" onclick='openStatusViewerModal(<?= $fStoriesJson ?>)' style="display:flex;align-items:center;gap:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:12px 14px;cursor:pointer;transition:transform 0.15s ease;">
-                        <div class="status-ring-wrap active-story-ring" style="width:48px;height:48px;flex-shrink:0;">
+                    <div class="wa-friend-status-item" onclick="openUserStories(<?= (int)$fUid ?>)" style="display:flex;align-items:center;gap:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:12px 14px;cursor:pointer;transition:transform 0.15s ease;">
+                        <div class="status-ring-wrap active-story-ring" style="width:48px;height:48px;flex-shrink:0;position:relative;">
                             <div class="status-ring-avatar">
                                 <?php if (!empty($fAvatar)): ?>
                                     <img src="<?= esc($fAvatar) ?>" alt="<?= esc($fName) ?>" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
@@ -230,11 +278,16 @@
                                     <span><?= esc($fInit) ?></span>
                                 <?php endif; ?>
                             </div>
+                            <?php if ($fCount > 1): ?>
+                                <span class="status-story-badge" title="<?= $fCount ?> cerita"><?= $fCount ?></span>
+                            <?php endif; ?>
                         </div>
                         <div style="flex:1;min-width:0;">
-                            <div style="font-weight:800;font-size:14.5px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= esc($fName) ?></div>
+                            <div style="font-weight:800;font-size:14.5px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                <?= esc($fName) ?><?= $fCount > 1 ? ' (' . $fCount . ')' : '' ?>
+                            </div>
                             <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
-                                <?= esc($timeAgo) ?> • <?= count($fStories) ?> cerita baru
+                                <?= esc($timeAgo) ?> • <?= $fCount ?> cerita
                             </div>
                         </div>
                         <span style="color:var(--text-muted);font-size:16px;">›</span>
@@ -736,8 +789,12 @@
         </div>
 
         <!-- Story Main Body / Content -->
-        <div id="viewerContentContainer" style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;" onclick="handleStoryTouchTap(event)">
-            <!-- Story visual dynamically injected -->
+        <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+            <div id="viewerContentContainer" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="handleStoryTouchTap(event)">
+                <!-- Story visual dynamically injected -->
+            </div>
+            <button type="button" onclick="event.stopPropagation(); goToPrevStory();" class="story-nav-btn prev" title="Sebelumnya">‹</button>
+            <button type="button" onclick="event.stopPropagation(); goToNextStory();" class="story-nav-btn next" title="Berikutnya">›</button>
         </div>
 
         <!-- Comments Drawer & Instagram Quick Reply Bar -->
@@ -948,6 +1005,54 @@
     transform: translateY(-1px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
+
+.status-story-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #10B981;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 2px solid var(--bg-card);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    z-index: 5;
+}
+
+.story-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.38);
+    color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 25;
+    transition: background 0.15s ease, transform 0.15s ease;
+    user-select: none;
+    backdrop-filter: blur(4px);
+}
+.story-nav-btn:hover {
+    background: rgba(0,0,0,0.75);
+    transform: translateY(-50%) scale(1.1);
+}
+.story-nav-btn.prev { left: 10px; }
+.story-nav-btn.next { right: 10px; }
 
 /* ══════════════════════════════════════════════════════════════
    PWA WHATSAPP CONVERSATIONS & FRIEND SYSTEM STYLES
@@ -2989,10 +3094,26 @@ let activeStoryList = [];
 let currentStoryIdx = 0;
 let storyAutoTimer = null;
 
-function openStatusViewerModal(stories) {
+function openUserStories(userId, initialIdx = 0) {
+    const stories = (window.storiesDataByUser && window.storiesDataByUser[userId]) || [];
+    if (stories.length > 0) {
+        openStatusViewerModal(stories, initialIdx);
+    }
+}
+
+function openMyStories(initialIdx = 0) {
+    const stories = window.myStatusesList || [];
+    if (stories.length > 0) {
+        openStatusViewerModal(stories, initialIdx);
+    } else {
+        openCreateStatusModal();
+    }
+}
+
+function openStatusViewerModal(stories, initialIdx = 0) {
     if (!stories || stories.length === 0) return;
     activeStoryList = stories;
-    currentStoryIdx = 0;
+    currentStoryIdx = (initialIdx >= 0 && initialIdx < stories.length) ? initialIdx : 0;
 
     const overlay = document.getElementById('statusViewerModalOverlay');
     if (overlay) {
@@ -3013,6 +3134,22 @@ function closeStatusViewerModal() {
     if (overlay) {
         overlay.classList.remove('open', 'show');
         overlay.style.display = 'none';
+    }
+}
+
+function goToPrevStory() {
+    if (currentStoryIdx > 0) {
+        currentStoryIdx--;
+        renderCurrentStory();
+    }
+}
+
+function goToNextStory() {
+    if (currentStoryIdx < activeStoryList.length - 1) {
+        currentStoryIdx++;
+        renderCurrentStory();
+    } else {
+        closeStatusViewerModal();
     }
 }
 
@@ -3037,8 +3174,19 @@ function renderCurrentStory() {
     });
 
     // Header info
-    const authorName = st.author_name || st.author_username || 'Teman';
+    const authorName = isMine ? 'Status Anda' : (st.author_name || st.author_username || 'Teman');
     document.getElementById('viewerAuthorName').textContent = authorName;
+
+    // Time & index subtitle
+    let timeAgoStr = '24 Jam';
+    if (st.created_at) {
+        const t = new Date(st.created_at.replace(/-/g, '/'));
+        timeAgoStr = t.getHours().toString().padStart(2, '0') + ':' + t.getMinutes().toString().padStart(2, '0');
+    }
+    const timeAgoEl = document.getElementById('viewerTimeAgo');
+    if (timeAgoEl) {
+        timeAgoEl.textContent = `Cerita ${currentStoryIdx + 1} dari ${activeStoryList.length} • Jam ${timeAgoStr}`;
+    }
 
     // Avatar
     const avatarEl = document.getElementById('viewerAuthorAvatar');
@@ -3084,12 +3232,7 @@ function renderCurrentStory() {
 
     // Auto advance after 6s for text, 7s for image
     storyAutoTimer = setTimeout(() => {
-        if (currentStoryIdx < activeStoryList.length - 1) {
-            currentStoryIdx++;
-            renderCurrentStory();
-        } else {
-            closeStatusViewerModal();
-        }
+        goToNextStory();
     }, st.media_type === 'image' ? 7000 : 6000);
 }
 
@@ -3097,19 +3240,9 @@ function handleStoryTouchTap(e) {
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     if (clickX < rect.width * 0.35) {
-        // Tap left: previous story
-        if (currentStoryIdx > 0) {
-            currentStoryIdx--;
-            renderCurrentStory();
-        }
+        goToPrevStory();
     } else {
-        // Tap right: next story
-        if (currentStoryIdx < activeStoryList.length - 1) {
-            currentStoryIdx++;
-            renderCurrentStory();
-        } else {
-            closeStatusViewerModal();
-        }
+        goToNextStory();
     }
 }
 
@@ -3122,6 +3255,32 @@ function toggleStatusCommentsDrawer() {
     } else {
         drawer.style.display = 'none';
     }
+}
+
+function deleteStatusById(statusId) {
+    if (!confirm('Hapus status ini?')) return;
+    const formData = new FormData();
+    formData.append(csrfTokenName, getCsrfToken());
+
+    fetch('/chat/status/delete/' + statusId, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': getCsrfToken()
+        },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success' || data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Gagal menghapus status.');
+        }
+    })
+    .catch(() => {
+        alert('Terjadi kesalahan jaringan.');
+    });
 }
 
 function sendQuickReaction(emoji) {
