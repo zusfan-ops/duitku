@@ -2825,7 +2825,14 @@ class _NotificationBell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final notifs = (data.notifications as List?) ?? [];
+    final notifs = ((data.notifications as List?) ?? []).where((n) {
+      if (n is Map<String, dynamic>) {
+        final isRead = n['is_read'] == true || n['is_read'] == 1 || n['is_read'] == '1';
+        final isPinned = n['is_pinned'] == true || n['is_pinned'] == 1 || n['is_pinned'] == '1';
+        if (n['type'] == 'broadcast' && isRead && !isPinned) return false;
+      }
+      return true;
+    }).toList();
     final count = notifs.length;
 
     return Stack(
@@ -3134,7 +3141,14 @@ class _UrgentAlertBanner extends StatelessWidget {
 
 // ── Notifications Bottom Sheet ──────────────────────────────────
 void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback onRefresh) {
-  final notifs = (data.notifications as List?) ?? [];
+  final notifs = List<dynamic>.from(((data.notifications as List?) ?? []).where((n) {
+    if (n is Map<String, dynamic>) {
+      final isRead = n['is_read'] == true || n['is_read'] == 1 || n['is_read'] == '1';
+      final isPinned = n['is_pinned'] == true || n['is_pinned'] == 1 || n['is_pinned'] == '1';
+      if (n['type'] == 'broadcast' && isRead && !isPinned) return false;
+    }
+    return true;
+  }));
   final symbol = data.symbol as String? ?? 'Rp';
 
   showModalBottomSheet(
@@ -3145,82 +3159,98 @@ void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback on
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (ctx) {
-      return DraggableScrollableSheet(
-        initialChildSize: 0.65,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (c, scrollCtrl) {
-          return Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
+      return StatefulBuilder(
+        builder: (modalCtx, setModalState) {
+          return DraggableScrollableSheet(
+            initialChildSize: 0.65,
+            minChildSize: 0.4,
+            maxChildSize: 0.9,
+            expand: false,
+            builder: (c, scrollCtrl) {
+              return Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          '🔔 Notifikasi & Pengingat',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        if (notifs.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.expense.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${notifs.length}',
-                              style: const TextStyle(
-                                fontSize: 11,
+                        Row(
+                          children: [
+                            const Text(
+                              '🔔 Notifikasi & Pengingat',
+                              style: TextStyle(
+                                fontSize: 16,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.expense,
+                                color: AppColors.textPrimary,
                               ),
                             ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        if (notifs.isNotEmpty)
-                          TextButton.icon(
-                            onPressed: () async {
-                              Navigator.pop(ctx);
-                              try {
-                                await ApiService.instance.markAllNotificationsRead();
-                                onRefresh();
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Notifikasi berhasil dibersihkan')),
-                                  );
-                                }
-                              } catch (_) {}
-                            },
-                            icon: const Icon(Icons.done_all_rounded, size: 16, color: AppColors.primary),
-                            label: const Text('Bersihkan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                          ),
+                            if (notifs.isNotEmpty) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.expense.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${notifs.length}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.expense,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            if (notifs.isNotEmpty)
+                              TextButton.icon(
+                                onPressed: () async {
+                                  setModalState(() {
+                                    notifs.removeWhere((n) {
+                                      if (n is Map<String, dynamic>) {
+                                        final isPinned = (n['is_pinned'] == true || n['is_pinned'] == 1 || n['is_pinned'] == '1');
+                                        return !isPinned;
+                                      }
+                                      return false;
+                                    });
+                                  });
+                                  try {
+                                    await ApiService.instance.markAllNotificationsRead();
+                                    onRefresh();
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Notifikasi berhasil dibersihkan')),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Gagal membersihkan: $e')),
+                                      );
+                                    }
+                                  }
+                                },
+                                icon: const Icon(Icons.done_all_rounded, size: 16, color: AppColors.primary),
+                                label: const Text('Bersihkan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                              ),
                         IconButton(
                           icon: const Icon(Icons.campaign_rounded, size: 22, color: AppColors.primary),
                           tooltip: 'Pesan & Pengumuman',
@@ -3415,6 +3445,8 @@ void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback on
           );
         },
       );
+    },
+  );
     },
   );
 }

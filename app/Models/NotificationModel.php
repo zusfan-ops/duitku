@@ -134,4 +134,23 @@ class NotificationModel extends Model
 
         return true;
     }
+
+    /**
+     * Tandai semua notifikasi pengguna sebagai telah dibaca
+     */
+    public function markAllAsRead(int $userId): bool
+    {
+        $this->ensureTable();
+        $safeUserId = (int)$userId;
+        if ($safeUserId <= 0) return false;
+
+        $db = \Config\Database::connect();
+        $db->query("
+            INSERT IGNORE INTO `notification_reads` (`notification_id`, `user_id`, `read_at`)
+            SELECT `id`, {$safeUserId}, NOW()
+            FROM `app_notifications`
+            WHERE `target` = 'all' OR `user_id` = {$safeUserId}
+        ");
+        return true;
+    }
 }

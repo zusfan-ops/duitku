@@ -45,11 +45,7 @@ class NotificationController extends BaseController
     {
         $userId = (int)(session()->get('user_id') ?? 0);
         if ($userId > 0) {
-            $notifications = $this->notifModel->getForUser($userId, 100);
-
-            foreach ($notifications as $n) {
-                $this->notifModel->markAsRead((int)$n['id'], $userId);
-            }
+            $this->notifModel->markAllAsRead($userId);
         }
 
         if ($this->request->isAJAX()) {

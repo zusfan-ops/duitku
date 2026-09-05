@@ -147,7 +147,10 @@ class DashboardController extends ApiController
                     'created_at'     => $ub['created_at'] ?? '',
                 ];
 
-                $notifications[] = $bItem;
+                // Hanya masukkan notifikasi jika belum dibaca ATAU disematkan (pinned)
+                if (!$isRead || $isPinned) {
+                    $notifications[] = $bItem;
+                }
 
                 if ($isPinned && $pinnedAnnouncement === null) {
                     $pinnedAnnouncement = $bItem;

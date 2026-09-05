@@ -53,10 +53,7 @@ class NotificationController extends ApiController
     public function markAllAsRead()
     {
         $userId = $this->uid();
-        $notifs = $this->notifModel->getForUser($userId, 100);
-        foreach ($notifs as $n) {
-            $this->notifModel->markAsRead((int) $n['id'], $userId);
-        }
+        $this->notifModel->markAllAsRead($userId);
 
         return $this->ok([
             'success'      => true,
