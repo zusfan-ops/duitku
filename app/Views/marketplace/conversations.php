@@ -241,7 +241,8 @@
                     </div>
                 </div>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+                <button type="button" class="market-chat-close-btn" onclick="openActiveChatOptions('direct')" title="Opsi Obrolan" style="font-size:16px;font-weight:bold;">⋮</button>
                 <button type="button" class="market-chat-close-btn" onclick="closeDirectChat()" title="Tutup">✕</button>
             </div>
         </div>
@@ -256,9 +257,10 @@
         <!-- Input Footer -->
         <form class="market-chat-footer wa-footer" id="directChatForm" onsubmit="sendDirectMessage(event)">
             <div class="wa-input-pill">
-                <span class="wa-input-icon">😊</span>
-                <input type="text" id="directChatInputMsg" class="market-chat-input wa-input" placeholder="Ketik pesan..." autocomplete="off" required>
-                <span class="wa-input-icon">📎</span>
+                <span class="wa-input-icon" onclick="togglePwaEmojiPicker(this, 'directChatInputMsg')" title="Pilih Emoji" role="button" style="cursor:pointer;">😊</span>
+                <input type="text" id="directChatInputMsg" class="market-chat-input wa-input" placeholder="Ketik pesan..." autocomplete="off">
+                <span class="wa-input-icon" onclick="triggerPwaChatUpload('file')" title="Lampirkan Berkas" role="button" style="cursor:pointer;">📎</span>
+                <span class="wa-input-icon" onclick="triggerPwaChatUpload('photo')" title="Kirim Foto" role="button" style="cursor:pointer;">📷</span>
             </div>
             <button type="submit" id="btnSendDirectMsg" class="market-chat-send-btn wa-send-btn" title="Kirim Pesan">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -285,10 +287,11 @@
                     </div>
                 </div>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;">
+            <div style="display:flex;align-items:center;gap:6px;">
                 <a href="#" id="chatModalWaBtn" target="_blank" class="chat-wa-header-btn" style="display:none;" title="Lanjutkan di WhatsApp">
                     🟢 WA
                 </a>
+                <button type="button" class="market-chat-close-btn" onclick="openActiveChatOptions('marketplace')" title="Opsi Obrolan" style="font-size:16px;font-weight:bold;">⋮</button>
                 <button type="button" class="market-chat-close-btn" onclick="closeMarketChat()" title="Tutup Chat">✕</button>
             </div>
         </div>
@@ -309,9 +312,10 @@
 
         <form class="market-chat-footer wa-footer" id="marketChatForm" onsubmit="sendChatMessage(event)">
             <div class="wa-input-pill">
-                <span class="wa-input-icon">😊</span>
-                <input type="text" id="chatInputMessage" class="market-chat-input wa-input" placeholder="Ketik pesan..." autocomplete="off" required>
-                <span class="wa-input-icon">📎</span>
+                <span class="wa-input-icon" onclick="togglePwaEmojiPicker(this, 'chatInputMessage')" title="Pilih Emoji" role="button" style="cursor:pointer;">😊</span>
+                <input type="text" id="chatInputMessage" class="market-chat-input wa-input" placeholder="Ketik pesan..." autocomplete="off">
+                <span class="wa-input-icon" onclick="triggerPwaChatUpload('file')" title="Lampirkan Berkas" role="button" style="cursor:pointer;">📎</span>
+                <span class="wa-input-icon" onclick="triggerPwaChatUpload('photo')" title="Kirim Foto" role="button" style="cursor:pointer;">📷</span>
             </div>
             <button type="submit" id="btnSendChatMsg" class="market-chat-send-btn wa-send-btn" title="Kirim Pesan">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -422,6 +426,27 @@
                 <span class="conv-action-text">Hapus Obrolan</span>
             </button>
         </div>
+    </div>
+</div>
+
+<!-- Hidden file inputs for PWA Chat Uploads -->
+<input type="file" id="pwaChatFileInput" style="display:none;" onchange="handlePwaFileSelected(this)">
+<input type="file" id="pwaChatPhotoInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePwaFileSelected(this)">
+
+<!-- Floating Emoji Picker Popover -->
+<div id="pwaEmojiPickerPopover" class="pwa-emoji-popover" style="display:none;">
+    <div class="pwa-emoji-header">
+        <span style="font-weight:700;font-size:12.5px;color:var(--text-primary);">Pilih Emoji 😊</span>
+        <button type="button" onclick="closePwaEmojiPicker()" style="background:none;border:none;cursor:pointer;font-size:15px;color:var(--text-muted);padding:4px;">✕</button>
+    </div>
+    <div class="pwa-emoji-grid" id="pwaEmojiGrid"></div>
+</div>
+
+<!-- Image Lightbox Modal for PWA -->
+<div id="pwaChatLightbox" class="market-chat-modal-overlay" style="display:none;z-index:99999;background:rgba(0,0,0,0.88);cursor:zoom-out;align-items:center;justify-content:center;" onclick="closePwaLightbox()">
+    <div style="position:relative;max-width:92vw;max-height:90vh;display:flex;align-items:center;justify-content:center;" onclick="event.stopPropagation()">
+        <img id="pwaLightboxImg" src="" style="max-width:100%;max-height:85vh;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.6);" alt="Foto Pratinjau">
+        <button type="button" onclick="closePwaLightbox()" style="position:absolute;top:-38px;right:0;background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
 </div>
 
@@ -1145,6 +1170,90 @@
 }
 .market-chat-send-btn.wa-send-btn:hover { background: #059669; transform: scale(1.05); }
 .market-chat-send-btn.wa-send-btn:active { transform: scale(0.95); }
+
+/* PWA Emoji Picker & Upload Enhancements */
+.pwa-emoji-popover {
+    position: fixed;
+    bottom: 75px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(340px, 92vw);
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.22);
+    z-index: 9999;
+    overflow: hidden;
+    animation: pwaPopoverFade 0.2s ease-out;
+}
+@keyframes pwaPopoverFade {
+    from { opacity: 0; transform: translate(-50%, 10px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+.pwa-emoji-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+}
+.pwa-emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    padding: 10px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+.pwa-emoji-item {
+    font-size: 22px;
+    padding: 6px;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.1s, background 0.1s;
+}
+.pwa-emoji-item:hover {
+    background: var(--primary-dim, rgba(0, 168, 132, 0.12));
+    transform: scale(1.2);
+}
+.chat-bubble-img-wrap {
+    margin: 3px 0 5px;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+}
+.chat-bubble-img {
+    width: 100%;
+    max-width: 260px;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: 10px;
+    display: block;
+    transition: transform 0.2s ease;
+}
+.chat-bubble-img:hover {
+    transform: scale(1.02);
+}
+.chat-bubble-file {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    margin: 3px 0 5px;
+    text-decoration: none;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 13px;
+    transition: background 0.15s;
+}
+.chat-bubble-file:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
 </style>
 
 <script>
@@ -1249,6 +1358,8 @@ function executeConvAction(action) {
     .then(res => {
         closeConvActionModal();
         if (res.status === 'success') {
+            closeDirectChat();
+            closeMarketChat();
             window.location.reload();
         } else {
             alert(res.message || 'Gagal memproses aksi.');
@@ -1257,6 +1368,232 @@ function executeConvAction(action) {
     .catch(err => {
         closeConvActionModal();
         alert('Gagal menghubungi server: ' + err);
+    });
+}
+
+function openActiveChatOptions(type) {
+    if (type === 'direct') {
+        if (!currentDirectFriendId) return;
+        const name = document.getElementById('directChatPartnerName')?.textContent || 'Teman';
+        const card = document.getElementById(`convCard_direct_${currentDirectFriendId}`);
+        const isPinned = card ? (card.getAttribute('data-pinned') === '1') : 0;
+        const isArchived = card ? (card.getAttribute('data-archived') === '1') : 0;
+        openConvOptions(null, 'direct', currentDirectFriendId, 0, isPinned, isArchived, name);
+    } else if (type === 'marketplace') {
+        if (!currentChatListingId) return;
+        const name = document.getElementById('chatModalPartnerName')?.textContent || 'Obrolan Marketplace';
+        const card = document.getElementById(`convCard_marketplace_${currentChatListingId}_${currentChatBuyerId || 0}`);
+        const isPinned = card ? (card.getAttribute('data-pinned') === '1') : 0;
+        const isArchived = card ? (card.getAttribute('data-archived') === '1') : 0;
+        openConvOptions(null, 'marketplace', currentChatListingId, currentChatBuyerId || 0, isPinned, isArchived, name);
+    }
+}
+
+/* PWA Chat Media & Emoji Handlers */
+const pwaPopularEmojis = [
+    '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😋','😜','🤪','😎','🥳','🥺','😭','😱','🤔','😴','🤐','🤯','🤠',
+    '👍','👎','👏','🙌','🤝','🙏','✌️','🤞','🤟','👌','👈','👉','👆','👇','✋','👋','💪','👀','❤️','🧡','💛','💚','💙','💜','🖤','💔','❣️','💕','🔥','⭐',
+    '✨','⚡','💯','💥','🎉','🎊','🎁','💰','💵','💸','📦','🛒','🏷️','✅','❌','⚠️','🔔','💬'
+];
+let activePwaEmojiInputId = 'directChatInputMsg';
+
+function togglePwaEmojiPicker(triggerEl, inputId) {
+    activePwaEmojiInputId = inputId;
+    const pop = document.getElementById('pwaEmojiPickerPopover');
+    if (!pop) return;
+
+    if (pop.style.display === 'block') {
+        pop.style.display = 'none';
+        return;
+    }
+
+    const grid = document.getElementById('pwaEmojiGrid');
+    if (grid && grid.children.length === 0) {
+        grid.innerHTML = pwaPopularEmojis.map(e => `<span class="pwa-emoji-item" onclick="insertPwaEmoji('${e}')">${e}</span>`).join('');
+    }
+    pop.style.display = 'block';
+}
+
+function closePwaEmojiPicker() {
+    const pop = document.getElementById('pwaEmojiPickerPopover');
+    if (pop) pop.style.display = 'none';
+}
+
+function insertPwaEmoji(emoji) {
+    const inp = document.getElementById(activePwaEmojiInputId);
+    if (!inp) return;
+    const start = inp.selectionStart || 0;
+    const end = inp.selectionEnd || 0;
+    const val = inp.value;
+    inp.value = val.substring(0, start) + emoji + val.substring(end);
+    inp.selectionStart = inp.selectionEnd = start + emoji.length;
+    inp.focus();
+}
+
+document.addEventListener('click', (e) => {
+    const pop = document.getElementById('pwaEmojiPickerPopover');
+    if (pop && pop.style.display === 'block') {
+        if (!pop.contains(e.target) && !e.target.closest('.wa-input-icon')) {
+            pop.style.display = 'none';
+        }
+    }
+});
+
+function openPwaLightbox(url) {
+    const box = document.getElementById('pwaChatLightbox');
+    const img = document.getElementById('pwaLightboxImg');
+    if (box && img) {
+        img.src = url;
+        box.style.display = 'flex';
+    }
+}
+function closePwaLightbox() {
+    const box = document.getElementById('pwaChatLightbox');
+    if (box) box.style.display = 'none';
+}
+
+function renderPwaMessageContent(rawMsg) {
+    if (!rawMsg) return '';
+    const str = String(rawMsg).trim();
+    if (str.startsWith('[img:')) {
+        const start = str.indexOf('[img:');
+        const end = str.indexOf(']', start);
+        if (end !== -1) {
+            const imgUrl = str.substring(start + 5, end).trim();
+            const caption = str.substring(end + 1).trim();
+            return `
+                <div class="chat-bubble-img-wrap" onclick="openPwaLightbox('${escapeHtml(imgUrl)}')">
+                    <img src="${escapeHtml(imgUrl)}" class="chat-bubble-img" alt="Foto" loading="lazy" />
+                </div>
+                ${caption ? `<div style="margin-top:4px;">${escapeHtml(caption)}</div>` : ''}
+            `;
+        }
+    }
+    if (str.startsWith('[file:')) {
+        const parts = str.substring(6, str.length - 1).split(':');
+        const fileUrl = parts[0] || '#';
+        const fileName = parts.slice(1).join(':') || 'Dokumen';
+        return `
+            <a href="${escapeHtml(fileUrl)}" target="_blank" download class="chat-bubble-file">
+                <span style="font-size:20px;">📄</span>
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${escapeHtml(fileName)}</span>
+                <span style="font-size:13px;color:var(--text-muted);">⬇️ Unduh</span>
+            </a>
+        `;
+    }
+    return `<div>${escapeHtml(str)}</div>`;
+}
+
+function triggerPwaChatUpload(mode) {
+    if (mode === 'photo') {
+        const inp = document.getElementById('pwaChatPhotoInput');
+        if (inp) { inp.value = ''; inp.click(); }
+    } else {
+        const inp = document.getElementById('pwaChatFileInput');
+        if (inp) { inp.value = ''; inp.click(); }
+    }
+}
+
+function handlePwaFileSelected(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+
+    const isDirectModal = (document.getElementById('directChatModal')?.style.display === 'flex');
+    const isMarketModal = (document.getElementById('marketChatModal')?.style.display === 'flex');
+
+    if (!isDirectModal && !isMarketModal) {
+        alert('Silakan buka ruang obrolan terlebih dahulu.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append(csrfTokenName, getCsrfToken());
+
+    const activeInput = isDirectModal ? document.getElementById('directChatInputMsg') : document.getElementById('chatInputMessage');
+    const oldPlaceholder = activeInput ? activeInput.placeholder : '';
+    if (activeInput) activeInput.placeholder = 'Mengunggah berkas...';
+
+    fetch('/chat/upload', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': getCsrfToken()
+        }
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (activeInput) activeInput.placeholder = oldPlaceholder;
+        if (res.status !== 'success' || !res.url) {
+            alert(res.message || 'Gagal mengunggah berkas.');
+            return;
+        }
+
+        let messagePayload = '';
+        if (res.is_image) {
+            messagePayload = `[img:${res.url}]`;
+        } else {
+            messagePayload = `[file:${res.url}:${res.filename || file.name}]`;
+        }
+
+        if (isDirectModal) {
+            sendDirectMessagePayload(messagePayload);
+        } else if (isMarketModal) {
+            sendMarketMessagePayload(messagePayload);
+        }
+    })
+    .catch(err => {
+        if (activeInput) activeInput.placeholder = oldPlaceholder;
+        console.error('Upload error:', err);
+        alert('Gagal menghubungi server untuk mengunggah file.');
+    });
+}
+
+function sendDirectMessagePayload(text) {
+    if (!currentDirectFriendId) return;
+    const formData = new FormData();
+    formData.append('friend_id', currentDirectFriendId);
+    formData.append('message', text);
+    formData.append(csrfTokenName, getCsrfToken());
+
+    fetch('<?= base_url('chat/direct/send') ?>', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': getCsrfToken()
+        }
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.status === 'success') {
+            loadDirectMessages(true);
+        }
+    });
+}
+
+function sendMarketMessagePayload(text) {
+    if (!currentChatListingId || !currentChatBuyerId) return;
+    const formData = new FormData();
+    formData.append('listing_id', currentChatListingId);
+    formData.append('buyer_id', currentChatBuyerId);
+    formData.append('message', text);
+    formData.append(csrfTokenName, getCsrfToken());
+
+    fetch('/marketplace/chat/send', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': getCsrfToken()
+        }
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            loadChatMessages(true);
+        }
     });
 }
 
@@ -1332,7 +1669,7 @@ function loadDirectMessages(autoScroll = false) {
 
             html += `
                 <div class="${bubbleClass}">
-                    <div>${escapeHtml(msg.message)}</div>
+                    ${renderPwaMessageContent(msg.message)}
                     <div class="chat-meta-row">
                         <span class="chat-bubble-time">${timeStr}</span>
                         ${tickHtml}
@@ -1460,7 +1797,7 @@ function loadChatMessages(autoScroll = false) {
 
             html += `
                 <div class="${bubbleClass}">
-                    <div>${escapeHtml(msg.message)}</div>
+                    ${renderPwaMessageContent(msg.message)}
                     <div class="chat-meta-row">
                         <span class="chat-bubble-time">${msg.time_formatted || ''}</span>
                         ${tickHtml}

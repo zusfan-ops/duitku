@@ -1058,6 +1058,40 @@ class MarketplaceController extends BaseController
     }
 
     /**
+     * Upload Attachment untuk Chat (Foto / Dokumen)
+     * POST /chat/upload
+     */
+    public function uploadChatAttachment()
+    {
+        $userId = session()->get('user_id');
+        if (!$userId) return $this->response->setJSON(['status' => 'error', 'message' => 'Unauthorized']);
+
+        $file = $this->request->getFile('file');
+        if (!$file || !$file->isValid()) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'File tidak valid']);
+        }
+
+        $uploadDir = FCPATH . 'uploads/chats/';
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0777, true);
+        }
+
+        $newName = $file->getRandomName();
+        $file->move($uploadDir, $newName);
+
+        $url = '/uploads/chats/' . $newName;
+        $mime = $file->getClientMimeType();
+        $isImage = str_starts_with($mime, 'image/');
+
+        return $this->response->setJSON([
+            'status'   => 'success',
+            'url'      => $url,
+            'is_image' => $isImage,
+            'filename' => $file->getClientName(),
+        ]);
+    }
+
+    /**
      * Endpoint Polling Total Unread Chat Count
      * GET /marketplace/chat/unread-count
      */

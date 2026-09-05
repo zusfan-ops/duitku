@@ -509,4 +509,45 @@ class ChatController extends ApiController
             'message' => 'Obrolan berhasil dihapus',
         ]);
     }
+
+    /**
+     * POST /api/chat/upload
+     * Upload foto atau attachment untuk chat
+     */
+    public function uploadAttachment()
+    {
+        $userId = $this->uid();
+        $file = $this->request->getFile('file');
+        $uploadDir = FCPATH . 'uploads/chats/';
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0777, true);
+        }
+
+        if ($file && $file->isValid()) {
+            $newName = $file->getRandomName();
+            $file->move($uploadDir, $newName);
+            $url = '/uploads/chats/' . $newName;
+            $mime = $file->getClientMimeType();
+            return $this->ok([
+                'url'      => $url,
+                'is_image' => str_starts_with($mime, 'image/'),
+                'filename' => $file->getClientName(),
+            ]);
+        }
+
+        $json = $this->request->getJSON(true) ?: $this->request->getPost();
+        if (!empty($json['image_base64'])) {
+            $b64 = preg_replace('#^data:image/\w+;base64,#i', '', $json['image_base64']);
+            $raw = base64_decode($b64);
+            $newName = bin2hex(random_bytes(16)) . '.jpg';
+            file_put_contents($uploadDir . $newName, $raw);
+            return $this->ok([
+                'url'      => '/uploads/chats/' . $newName,
+                'is_image' => true,
+                'filename' => $newName,
+            ]);
+        }
+
+        return $this->fail('Tidak ada file atau gambar yang diunggah.');
+    }
 }

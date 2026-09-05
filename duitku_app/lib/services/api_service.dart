@@ -1007,6 +1007,12 @@ class ApiService {
     final bytes = await file.readAsBytes();
     return base64Encode(bytes);
   }
+
+  Future<Map<String, dynamic>> uploadChatImage(String base64Image) async {
+    return post('chat/upload', {
+      'image_base64': base64Image,
+    });
+  }
 }
 
 

@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../services/api_service.dart';
-import '../../theme.dart';
+import 'chat_media_helpers.dart';
 
 class DirectChatScreen extends StatefulWidget {
   final int friendId;
@@ -32,6 +33,9 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   List<Map<String, dynamic>> _messages = [];
   int _myId = 0;
   Timer? _pollingTimer;
+
+  bool _isPinned = false;
+  bool _isArchived = false;
 
   @override
   void initState() {
@@ -132,6 +136,143 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 
+  void _onSelectEmoji(String emoji) {
+    final text = _messageController.text;
+    final selection = _messageController.selection;
+    final newText = selection.start >= 0
+        ? text.replaceRange(selection.start, selection.end, emoji)
+        : text + emoji;
+    _messageController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(
+        offset: (selection.start >= 0 ? selection.start : text.length) + emoji.length,
+      ),
+    );
+  }
+
+  Future<void> _pickAndSendPhoto(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 82,
+      );
+      if (picked == null) return;
+
+      setState(() => _isSending = true);
+
+      final b64 = await ApiService.instance.base64FromFile(picked.path);
+      if (b64 == null) {
+        throw Exception('Gagal membaca berkas gambar.');
+      }
+
+      final uploadRes = await ApiService.instance.uploadChatImage(b64);
+      final url = uploadRes['url'] as String?;
+      if (url == null || url.isEmpty) {
+        throw Exception(uploadRes['message'] ?? 'Gagal mengunggah foto.');
+      }
+
+      final msgPayload = '[img:$url]';
+      await ApiService.instance.sendDirectMessage(widget.friendId, msgPayload);
+      await _loadMessages(isSilent: true);
+      _scrollToBottom();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengirim foto: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
+  }
+
+  Future<void> _togglePin() async {
+    try {
+      final res = await ApiService.instance.pinConversation(
+        type: 'direct',
+        targetId: widget.friendId,
+      );
+      if (mounted) {
+        setState(() => _isPinned = (res['is_pinned'] == 1 || res['is_pinned'] == true));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? 'Status pin diperbarui')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengubah status pin: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleArchive() async {
+    try {
+      final res = await ApiService.instance.archiveConversation(
+        type: 'direct',
+        targetId: widget.friendId,
+      );
+      if (mounted) {
+        setState(() => _isArchived = (res['is_archived'] == 1 || res['is_archived'] == true));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? 'Status arsip diperbarui')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengubah status arsip: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteChat() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Seluruh Obrolan?'),
+        content: Text('Semua riwayat obrolan dengan "${widget.friendName}" akan dihapus permanen.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final res = await ApiService.instance.deleteConversation(
+        type: 'direct',
+        targetId: widget.friendId,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? 'Obrolan berhasil dihapus')),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menghapus obrolan: $e')),
+        );
+      }
+    }
+  }
+
   String _formatTime(String? dateStr) {
     if (dateStr == null || dateStr.length < 16) return '';
     try {
@@ -192,6 +333,66 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
             ),
           ],
         ),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
+            tooltip: 'Opsi Obrolan',
+            onSelected: (val) {
+              switch (val) {
+                case 'pin':
+                  _togglePin();
+                  break;
+                case 'archive':
+                  _toggleArchive();
+                  break;
+                case 'delete':
+                  _deleteChat();
+                  break;
+              }
+            },
+            itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: 'pin',
+                child: Row(
+                  children: [
+                    Icon(
+                      _isPinned ? Icons.push_pin_outlined : Icons.push_pin_rounded,
+                      size: 20,
+                      color: const Color(0xFF00A884),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(_isPinned ? 'Lepas Sematan' : 'Sematkan Obrolan'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'archive',
+                child: Row(
+                  children: [
+                    Icon(
+                      _isArchived ? Icons.unarchive_outlined : Icons.archive_outlined,
+                      size: 20,
+                      color: Colors.blueAccent,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(_isArchived ? 'Buka dari Arsip' : 'Arsipkan Obrolan'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline_rounded, size: 20, color: Colors.red),
+                    SizedBox(width: 12),
+                    Text('Hapus Obrolan', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -220,32 +421,23 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                         )
                       : _messages.isEmpty
                           ? Center(
-                              child: Container(
-                                margin: const EdgeInsets.all(24),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF1F2C34) : Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.06),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Text('👋', style: TextStyle(fontSize: 32)),
-                                    const SizedBox(height: 8),
+                                    Icon(
+                                      Icons.chat_bubble_outline_rounded,
+                                      size: 52,
+                                      color: isDark ? Colors.white24 : Colors.black26,
+                                    ),
+                                    const SizedBox(height: 12),
                                     Text(
-                                      'Mulai percakapan dengan ${widget.friendName}!',
+                                      'Mulai percakapan langsung dengan ${widget.friendName}!',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
+                                        color: isDark ? Colors.white54 : Colors.black45,
                                         fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: isDark ? Colors.white70 : AppColors.textSecondary,
                                       ),
                                     ),
                                   ],
@@ -261,6 +453,8 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                                 final isMe = int.tryParse('${msg['sender_id']}') == _myId;
                                 final isRead = (int.tryParse('${msg['is_read']}') ?? 0) == 1;
                                 final time = _formatTime(msg['created_at']);
+                                final rawText = (msg['message'] ?? '').toString();
+                                final isImg = ChatMediaHelpers.isImageMessage(rawText);
 
                                 return Align(
                                   alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -269,7 +463,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                                     constraints: BoxConstraints(
                                       maxWidth: MediaQuery.of(context).size.width * 0.78,
                                     ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                     decoration: BoxDecoration(
                                       color: isMe
                                           ? (isDark ? const Color(0xFF005C4B) : const Color(0xFFD9FDD3))
@@ -291,18 +485,22 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            msg['message'] ?? '',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: isMe
-                                                  ? (isDark ? Colors.white : const Color(0xFF111B21))
-                                                  : (isDark ? const Color(0xFFE9EDEF) : const Color(0xFF111B21)),
+                                        if (isImg) ...[
+                                          _buildImageContent(rawText),
+                                        ] else ...[
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(
+                                              rawText,
+                                              style: TextStyle(
+                                                fontSize: 14.5,
+                                                color: isMe
+                                                    ? (isDark ? Colors.white : const Color(0xFF111B21))
+                                                    : (isDark ? const Color(0xFFE9EDEF) : const Color(0xFF111B21)),
+                                              ),
                                             ),
                                           ),
-                                        ),
+                                        ],
                                         const SizedBox(height: 3),
                                         Row(
                                           mainAxisSize: MainAxisSize.min,
@@ -332,7 +530,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                             ),
             ),
 
-            // Input Bar at bottom (WhatsApp Pill Style)
+            // Input Bar at bottom (WhatsApp Pill Style with Emoji, Attachment, Camera)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               color: isDark ? const Color(0xFF202C33) : const Color(0xFFF0F2F5),
@@ -342,36 +540,75 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: isDark ? const Color(0xFF2A3942) : Colors.white,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(26),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
-                          const SizedBox(width: 14),
+                          IconButton(
+                            icon: const Icon(Icons.sentiment_satisfied_alt_outlined, size: 23),
+                            color: isDark ? const Color(0xFF8696A0) : const Color(0xFF54656F),
+                            tooltip: 'Pilih Emoji',
+                            onPressed: () => ChatMediaHelpers.showEmojiPicker(
+                              context,
+                              onEmojiSelected: _onSelectEmoji,
+                            ),
+                            padding: const EdgeInsets.all(8),
+                            constraints: const BoxConstraints(),
+                          ),
                           Expanded(
                             child: TextField(
                               controller: _messageController,
                               textCapitalization: TextCapitalization.sentences,
+                              maxLines: 5,
+                              minLines: 1,
                               decoration: const InputDecoration(
                                 hintText: 'Ketik pesan...',
-                                hintStyle: TextStyle(fontSize: 14, color: Colors.grey),
+                                hintStyle: TextStyle(fontSize: 14.5, color: Colors.grey),
                                 border: InputBorder.none,
                                 isDense: true,
-                                contentPadding: EdgeInsets.symmetric(vertical: 10),
+                                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 4),
                               ),
                               onSubmitted: (_) => _sendMessage(),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.attach_file_rounded, size: 22),
+                            color: isDark ? const Color(0xFF8696A0) : const Color(0xFF54656F),
+                            tooltip: 'Lampirkan Berkas',
+                            onPressed: () => ChatMediaHelpers.showAttachmentPicker(
+                              context,
+                              onCamera: () => _pickAndSendPhoto(ImageSource.camera),
+                              onGallery: () => _pickAndSendPhoto(ImageSource.gallery),
+                            ),
+                            padding: const EdgeInsets.all(6),
+                            constraints: const BoxConstraints(),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.camera_alt_rounded, size: 22),
+                            color: isDark ? const Color(0xFF8696A0) : const Color(0xFF54656F),
+                            tooltip: 'Ambil Foto',
+                            onPressed: () => _pickAndSendPhoto(ImageSource.camera),
+                            padding: const EdgeInsets.all(6),
+                            constraints: const BoxConstraints(),
+                          ),
+                          const SizedBox(width: 6),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   GestureDetector(
                     onTap: _isSending ? null : _sendMessage,
                     child: Container(
-                      width: 44,
-                      height: 44,
+                      width: 46,
+                      height: 46,
                       decoration: const BoxDecoration(
                         color: Color(0xFF00A884),
                         shape: BoxShape.circle,
@@ -384,7 +621,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               ),
                             )
-                          : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                          : const Icon(Icons.send_rounded, color: Colors.white, size: 21),
                     ),
                   ),
                 ],
@@ -393,6 +630,54 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildImageContent(String rawText) {
+    final imgUrl = ChatMediaHelpers.extractImageUrl(rawText);
+    final caption = ChatMediaHelpers.extractCaption(rawText);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: GestureDetector(
+            onTap: () => ChatMediaHelpers.showImagePreview(context, imgUrl),
+            child: Image.network(
+              imgUrl,
+              width: double.infinity,
+              height: 200,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return Container(
+                  height: 200,
+                  color: Colors.black12,
+                  child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00A884))),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) => Container(
+                height: 120,
+                color: Colors.black12,
+                alignment: Alignment.center,
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.broken_image_rounded, color: Colors.grey, size: 36),
+                    SizedBox(height: 4),
+                    Text('Gagal memuat gambar', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (caption.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(caption, style: const TextStyle(fontSize: 14)),
+        ],
+      ],
     );
   }
 }

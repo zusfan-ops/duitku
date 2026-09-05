@@ -286,6 +286,7 @@ $routes->post('/chat/direct/send',                   'MarketplaceController::sen
 $routes->post('/chat/conversation/pin',              'MarketplaceController::pinConversation', ['filter' => 'auth']);
 $routes->post('/chat/conversation/archive',          'MarketplaceController::archiveConversation', ['filter' => 'auth']);
 $routes->post('/chat/conversation/delete',           'MarketplaceController::deleteConversation', ['filter' => 'auth']);
+$routes->post('/chat/upload',                        'MarketplaceController::uploadChatAttachment', ['filter' => 'auth']);
 $routes->post('/marketplace/status/(:num)',          'MarketplaceController::updateStatus/$1', ['filter' => 'auth']);
 $routes->post('/marketplace/delete/(:num)',          'MarketplaceController::delete/$1', ['filter' => 'auth']);
 $routes->get('/u/(:segment)',                        'MarketplaceController::userStore/$1');
@@ -486,6 +487,7 @@ $routes->group('api', function ($routes) {
         $routes->post('chat/conversation/pin',            'Api\ChatController::pinConversation');
         $routes->post('chat/conversation/archive',        'Api\ChatController::archiveConversation');
         $routes->post('chat/conversation/delete',         'Api\ChatController::deleteConversation');
+        $routes->post('chat/upload',                      'Api\ChatController::uploadAttachment');
     });
 });
 

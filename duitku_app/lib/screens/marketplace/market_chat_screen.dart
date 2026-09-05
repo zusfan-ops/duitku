@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../config/api_config.dart';
 import '../../services/api_service.dart';
 import '../../utils/whatsapp_launcher.dart';
+import '../chat/chat_media_helpers.dart';
 import 'market_detail_screen.dart';
 
 class MarketChatScreen extends StatefulWidget {
@@ -179,6 +181,147 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
     }
   }
 
+  bool _isPinned = false;
+  bool _isArchived = false;
+
+  void _onSelectEmoji(String emoji) {
+    final text = _textCtrl.text;
+    final selection = _textCtrl.selection;
+    final newText = selection.start >= 0
+        ? text.replaceRange(selection.start, selection.end, emoji)
+        : text + emoji;
+    _textCtrl.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(
+        offset: (selection.start >= 0 ? selection.start : text.length) + emoji.length,
+      ),
+    );
+  }
+
+  Future<void> _pickAndSendPhoto(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 82,
+      );
+      if (picked == null) return;
+
+      setState(() => _isSending = true);
+
+      final b64 = await ApiService.instance.base64FromFile(picked.path);
+      if (b64 == null) throw Exception('Gagal membaca berkas gambar.');
+
+      final uploadRes = await ApiService.instance.uploadChatImage(b64);
+      final url = uploadRes['url'] as String?;
+      if (url == null || url.isEmpty) {
+        throw Exception(uploadRes['message'] ?? 'Gagal mengunggah foto.');
+      }
+
+      await _sendMessage('[img:$url]');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengirim foto: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
+  }
+
+  Future<void> _togglePin() async {
+    final effectiveBuyerId = widget.buyerId ?? _parseInt(_buyerInfo?['id']);
+    try {
+      final res = await ApiService.instance.pinConversation(
+        type: 'marketplace',
+        targetId: widget.listingId,
+        targetSubId: effectiveBuyerId,
+      );
+      if (mounted) {
+        setState(() => _isPinned = (res['is_pinned'] == 1 || res['is_pinned'] == true));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? 'Status pin diperbarui')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengubah status pin: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleArchive() async {
+    final effectiveBuyerId = widget.buyerId ?? _parseInt(_buyerInfo?['id']);
+    try {
+      final res = await ApiService.instance.archiveConversation(
+        type: 'marketplace',
+        targetId: widget.listingId,
+        targetSubId: effectiveBuyerId,
+      );
+      if (mounted) {
+        setState(() => _isArchived = (res['is_archived'] == 1 || res['is_archived'] == true));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? 'Status arsip diperbarui')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengubah status arsip: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteChat() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Seluruh Obrolan?'),
+        content: const Text('Semua riwayat obrolan mengenai produk ini akan dihapus permanen.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final effectiveBuyerId = widget.buyerId ?? _parseInt(_buyerInfo?['id']);
+    try {
+      final res = await ApiService.instance.deleteConversation(
+        type: 'marketplace',
+        targetId: widget.listingId,
+        targetSubId: effectiveBuyerId,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? 'Obrolan berhasil dihapus')),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menghapus obrolan: $e')),
+        );
+      }
+    }
+  }
+
   String _fullImageUrl(String? url) {
     if (url == null || url.isEmpty) return '';
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
@@ -335,6 +478,64 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
               },
             ),
           ],
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF1E293B)),
+            tooltip: 'Opsi Obrolan',
+            onSelected: (val) {
+              switch (val) {
+                case 'pin':
+                  _togglePin();
+                  break;
+                case 'archive':
+                  _toggleArchive();
+                  break;
+                case 'delete':
+                  _deleteChat();
+                  break;
+              }
+            },
+            itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: 'pin',
+                child: Row(
+                  children: [
+                    Icon(
+                      _isPinned ? Icons.push_pin_outlined : Icons.push_pin_rounded,
+                      size: 20,
+                      color: const Color(0xFF00A884),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(_isPinned ? 'Lepas Sematan' : 'Sematkan Obrolan'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'archive',
+                child: Row(
+                  children: [
+                    Icon(
+                      _isArchived ? Icons.unarchive_outlined : Icons.archive_outlined,
+                      size: 20,
+                      color: Colors.blueAccent,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(_isArchived ? 'Buka dari Arsip' : 'Arsipkan Obrolan'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline_rounded, size: 20, color: Colors.red),
+                    SizedBox(width: 12),
+                    Text('Hapus Obrolan', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
       body: Column(
@@ -560,7 +761,11 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.sentiment_satisfied_alt_outlined, color: Color(0xFF8696A0), size: 24),
-                            onPressed: () {},
+                            tooltip: 'Pilih Emoji',
+                            onPressed: () => ChatMediaHelpers.showEmojiPicker(
+                              context,
+                              onEmojiSelected: _onSelectEmoji,
+                            ),
                             padding: const EdgeInsets.all(6),
                             constraints: const BoxConstraints(),
                           ),
@@ -590,14 +795,20 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.attach_file_rounded, color: Color(0xFF8696A0), size: 22),
-                            onPressed: () {},
+                            tooltip: 'Lampirkan Berkas',
+                            onPressed: () => ChatMediaHelpers.showAttachmentPicker(
+                              context,
+                              onCamera: () => _pickAndSendPhoto(ImageSource.camera),
+                              onGallery: () => _pickAndSendPhoto(ImageSource.gallery),
+                            ),
                             padding: const EdgeInsets.all(6),
                             constraints: const BoxConstraints(),
                           ),
                           const SizedBox(width: 2),
                           IconButton(
                             icon: const Icon(Icons.camera_alt_rounded, color: Color(0xFF8696A0), size: 22),
-                            onPressed: () {},
+                            tooltip: 'Ambil Foto',
+                            onPressed: () => _pickAndSendPhoto(ImageSource.camera),
                             padding: const EdgeInsets.all(6),
                             constraints: const BoxConstraints(),
                           ),
@@ -681,6 +892,7 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
     final createdAt = (msg['created_at'] ?? '').toString();
     final timeStr = createdAt.length >= 16 ? createdAt.substring(11, 16) : '';
     final isRead = _parseInt(msg['is_read']) == 1;
+    final isImg = ChatMediaHelpers.isImageMessage(text);
 
     return Align(
       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
@@ -706,20 +918,65 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
           ],
         ),
         padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
-        child: Wrap(
-          alignment: WrapAlignment.end,
-          crossAxisAlignment: WrapCrossAlignment.end,
-          spacing: 8,
-          runSpacing: 2,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              text,
-              style: const TextStyle(
-                fontSize: 14.5,
-                color: Color(0xFF111B21),
-                height: 1.35,
+            if (isImg) ...[
+              Builder(builder: (ctx) {
+                final imgUrl = ChatMediaHelpers.extractImageUrl(text);
+                final caption = ChatMediaHelpers.extractCaption(text);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: GestureDetector(
+                        onTap: () => ChatMediaHelpers.showImagePreview(context, imgUrl),
+                        child: Image.network(
+                          imgUrl,
+                          width: double.infinity,
+                          height: 180,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return Container(
+                              height: 180,
+                              color: Colors.black12,
+                              child: const Center(
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00A884)),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            height: 120,
+                            color: Colors.black12,
+                            alignment: Alignment.center,
+                            child: const Icon(Icons.broken_image_rounded, color: Colors.grey, size: 36),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (caption.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(caption, style: const TextStyle(fontSize: 14)),
+                    ],
+                  ],
+                );
+              }),
+            ] else ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  text,
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    color: Color(0xFF111B21),
+                    height: 1.35,
+                  ),
+                ),
               ),
-            ),
+            ],
+            const SizedBox(height: 2),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
