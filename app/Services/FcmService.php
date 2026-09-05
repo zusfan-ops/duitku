@@ -197,6 +197,23 @@ class FcmService
         $stringData['title'] = $title;
         $stringData['message'] = $body;
 
+        $isChat = (!empty($data['type']) && $data['type'] === 'marketplace_chat');
+        $channelId = $isChat ? 'duitku_chat_channel' : 'duitku_broadcast_channel';
+
+        $androidNotification = [
+            'channel_id'              => $channelId,
+            'sound'                   => 'default',
+            'default_vibrate_timings' => true,
+            'default_sound'           => true,
+            'notification_priority'   => 'PRIORITY_MAX',
+            'visibility'              => 'PUBLIC',
+        ];
+
+        if ($isChat) {
+            $tag = 'chat_' . ($data['listing_id'] ?? '0') . '_' . ($data['buyer_id'] ?? '0');
+            $androidNotification['tag'] = $tag;
+        }
+
         $payload = [
             'message' => [
                 'topic' => $topic,
@@ -206,13 +223,8 @@ class FcmService
                 ],
                 'data' => $stringData,
                 'android' => [
-                    'priority' => 'high',
-                    'notification' => [
-                        'channel_id' => 'duitku_broadcast_channel',
-                        'sound'      => 'default',
-                        'default_vibrate_timings' => true,
-                        'default_sound'           => true,
-                    ],
+                    'priority'     => 'HIGH',
+                    'notification' => $androidNotification,
                 ],
             ],
         ];

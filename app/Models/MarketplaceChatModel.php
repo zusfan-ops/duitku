@@ -104,15 +104,15 @@ class MarketplaceChatModel extends Model
                     mc.listing_id,
                     mc.buyer_id,
                     mc.seller_id,
-                    l.title AS listing_title,
-                    l.price AS listing_price,
-                    l.status AS listing_status,
-                    l.type AS listing_type,
-                    (SELECT image_url FROM marketplace_images mi WHERE mi.listing_id = l.id ORDER BY mi.is_primary DESC, mi.id ASC LIMIT 1) AS listing_image,
-                    ub.name AS buyer_name,
-                    ub.phone AS buyer_phone,
-                    us.name AS seller_name,
-                    us.phone AS seller_phone,
+                    COALESCE(l.title, 'Produk Marketplace') AS listing_title,
+                    COALESCE(l.price, 0) AS listing_price,
+                    COALESCE(l.status, 'active') AS listing_status,
+                    COALESCE(l.type, 'sale') AS listing_type,
+                    (SELECT image_url FROM marketplace_images mi WHERE mi.listing_id = mc.listing_id ORDER BY mi.is_primary DESC, mi.id ASC LIMIT 1) AS listing_image,
+                    COALESCE(ub.name, 'Calon Pembeli') AS buyer_name,
+                    COALESCE(ub.phone, '') AS buyer_phone,
+                    COALESCE(us.name, 'Penjual') AS seller_name,
+                    COALESCE(us.phone, '') AS seller_phone,
                     last_m.message AS last_message,
                     last_m.sender_id AS last_sender_id,
                     last_m.created_at AS last_message_time,
@@ -131,9 +131,9 @@ class MarketplaceChatModel extends Model
                     GROUP BY listing_id, buyer_id, seller_id
                 ) mc
                 JOIN marketplace_chats last_m ON last_m.id = mc.max_id
-                JOIN marketplace_listings l ON l.id = mc.listing_id
-                JOIN users ub ON ub.id = mc.buyer_id
-                JOIN users us ON us.id = mc.seller_id
+                LEFT JOIN marketplace_listings l ON l.id = mc.listing_id
+                LEFT JOIN users ub ON ub.id = mc.buyer_id
+                LEFT JOIN users us ON us.id = mc.seller_id
                 ORDER BY last_m.id DESC
             ";
 

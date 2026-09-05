@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../main.dart';
+import '../screens/marketplace/market_chat_screen.dart';
 import 'update_checker_service.dart';
 
 class LocalNotificationService {
@@ -16,6 +18,10 @@ class LocalNotificationService {
   static const String _channelId = 'duitku_broadcast_channel';
   static const String _channelName = 'Notifikasi & Pengumuman DuitKu';
   static const String _channelDesc = 'Menerima pemberitahuan pembaruan aplikasi dan pengumuman resmi';
+
+  static const String _chatChannelId = 'duitku_chat_channel';
+  static const String _chatChannelName = 'Pesan & Chat Marketplace';
+  static const String _chatChannelDesc = 'Pemberitahuan pesan chat masuk langsung seperti WhatsApp';
 
   Future<void> init() async {
     if (_isInitialized) return;
@@ -49,7 +55,7 @@ class LocalNotificationService {
     // Request runtime permission for Android 13+ (POST_NOTIFICATIONS)
     await requestPermission();
 
-    // Create Notification Channel for Android
+    // Create Notification Channels for Android
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin != null) {
       await androidPlugin.createNotificationChannel(
@@ -60,6 +66,19 @@ class LocalNotificationService {
           importance: Importance.max,
           enableVibration: true,
           playSound: true,
+        ),
+      );
+
+      // Channel khusus chat berprioritas maksimal (Heads-up pop-up + Suara + Getar layaknya WhatsApp)
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _chatChannelId,
+          _chatChannelName,
+          description: _chatChannelDesc,
+          importance: Importance.max,
+          enableVibration: true,
+          playSound: true,
+          showBadge: true,
         ),
       );
     }
@@ -98,6 +117,44 @@ class LocalNotificationService {
         body,
         contentTitle: title,
         summaryText: subText,
+      ),
+      icon: '@mipmap/ic_launcher',
+    );
+
+    final details = NotificationDetails(android: androidDetails);
+    await _plugin.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: details,
+      payload: payload,
+    );
+  }
+
+  /// Menampilkan push notifikasi chat marketplace dengan prioritas tinggi & suara/getar seperti WhatsApp
+  Future<void> showChatNotification({
+    required int id,
+    required String title,
+    required String body,
+    String? payload,
+    String? subText,
+  }) async {
+    await init();
+
+    final androidDetails = AndroidNotificationDetails(
+      _chatChannelId,
+      _chatChannelName,
+      channelDescription: _chatChannelDesc,
+      importance: Importance.max,
+      priority: Priority.max,
+      playSound: true,
+      enableVibration: true,
+      category: AndroidNotificationCategory.message,
+      subText: subText ?? 'Chat Masuk',
+      styleInformation: BigTextStyleInformation(
+        body,
+        contentTitle: title,
+        summaryText: subText ?? 'Chat Masuk',
       ),
       icon: '@mipmap/ic_launcher',
     );
@@ -225,11 +282,64 @@ class LocalNotificationService {
       return;
     }
 
-    // Bukan update APK: buka link standar di browser jika merupakan URL valid
+    // Bukan update APK: cek jika notifikasi adalah Chat Marketplace
+    if (_handleChatPayload(payload)) {
+      return;
+    }
+
+    // Buka link standar di browser jika merupakan URL valid
     final uri = Uri.tryParse(payload);
     if (uri != null && await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  /// Memproses payload chat marketplace dan langsung membuka room chat
+  bool _handleChatPayload(String payload) {
+    int listingId = 0;
+    int buyerId = 0;
+    String? title;
+    String? senderName;
+
+    if (payload.startsWith('{') && payload.endsWith('}')) {
+      try {
+        final data = jsonDecode(payload) as Map<String, dynamic>;
+        if (data['type'] == 'marketplace_chat') {
+          listingId = int.tryParse('${data['listing_id']}') ?? 0;
+          buyerId = int.tryParse('${data['buyer_id']}') ?? 0;
+          title = data['listing_title']?.toString() ?? data['title']?.toString();
+          senderName = data['sender_name']?.toString();
+        }
+      } catch (_) {}
+    }
+
+    if (listingId == 0) {
+      // Coba parse format URL internal: /marketplace?tab=chat&listing_id=123&buyer_id=456
+      final uri = Uri.tryParse(payload.startsWith('/') ? 'app://duitku$payload' : payload);
+      if (uri != null && (uri.path.contains('marketplace') || uri.queryParameters.containsKey('listing_id'))) {
+        listingId = int.tryParse(uri.queryParameters['listing_id'] ?? '') ?? 0;
+        buyerId = int.tryParse(uri.queryParameters['buyer_id'] ?? '') ?? 0;
+      }
+    }
+
+    if (listingId > 0) {
+      final navContext = rootNavigatorKey.currentContext;
+      if (navContext != null && navContext.mounted) {
+        Navigator.push(
+          navContext,
+          MaterialPageRoute(
+            builder: (_) => MarketChatScreen(
+              listingId: listingId,
+              buyerId: buyerId > 0 ? buyerId : null,
+              initialListingTitle: title,
+              targetUserName: senderName,
+            ),
+          ),
+        );
+        return true;
+      }
+    }
+    return false;
   }
 
   /// Notifikasi uji coba (test push notification)

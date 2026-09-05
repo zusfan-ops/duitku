@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../config/api_config.dart';
@@ -17,18 +18,37 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
   String? _errorMessage;
   List<Map<String, dynamic>> _conversations = [];
   int _myId = 0;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _startAutoRefresh();
   }
 
-  Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (mounted) {
+        _loadData(isSilent: true);
+      }
     });
+  }
+
+  Future<void> _loadData({bool isSilent = false}) async {
+    if (!isSilent) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final res = await ApiService.instance.getMarketplaceChatConversations();
@@ -42,7 +62,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
         });
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && !isSilent) {
         setState(() {
           _isLoading = false;
           _errorMessage = 'Gagal memuat daftar obrolan: $e';

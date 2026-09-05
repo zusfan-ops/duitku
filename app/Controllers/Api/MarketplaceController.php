@@ -534,10 +534,40 @@ class MarketplaceController extends ApiController
             // Jika dipanggil oleh pembeli, buyer_id otomatis userId
             if ($userId !== $sellerId) {
                 $buyerId = $userId;
+            } else {
+                // Jika penjual membuka obrolan namun buyer_id belum diset, ambil pembeli terbaru dari obrolan iklan ini
+                if ($buyerId <= 0) {
+                    $lastChat = $this->chatModel->where('listing_id', $listingId)->orderBy('id', 'DESC')->first();
+                    if ($lastChat && !empty($lastChat['buyer_id'])) {
+                        $buyerId = (int)$lastChat['buyer_id'];
+                    }
+                }
             }
 
+            $images = $this->imageModel->where('listing_id', $listingId)->orderBy('is_primary', 'DESC')->findAll();
+            $seller = $this->userModel->find($sellerId);
+
             if ($buyerId <= 0) {
-                return $this->fail('Parameter buyer_id tidak valid.');
+                // Belum ada obrolan untuk produk ini
+                return $this->ok([
+                    'messages' => [],
+                    'listing'  => [
+                        'id'            => (int)$listing['id'],
+                        'title'         => $listing['title'],
+                        'price'         => (float)$listing['price'],
+                        'type'          => $listing['type'],
+                        'status'        => $listing['status'],
+                        'primary_image' => !empty($images) ? $images[0]['image_url'] : null,
+                    ],
+                    'buyer'    => null,
+                    'seller'   => [
+                        'id'       => $sellerId,
+                        'name'     => $seller['name'] ?? 'Penjual',
+                        'phone'    => $seller['phone'] ?? '',
+                        'username' => $seller['username'] ?? '',
+                    ],
+                    'my_id'    => $userId,
+                ]);
             }
 
             // Akses hanya untuk penjual atau pembeli
@@ -552,8 +582,6 @@ class MarketplaceController extends ApiController
             $this->chatModel->markAsRead($listingId, $buyerId, $userId);
 
             $buyer  = $this->userModel->find($buyerId);
-            $seller = $this->userModel->find($sellerId);
-            $images = $this->imageModel->where('listing_id', $listingId)->orderBy('is_primary', 'DESC')->findAll();
 
             return $this->ok([
                 'messages' => $messages,
@@ -591,6 +619,7 @@ class MarketplaceController extends ApiController
     public function sendChatMessage()
     {
         $userId = $this->uid();
+        $this->chatModel->ensureTable();
         $json   = $this->request->getJSON(true) ?? [];
         $listingId = (int)($json['listing_id'] ?? $this->request->getPost('listing_id') ?? 0);
         $message   = trim($json['message'] ?? $this->request->getPost('message') ?? '');
@@ -614,7 +643,12 @@ class MarketplaceController extends ApiController
         if ($userId === $sellerId) {
             // Penjual mengirim pesan ke pembeli tertentu
             if ($buyerId <= 0) {
-                return $this->fail('Tentukan buyer_id untuk mengirim pesan.');
+                $lastChat = $this->chatModel->where('listing_id', $listingId)->orderBy('id', 'DESC')->first();
+                if ($lastChat && !empty($lastChat['buyer_id'])) {
+                    $buyerId = (int)$lastChat['buyer_id'];
+                } else {
+                    return $this->fail('Tentukan pembeli untuk membalas pesan.');
+                }
             }
             $recipientId = $buyerId;
         } else {
@@ -649,22 +683,27 @@ class MarketplaceController extends ApiController
             log_message('error', 'Chat in-app notif error: ' . $e->getMessage());
         }
 
-        // 2. Push Notification FCM untuk penerima
+        // 2. Push Notification FCM untuk penerima (Realtime alert heads-up seperti WhatsApp)
         try {
             if ($this->fcmService->isConfigured()) {
-                $this->fcmService->sendToTopic(
+                $fcmRes = $this->fcmService->sendToTopic(
                     "user_{$recipientId}",
-                    "💬 Chat dari {$senderName}",
+                    "💬 {$senderName}",
                     "{$listing['title']}: {$message}",
                     [
-                        'type'        => 'marketplace_chat',
-                        'listing_id'  => (string)$listingId,
-                        'buyer_id'    => (string)$buyerId,
-                        'seller_id'   => (string)$sellerId,
-                        'sender_name' => (string)$senderName,
-                        'action_url'  => '/marketplace?tab=chat&listing_id=' . $listingId . '&buyer_id=' . $buyerId,
+                        'type'          => 'marketplace_chat',
+                        'listing_id'    => (string)$listingId,
+                        'buyer_id'      => (string)$buyerId,
+                        'seller_id'     => (string)$sellerId,
+                        'sender_name'   => (string)$senderName,
+                        'title'         => "💬 {$senderName}",
+                        'message'       => (string)$message,
+                        'listing_title' => (string)$listing['title'],
+                        'click_action'  => 'FLUTTER_NOTIFICATION_CLICK',
+                        'action_url'    => '/marketplace?tab=chat&listing_id=' . $listingId . '&buyer_id=' . $buyerId,
                     ]
                 );
+                log_message('info', "Chat FCM to user_{$recipientId} result: " . json_encode($fcmRes));
             }
         } catch (\Throwable $e) {
             log_message('error', 'Chat FCM error: ' . $e->getMessage());

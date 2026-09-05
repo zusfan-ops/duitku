@@ -8,6 +8,7 @@ import '../../services/api_service.dart';
 import '../../theme.dart';
 import '../../utils/whatsapp_launcher.dart';
 import 'market_chat_screen.dart';
+import 'market_conversations_screen.dart';
 
 class MarketDetailScreen extends StatefulWidget {
   final int listingId;
@@ -23,6 +24,7 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
 
   Map<String, dynamic>? _listing;
   bool _isLoading = true;
+  bool _isOwner = false;
   String? _errorMessage;
   int _activePhotoIndex = 0;
   bool _isPostingComment = false;
@@ -52,6 +54,7 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
         setState(() {
           final rawListing = res['listing'];
           _listing = (rawListing is Map) ? Map<String, dynamic>.from(rawListing) : null;
+          _isOwner = res['is_owner'] == true;
           _isLoading = false;
         });
       }
@@ -497,6 +500,58 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
   }
 
   Widget _buildActionButtons(String phone, String title, String thirdPartyUrl) {
+    if (_isOwner) {
+      return Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.verified_user_rounded, color: Color(0xFF2563EB), size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Anda adalah pemilik dari iklan ini.',
+                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF1E40AF)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4F46E5),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 1,
+              ),
+              icon: const Icon(Icons.forum_rounded, size: 20),
+              label: const Text(
+                '💬 Lihat Obrolan Calon Pembeli',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MarketConversationsScreen()),
+                );
+              },
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       children: [
         // Direct In-App Chat button (prominent primary)

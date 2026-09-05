@@ -144,10 +144,12 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
 
     setState(() => _isSending = true);
 
+    final effectiveBuyerId = widget.buyerId ?? _parseInt(_buyerInfo?['id']);
+
     try {
       final res = await ApiService.instance.sendMarketplaceChatMessage(
         listingId: widget.listingId,
-        buyerId: widget.buyerId,
+        buyerId: effectiveBuyerId > 0 ? effectiveBuyerId : null,
         message: text,
       );
 
@@ -417,12 +419,29 @@ class _MarketChatScreenState extends State<MarketChatScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 3),
-                                  Text(
-                                    timeStr,
-                                    style: TextStyle(
-                                      color: isMine ? Colors.white70 : Colors.grey.shade500,
-                                      fontSize: 10,
-                                    ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        timeStr,
+                                        style: TextStyle(
+                                          color: isMine ? Colors.white70 : Colors.grey.shade500,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                      if (isMine) ...[
+                                        const SizedBox(width: 4),
+                                        Icon(
+                                          (_parseInt(msg['is_read']) == 1)
+                                              ? Icons.done_all_rounded
+                                              : Icons.done_rounded,
+                                          size: 14,
+                                          color: (_parseInt(msg['is_read']) == 1)
+                                              ? const Color(0xFF38BDF8)
+                                              : Colors.white70,
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ],
                               ),
