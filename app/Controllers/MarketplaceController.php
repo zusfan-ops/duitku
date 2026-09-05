@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Models\DirectChatModel;
 use App\Models\MarketplaceCommentModel;
 use App\Models\MarketplaceImageModel;
 use App\Models\MarketplaceListingModel;
@@ -9,6 +10,7 @@ use App\Models\MarketplaceOrderModel;
 use App\Models\MarketplaceChatModel;
 use App\Models\NotificationModel;
 use App\Models\SettingModel;
+use App\Models\UserFriendModel;
 use App\Models\UserModel;
 use App\Services\FcmService;
 
@@ -19,6 +21,8 @@ class MarketplaceController extends BaseController
     protected MarketplaceCommentModel $commentModel;
     protected MarketplaceOrderModel   $orderModel;
     protected MarketplaceChatModel    $chatModel;
+    protected DirectChatModel         $directChatModel;
+    protected UserFriendModel         $friendModel;
     protected UserModel               $userModel;
     protected SettingModel            $settingModel;
     protected NotificationModel       $notificationModel;
@@ -31,6 +35,8 @@ class MarketplaceController extends BaseController
         $this->commentModel       = new MarketplaceCommentModel();
         $this->orderModel         = new MarketplaceOrderModel();
         $this->chatModel          = new MarketplaceChatModel();
+        $this->directChatModel    = new DirectChatModel();
+        $this->friendModel        = new UserFriendModel();
         $this->userModel          = new UserModel();
         $this->settingModel       = new SettingModel();
         $this->notificationModel  = new NotificationModel();
@@ -822,6 +828,10 @@ class MarketplaceController extends BaseController
      * Halaman Daftar Obrolan (Pesan & Obrolan) di PWA
      * GET /chat or /pesan
      */
+    /**
+     * Halaman Daftar Obrolan (Pesan & Obrolan) di PWA
+     * GET /chat or /pesan
+     */
     public function conversations()
     {
         $userId = session()->get('user_id');
@@ -829,14 +839,68 @@ class MarketplaceController extends BaseController
             return redirect()->to('/login');
         }
 
-        $conversations = $this->chatModel->getConversationsForUser($userId);
-        $totalUnread   = $this->chatModel->getTotalUnreadCount($userId);
+        // 1. Direct chats dengan teman (WhatsApp style)
+        $directConvs = $this->directChatModel->getConversations($userId);
+        $normalizedDirect = array_map(function ($c) {
+            return [
+                'type'              => 'direct',
+                'partner_id'        => (int)$c['partner_id'],
+                'partner_name'      => $c['partner_name'] ?: ($c['partner_username'] ?: 'Teman'),
+                'partner_username'  => $c['partner_username'] ?: '',
+                'partner_avatar'    => $c['partner_avatar'] ?: '',
+                'partner_phone'     => $c['partner_phone'] ?: '',
+                'last_message'      => $c['last_message'],
+                'last_sender_id'    => (int)$c['last_sender_id'],
+                'last_message_time' => $c['last_message_time'],
+                'unread_count'      => (int)$c['unread_count'],
+            ];
+        }, $directConvs);
+
+        // 2. Marketplace chats
+        $marketConvs = $this->chatModel->getConversationsForUser($userId);
+        $normalizedMarket = array_map(function ($c) use ($userId) {
+            $isSeller = ((int)$c['seller_id'] === $userId);
+            return [
+                'type'              => 'marketplace',
+                'listing_id'        => (int)$c['listing_id'],
+                'buyer_id'          => (int)$c['buyer_id'],
+                'seller_id'         => (int)$c['seller_id'],
+                'listing_title'     => $c['listing_title'] ?: 'Produk Marketplace',
+                'listing_price'     => (float)($c['listing_price'] ?? 0),
+                'listing_image'     => $c['listing_image'] ?: '',
+                'partner_name'      => $isSeller ? ($c['buyer_name'] ?: 'Calon Pembeli') : ($c['seller_name'] ?: 'Penjual'),
+                'partner_phone'     => $isSeller ? ($c['buyer_phone'] ?: '') : ($c['seller_phone'] ?: ''),
+                'last_message'      => $c['last_message'],
+                'last_sender_id'    => (int)$c['last_sender_id'],
+                'last_message_time' => $c['last_message_time'],
+                'unread_count'      => (int)$c['unread_count'],
+            ];
+        }, $marketConvs);
+
+        // Gabungkan seluruh obrolan secara kronologis
+        $allConvs = array_merge($normalizedDirect, $normalizedMarket);
+        usort($allConvs, function ($a, $b) {
+            $tA = !empty($a['last_message_time']) ? strtotime($a['last_message_time']) : 0;
+            $tB = !empty($b['last_message_time']) ? strtotime($b['last_message_time']) : 0;
+            return $tB <=> $tA;
+        });
+
+        // 3. Permintaan pertemanan masuk
+        $incomingRequests = $this->friendModel->getIncomingRequests($userId);
+
+        // 4. Daftar teman yang sudah disetujui
+        $friends = $this->friendModel->getFriends($userId);
+
+        // 5. Total unread chat
+        $totalUnread = $this->chatModel->getTotalUnreadCount($userId) + $this->directChatModel->getTotalUnreadCount($userId);
 
         return view('marketplace/conversations', [
-            'pageTitle'     => 'Pesan & Obrolan',
-            'conversations' => $conversations,
-            'totalUnread'   => $totalUnread,
-            'userId'        => $userId,
+            'pageTitle'        => 'Pesan & Obrolan',
+            'conversations'    => $allConvs,
+            'incomingRequests' => $incomingRequests,
+            'friends'          => $friends,
+            'totalUnread'      => $totalUnread,
+            'userId'           => $userId,
         ]);
     }
 
@@ -851,10 +915,271 @@ class MarketplaceController extends BaseController
             return $this->response->setJSON(['status' => 'error', 'unread_count' => 0]);
         }
 
-        $count = $this->chatModel->getTotalUnreadCount($userId);
+        $marketUnread = $this->chatModel->getTotalUnreadCount($userId);
+        $directUnread = $this->directChatModel->getTotalUnreadCount($userId);
+        $pendingReqs  = count($this->friendModel->getIncomingRequests($userId));
+
         return $this->response->setJSON([
-            'status'       => 'success',
-            'unread_count' => $count,
+            'status'         => 'success',
+            'unread_count'   => ($marketUnread + $directUnread + $pendingReqs),
+            'chat_unread'    => ($marketUnread + $directUnread),
+            'pending_friends'=> $pendingReqs,
+        ]);
+    }
+
+    /**
+     * Cari Teman via Username (AJAX PWA)
+     * GET /friends/search?q=...
+     */
+    public function searchFriends()
+    {
+        $userId = session()->get('user_id');
+        if (!$userId) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Silakan login terlebih dahulu.']);
+        }
+
+        $query = trim((string)$this->request->getVar('q'));
+        $users = $this->friendModel->searchUsers($query, $userId);
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'users'  => $users,
+        ]);
+    }
+
+    /**
+     * Kirim Permintaan Pertemanan (AJAX PWA)
+     * POST /friends/request
+     */
+    public function sendFriendRequest()
+    {
+        $userId = session()->get('user_id');
+        if (!$userId) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Silakan login terlebih dahulu.']);
+        }
+
+        $username = trim((string)$this->request->getVar('username'));
+        if (empty($username)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Username tidak boleh kosong.']);
+        }
+
+        $res = $this->friendModel->sendRequest($userId, $username);
+        if (!$res['success']) {
+            return $this->response->setJSON(['status' => 'error', 'message' => $res['message']]);
+        }
+
+        $sender = $this->userModel->find($userId);
+        $senderName = $sender['name'] ?? 'Pengguna';
+        $friendId = (int)($res['friend']['id'] ?? 0);
+
+        if ($friendId > 0) {
+            $isAccepted = ($res['status'] ?? '') === 'accepted';
+            $notifTitle = $isAccepted ? "🤝 Teman Baru!" : "👋 Permintaan Pertemanan";
+            $notifMsg   = $isAccepted 
+                ? "{$senderName} (@{$sender['username']}) sekarang berteman dengan Anda."
+                : "{$senderName} (@{$sender['username']}) ingin menambahkan Anda sebagai teman.";
+
+            try {
+                $this->notificationModel->insert([
+                    'user_id'    => $friendId,
+                    'title'      => $notifTitle,
+                    'message'    => $notifMsg,
+                    'type'       => 'friend_request',
+                    'action_url' => '/chat?tab=friends',
+                ]);
+            } catch (\Throwable $e) {
+                log_message('error', 'Friend request notif error: ' . $e->getMessage());
+            }
+
+            try {
+                if ($this->fcmService->isConfigured()) {
+                    $this->fcmService->sendToTopic(
+                        "user_{$friendId}",
+                        $notifTitle,
+                        $notifMsg,
+                        [
+                            'type'         => 'friend_request',
+                            'sender_id'    => (string)$userId,
+                            'sender_name'  => (string)$senderName,
+                            'action_url'   => '/chat?tab=friends',
+                            'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                        ]
+                    );
+                }
+            } catch (\Throwable $e) {
+                log_message('error', 'Friend request FCM error: ' . $e->getMessage());
+            }
+        }
+
+        return $this->response->setJSON([
+            'status'  => 'success',
+            'message' => $res['message'],
+            'friend'  => $res['friend'] ?? null,
+        ]);
+    }
+
+    /**
+     * Respon Permintaan Pertemanan: Terima / Tolak (AJAX PWA)
+     * POST /friends/respond
+     */
+    public function respondFriendRequest()
+    {
+        $userId    = session()->get('user_id');
+        if (!$userId) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Silakan login terlebih dahulu.']);
+        }
+
+        $requestId = (int)$this->request->getVar('request_id');
+        $action    = trim((string)$this->request->getVar('action'));
+
+        if ($requestId <= 0 || !in_array($action, ['accept', 'reject'], true)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Parameter tidak valid.']);
+        }
+
+        $res = $this->friendModel->respondRequest($requestId, $userId, $action);
+        if (!$res['success']) {
+            return $this->response->setJSON(['status' => 'error', 'message' => $res['message']]);
+        }
+
+        if ($action === 'accept' && !empty($res['friend'])) {
+            $senderId = (int)$res['friend']['id'];
+            $myInfo   = $this->userModel->find($userId);
+            $myName   = $myInfo['name'] ?? 'Teman';
+
+            try {
+                $this->notificationModel->insert([
+                    'user_id'    => $senderId,
+                    'title'      => "🤝 Permintaan Diterima!",
+                    'message'    => "{$myName} telah menerima permintaan pertemanan Anda.",
+                    'type'       => 'friend_accepted',
+                    'action_url' => '/chat?direct_user=' . $userId,
+                ]);
+
+                if ($this->fcmService->isConfigured()) {
+                    $this->fcmService->sendToTopic(
+                        "user_{$senderId}",
+                        "🤝 Permintaan Diterima!",
+                        "{$myName} menerima permintaan pertemanan Anda. Ketuk untuk mulai chat!",
+                        [
+                            'type'         => 'friend_accepted',
+                            'friend_id'    => (string)$userId,
+                            'friend_name'  => (string)$myName,
+                            'action_url'   => '/chat?direct_user=' . $userId,
+                            'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                        ]
+                    );
+                }
+            } catch (\Throwable $e) {
+                log_message('error', 'Accept friend notif error: ' . $e->getMessage());
+            }
+        }
+
+        return $this->response->setJSON([
+            'status'  => 'success',
+            'message' => $res['message'],
+            'action'  => $action,
+            'friend'  => $res['friend'] ?? null,
+        ]);
+    }
+
+    /**
+     * Ambil Pesan Direct Chat (AJAX PWA)
+     * GET /chat/direct/messages?friend_id=...&after_id=...
+     */
+    public function directChatMessages()
+    {
+        $userId   = session()->get('user_id');
+        if (!$userId) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Unauthorized']);
+        }
+
+        $friendId = (int)$this->request->getVar('friend_id');
+        $afterId  = (int)($this->request->getVar('after_id') ?? 0);
+
+        if ($friendId <= 0) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'ID Teman tidak valid.']);
+        }
+
+        $this->directChatModel->markAsRead($friendId, $userId);
+        $messages = $this->directChatModel->getMessages($userId, $friendId, $afterId);
+        $friend   = $this->userModel->find($friendId);
+
+        return $this->response->setJSON([
+            'status'   => 'success',
+            'messages' => $messages,
+            'friend'   => [
+                'id'       => (int)$friendId,
+                'name'     => $friend['name'] ?? '',
+                'username' => $friend['username'] ?? '',
+                'avatar'   => $friend['avatar'] ?? '',
+                'phone'    => $friend['phone'] ?? '',
+            ],
+            'my_id'    => $userId,
+        ]);
+    }
+
+    /**
+     * Kirim Pesan Direct Chat (AJAX PWA)
+     * POST /chat/direct/send
+     */
+    public function sendDirectChatMessage()
+    {
+        $userId   = session()->get('user_id');
+        if (!$userId) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Unauthorized']);
+        }
+
+        $friendId = (int)$this->request->getVar('friend_id');
+        $message  = trim((string)$this->request->getVar('message'));
+
+        if ($friendId <= 0 || empty($message)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Pesan atau teman tidak valid.']);
+        }
+
+        if (!$this->friendModel->isFriend($userId, $friendId)) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Anda harus berteman terlebih dahulu untuk mengirim pesan.']);
+        }
+
+        $chat = $this->directChatModel->sendMessage($userId, $friendId, $message);
+        $sender = $this->userModel->find($userId);
+        $senderName = $sender['name'] ?? 'Teman';
+
+        try {
+            $this->notificationModel->insert([
+                'user_id'    => $friendId,
+                'title'      => "💬 {$senderName}",
+                'message'    => $message,
+                'type'       => 'direct_chat',
+                'action_url' => '/chat?direct_user=' . $userId,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Direct chat notif error: ' . $e->getMessage());
+        }
+
+        try {
+            if ($this->fcmService->isConfigured()) {
+                $this->fcmService->sendToTopic(
+                    "user_{$friendId}",
+                    "💬 {$senderName}",
+                    $message,
+                    [
+                        'type'         => 'direct_chat',
+                        'sender_id'    => (string)$userId,
+                        'sender_name'  => (string)$senderName,
+                        'message'      => (string)$message,
+                        'action_url'   => '/chat?direct_user=' . $userId,
+                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    ]
+                );
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Direct chat FCM error: ' . $e->getMessage());
+        }
+
+        return $this->response->setJSON([
+            'status'  => 'success',
+            'message' => 'Pesan terkirim',
+            'chat'    => $chat,
         ]);
     }
 

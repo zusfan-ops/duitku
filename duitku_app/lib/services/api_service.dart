@@ -923,6 +923,47 @@ class ApiService {
     return get('marketplace/chat/conversations');
   }
 
+  // ── WhatsApp Style Friends & Direct Chat ─────────────────────
+  Future<Map<String, dynamic>> getAllConversations() async {
+    return get('chat/all-conversations');
+  }
+
+  Future<List<dynamic>> getFriends() async {
+    final res = await get('friends');
+    return (res['friends'] as List<dynamic>?) ?? [];
+  }
+
+  Future<Map<String, dynamic>> getFriendRequests() async {
+    return get('friends/requests');
+  }
+
+  Future<Map<String, dynamic>> sendFriendRequest(String username) async {
+    return post('friends/request', {'username': username});
+  }
+
+  Future<Map<String, dynamic>> respondFriendRequest(int requestId, String action) async {
+    return post('friends/respond', {'request_id': requestId, 'action': action});
+  }
+
+  Future<List<dynamic>> searchUsers(String query) async {
+    final res = await get('friends/search', query: {'q': query});
+    return (res['users'] as List<dynamic>?) ?? [];
+  }
+
+  Future<Map<String, dynamic>> getDirectMessages(int friendId, {int afterId = 0}) async {
+    return get('chat/direct/messages', query: {
+      'friend_id': friendId.toString(),
+      if (afterId > 0) 'after_id': afterId.toString(),
+    });
+  }
+
+  Future<Map<String, dynamic>> sendDirectMessage(int friendId, String message) async {
+    return post('chat/direct/send', {
+      'friend_id': friendId,
+      'message': message,
+    });
+  }
+
   // ── Upload helpers ───────────────────────────────────────────
   Future<String?> base64FromFile(String path) async {
     final file = File(path);

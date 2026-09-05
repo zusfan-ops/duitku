@@ -278,6 +278,11 @@ $routes->post('/marketplace/chat/send',              'MarketplaceController::sen
 $routes->get('/marketplace/chat/unread-count',       'MarketplaceController::unreadChatCount', ['filter' => 'auth']);
 $routes->get('/chat',                                'MarketplaceController::conversations',   ['filter' => 'auth']);
 $routes->get('/pesan',                               'MarketplaceController::conversations',   ['filter' => 'auth']);
+$routes->get('/friends/search',                      'MarketplaceController::searchFriends',   ['filter' => 'auth']);
+$routes->post('/friends/request',                    'MarketplaceController::sendFriendRequest', ['filter' => 'auth']);
+$routes->post('/friends/respond',                    'MarketplaceController::respondFriendRequest', ['filter' => 'auth']);
+$routes->get('/chat/direct/messages',                'MarketplaceController::directChatMessages', ['filter' => 'auth']);
+$routes->post('/chat/direct/send',                   'MarketplaceController::sendDirectChatMessage', ['filter' => 'auth']);
 $routes->post('/marketplace/status/(:num)',          'MarketplaceController::updateStatus/$1', ['filter' => 'auth']);
 $routes->post('/marketplace/delete/(:num)',          'MarketplaceController::delete/$1', ['filter' => 'auth']);
 $routes->get('/u/(:segment)',                        'MarketplaceController::userStore/$1');
@@ -465,6 +470,16 @@ $routes->group('api', function ($routes) {
         $routes->get('marketplace/chat/messages',        'Api\MarketplaceController::chatMessages');
         $routes->post('marketplace/chat/send',           'Api\MarketplaceController::sendChatMessage');
         $routes->get('marketplace/chat/conversations',   'Api\MarketplaceController::chatConversations');
+
+        // Friends & Direct WhatsApp-style Chat API
+        $routes->get('friends',                           'Api\ChatController::friends');
+        $routes->get('friends/requests',                  'Api\ChatController::requests');
+        $routes->post('friends/request',                  'Api\ChatController::sendFriendRequest');
+        $routes->post('friends/respond',                  'Api\ChatController::respondFriendRequest');
+        $routes->get('friends/search',                    'Api\ChatController::searchUsers');
+        $routes->get('chat/direct/messages',              'Api\ChatController::directMessages');
+        $routes->post('chat/direct/send',                 'Api\ChatController::sendDirectMessage');
+        $routes->get('chat/all-conversations',            'Api\ChatController::allConversations');
     });
 });
 

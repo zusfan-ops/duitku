@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/api_config.dart';
+import '../../models/friend.dart';
 import '../../providers/app_data_provider.dart';
 import '../../services/api_service.dart';
 import '../../theme.dart';
+import '../chat/direct_chat_screen.dart';
 import 'market_chat_screen.dart';
 
 class MarketConversationsScreen extends StatefulWidget {
@@ -20,8 +22,11 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   List<Map<String, dynamic>> _conversations = [];
+  List<FriendRequest> _incomingRequests = [];
+  List<Friend> _friends = [];
   int _myId = 0;
   Timer? _refreshTimer;
+  String _activeFilter = 'all'; // 'all', 'direct', 'marketplace'
 
   @override
   void initState() {
@@ -54,20 +59,27 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
     }
 
     try {
-      final res = await ApiService.instance.getMarketplaceChatConversations();
+      // 1. Ambil seluruh percakapan gabungan (Direct Friends + Marketplace)
+      final res = await ApiService.instance.getAllConversations();
       _myId = int.tryParse('${res['my_id']}') ?? 0;
       final list = (res['conversations'] as List<dynamic>?) ?? [];
 
+      // 2. Ambil permintaan pertemanan & daftar teman
+      final reqRes = await ApiService.instance.getFriendRequests();
+      final incList = (reqRes['incoming'] as List<dynamic>?) ?? [];
+      final parsedReqs = incList.map((e) => FriendRequest.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+
+      final friendsList = await ApiService.instance.getFriends();
+      final parsedFriends = friendsList.map((e) => Friend.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+
       if (mounted) {
-        int totalUnread = 0;
-        for (final c in list) {
-          if (c is Map) {
-            totalUnread += int.tryParse('${c['unread_count']}') ?? 0;
-          }
-        }
+        final totalUnread = int.tryParse('${res['total_unread']}') ?? 0;
         context.read<AppDataProvider>().setMarketChatUnread(totalUnread);
+
         setState(() {
           _conversations = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          _incomingRequests = parsedReqs;
+          _friends = parsedFriends;
           _isLoading = false;
         });
       }
@@ -75,10 +87,389 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
       if (mounted && !isSilent) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Gagal memuat daftar obrolan: $e';
+          _errorMessage = 'Gagal memuat obrolan: $e';
         });
       }
     }
+  }
+
+  Future<void> _respondFriendRequest(int requestId, String action) async {
+    try {
+      final res = await ApiService.instance.respondFriendRequest(requestId, action);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res['message'] ?? 'Permintaan diproses.'),
+            backgroundColor: action == 'accept' ? const Color(0xFF10B981) : Colors.black87,
+          ),
+        );
+        _loadData(isSilent: true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  void _showAddFriendDialog(BuildContext context) {
+    final searchCtrl = TextEditingController();
+    bool searching = false;
+    List<UserSearchResult> searchResults = [];
+    String? searchMsg;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            void doSearch() async {
+              final q = searchCtrl.text.trim();
+              if (q.isEmpty) return;
+              setModalState(() {
+                searching = true;
+                searchMsg = null;
+              });
+
+              try {
+                final list = await ApiService.instance.searchUsers(q);
+                final parsed = list.map((e) => UserSearchResult.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+                setModalState(() {
+                  searchResults = parsed;
+                  searching = false;
+                  if (parsed.isEmpty) {
+                    searchMsg = 'Pengguna dengan username tersebut tidak ditemukan.';
+                  }
+                });
+              } catch (e) {
+                setModalState(() {
+                  searching = false;
+                  searchMsg = 'Gagal mencari pengguna: $e';
+                });
+              }
+            }
+
+            void sendRequest(String username) async {
+              try {
+                final res = await ApiService.instance.sendFriendRequest(username);
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(res['message'] ?? 'Permintaan terkirim!'),
+                      backgroundColor: const Color(0xFF2563EB),
+                    ),
+                  );
+                  Navigator.pop(ctx);
+                  _loadData(isSilent: true);
+                }
+              } catch (e) {
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e')),
+                  );
+                }
+              }
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+                top: 20,
+                left: 20,
+                right: 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF2563EB)),
+                          SizedBox(width: 8),
+                          Text(
+                            'Tambah Teman',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Cari akun pengguna lain berdasarkan @username untuk mengirimkan permintaan pertemanan.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: searchCtrl,
+                          textInputAction: TextInputAction.search,
+                          onSubmitted: (_) => doSearch(),
+                          decoration: InputDecoration(
+                            hintText: 'Ketik username, misal: budi',
+                            hintStyle: const TextStyle(fontSize: 13),
+                            prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            isDense: true,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: searching ? null : doSearch,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563EB),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                        ),
+                        child: searching
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Text('Cari', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  if (searchMsg != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Text(searchMsg!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                    ),
+                  if (searchResults.isNotEmpty)
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: searchResults.length,
+                      itemBuilder: (c, idx) {
+                        final u = searchResults[idx];
+                        final init = u.name.isNotEmpty ? u.name[0].toUpperCase() : 'U';
+
+                        Widget actionBtn;
+                        if (u.friendStatus == 'friends') {
+                          actionBtn = ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => DirectChatScreen(
+                                    friendId: u.id,
+                                    friendName: u.name,
+                                    friendUsername: u.username,
+                                    friendAvatar: u.avatar,
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text('Chat', style: TextStyle(fontSize: 12, color: Colors.white)),
+                          );
+                        } else if (u.friendStatus == 'pending_sent') {
+                          actionBtn = Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'Menunggu',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.amber),
+                            ),
+                          );
+                        } else if (u.friendStatus == 'pending_received') {
+                          actionBtn = ElevatedButton(
+                            onPressed: () {
+                              if (u.requestId != null) {
+                                Navigator.pop(ctx);
+                                _respondFriendRequest(u.requestId!, 'accept');
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              minimumSize: Size.zero,
+                            ),
+                            child: const Text('Terima', style: TextStyle(fontSize: 12, color: Colors.white)),
+                          );
+                        } else {
+                          actionBtn = ElevatedButton(
+                            onPressed: () => sendRequest(u.username),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2563EB),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              minimumSize: Size.zero,
+                            ),
+                            child: const Text('Tambah', style: TextStyle(fontSize: 12, color: Colors.white)),
+                          );
+                        }
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: const Color(0xFF3B82F6),
+                                child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(u.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                                    Text('@${u.username}', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                                  ],
+                                ),
+                              ),
+                              actionBtn,
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showContactsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Kontak Teman (${_friends.length})',
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                if (_friends.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 36),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.people_outline_rounded, size: 48, color: Colors.grey),
+                        const SizedBox(height: 10),
+                        const Text('Belum Ada Teman', style: TextStyle(fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Gunakan Tambah Teman untuk mencari teman baru via username.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            _showAddFriendDialog(context);
+                          },
+                          icon: const Icon(Icons.person_add_rounded, size: 16),
+                          label: const Text('Tambah Teman Sekarang'),
+                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: _friends.length,
+                      separatorBuilder: (_, _) => Divider(height: 1, color: Colors.grey.shade200),
+                      itemBuilder: (c, idx) {
+                        final f = _friends[idx];
+                        final init = f.name.isNotEmpty ? f.name[0].toUpperCase() : 'T';
+
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          leading: CircleAvatar(
+                            radius: 20,
+                            backgroundColor: const Color(0xFF2563EB),
+                            child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                          ),
+                          title: Text(f.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                          subtitle: Text('@${f.username}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text('💬 Chat', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w700, fontSize: 12)),
+                          ),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DirectChatScreen(
+                                  friendId: f.friendId,
+                                  friendName: f.name,
+                                  friendUsername: f.username,
+                                  friendAvatar: f.avatar,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   String _fullImageUrl(String? url) {
@@ -110,11 +501,28 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.person_add_rounded),
+            tooltip: 'Tambah Teman',
+            onPressed: () => _showAddFriendDialog(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.contacts_rounded),
+            tooltip: 'Kontak Teman',
+            onPressed: () => _showContactsSheet(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Segarkan',
             onPressed: () => _loadData(),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'fab_whatsapp_new_chat',
+        backgroundColor: const Color(0xFF00A884), // WhatsApp Green
+        tooltip: 'Chat Baru',
+        onPressed: () => _showContactsSheet(context),
+        child: const Icon(Icons.chat_rounded, color: Colors.white, size: 24),
       ),
       body: _buildBody(),
     );
@@ -151,256 +559,423 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
       );
     }
 
-    if (_conversations.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.forum_outlined, size: 40, color: AppColors.primary),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Belum Ada Pesan',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Obrolan akan otomatis dimulai ketika ada calon pembeli yang mengajukan minat pada produk Anda, atau saat Anda menghubungi penjual.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: AppColors.textMuted, height: 1.4),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    // Filter conversations
+    final filtered = _conversations.where((c) {
+      final type = c['type'] ?? 'marketplace';
+      if (_activeFilter == 'direct') return type == 'direct';
+      if (_activeFilter == 'marketplace') return type == 'marketplace';
+      return true;
+    }).toList();
 
     return RefreshIndicator(
       onRefresh: _loadData,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: _conversations.length,
-        separatorBuilder: (_, _) => Divider(height: 1, color: Colors.grey.shade200),
-        itemBuilder: (context, index) {
-          final conv = _conversations[index];
-          final listingId = int.tryParse('${conv['listing_id']}') ?? 0;
-          final buyerId = int.tryParse('${conv['buyer_id']}') ?? 0;
-          final sellerId = int.tryParse('${conv['seller_id']}') ?? 0;
-          final isSeller = _myId > 0 && _myId == sellerId;
-
-          final partnerName = isSeller
-              ? (conv['buyer_name'] ?? 'Calon Pembeli').toString()
-              : (conv['seller_name'] ?? 'Penjual').toString();
-          final partnerPhone = isSeller
-              ? (conv['buyer_phone'] ?? '').toString()
-              : (conv['seller_phone'] ?? '').toString();
-
-          final title = (conv['listing_title'] ?? 'Produk').toString();
-          final price = _formatRupiah(conv['listing_price']);
-          final img = (conv['listing_image'] ?? '').toString();
-          final lastMsg = (conv['last_message'] ?? '').toString();
-          final lastSenderId = int.tryParse('${conv['last_sender_id']}') ?? 0;
-          final unreadCount = int.tryParse('${conv['unread_count']}') ?? 0;
-          final timeStr = (conv['last_message_time'] ?? '').toString();
-
-          final isMyMsg = _myId > 0 && lastSenderId == _myId;
-
-          return InkWell(
-            onTap: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => MarketChatScreen(
-                    listingId: listingId,
-                    buyerId: buyerId,
-                    initialListingTitle: title,
-                    initialListingPrice: price,
-                    initialListingImage: img,
-                    targetUserName: partnerName,
-                    targetUserPhone: partnerPhone,
-                  ),
-                ),
-              );
-              _loadData();
-            },
-            child: Container(
-              color: unreadCount > 0 ? AppColors.primary.withValues(alpha: 0.04) : Colors.transparent,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 90),
+        children: [
+          // 1. Incoming Friend Requests Banner
+          if (_incomingRequests.isNotEmpty) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF93C5FD)),
+              ),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product / Avatar Stack
-                  Stack(
+                  Row(
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          width: 52,
-                          height: 52,
-                          color: const Color(0xFFF1F5F9),
-                          child: img.isNotEmpty
-                              ? Image.network(
-                                  _fullImageUrl(img),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => const Icon(
-                                    Icons.shopping_bag_outlined,
-                                    size: 26,
-                                    color: Color(0xFF94A3B8),
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.shopping_bag_outlined,
-                                  size: 26,
-                                  color: Color(0xFF94A3B8),
-                                ),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF2563EB),
+                          shape: BoxShape.circle,
                         ),
                       ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: isSeller ? const Color(0xFF0284C7) : const Color(0xFF059669),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 1.5),
-                          ),
-                          child: Icon(
-                            isSeller ? Icons.person_rounded : Icons.store_rounded,
-                            size: 10,
-                            color: Colors.white,
-                          ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Permintaan Pertemanan (${_incomingRequests.length})',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E40AF),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(height: 8),
+                  ..._incomingRequests.map((req) {
+                    final rInit = req.requesterName.isNotEmpty ? req.requesterName[0].toUpperCase() : 'U';
 
-                  // Message Content
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Partner Name & Time
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      partnerName,
-                                      style: TextStyle(
-                                        fontWeight: unreadCount > 0 ? FontWeight.w900 : FontWeight.w700,
-                                        fontSize: 14,
-                                        color: const Color(0xFF0F172A),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                    decoration: BoxDecoration(
-                                      color: isSeller
-                                          ? const Color(0xFFE0F2FE)
-                                          : const Color(0xFFDCFCE7),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      isSeller ? 'Pembeli' : 'Penjual',
-                                      style: TextStyle(
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.w800,
-                                        color: isSeller
-                                            ? const Color(0xFF0284C7)
-                                            : const Color(0xFF15803D),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              timeStr.length >= 16 ? timeStr.substring(11, 16) : timeStr,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: unreadCount > 0 ? AppColors.primary : AppColors.textMuted,
-                                fontWeight: unreadCount > 0 ? FontWeight.w800 : FontWeight.normal,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-
-                        // Listing Title & Price
-                        Text(
-                          '$title • $price',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textMuted,
+                    return Container(
+                      margin: const EdgeInsets.only(top: 6),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: const Color(0xFF3B82F6),
+                            child: Text(rInit, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-
-                        // Last Message & Badge
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                isMyMsg ? 'Anda: $lastMsg' : lastMsg,
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  color: unreadCount > 0 ? const Color(0xFF1E293B) : const Color(0xFF64748B),
-                                  fontWeight: unreadCount > 0 ? FontWeight.w700 : FontWeight.normal,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(req.requesterName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                                Text('@${req.requesterUsername}', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                              ],
                             ),
-                            if (unreadCount > 0) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  '$unreadCount',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => _respondFriendRequest(req.requestId, 'accept'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text('Terima', style: TextStyle(fontSize: 11, color: Colors.white)),
+                          ),
+                          const SizedBox(width: 6),
+                          OutlinedButton(
+                            onPressed: () => _respondFriendRequest(req.requestId, 'reject'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.red,
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text('Tolak', style: TextStyle(fontSize: 11)),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
-          );
-        },
+          ],
+
+          // 2. Filter Pills
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildFilterChip('Semua', 'all'),
+                const SizedBox(width: 8),
+                _buildFilterChip('Teman (Direct)', 'direct'),
+                const SizedBox(width: 8),
+                _buildFilterChip('Marketplace', 'marketplace'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // 3. Empty State or List
+          if (filtered.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: Center(
+                child: Column(
+                  children: [
+                    const Icon(Icons.forum_outlined, size: 48, color: Colors.grey),
+                    const SizedBox(height: 12),
+                    const Text('Belum Ada Percakapan', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Tambahkan teman untuk mulai mengobrol seperti WhatsApp!',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () => _showAddFriendDialog(context),
+                      icon: const Icon(Icons.person_add_rounded, size: 16),
+                      label: const Text('Tambah Teman'),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ...filtered.map((conv) {
+              final type = conv['type'] ?? 'marketplace';
+              final isDirect = (type == 'direct');
+
+              if (isDirect) {
+                // DIRECT CHAT ITEM (TEMAN)
+                final partnerId = int.tryParse('${conv['partner_id']}') ?? 0;
+                final partnerName = (conv['partner_name'] ?? 'Teman').toString();
+                final partnerUsername = (conv['partner_username'] ?? '').toString();
+                final partnerAvatar = conv['partner_avatar'];
+                final lastMsg = (conv['last_message'] ?? '').toString();
+                final unreadCount = int.tryParse('${conv['unread_count']}') ?? 0;
+                final lastSenderId = int.tryParse('${conv['last_sender_id']}') ?? 0;
+                final isMyMsg = _myId > 0 && lastSenderId == _myId;
+                final init = partnerName.isNotEmpty ? partnerName[0].toUpperCase() : 'T';
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: unreadCount > 0 ? const Color(0xFF2563EB).withValues(alpha: 0.3) : Colors.grey.shade200,
+                    ),
+                  ),
+                  color: unreadCount > 0 ? const Color(0xFF2563EB).withValues(alpha: 0.03) : Theme.of(context).cardColor,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DirectChatScreen(
+                            friendId: partnerId,
+                            friendName: partnerName,
+                            friendUsername: partnerUsername,
+                            friendAvatar: partnerAvatar,
+                          ),
+                        ),
+                      );
+                      _loadData(isSilent: true);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: const Color(0xFF2563EB),
+                            child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        partnerName,
+                                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFDBEAFE),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text('Teman', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF1D4ED8))),
+                                    ),
+                                  ],
+                                ),
+                                if (partnerUsername.isNotEmpty)
+                                  Text('@$partnerUsername', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    if (isMyMsg) ...[
+                                      const Icon(Icons.done_all_rounded, size: 14, color: Color(0xFF2563EB)),
+                                      const SizedBox(width: 4),
+                                    ],
+                                    Expanded(
+                                      child: Text(
+                                        lastMsg,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: unreadCount > 0 ? FontWeight.w700 : FontWeight.w400,
+                                          color: unreadCount > 0 ? Colors.black87 : Colors.grey.shade600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (unreadCount > 0)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF2563EB),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                unreadCount > 99 ? '99+' : '$unreadCount',
+                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              } else {
+                // MARKETPLACE CHAT ITEM
+                final listingId = int.tryParse('${conv['listing_id']}') ?? 0;
+                final buyerId = int.tryParse('${conv['buyer_id']}') ?? 0;
+                final partnerName = (conv['partner_name'] ?? 'Penjual/Pembeli').toString();
+                final partnerPhone = (conv['partner_phone'] ?? '').toString();
+                final title = (conv['listing_title'] ?? 'Produk').toString();
+                final price = _formatRupiah(conv['listing_price']);
+                final img = (conv['listing_image'] ?? '').toString();
+                final lastMsg = (conv['last_message'] ?? '').toString();
+                final unreadCount = int.tryParse('${conv['unread_count']}') ?? 0;
+                final lastSenderId = int.tryParse('${conv['last_sender_id']}') ?? 0;
+                final isMyMsg = _myId > 0 && lastSenderId == _myId;
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(
+                      color: unreadCount > 0 ? const Color(0xFF059669).withValues(alpha: 0.3) : Colors.grey.shade200,
+                    ),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MarketChatScreen(
+                            listingId: listingId,
+                            buyerId: buyerId,
+                            initialListingTitle: title,
+                            initialListingPrice: price,
+                            initialListingImage: img,
+                            targetUserName: partnerName,
+                            targetUserPhone: partnerPhone,
+                          ),
+                        ),
+                      );
+                      _loadData(isSilent: true);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              color: const Color(0xFFF1F5F9),
+                              child: img.isNotEmpty
+                                  ? Image.network(
+                                      _fullImageUrl(img),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => const Icon(Icons.shopping_bag_outlined, color: Colors.grey),
+                                    )
+                                  : const Icon(Icons.shopping_bag_outlined, color: Colors.grey),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        partnerName,
+                                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFD1FAE5),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text('Marketplace', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF047857))),
+                                    ),
+                                  ],
+                                ),
+                                Text('$title • $price', style: const TextStyle(fontSize: 11, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    if (isMyMsg) ...[
+                                      const Icon(Icons.done_all_rounded, size: 14, color: Color(0xFF059669)),
+                                      const SizedBox(width: 4),
+                                    ],
+                                    Expanded(
+                                      child: Text(
+                                        lastMsg,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: unreadCount > 0 ? FontWeight.w700 : FontWeight.w400,
+                                          color: unreadCount > 0 ? Colors.black87 : Colors.grey.shade600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (unreadCount > 0)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF059669),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                unreadCount > 99 ? '99+' : '$unreadCount',
+                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+            }),
+        ],
       ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, String filterKey) {
+    final isSelected = _activeFilter == filterKey;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (_) => setState(() => _activeFilter = filterKey),
+      labelStyle: TextStyle(
+        fontSize: 12,
+        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+        color: isSelected ? Colors.white : Colors.grey.shade700,
+      ),
+      selectedColor: const Color(0xFF2563EB),
+      backgroundColor: Colors.grey.shade100,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     );
   }
 }
