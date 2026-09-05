@@ -353,7 +353,7 @@
                             <div style="font-weight:700;font-size:14px;color:var(--text-primary);"><?= esc($f['name']) ?></div>
                             <div style="font-size:11px;color:var(--text-muted);">@<?= esc($f['username']) ?></div>
                         </div>
-                        <button type="button" class="btn-chat-now">💬 Chat</button>
+                        <button type="button" class="btn-chat-now" onclick="event.stopPropagation(); startChatWithFriend(<?= (int)$f['friend_id'] ?>, '<?= esc(addslashes($f['name'])) ?>', '<?= esc(addslashes($f['username'])) ?>', '<?= esc(addslashes($f['avatar'] ?? '')) ?>')">💬 Chat</button>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -768,11 +768,20 @@
     inset: 0;
     background: rgba(0, 0, 0, 0.65);
     backdrop-filter: blur(8px);
-    z-index: 1000;
-    display: flex;
+    z-index: 10000;
+    display: none;
     align-items: center;
     justify-content: center;
     padding: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+.market-chat-modal-overlay.show,
+.market-chat-modal-overlay.open {
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
 }
 .market-chat-modal-box.wa-style {
     width: 100%;
@@ -1055,6 +1064,7 @@ function openDirectChat(friendId, friendName, friendUser, friendAvatar) {
     document.getElementById('directChatAvatar').innerHTML = `<span>${avInit}</span>`;
 
     modal.style.display = 'flex';
+    modal.classList.add('show', 'open');
     document.body.classList.add('modal-open');
 
     loadDirectMessages(true);
@@ -1070,7 +1080,10 @@ function closeDirectChat() {
     currentDirectFriendId = null;
     clearInterval(chatPollTimer);
     const modal = document.getElementById('directChatModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.classList.remove('show', 'open');
+        modal.style.display = 'none';
+    }
     document.body.classList.remove('modal-open');
 }
 
@@ -1185,6 +1198,7 @@ function openChatFromConv(listingId, buyerId, listingTitle, partnerName, partner
     document.getElementById('chatPinnedListing').style.display   = 'flex';
 
     modal.style.display = 'flex';
+    modal.classList.add('show', 'open');
     document.body.classList.add('modal-open');
 
     loadChatMessages(true);
@@ -1201,7 +1215,10 @@ function closeMarketChat() {
     currentChatBuyerId   = null;
     clearInterval(chatPollTimer);
     const modal = document.getElementById('marketChatModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.classList.remove('show', 'open');
+        modal.style.display = 'none';
+    }
     document.body.classList.remove('modal-open');
 }
 

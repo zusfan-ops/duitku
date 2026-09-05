@@ -311,6 +311,28 @@ class ChatController extends ApiController
 
         // 1. Direct chats
         $directConvs = $this->directChatModel->getConversations($userId);
+
+        // Ambil semua teman yang disetujui
+        $allFriends = $this->friendModel->getFriends($userId);
+        $existingPartnerIds = array_column($directConvs, 'partner_id');
+
+        foreach ($allFriends as $f) {
+            $fId = (int)$f['friend_id'];
+            if (!in_array($fId, $existingPartnerIds, true)) {
+                $directConvs[] = [
+                    'partner_id'        => $fId,
+                    'partner_name'      => $f['name'] ?: ($f['username'] ?: 'Teman'),
+                    'partner_username'  => $f['username'] ?: '',
+                    'partner_avatar'    => $f['avatar'] ?: '',
+                    'partner_phone'     => $f['phone'] ?: '',
+                    'last_message'      => 'Ketuk untuk mulai mengobrol',
+                    'last_sender_id'    => 0,
+                    'last_message_time' => $f['friends_since'] ?? date('Y-m-d H:i:s'),
+                    'unread_count'      => 0,
+                ];
+            }
+        }
+
         $normalizedDirect = array_map(function ($c) use ($userId) {
             return [
                 'type'              => 'direct',
