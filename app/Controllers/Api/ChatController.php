@@ -462,9 +462,9 @@ class ChatController extends ApiController
     public function pinConversation()
     {
         $userId = $this->uid();
-        $type = $this->request->getPost('type') ?: 'direct';
-        $targetId = (int)$this->request->getPost('target_id');
-        $targetSubId = (int)($this->request->getPost('target_sub_id') ?? 0);
+        $type = $this->request->getVar('type') ?: 'direct';
+        $targetId = (int)$this->request->getVar('target_id');
+        $targetSubId = (int)($this->request->getVar('target_sub_id') ?? 0);
 
         $res = $this->convSettingModel->togglePin($userId, $type, $targetId, $targetSubId);
         return $this->ok([
@@ -481,9 +481,9 @@ class ChatController extends ApiController
     public function archiveConversation()
     {
         $userId = $this->uid();
-        $type = $this->request->getPost('type') ?: 'direct';
-        $targetId = (int)$this->request->getPost('target_id');
-        $targetSubId = (int)($this->request->getPost('target_sub_id') ?? 0);
+        $type = $this->request->getVar('type') ?: 'direct';
+        $targetId = (int)$this->request->getVar('target_id');
+        $targetSubId = (int)($this->request->getVar('target_sub_id') ?? 0);
 
         $res = $this->convSettingModel->toggleArchive($userId, $type, $targetId, $targetSubId);
         return $this->ok([
@@ -500,9 +500,9 @@ class ChatController extends ApiController
     public function deleteConversation()
     {
         $userId = $this->uid();
-        $type = $this->request->getPost('type') ?: 'direct';
-        $targetId = (int)$this->request->getPost('target_id');
-        $targetSubId = (int)($this->request->getPost('target_sub_id') ?? 0);
+        $type = $this->request->getVar('type') ?: 'direct';
+        $targetId = (int)$this->request->getVar('target_id');
+        $targetSubId = (int)($this->request->getVar('target_sub_id') ?? 0);
 
         $this->convSettingModel->deleteChat($userId, $type, $targetId, $targetSubId);
         return $this->ok([
