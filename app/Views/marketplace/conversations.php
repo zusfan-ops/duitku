@@ -129,9 +129,129 @@
         <button type="button" class="conv-tab-btn" data-filter="marketplace" onclick="filterConversations('marketplace', this)">
             Marketplace
         </button>
+        <button type="button" class="conv-tab-btn" data-filter="status" onclick="filterConversations('status', this)">
+            Status<?= !empty($statuses) ? ' (' . count($statuses) . ')' : '' ?>
+        </button>
         <button type="button" class="conv-tab-btn" data-filter="archived" onclick="filterConversations('archived', this)" id="tabBtnArchived">
             📦 Diarsipkan <span id="archivedBadgeCount" class="conv-tab-badge" style="<?= empty($archivedCount) ? 'display:none;' : '' ?>"><?= (int)($archivedCount ?? 0) ?></span>
         </button>
+    </div>
+
+    <!-- Dedicated WhatsApp Status Tab View -->
+    <div id="statusWhatsAppView" style="display: none; margin-top: 14px;">
+        <?php
+            $myStatuses = [];
+            $friendsStatuses = [];
+            if (!empty($statuses)) {
+                foreach ($statuses as $st) {
+                    if ((int)$st['user_id'] === (int)$userId) {
+                        $myStatuses[] = $st;
+                    } else {
+                        $friendsStatuses[$st['user_id']][] = $st;
+                    }
+                }
+            }
+            $myStatusesJson = htmlspecialchars(json_encode($myStatuses), ENT_QUOTES, 'UTF-8');
+        ?>
+
+        <!-- Card Status Saya (WhatsApp Style) -->
+        <div class="wa-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:14px 16px;display:flex;align-items:center;gap:14px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+            <div class="status-ring-wrap <?= !empty($myStatuses) ? 'active-story-ring' : 'me-ring' ?>" style="width:52px;height:52px;cursor:pointer;" onclick="<?= !empty($myStatuses) ? 'openStatusViewerModal(' . $myStatusesJson . ')' : 'openCreateStatusModal()' ?>">
+                <div class="status-ring-avatar">
+                    <span style="font-size:22px;"><?= !empty($myStatuses) ? '👤' : '➕' ?></span>
+                </div>
+                <?php if (empty($myStatuses)): ?>
+                    <span class="status-add-badge">+</span>
+                <?php endif; ?>
+            </div>
+            <div style="flex:1;min-width:0;cursor:pointer;" onclick="<?= !empty($myStatuses) ? 'openStatusViewerModal(' . $myStatusesJson . ')' : 'openCreateStatusModal()' ?>">
+                <div style="font-weight:800;font-size:15px;color:var(--text-primary);">Status Saya</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+                    <?= !empty($myStatuses) ? count($myStatuses) . ' pembaruan aktif • Ketuk untuk melihat' : 'Ketuk untuk menambahkan pembaruan status' ?>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <?php if (!empty($myStatuses)): ?>
+                    <button type="button" class="btn-wa-status-action" onclick='openStatusViewerModal(<?= $myStatusesJson ?>)' title="Lihat Status">
+                        👁️
+                    </button>
+                <?php endif; ?>
+                <button type="button" class="btn-wa-status-action add" onclick="openCreateStatusModal()" title="Tambah Status Baru">
+                    ➕
+                </button>
+            </div>
+        </div>
+
+        <!-- Pembaruan Terkini Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 4px;">
+            <div style="font-size:13px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">
+                Pembaruan Terkini (<?= count($friendsStatuses) ?>)
+            </div>
+            <span style="font-size:11px;color:var(--text-muted);font-weight:600;">Hanya Teman • 24 Jam</span>
+        </div>
+
+        <!-- Daftar Pembaruan Teman (WhatsApp Style Vertical List) -->
+        <?php if (empty($friendsStatuses)): ?>
+            <div class="conv-empty-state" style="padding:32px 16px;">
+                <div class="conv-empty-icon" style="font-size:36px;">⏳</div>
+                <h4 style="font-size:15px;font-weight:800;margin:0 0 6px;">Belum Ada Pembaruan Status</h4>
+                <p style="font-size:12px;color:var(--text-muted);max-width:320px;margin:0 auto 16px;">
+                    Pembaruan status dari teman Anda yang aktif dalam 24 jam terakhir akan muncul di sini.
+                </p>
+                <button type="button" class="conv-empty-btn" onclick="openCreateStatusModal()">
+                    <span>✏️ Buat Status Sekarang</span>
+                </button>
+            </div>
+        <?php else: ?>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <?php foreach ($friendsStatuses as $fUid => $fStories): ?>
+                    <?php
+                        $latestStory = $fStories[0];
+                        $fName = $latestStory['author_name'] ?: ($latestStory['author_username'] ?: 'Teman');
+                        $fAvatar = $latestStory['author_avatar_url'] ?? '';
+                        $fInit = strtoupper(mb_substr($fName, 0, 1));
+                        $fStoriesJson = htmlspecialchars(json_encode($fStories), ENT_QUOTES, 'UTF-8');
+                        $timeAgo = '';
+                        if (!empty($latestStory['created_at'])) {
+                            $diff = time() - strtotime($latestStory['created_at']);
+                            if ($diff < 60) $timeAgo = 'Baru saja';
+                            elseif ($diff < 3600) $timeAgo = floor($diff / 60) . ' menit lalu';
+                            elseif ($diff < 86400) $timeAgo = floor($diff / 3600) . ' jam lalu';
+                            else $timeAgo = floor($diff / 86400) . ' hari lalu';
+                        }
+                    ?>
+                    <div class="wa-friend-status-item" onclick='openStatusViewerModal(<?= $fStoriesJson ?>)' style="display:flex;align-items:center;gap:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:12px 14px;cursor:pointer;transition:transform 0.15s ease;">
+                        <div class="status-ring-wrap active-story-ring" style="width:48px;height:48px;flex-shrink:0;">
+                            <div class="status-ring-avatar">
+                                <?php if (!empty($fAvatar)): ?>
+                                    <img src="<?= esc($fAvatar) ?>" alt="<?= esc($fName) ?>" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                    <span style="display:none;"><?= esc($fInit) ?></span>
+                                <?php else: ?>
+                                    <span><?= esc($fInit) ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:800;font-size:14.5px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= esc($fName) ?></div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+                                <?= esc($timeAgo) ?> • <?= count($fStories) ?> cerita baru
+                            </div>
+                        </div>
+                        <span style="color:var(--text-muted);font-size:16px;">›</span>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- WhatsApp Floating Action Buttons (Pencil & Camera) -->
+        <div class="wa-status-fabs" style="position:fixed;bottom:85px;right:20px;display:flex;flex-direction:column;gap:10px;z-index:90;">
+            <button type="button" onclick="openCreateStatusModal(); switchStatusType('text');" style="width:44px;height:44px;border-radius:50%;background:#F1F5F9;border:1px solid #CBD5E1;color:#1E293B;box-shadow:0 4px 12px rgba(0,0,0,0.15);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;" title="Buat Status Teks">
+                ✏️
+            </button>
+            <button type="button" onclick="openCreateStatusModal(); switchStatusType('image');" style="width:52px;height:52px;border-radius:50%;background:#00A884;border:none;color:#fff;box-shadow:0 6px 16px rgba(0,168,132,0.35);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;" title="Buat Status Foto">
+                📷
+            </button>
+        </div>
     </div>
 
     <!-- Conversations List -->
@@ -551,7 +671,7 @@
             <!-- Section Teks -->
             <div id="statusTextSection">
                 <div id="statusTextPreview" style="background:#2563EB;border-radius:18px;min-height:130px;padding:16px;display:flex;align-items:center;justify-content:center;color:#fff;margin-bottom:12px;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,0.15);transition:background 0.2s ease;">
-                    <textarea id="statusCaptionText" placeholder="Ketik apa yang Anda pikirkan..." style="width:100%;border:none;background:transparent;color:#fff;font-size:16px;font-weight:700;text-align:center;resize:none;outline:none;font-family:inherit;line-height:1.4;" rows="3" required></textarea>
+                    <textarea id="statusCaptionText" class="status-create-textarea" placeholder="Ketik apa yang Anda pikirkan..." rows="3" required></textarea>
                 </div>
 
                 <label style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;display:block;">Pilih Warna Latar Belakang:</label>
@@ -609,6 +729,7 @@
                 </div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
+                <button type="button" id="btnAddStoryFromViewer" onclick="closeStatusViewerModal(); openCreateStatusModal();" style="display:none;background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;" title="Tambah Status Baru">➕</button>
                 <button type="button" id="btnDeleteMyStatus" onclick="deleteActiveStatus()" style="display:none;background:rgba(239,68,68,0.3);color:#ef4444;border:none;border-radius:50%;width:32px;height:32px;font-size:14px;cursor:pointer;" title="Hapus Status">🗑️</button>
                 <button type="button" onclick="closeStatusViewerModal()" style="background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:14px;cursor:pointer;">✕</button>
             </div>
@@ -619,19 +740,29 @@
             <!-- Story visual dynamically injected -->
         </div>
 
-        <!-- Comments Drawer & Quick Reply Bar -->
-        <div style="background:#1E293B;padding:10px 14px;position:relative;z-index:10;border-top:1px solid rgba(255,255,255,0.1);">
+        <!-- Comments Drawer & Instagram Quick Reply Bar -->
+        <div style="background:#0F172A;padding:8px 12px 12px;position:relative;z-index:10;border-top:1px solid rgba(255,255,255,0.12);">
+            <!-- Quick Reaction Emojis (Instagram Style: ❤️ 😂 🔥 👏 😮 😍) -->
+            <div id="viewerQuickReactionsRow" style="display:flex;justify-content:space-around;padding:4px 0 8px;">
+                <span class="insta-reaction-pill" onclick="sendQuickReaction('❤️')">❤️</span>
+                <span class="insta-reaction-pill" onclick="sendQuickReaction('😂')">😂</span>
+                <span class="insta-reaction-pill" onclick="sendQuickReaction('🔥')">🔥</span>
+                <span class="insta-reaction-pill" onclick="sendQuickReaction('👏')">👏</span>
+                <span class="insta-reaction-pill" onclick="sendQuickReaction('😮')">😮</span>
+                <span class="insta-reaction-pill" onclick="sendQuickReaction('😍')">😍</span>
+            </div>
+
             <div id="viewerCommentsToggleRow" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
                 <button type="button" onclick="toggleStatusCommentsDrawer()" style="background:transparent;border:none;color:#38BDF8;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
                     💬 <span id="viewerCommentsCountLabel">Lihat Komentar Teman</span>
                 </button>
             </div>
-            <div id="viewerCommentsDrawer" style="display:none;max-height:160px;overflow-y:auto;background:rgba(0,0,0,0.35);border-radius:12px;padding:8px;margin-bottom:8px;color:#fff;font-size:12px;">
+            <div id="viewerCommentsDrawer" style="display:none;max-height:160px;overflow-y:auto;background:rgba(0,0,0,0.45);border-radius:12px;padding:8px 10px;margin-bottom:8px;color:#fff;font-size:12px;">
                 <div id="viewerCommentsList">Memuat komentar...</div>
             </div>
             <form onsubmit="submitStatusComment(event)" style="display:flex;gap:8px;align-items:center;">
-                <input type="text" id="viewerCommentInput" placeholder="Kirim balasan / komentar..." style="flex:1;background:rgba(255,255,255,0.12);border:none;border-radius:999px;padding:9px 16px;color:#fff;font-size:13px;outline:none;" required autocomplete="off">
-                <button type="submit" style="background:#2563EB;color:#fff;border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">➤</button>
+                <input type="text" id="viewerCommentInput" placeholder="Kirim balasan / komentar..." style="flex:1;background:rgba(255,255,255,0.15);border:none;border-radius:999px;padding:10px 16px;color:#fff;font-size:13px;outline:none;" required autocomplete="off">
+                <button type="submit" style="background:#2563EB;color:#fff;border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">➤</button>
             </form>
         </div>
     </div>
@@ -761,6 +892,61 @@
     border-color: #fff;
     box-shadow: 0 0 0 2px #2563EB;
     transform: scale(1.15);
+}
+
+.status-create-textarea {
+    width: 100%;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    color: #ffffff !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    caret-color: #ffffff !important;
+    resize: none !important;
+    line-height: 1.5 !important;
+    box-shadow: none !important;
+}
+.status-create-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.75) !important;
+}
+
+#createStatusModalOverlay {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.75) !important;
+    z-index: 99999 !important;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+#createStatusModalOverlay.open {
+    display: flex !important;
+}
+
+.insta-reaction-pill {
+    font-size: 26px;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+    user-select: none;
+    padding: 2px 4px;
+}
+.insta-reaction-pill:hover {
+    transform: scale(1.35);
+}
+.insta-reaction-pill:active {
+    transform: scale(0.9);
+}
+
+.wa-friend-status-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+.btn-wa-status-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1653,24 +1839,49 @@ function filterConversations(type, btn) {
     document.querySelectorAll('.conv-tab-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
 
+    const statusView = document.getElementById('statusWhatsAppView');
+    const convList = document.getElementById('convList');
+    const emptyState = document.querySelector('.conv-empty-state');
+    const statusTray = document.querySelector('.status-tray-container');
+
+    if (type === 'status') {
+        if (statusView) statusView.style.display = 'block';
+        if (convList) convList.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'none';
+        if (statusTray) statusTray.style.display = 'none';
+        return;
+    }
+
+    if (statusView) statusView.style.display = 'none';
+    if (statusTray) statusTray.style.display = 'block';
+    if (convList) convList.style.display = 'flex';
+
     const items = document.querySelectorAll('.conv-item');
+    let visibleCount = 0;
     items.forEach(item => {
         const itemType = item.getAttribute('data-type');
         const isArchived = item.getAttribute('data-archived') === '1';
 
         if (type === 'archived') {
-            item.style.display = isArchived ? 'flex' : 'none';
+            const show = isArchived;
+            item.style.display = show ? 'flex' : 'none';
+            if (show) visibleCount++;
         } else {
             // Main tabs exclude archived
             if (isArchived) {
                 item.style.display = 'none';
             } else if (type === 'all' || itemType === type) {
                 item.style.display = 'flex';
+                visibleCount++;
             } else {
                 item.style.display = 'none';
             }
         }
     });
+
+    if (emptyState) {
+        emptyState.style.display = (visibleCount === 0 && items.length === 0) ? 'block' : 'none';
+    }
 }
 
 let activeActionConv = null;
@@ -2746,7 +2957,7 @@ function submitCreateStatus(e) {
         formData.append('caption', (document.getElementById('statusPhotoCaption')?.value || '').trim());
     }
 
-    fetch('<?= base_url('chat/status/create') ?>', {
+    fetch('/chat/status/create', {
         method: 'POST',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -2815,7 +3026,7 @@ function renderCurrentStory() {
     const st = activeStoryList[currentStoryIdx];
     const isMine = (parseInt(st.user_id) === parseInt('<?= (int)$userId ?>'));
 
-    // Progress bar
+    // Segmented progress bar
     const barWrap = document.getElementById('statusProgressBarWrap');
     barWrap.innerHTML = '';
     activeStoryList.forEach((_, i) => {
@@ -2837,9 +3048,16 @@ function renderCurrentStory() {
         avatarEl.innerHTML = `<span>${authorName.charAt(0).toUpperCase()}</span>`;
     }
 
-    // Delete button if own status
+    // Delete and Add buttons if own status
     const delBtn = document.getElementById('btnDeleteMyStatus');
     if (delBtn) delBtn.style.display = isMine ? 'block' : 'none';
+
+    const addBtn = document.getElementById('btnAddStoryFromViewer');
+    if (addBtn) addBtn.style.display = isMine ? 'block' : 'none';
+
+    // Quick reactions (only show if not own status)
+    const reactionsRow = document.getElementById('viewerQuickReactionsRow');
+    if (reactionsRow) reactionsRow.style.display = isMine ? 'none' : 'flex';
 
     // Content
     const container = document.getElementById('viewerContentContainer');
@@ -2906,11 +3124,53 @@ function toggleStatusCommentsDrawer() {
     }
 }
 
+function sendQuickReaction(emoji) {
+    const st = activeStoryList[currentStoryIdx];
+    if (!st || !st.id) return;
+
+    const formData = new FormData();
+    formData.append('status_id', st.id);
+    formData.append('comment', emoji);
+    formData.append(csrfTokenName, getCsrfToken());
+
+    fetch('/chat/status/comment', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': getCsrfToken()
+        },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success' || data.success) {
+            showStoryReactionToast(`Reaksi ${emoji} terkirim!`);
+            loadActiveStatusComments();
+        }
+    })
+    .catch(() => {});
+}
+
+function showStoryReactionToast(text) {
+    let toast = document.getElementById('storyReactionToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'storyReactionToast';
+        toast.style.cssText = 'position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:8px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:999999;transition:opacity 0.2s ease;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = text;
+    toast.style.opacity = '1';
+    setTimeout(() => {
+        if (toast) toast.style.opacity = '0';
+    }, 1800);
+}
+
 function loadActiveStatusComments() {
     const st = activeStoryList[currentStoryIdx];
     if (!st || !st.id) return;
 
-    fetch(`<?= base_url('chat/status/comments') ?>/${st.id}`, {
+    fetch('/chat/status/comments/' + st.id, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
     .then(r => r.json())
@@ -2961,7 +3221,7 @@ function submitStatusComment(e) {
     formData.append('comment', comment);
     formData.append(csrfTokenName, getCsrfToken());
 
-    fetch('<?= base_url('chat/status/comment') ?>', {
+    fetch('/chat/status/comment', {
         method: 'POST',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -2992,7 +3252,7 @@ function deleteActiveStatus() {
     const formData = new FormData();
     formData.append(csrfTokenName, getCsrfToken());
 
-    fetch(`<?= base_url('chat/status/delete') ?>/${st.id}`, {
+    fetch('/chat/status/delete/' + st.id, {
         method: 'POST',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',

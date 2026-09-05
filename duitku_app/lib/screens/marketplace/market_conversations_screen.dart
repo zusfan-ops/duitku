@@ -726,14 +726,29 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                 const SizedBox(width: 8),
                 _buildFilterChip('Marketplace', 'marketplace'),
                 const SizedBox(width: 8),
+                _buildFilterChip('Status${_statuses.isNotEmpty ? ' (${_statuses.length})' : ''}', 'status'),
+                const SizedBox(width: 8),
                 _buildFilterChip('Diarsipkan${_archivedCount > 0 ? ' ($_archivedCount)' : ''}', 'archived'),
               ],
             ),
           ),
           const SizedBox(height: 10),
 
-          // 3. Empty State or List
-          if (filtered.isEmpty)
+          // 3. Status View (WhatsApp Style) or Conversation List
+          if (_activeFilter == 'status')
+            Builder(
+              builder: (_) {
+                final myStatuses = _statuses.where((s) => s['is_mine'] == true).toList();
+                final friendsStatuses = _statuses.where((s) => s['is_mine'] != true).toList();
+                final Map<int, List<Map<String, dynamic>>> groupedFriends = {};
+                for (final st in friendsStatuses) {
+                  final uId = int.tryParse('${st['user_id']}') ?? 0;
+                  groupedFriends.putIfAbsent(uId, () => []).add(st);
+                }
+                return _buildWhatsAppStatusView(myStatuses, groupedFriends);
+              },
+            )
+          else if (filtered.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 40),
               child: Center(
@@ -1092,6 +1107,287 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
     );
   }
 
+  String _formatTimeAgo(dynamic dateStr) {
+    if (dateStr == null) return '';
+    try {
+      final dt = DateTime.parse(dateStr.toString().replaceAll('/', '-'));
+      final now = DateTime.now();
+      final diff = now.difference(dt);
+      if (diff.inMinutes < 1) return 'Baru saja';
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m lalu';
+      if (diff.inHours < 24) return '${diff.inHours}j lalu';
+      return '${diff.inDays}h lalu';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // WHATSAPP STYLE STATUS PAGE VIEW
+  // ═════════════════════════════════════════════════════════════════════════
+
+  Widget _buildWhatsAppStatusView(List<Map<String, dynamic>> myStatuses, Map<int, List<Map<String, dynamic>>> groupedFriends) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 1. Status Saya Card
+        Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2)),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    if (myStatuses.isNotEmpty) {
+                      _openStatusViewer(myStatuses, 0);
+                    } else {
+                      _showCreateStatusSheet();
+                    }
+                  },
+                  child: Stack(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(2.5),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: myStatuses.isNotEmpty ? const Color(0xFF10B981) : Colors.grey.shade400,
+                            width: 2.5,
+                          ),
+                        ),
+                        child: const CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Color(0xFFEFF6FF),
+                          child: Icon(Icons.person_rounded, color: Color(0xFF2563EB), size: 28),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: _showCreateStatusSheet,
+                          child: Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: const Icon(Icons.add, size: 13, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      if (myStatuses.isNotEmpty) {
+                        _openStatusViewer(myStatuses, 0);
+                      } else {
+                        _showCreateStatusSheet();
+                      }
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Status Saya',
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          myStatuses.isNotEmpty
+                              ? '${myStatuses.length} pembaruan aktif • Ketuk untuk melihat'
+                              : 'Ketuk untuk menambahkan pembaruan status',
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (myStatuses.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.visibility_rounded, color: Color(0xFF2563EB), size: 22),
+                    tooltip: 'Lihat Status Saya',
+                    onPressed: () => _openStatusViewer(myStatuses, 0),
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.add_circle_rounded, color: Color(0xFF10B981), size: 28),
+                  tooltip: 'Buat Status Baru',
+                  onPressed: _showCreateStatusSheet,
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // 2. Pembaruan Terkini Section Header
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Row(
+            children: [
+              Text(
+                'Pembaruan Terkini',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Colors.grey.shade700),
+              ),
+              const SizedBox(width: 6),
+              if (groupedFriends.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDBEAFE),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${groupedFriends.length}',
+                    style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF1D4ED8)),
+                  ),
+                ),
+              const Spacer(),
+              Text(
+                'Hanya Teman',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+
+        // 3. Friends Status List
+        if (groupedFriends.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.motion_photos_on_rounded, size: 44, color: Colors.grey),
+                const SizedBox(height: 10),
+                const Text(
+                  'Belum Ada Status Teman',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Pembaruan status dari teman Anda yang aktif dalam 24 jam terakhir akan muncul di sini.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 14),
+                ElevatedButton.icon(
+                  onPressed: _showCreateStatusSheet,
+                  icon: const Icon(Icons.edit_rounded, size: 16),
+                  label: const Text('Buat Status Sekarang'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          ...groupedFriends.entries.map((entry) {
+            final list = entry.value;
+            final latest = list.first;
+            final name = (latest['author_name'] ?? 'Teman').toString();
+            final avatarUrl = (latest['author_avatar_url'] ?? '').toString();
+            final init = name.isNotEmpty ? name[0].toUpperCase() : 'T';
+            final timeStr = _formatTimeAgo(latest['created_at']);
+            final count = list.length;
+
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.grey.shade200),
+              ),
+              color: Theme.of(context).cardColor,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => _openStatusViewer(list, 0),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(2.5),
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF2563EB), Color(0xFF10B981)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: ClipOval(
+                          child: avatarUrl.isNotEmpty
+                              ? Image.network(
+                                  _fullImageUrl(avatarUrl),
+                                  width: 46,
+                                  height: 46,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => CircleAvatar(
+                                    radius: 23,
+                                    backgroundColor: const Color(0xFF3B82F6),
+                                    child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                                  ),
+                                )
+                              : CircleAvatar(
+                                  radius: 23,
+                                  backgroundColor: const Color(0xFF3B82F6),
+                                  child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              timeStr.isNotEmpty ? '$timeStr • $count cerita' : '$count cerita baru',
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+      ],
+    );
+  }
+
   void _showConversationOptions(Map<String, dynamic> conv) {
     final type = (conv['type'] ?? 'marketplace').toString();
     final isDirect = (type == 'direct');
@@ -1332,15 +1628,9 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. My Status Item
+                // 1. Always present: Standalone Buat Status (+) Button
                 GestureDetector(
-                  onTap: () {
-                    if (myStatuses.isNotEmpty) {
-                      _openStatusViewer(myStatuses, 0);
-                    } else {
-                      _showCreateStatusSheet();
-                    }
-                  },
+                  onTap: _showCreateStatusSheet,
                   child: Container(
                     width: 68,
                     margin: const EdgeInsets.only(right: 10),
@@ -1353,39 +1643,36 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: myStatuses.isNotEmpty ? const Color(0xFF2563EB) : Colors.grey.shade300,
+                                  color: Colors.grey.shade300,
                                   width: 2.2,
                                 ),
                               ),
                               child: const CircleAvatar(
                                 radius: 24,
                                 backgroundColor: Color(0xFFEFF6FF),
-                                child: Icon(Icons.person_rounded, color: Color(0xFF2563EB), size: 28),
+                                child: Icon(Icons.add, color: Color(0xFF2563EB), size: 28),
                               ),
                             ),
                             Positioned(
                               bottom: 0,
                               right: 0,
-                              child: GestureDetector(
-                                onTap: _showCreateStatusSheet,
-                                child: Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF2563EB),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 2),
-                                  ),
-                                  child: const Icon(Icons.add, size: 13, color: Colors.white),
+                              child: Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF2563EB),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
                                 ),
+                                child: const Icon(Icons.add, size: 13, color: Colors.white),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 5),
-                        Text(
-                          myStatuses.isNotEmpty ? 'Status Anda' : 'Buat Status',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                        const Text(
+                          'Buat Status',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
@@ -1395,7 +1682,45 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                   ),
                 ),
 
-                // 2. Friends Statuses
+                // 2. My Active Statuses (if any)
+                if (myStatuses.isNotEmpty)
+                  GestureDetector(
+                    onTap: () => _openStatusViewer(myStatuses, 0),
+                    child: Container(
+                      width: 68,
+                      margin: const EdgeInsets.only(right: 10),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(2.5),
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+                            child: const CircleAvatar(
+                              radius: 24,
+                              backgroundColor: Color(0xFFEFF6FF),
+                              child: Icon(Icons.person_rounded, color: Color(0xFF2563EB), size: 28),
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            'Status Anda (${myStatuses.length})',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // 3. Friends Statuses
                 ...groupedFriends.entries.map((entry) {
                   final list = entry.value;
                   final latest = list.first;
@@ -1538,10 +1863,19 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                       maxLines: 4,
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+                      cursorColor: Colors.white,
                       decoration: const InputDecoration(
                         hintText: 'Ketik apa yang Anda pikirkan...',
-                        hintStyle: TextStyle(color: Colors.white70),
+                        hintStyle: TextStyle(color: Colors.white70, fontSize: 16),
+                        filled: false,
+                        fillColor: Colors.transparent,
+                        hoverColor: Colors.transparent,
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
                       ),
                       onChanged: (_) => setModalState(() {}),
                     ),
@@ -1687,6 +2021,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
           final bgColorStr = st['background_color'] ?? '#2563EB';
           final isMine = st['is_mine'] == true;
           final statusId = int.tryParse('${st['id']}') ?? 0;
+          final timeStr = _formatTimeAgo(st['created_at']);
 
           Color bgColor = const Color(0xFF2563EB);
           try {
@@ -1739,16 +2074,28 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              authorName,
+                              isMine ? 'Status Anda' : authorName,
                               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14),
                             ),
-                            const Text('Hanya Teman • 24 Jam', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                            Text(
+                              timeStr.isNotEmpty ? '$timeStr • Hanya Teman' : 'Hanya Teman • 24 Jam',
+                              style: const TextStyle(color: Colors.white70, fontSize: 11),
+                            ),
                           ],
                         ),
                       ),
-                      if (isMine)
+                      if (isMine) ...[
                         IconButton(
-                          icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                          icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.white, size: 22),
+                          tooltip: 'Tambah Cerita Baru',
+                          onPressed: () {
+                            Navigator.pop(viewerCtx);
+                            _showCreateStatusSheet();
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 22),
+                          tooltip: 'Hapus Status Ini',
                           onPressed: () async {
                             Navigator.pop(viewerCtx);
                             try {
@@ -1760,20 +2107,21 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                             } catch (_) {}
                           },
                         ),
+                      ],
                       IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Colors.white),
+                        icon: const Icon(Icons.close_rounded, color: Colors.white, size: 24),
                         onPressed: () => Navigator.pop(viewerCtx),
                       ),
                     ],
                   ),
                 ),
 
-                // Status Body
+                // Status Body with Tap Left / Tap Right Navigation (Instagram Stories Style)
                 Expanded(
                   child: GestureDetector(
                     onTapUp: (details) {
                       final width = MediaQuery.of(ctx).size.width;
-                      if (details.localPosition.dx > width / 2) {
+                      if (details.localPosition.dx > width * 0.35) {
                         if (currentIndex < statuses.length - 1) {
                           setViewerState(() => currentIndex++);
                         } else {
@@ -1804,10 +2152,11 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                                 if (caption.isNotEmpty) ...[
                                   const SizedBox(height: 12),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                     decoration: BoxDecoration(
-                                      color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(12),
+                                      color: Colors.black.withValues(alpha: 0.65),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: Colors.white12),
                                     ),
                                     child: Text(
                                       caption,
@@ -1821,108 +2170,154 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                           : Text(
                               caption,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800, height: 1.4),
+                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800, height: 1.4),
                             ),
                     ),
                   ),
                 ),
 
-                // Bottom Comments Button & Quick Comment Bar
+                // Instagram Style Bottom Bar: Quick Reactions + Pill Comment Bar
                 Container(
                   padding: EdgeInsets.only(
                     bottom: MediaQuery.of(ctx).viewInsets.bottom + 12,
-                    left: 14,
-                    right: 14,
-                    top: 10,
+                    left: 12,
+                    right: 12,
+                    top: 8,
                   ),
                   decoration: const BoxDecoration(
-                    color: Color(0xFF1E293B),
+                    color: Color(0xFF0F172A),
                     border: Border(top: BorderSide(color: Colors.white12)),
                   ),
-                  child: Row(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // View Comments icon
-                      IconButton(
-                        icon: loadingComments
-                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : const Icon(Icons.comment_outlined, color: Colors.white),
-                        tooltip: 'Lihat Komentar',
-                        onPressed: () async {
-                          setViewerState(() => loadingComments = true);
-                          try {
-                            final res = await ApiService.instance.getStatusComments(statusId);
-                            final cList = (res['comments'] as List<dynamic>?) ?? [];
-                            comments = cList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-                          } catch (_) {}
-                          setViewerState(() => loadingComments = false);
-
-                          if (ctx.mounted) {
-                            showModalBottomSheet(
-                              context: ctx,
-                              backgroundColor: Colors.white,
-                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-                              builder: (_) => Container(
-                                padding: const EdgeInsets.all(16),
-                                height: 350,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text('Komentar Teman', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                                    const Divider(),
-                                    Expanded(
-                                      child: comments.isEmpty
-                                          ? const Center(child: Text('Belum ada komentar dari teman.', style: TextStyle(color: Colors.grey)))
-                                          : ListView.builder(
-                                              itemCount: comments.length,
-                                              itemBuilder: (_, i) {
-                                                final c = comments[i];
-                                                return ListTile(
-                                                  leading: CircleAvatar(child: Text((c['user_name'] ?? 'T')[0])),
-                                                  title: Text(c['user_name'] ?? 'Teman', style: const TextStyle(fontWeight: FontWeight.w700)),
-                                                  subtitle: Text(c['comment'] ?? ''),
-                                                );
-                                              },
-                                            ),
-                                    ),
-                                  ],
+                      // Quick Emoji Reactions (Instagram Style: ❤️ 😂 🔥 👏 😮 😍)
+                      if (!isMine)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: ['❤️', '😂', '🔥', '👏', '😮', '😍'].map((emoji) {
+                              return GestureDetector(
+                                onTap: () async {
+                                  try {
+                                    await ApiService.instance.commentStatus(statusId, emoji);
+                                    if (ctx.mounted) {
+                                      ScaffoldMessenger.of(ctx).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Bereaksi $emoji pada status $authorName'),
+                                          duration: const Duration(seconds: 1),
+                                          backgroundColor: const Color(0xFF2563EB),
+                                        ),
+                                      );
+                                    }
+                                  } catch (_) {}
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  child: Text(emoji, style: const TextStyle(fontSize: 22)),
                                 ),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                      Expanded(
-                        child: TextField(
-                          controller: commentCtrl,
-                          style: const TextStyle(color: Colors.white, fontSize: 14),
-                          decoration: InputDecoration(
-                            hintText: 'Kirim balasan/komentar teman...',
-                            hintStyle: const TextStyle(color: Colors.white54, fontSize: 13),
-                            filled: true,
-                            fillColor: Colors.white10,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                              );
+                            }).toList(),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(Icons.send_rounded, color: Color(0xFF38BDF8)),
-                        onPressed: () async {
-                          final cText = commentCtrl.text.trim();
-                          if (cText.isEmpty) return;
-                          commentCtrl.clear();
-                          try {
-                            await ApiService.instance.commentStatus(statusId, cText);
-                            if (ctx.mounted) {
-                              ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Komentar terkirim!')));
-                            }
-                          } catch (e) {
-                            if (ctx.mounted) {
-                              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Gagal: $e')));
-                            }
-                          }
-                        },
+
+                      // Floating Input Pill + Comment Drawer Button
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: loadingComments
+                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 22),
+                            tooltip: 'Lihat Komentar Teman',
+                            onPressed: () async {
+                              setViewerState(() => loadingComments = true);
+                              try {
+                                final res = await ApiService.instance.getStatusComments(statusId);
+                                final cList = (res['comments'] as List<dynamic>?) ?? [];
+                                comments = cList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+                              } catch (_) {}
+                              setViewerState(() => loadingComments = false);
+
+                              if (ctx.mounted) {
+                                showModalBottomSheet(
+                                  context: ctx,
+                                  backgroundColor: const Color(0xFF1E293B),
+                                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                                  builder: (_) => Container(
+                                    padding: const EdgeInsets.all(16),
+                                    height: 380,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Center(
+                                          child: Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        const Text('Komentar Teman', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Colors.white)),
+                                        const SizedBox(height: 8),
+                                        const Divider(color: Colors.white12),
+                                        Expanded(
+                                          child: comments.isEmpty
+                                              ? const Center(child: Text('Belum ada komentar dari teman.', style: TextStyle(color: Colors.white54)))
+                                              : ListView.builder(
+                                                  itemCount: comments.length,
+                                                  itemBuilder: (_, i) {
+                                                    final c = comments[i];
+                                                    return ListTile(
+                                                      leading: CircleAvatar(
+                                                        backgroundColor: const Color(0xFF2563EB),
+                                                        child: Text((c['user_name'] ?? 'T')[0], style: const TextStyle(color: Colors.white)),
+                                                      ),
+                                                      title: Text(c['user_name'] ?? 'Teman', style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white, fontSize: 13)),
+                                                      subtitle: Text(c['comment'] ?? '', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                                                    );
+                                                  },
+                                                ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                          Expanded(
+                            child: TextField(
+                              controller: commentCtrl,
+                              style: const TextStyle(color: Colors.white, fontSize: 14),
+                              decoration: InputDecoration(
+                                hintText: isMine ? 'Tulis komentar/catatan...' : 'Kirim balasan ke $authorName...',
+                                hintStyle: const TextStyle(color: Colors.white54, fontSize: 13),
+                                filled: true,
+                                fillColor: Colors.white.withValues(alpha: 0.12),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 1.2)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.send_rounded, color: Color(0xFF38BDF8)),
+                            onPressed: () async {
+                              final cText = commentCtrl.text.trim();
+                              if (cText.isEmpty) return;
+                              commentCtrl.clear();
+                              try {
+                                await ApiService.instance.commentStatus(statusId, cText);
+                                if (ctx.mounted) {
+                                  ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Komentar terkirim!'), backgroundColor: Color(0xFF10B981)));
+                                }
+                              } catch (e) {
+                                if (ctx.mounted) {
+                                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Gagal: $e')));
+                                }
+                              }
+                            },
+                          ),
+                        ],
                       ),
                     ],
                   ),
