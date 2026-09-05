@@ -32,15 +32,23 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   late int _tipIndex;
   Timer? _tipTimer;
 
+  // Material Design 3 Army Green Color Palette
+  static const Color _armyBackground = Color(0xFF1E2B1A);
+  static const Color _armyDark = Color(0xFF141E11);
+  static const Color _armyLight = Color(0xFF283A23);
+  static const Color _brandAccent = Color(0xFF96BC33); // Matched to new logo
+  static const Color _brandAccentLight = Color(0xFFB5E048);
+
   @override
   void initState() {
     super.initState();
     _tipIndex = Random().nextInt(_financialTips.length);
-    _fadeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600))..forward();
-    _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
-    _slide = Tween<Offset>(begin: const Offset(0, .04), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut));
-    _tipTimer = Timer.periodic(const Duration(milliseconds: 1250), (_) {
+    _fadeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 650))..forward();
+    _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOutCubic);
+    _slide = Tween<Offset>(begin: const Offset(0, .05), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOutCubic));
+
+    _tipTimer = Timer.periodic(const Duration(milliseconds: 1400), (_) {
       if (!mounted) return;
       setState(() => _tipIndex = (_tipIndex + 1) % _financialTips.length);
     });
@@ -56,105 +64,217 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A2A1F),
+      backgroundColor: _armyBackground,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Base gradient — same greens used across the app's hero cards.
+          // Base Material 3 Atmospheric Army Green Gradient
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF043D22), Color(0xFF076836), Color(0xFF0AA956)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                colors: [_armyDark, _armyBackground, _armyLight],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
             ),
           ),
-          // Soft radial glows for texture, echoing the liqo-app splash motif.
+
+          // Ambient Radial Glows
           Positioned(
-            top: -80,
-            left: -60,
-            child: _Glow(color: const Color(0xFFF59E0B).withValues(alpha: .18), size: 260),
+            top: -60,
+            right: -40,
+            child: _Glow(color: _brandAccent.withValues(alpha: .14), size: 280),
           ),
           Positioned(
-            bottom: -100,
-            right: -70,
-            child: _Glow(color: Colors.white.withValues(alpha: .10), size: 300),
+            bottom: -80,
+            left: -50,
+            child: _Glow(color: _armyLight.withValues(alpha: .30), size: 300),
           ),
+
           SafeArea(
             child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 28),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Identical to what the native pre-Flutter splash already shows —
-                    // rendered statically (no fade-in) so there's no visible flicker
-                    // at the handoff between native splash and this Dart screen.
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: Image.asset('assets/icon/logo.png', width: 92, height: 92),
+                    // M3 Surface Elevated Logo Squircle
+                    Container(
+                      width: 104,
+                      height: 104,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF263721),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: _brandAccent.withValues(alpha: 0.28),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            blurRadius: 24,
+                            offset: const Offset(0, 10),
+                          ),
+                          BoxShadow(
+                            color: _brandAccent.withValues(alpha: 0.12),
+                            blurRadius: 18,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: Image.asset(
+                          'assets/icon/logo.png',
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 18),
+
+                    // App Title
                     const Text(
                       'DuitKu',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 28,
+                        fontSize: 30,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Pencatat keuangan pribadi',
-                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    const SizedBox(height: 8),
+
+                    // M3 Tonal Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: _brandAccent.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _brandAccent.withValues(alpha: 0.32),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Text(
+                        'PENCATAT KEUANGAN PRIBADI',
+                        style: TextStyle(
+                          color: _brandAccentLight,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 36),
+
+                    // Material 3 Financial Tips Card
                     FadeTransition(
                       opacity: _fade,
                       child: SlideTransition(
                         position: _slide,
-                        child: Column(
-                          children: [
-                            const Text('💡', style: TextStyle(fontSize: 20)),
-                            const SizedBox(height: 10),
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 450),
-                              child: Text(
-                                _financialTips[_tipIndex],
-                                key: ValueKey(_tipIndex),
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  height: 1.55,
-                                  fontWeight: FontWeight.w500,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF263721).withValues(alpha: 0.88),
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.12),
+                              width: 1.2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.22),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.lightbulb_rounded, size: 16, color: _brandAccent),
+                                  const SizedBox(width: 6),
+                                  const Text(
+                                    'TIPS KEUANGAN',
+                                    style: TextStyle(
+                                      color: _brandAccent,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 400),
+                                transitionBuilder: (child, anim) => FadeTransition(
+                                  opacity: anim,
+                                  child: SlideTransition(
+                                    position: Tween<Offset>(
+                                      begin: const Offset(0, 0.08),
+                                      end: Offset.zero,
+                                    ).animate(anim),
+                                    child: child,
+                                  ),
+                                ),
+                                child: Text(
+                                  _financialTips[_tipIndex],
+                                  key: ValueKey(_tipIndex),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Color(0xFFF1F5EE),
+                                    fontSize: 13.5,
+                                    height: 1.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 6),
-                            const Text('TIPS KEUANGAN',
-                                style: TextStyle(
-                                  color: Color(0xFFFBBF24),
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.2,
-                                )),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
+                    const SizedBox(height: 48),
+
+                    // Material Repeating Pulse Dots
+                    const _RepeatingDots(dotColor: _brandAccent),
                   ],
                 ),
               ),
             ),
           ),
-          const Positioned(
+
+          // Security / Integrity Footer
+          Positioned(
             left: 0,
             right: 0,
-            bottom: 36,
-            child: Center(child: _RepeatingDots()),
+            bottom: 24,
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.lock_outline_rounded, size: 13, color: Colors.white38),
+                  SizedBox(width: 5),
+                  Text(
+                    'Aman & Terenkripsi',
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -181,7 +301,8 @@ class _Glow extends StatelessWidget {
 }
 
 class _RepeatingDots extends StatefulWidget {
-  const _RepeatingDots();
+  final Color dotColor;
+  const _RepeatingDots({required this.dotColor});
 
   @override
   State<_RepeatingDots> createState() => _RepeatingDotsState();
@@ -211,15 +332,25 @@ class _RepeatingDotsState extends State<_RepeatingDots> with SingleTickerProvide
           mainAxisSize: MainAxisSize.min,
           children: List.generate(3, (i) {
             final t = (_ctrl.value + i * .2) % 1.0;
-            final opacity = 0.3 + 0.7 * (0.5 + 0.5 * sin(t * 2 * pi));
+            final opacity = 0.25 + 0.75 * (0.5 + 0.5 * sin(t * 2 * pi));
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Opacity(
                 opacity: opacity,
                 child: Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(color: Color(0xFFFBBF24), shape: BoxShape.circle),
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: widget.dotColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: widget.dotColor.withValues(alpha: 0.4),
+                        blurRadius: 4,
+                        spreadRadius: 0.5,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );

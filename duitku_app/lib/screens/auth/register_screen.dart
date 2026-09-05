@@ -89,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(18),
@@ -99,7 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(14),
-                      child: Image.asset('assets/icon/logo.png', width: 52, height: 52),
+                      child: Image.asset('assets/icon/logo.png', width: 52, height: 52, fit: BoxFit.contain),
                     ),
                   ),
                   const SizedBox(height: 10),

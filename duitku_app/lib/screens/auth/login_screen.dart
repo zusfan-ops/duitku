@@ -674,7 +674,7 @@ class _HeaderSection extends StatelessWidget {
               return Transform.scale(
                 scale: scale,
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -688,6 +688,7 @@ class _HeaderSection extends StatelessWidget {
                       'assets/icon/logo.png',
                       width: 60,
                       height: 60,
+                      fit: BoxFit.contain,
                     ),
                   ),
                 ),
