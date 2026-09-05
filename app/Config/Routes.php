@@ -283,6 +283,9 @@ $routes->post('/friends/request',                    'MarketplaceController::sen
 $routes->post('/friends/respond',                    'MarketplaceController::respondFriendRequest', ['filter' => 'auth']);
 $routes->get('/chat/direct/messages',                'MarketplaceController::directChatMessages', ['filter' => 'auth']);
 $routes->post('/chat/direct/send',                   'MarketplaceController::sendDirectChatMessage', ['filter' => 'auth']);
+$routes->post('/chat/conversation/pin',              'MarketplaceController::pinConversation', ['filter' => 'auth']);
+$routes->post('/chat/conversation/archive',          'MarketplaceController::archiveConversation', ['filter' => 'auth']);
+$routes->post('/chat/conversation/delete',           'MarketplaceController::deleteConversation', ['filter' => 'auth']);
 $routes->post('/marketplace/status/(:num)',          'MarketplaceController::updateStatus/$1', ['filter' => 'auth']);
 $routes->post('/marketplace/delete/(:num)',          'MarketplaceController::delete/$1', ['filter' => 'auth']);
 $routes->get('/u/(:segment)',                        'MarketplaceController::userStore/$1');
@@ -480,6 +483,9 @@ $routes->group('api', function ($routes) {
         $routes->get('chat/direct/messages',              'Api\ChatController::directMessages');
         $routes->post('chat/direct/send',                 'Api\ChatController::sendDirectMessage');
         $routes->get('chat/all-conversations',            'Api\ChatController::allConversations');
+        $routes->post('chat/conversation/pin',            'Api\ChatController::pinConversation');
+        $routes->post('chat/conversation/archive',        'Api\ChatController::archiveConversation');
+        $routes->post('chat/conversation/delete',         'Api\ChatController::deleteConversation');
     });
 });
 

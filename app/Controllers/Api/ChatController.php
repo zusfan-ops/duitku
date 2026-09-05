@@ -2,6 +2,7 @@
 
 namespace App\Controllers\Api;
 
+use App\Models\ChatConversationSettingModel;
 use App\Models\DirectChatModel;
 use App\Models\MarketplaceChatModel;
 use App\Models\NotificationModel;
@@ -17,6 +18,7 @@ class ChatController extends ApiController
     protected UserModel            $userModel;
     protected NotificationModel    $notifModel;
     protected FcmService           $fcmService;
+    protected ChatConversationSettingModel $convSettingModel;
 
     public function __construct()
     {
@@ -26,6 +28,7 @@ class ChatController extends ApiController
         $this->userModel       = new UserModel();
         $this->notifModel      = new NotificationModel();
         $this->fcmService      = new FcmService();
+        $this->convSettingModel = new ChatConversationSettingModel();
     }
 
     /**
@@ -309,6 +312,9 @@ class ChatController extends ApiController
     {
         $userId = $this->uid();
 
+        // Ambil pengaturan percakapan user (pin, archive, cleared)
+        $convSettings = $this->convSettingModel->getSettingsForUser($userId);
+
         // 1. Direct chats
         $directConvs = $this->directChatModel->getConversations($userId);
 
@@ -319,6 +325,11 @@ class ChatController extends ApiController
         foreach ($allFriends as $f) {
             $fId = (int)$f['friend_id'];
             if (!in_array($fId, $existingPartnerIds, true)) {
+                $settingKey = 'direct_' . $fId . '_0';
+                $s = $convSettings[$settingKey] ?? null;
+                if ($s && !empty($s['cleared_at'])) {
+                    continue;
+                }
                 $directConvs[] = [
                     'partner_id'        => $fId,
                     'partner_name'      => $f['name'] ?: ($f['username'] ?: 'Teman'),
@@ -333,10 +344,23 @@ class ChatController extends ApiController
             }
         }
 
-        $normalizedDirect = array_map(function ($c) use ($userId) {
-            return [
+        $normalizedDirect = [];
+        foreach ($directConvs as $c) {
+            $fId = (int)$c['partner_id'];
+            $settingKey = 'direct_' . $fId . '_0';
+            $s = $convSettings[$settingKey] ?? null;
+
+            if ($s && !empty($s['cleared_at'])) {
+                if (empty($c['last_message_time']) || strtotime($c['last_message_time']) <= strtotime($s['cleared_at'])) {
+                    continue;
+                }
+            }
+
+            $normalizedDirect[] = [
                 'type'              => 'direct',
-                'partner_id'        => (int)$c['partner_id'],
+                'partner_id'        => $fId,
+                'target_id'         => $fId,
+                'target_sub_id'     => 0,
                 'partner_name'      => $c['partner_name'] ?: ($c['partner_username'] ?: 'Teman'),
                 'partner_username'  => $c['partner_username'] ?: '',
                 'partner_avatar'    => $c['partner_avatar'] ?: '',
@@ -345,18 +369,36 @@ class ChatController extends ApiController
                 'last_sender_id'    => (int)$c['last_sender_id'],
                 'last_message_time' => $c['last_message_time'],
                 'unread_count'      => (int)$c['unread_count'],
+                'is_pinned'         => !empty($s['is_pinned']),
+                'pinned_at'         => $s['pinned_at'] ?? null,
+                'is_archived'       => !empty($s['is_archived']),
+                'archived_at'       => $s['archived_at'] ?? null,
             ];
-        }, $directConvs);
+        }
 
         // 2. Marketplace chats
         $marketConvs = $this->marketChatModel->getConversationsForUser($userId);
-        $normalizedMarket = array_map(function ($c) use ($userId) {
+        $normalizedMarket = [];
+        foreach ($marketConvs as $c) {
+            $lid = (int)$c['listing_id'];
+            $bid = (int)$c['buyer_id'];
+            $settingKey = 'marketplace_' . $lid . '_' . $bid;
+            $s = $convSettings[$settingKey] ?? null;
+
+            if ($s && !empty($s['cleared_at'])) {
+                if (empty($c['last_message_time']) || strtotime($c['last_message_time']) <= strtotime($s['cleared_at'])) {
+                    continue;
+                }
+            }
+
             $isSeller = ((int)$c['seller_id'] === $userId);
-            return [
+            $normalizedMarket[] = [
                 'type'              => 'marketplace',
-                'listing_id'        => (int)$c['listing_id'],
-                'buyer_id'          => (int)$c['buyer_id'],
+                'listing_id'        => $lid,
+                'buyer_id'          => $bid,
                 'seller_id'         => (int)$c['seller_id'],
+                'target_id'         => $lid,
+                'target_sub_id'     => $bid,
                 'listing_title'     => $c['listing_title'] ?: 'Produk Marketplace',
                 'listing_price'     => (float)($c['listing_price'] ?? 0),
                 'listing_image'     => $c['listing_image'] ?: '',
@@ -366,31 +408,105 @@ class ChatController extends ApiController
                 'last_sender_id'    => (int)$c['last_sender_id'],
                 'last_message_time' => $c['last_message_time'],
                 'unread_count'      => (int)$c['unread_count'],
+                'is_pinned'         => !empty($s['is_pinned']),
+                'pinned_at'         => $s['pinned_at'] ?? null,
+                'is_archived'       => !empty($s['is_archived']),
+                'archived_at'       => $s['archived_at'] ?? null,
             ];
-        }, $marketConvs);
+        }
 
-        // Gabung dan urutkan berdasarkan last_message_time DESC
+        // Gabung dan urutkan
         $merged = array_merge($normalizedDirect, $normalizedMarket);
         usort($merged, function ($a, $b) {
+            $pinA = !empty($a['is_pinned']) ? 1 : 0;
+            $pinB = !empty($b['is_pinned']) ? 1 : 0;
+            if ($pinA !== $pinB) {
+                return $pinB <=> $pinA;
+            }
+            if ($pinA === 1) {
+                $pA = !empty($a['pinned_at']) ? strtotime($a['pinned_at']) : 0;
+                $pB = !empty($b['pinned_at']) ? strtotime($b['pinned_at']) : 0;
+                if ($pA !== $pB) return $pB <=> $pA;
+            }
             $tA = !empty($a['last_message_time']) ? strtotime($a['last_message_time']) : 0;
             $tB = !empty($b['last_message_time']) ? strtotime($b['last_message_time']) : 0;
             return $tB <=> $tA;
         });
 
-        // Hitung total unread
+        // Hitung total unread & total archived
         $totalUnread = 0;
+        $archivedCount = 0;
         foreach ($merged as $item) {
             $totalUnread += (int)$item['unread_count'];
+            if (!empty($item['is_archived'])) {
+                $archivedCount++;
+            }
         }
 
         // Permintaan teman pending masuk
         $pendingReqs = $this->friendModel->getIncomingRequests($userId);
 
         return $this->ok([
-            'conversations' => $merged,
-            'total_unread'  => $totalUnread,
+            'conversations'           => $merged,
+            'total_unread'            => $totalUnread,
+            'archived_count'          => $archivedCount,
             'pending_friend_requests' => count($pendingReqs),
-            'my_id'         => $userId,
+            'my_id'                   => $userId,
+        ]);
+    }
+
+    /**
+     * POST /api/chat/conversation/pin
+     * Body: { type: 'direct'|'marketplace', target_id: int, target_sub_id: int }
+     */
+    public function pinConversation()
+    {
+        $userId = $this->uid();
+        $type = $this->request->getPost('type') ?: 'direct';
+        $targetId = (int)$this->request->getPost('target_id');
+        $targetSubId = (int)($this->request->getPost('target_sub_id') ?? 0);
+
+        $res = $this->convSettingModel->togglePin($userId, $type, $targetId, $targetSubId);
+        return $this->ok([
+            'is_pinned'   => $res['is_pinned'],
+            'is_archived' => $res['is_archived'],
+            'message'     => $res['is_pinned'] ? 'Obrolan disematkan ke atas' : 'Sematan obrolan dilepas',
+        ]);
+    }
+
+    /**
+     * POST /api/chat/conversation/archive
+     * Body: { type: 'direct'|'marketplace', target_id: int, target_sub_id: int }
+     */
+    public function archiveConversation()
+    {
+        $userId = $this->uid();
+        $type = $this->request->getPost('type') ?: 'direct';
+        $targetId = (int)$this->request->getPost('target_id');
+        $targetSubId = (int)($this->request->getPost('target_sub_id') ?? 0);
+
+        $res = $this->convSettingModel->toggleArchive($userId, $type, $targetId, $targetSubId);
+        return $this->ok([
+            'is_archived' => $res['is_archived'],
+            'is_pinned'   => $res['is_pinned'],
+            'message'     => $res['is_archived'] ? 'Obrolan diarsipkan' : 'Obrolan dikeluarkan dari arsip',
+        ]);
+    }
+
+    /**
+     * POST /api/chat/conversation/delete
+     * Body: { type: 'direct'|'marketplace', target_id: int, target_sub_id: int }
+     */
+    public function deleteConversation()
+    {
+        $userId = $this->uid();
+        $type = $this->request->getPost('type') ?: 'direct';
+        $targetId = (int)$this->request->getPost('target_id');
+        $targetSubId = (int)($this->request->getPost('target_sub_id') ?? 0);
+
+        $this->convSettingModel->deleteChat($userId, $type, $targetId, $targetSubId);
+        return $this->ok([
+            'message' => 'Obrolan berhasil dihapus',
         ]);
     }
 }

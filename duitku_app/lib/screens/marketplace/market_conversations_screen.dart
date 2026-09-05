@@ -25,8 +25,9 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
   List<FriendRequest> _incomingRequests = [];
   List<Friend> _friends = [];
   int _myId = 0;
+  int _archivedCount = 0;
   Timer? _refreshTimer;
-  String _activeFilter = 'all'; // 'all', 'direct', 'marketplace'
+  String _activeFilter = 'all'; // 'all', 'direct', 'marketplace', 'archived'
 
   @override
   void initState() {
@@ -74,12 +75,14 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
 
       if (mounted) {
         final totalUnread = int.tryParse('${res['total_unread']}') ?? 0;
+        final archived = int.tryParse('${res['archived_count']}') ?? 0;
         context.read<AppDataProvider>().setMarketChatUnread(totalUnread);
 
         setState(() {
           _conversations = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
           _incomingRequests = parsedReqs;
           _friends = parsedFriends;
+          _archivedCount = archived;
           _isLoading = false;
         });
       }
@@ -561,6 +564,11 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
 
     // Filter conversations
     final filtered = _conversations.where((c) {
+      final isArchived = (c['is_archived'] == true || c['is_archived'] == 1 || c['is_archived'] == '1');
+      if (_activeFilter == 'archived') {
+        return isArchived;
+      }
+      if (isArchived) return false;
       final type = c['type'] ?? 'marketplace';
       if (_activeFilter == 'direct') return type == 'direct';
       if (_activeFilter == 'marketplace') return type == 'marketplace';
@@ -674,6 +682,8 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                 _buildFilterChip('Teman (Direct)', 'direct'),
                 const SizedBox(width: 8),
                 _buildFilterChip('Marketplace', 'marketplace'),
+                const SizedBox(width: 8),
+                _buildFilterChip('Diarsipkan${_archivedCount > 0 ? ' ($_archivedCount)' : ''}', 'archived'),
               ],
             ),
           ),
@@ -686,21 +696,33 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
               child: Center(
                 child: Column(
                   children: [
-                    const Icon(Icons.forum_outlined, size: 48, color: Colors.grey),
+                    Icon(
+                      _activeFilter == 'archived' ? Icons.archive_outlined : Icons.forum_outlined,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
                     const SizedBox(height: 12),
-                    const Text('Belum Ada Percakapan', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                    Text(
+                      _activeFilter == 'archived' ? 'Belum Ada Obrolan Diarsipkan' : 'Belum Ada Percakapan',
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                    ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'Tambahkan teman untuk mulai mengobrol seperti WhatsApp!',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    Text(
+                      _activeFilter == 'archived'
+                          ? 'Tekan lama atau gunakan ikon titik tiga pada obrolan untuk mengarsipkan.'
+                          : 'Tambahkan teman untuk mulai mengobrol seperti WhatsApp!',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () => _showAddFriendDialog(context),
-                      icon: const Icon(Icons.person_add_rounded, size: 16),
-                      label: const Text('Tambah Teman'),
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
-                    ),
+                    if (_activeFilter != 'archived') ...[
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: () => _showAddFriendDialog(context),
+                        icon: const Icon(Icons.person_add_rounded, size: 16),
+                        label: const Text('Tambah Teman'),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -721,6 +743,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                 final lastSenderId = int.tryParse('${conv['last_sender_id']}') ?? 0;
                 final isMyMsg = _myId > 0 && lastSenderId == _myId;
                 final init = partnerName.isNotEmpty ? partnerName[0].toUpperCase() : 'T';
+                final isPinned = (conv['is_pinned'] == true || conv['is_pinned'] == 1 || conv['is_pinned'] == '1');
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
@@ -728,10 +751,14 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                     side: BorderSide(
-                      color: unreadCount > 0 ? const Color(0xFF2563EB).withValues(alpha: 0.3) : Colors.grey.shade200,
+                      color: isPinned
+                          ? const Color(0xFF2563EB).withValues(alpha: 0.4)
+                          : (unreadCount > 0 ? const Color(0xFF2563EB).withValues(alpha: 0.3) : Colors.grey.shade200),
                     ),
                   ),
-                  color: unreadCount > 0 ? const Color(0xFF2563EB).withValues(alpha: 0.03) : Theme.of(context).cardColor,
+                  color: isPinned
+                      ? const Color(0xFF2563EB).withValues(alpha: 0.05)
+                      : (unreadCount > 0 ? const Color(0xFF2563EB).withValues(alpha: 0.03) : Theme.of(context).cardColor),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
                     onTap: () async {
@@ -748,6 +775,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                       );
                       _loadData(isSilent: true);
                     },
+                    onLongPress: () => _showConversationOptions(conv),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       child: Row(
@@ -764,6 +792,10 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                               children: [
                                 Row(
                                   children: [
+                                    if (isPinned) ...[
+                                      const Icon(Icons.push_pin_rounded, size: 14, color: Color(0xFF2563EB)),
+                                      const SizedBox(width: 3),
+                                    ],
                                     Expanded(
                                       child: Text(
                                         partnerName,
@@ -821,6 +853,13 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                                 style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
                               ),
                             ),
+                          IconButton(
+                            icon: const Icon(Icons.more_vert_rounded, size: 18, color: Colors.grey),
+                            onPressed: () => _showConversationOptions(conv),
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.only(left: 4),
+                            constraints: const BoxConstraints(),
+                          ),
                         ],
                       ),
                     ),
@@ -839,6 +878,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                 final unreadCount = int.tryParse('${conv['unread_count']}') ?? 0;
                 final lastSenderId = int.tryParse('${conv['last_sender_id']}') ?? 0;
                 final isMyMsg = _myId > 0 && lastSenderId == _myId;
+                final isPinned = (conv['is_pinned'] == true || conv['is_pinned'] == 1 || conv['is_pinned'] == '1');
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
@@ -846,9 +886,12 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                     side: BorderSide(
-                      color: unreadCount > 0 ? const Color(0xFF059669).withValues(alpha: 0.3) : Colors.grey.shade200,
+                      color: isPinned
+                          ? const Color(0xFF059669).withValues(alpha: 0.4)
+                          : (unreadCount > 0 ? const Color(0xFF059669).withValues(alpha: 0.3) : Colors.grey.shade200),
                     ),
                   ),
+                  color: isPinned ? const Color(0xFF059669).withValues(alpha: 0.05) : Theme.of(context).cardColor,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
                     onTap: () async {
@@ -868,6 +911,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                       );
                       _loadData(isSilent: true);
                     },
+                    onLongPress: () => _showConversationOptions(conv),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Row(
@@ -894,6 +938,10 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                               children: [
                                 Row(
                                   children: [
+                                    if (isPinned) ...[
+                                      const Icon(Icons.push_pin_rounded, size: 14, color: Color(0xFF059669)),
+                                      const SizedBox(width: 3),
+                                    ],
                                     Expanded(
                                       child: Text(
                                         partnerName,
@@ -950,6 +998,13 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                                 style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
                               ),
                             ),
+                          IconButton(
+                            icon: const Icon(Icons.more_vert_rounded, size: 18, color: Colors.grey),
+                            onPressed: () => _showConversationOptions(conv),
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.only(left: 4),
+                            constraints: const BoxConstraints(),
+                          ),
                         ],
                       ),
                     ),
@@ -976,6 +1031,198 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
       selectedColor: const Color(0xFF2563EB),
       backgroundColor: Colors.grey.shade100,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    );
+  }
+
+  void _showConversationOptions(Map<String, dynamic> conv) {
+    final type = (conv['type'] ?? 'marketplace').toString();
+    final isDirect = (type == 'direct');
+    final partnerName = (conv['partner_name'] ?? (isDirect ? 'Teman' : 'Pengguna')).toString();
+    final isPinned = (conv['is_pinned'] == true || conv['is_pinned'] == 1 || conv['is_pinned'] == '1');
+    final isArchived = (conv['is_archived'] == true || conv['is_archived'] == 1 || conv['is_archived'] == '1');
+
+    final targetId = isDirect
+        ? (int.tryParse('${conv['partner_id']}') ?? 0)
+        : (int.tryParse('${conv['listing_id']}') ?? 0);
+    final targetSubId = isDirect
+        ? 0
+        : (int.tryParse('${conv['buyer_id']}') ?? 0);
+
+    final init = partnerName.isNotEmpty ? partnerName[0].toUpperCase() : 'T';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: isDirect ? const Color(0xFF2563EB) : const Color(0xFF059669),
+                      child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            partnerName,
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            isDirect ? 'Obrolan Teman' : 'Obrolan Marketplace',
+                            style: const TextStyle(fontSize: 11, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Divider(height: 1, color: Colors.grey.shade200),
+                const SizedBox(height: 6),
+
+                // Pin / Unpin
+                ListTile(
+                  leading: Icon(
+                    isPinned ? Icons.push_pin_outlined : Icons.push_pin_rounded,
+                    color: const Color(0xFF2563EB),
+                  ),
+                  title: Text(
+                    isPinned ? 'Lepas Sematan' : 'Sematkan ke Atas',
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    try {
+                      final res = await ApiService.instance.pinConversation(
+                        type: type,
+                        targetId: targetId,
+                        targetSubId: targetSubId,
+                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(res['message'] ?? 'Status sematan diperbarui')),
+                        );
+                        _loadData(isSilent: true);
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      }
+                    }
+                  },
+                ),
+
+                // Archive / Unarchive
+                ListTile(
+                  leading: Icon(
+                    isArchived ? Icons.unarchive_rounded : Icons.archive_rounded,
+                    color: const Color(0xFFD97706),
+                  ),
+                  title: Text(
+                    isArchived ? 'Keluarkan dari Arsip' : 'Arsipkan Obrolan',
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    try {
+                      final res = await ApiService.instance.archiveConversation(
+                        type: type,
+                        targetId: targetId,
+                        targetSubId: targetSubId,
+                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(res['message'] ?? 'Status arsip diperbarui')),
+                        );
+                        _loadData(isSilent: true);
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                      }
+                    }
+                  },
+                ),
+
+                // Delete
+                ListTile(
+                  leading: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                  title: const Text(
+                    'Hapus Obrolan',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _confirmDeleteConversation(type, targetId, targetSubId, partnerName);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmDeleteConversation(String type, int targetId, int targetSubId, String partnerName) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Hapus Obrolan?', style: TextStyle(fontWeight: FontWeight.w800)),
+        content: Text(
+          'Hapus seluruh riwayat obrolan dengan "$partnerName"? Pesan yang telah dihapus tidak dapat dipulihkan.',
+          style: const TextStyle(fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              try {
+                final res = await ApiService.instance.deleteConversation(
+                  type: type,
+                  targetId: targetId,
+                  targetSubId: targetSubId,
+                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(res['message'] ?? 'Obrolan berhasil dihapus')),
+                  );
+                  _loadData(isSilent: true);
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                }
+              }
+            },
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 }

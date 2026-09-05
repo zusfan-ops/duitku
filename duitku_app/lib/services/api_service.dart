@@ -964,6 +964,42 @@ class ApiService {
     });
   }
 
+  Future<Map<String, dynamic>> pinConversation({
+    required String type,
+    required int targetId,
+    int targetSubId = 0,
+  }) async {
+    return post('chat/conversation/pin', {
+      'type': type,
+      'target_id': targetId,
+      'target_sub_id': targetSubId,
+    });
+  }
+
+  Future<Map<String, dynamic>> archiveConversation({
+    required String type,
+    required int targetId,
+    int targetSubId = 0,
+  }) async {
+    return post('chat/conversation/archive', {
+      'type': type,
+      'target_id': targetId,
+      'target_sub_id': targetSubId,
+    });
+  }
+
+  Future<Map<String, dynamic>> deleteConversation({
+    required String type,
+    required int targetId,
+    int targetSubId = 0,
+  }) async {
+    return post('chat/conversation/delete', {
+      'type': type,
+      'target_id': targetId,
+      'target_sub_id': targetSubId,
+    });
+  }
+
   // ── Upload helpers ───────────────────────────────────────────
   Future<String?> base64FromFile(String path) async {
     final file = File(path);

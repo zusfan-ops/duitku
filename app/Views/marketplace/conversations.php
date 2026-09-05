@@ -70,6 +70,9 @@
         <button type="button" class="conv-tab-btn" data-filter="marketplace" onclick="filterConversations('marketplace', this)">
             Marketplace
         </button>
+        <button type="button" class="conv-tab-btn" data-filter="archived" onclick="filterConversations('archived', this)" id="tabBtnArchived">
+            📦 Diarsipkan <span id="archivedBadgeCount" class="conv-tab-badge" style="<?= empty($archivedCount) ? 'display:none;' : '' ?>"><?= (int)($archivedCount ?? 0) ?></span>
+        </button>
     </div>
 
     <!-- Conversations List -->
@@ -116,7 +119,14 @@
 
                 <?php if ($isDirect): ?>
                     <!-- DIRECT CHAT (TEMAN) -->
-                    <div class="conv-item direct-item <?= $unread > 0 ? 'unread' : '' ?>" data-type="direct" onclick="openDirectChat(<?= (int)$conv['partner_id'] ?>, '<?= esc(addslashes($partnerName)) ?>', '<?= esc(addslashes($conv['partner_username'] ?? '')) ?>', '<?= esc(addslashes($conv['partner_avatar'] ?? '')) ?>')">
+                    <div class="conv-item direct-item <?= $unread > 0 ? 'unread' : '' ?> <?= !empty($conv['is_pinned']) ? 'pinned' : '' ?>" 
+                         data-type="direct" 
+                         data-target-id="<?= (int)$conv['target_id'] ?>" 
+                         data-target-sub-id="0" 
+                         data-pinned="<?= !empty($conv['is_pinned']) ? '1' : '0' ?>" 
+                         data-archived="<?= !empty($conv['is_archived']) ? '1' : '0' ?>" 
+                         id="convCard_direct_<?= (int)$conv['target_id'] ?>_0"
+                         onclick="openDirectChat(<?= (int)$conv['partner_id'] ?>, '<?= esc(addslashes($partnerName)) ?>', '<?= esc(addslashes($conv['partner_username'] ?? '')) ?>', '<?= esc(addslashes($conv['partner_avatar'] ?? '')) ?>')">
                         <div class="conv-avatar">
                             <span><?= esc($initial) ?></span>
                             <span class="conv-status-badge direct"></span>
@@ -127,7 +137,13 @@
                                     <span class="conv-partner-name"><?= esc($partnerName) ?></span>
                                     <span class="conv-role-tag friend">Teman</span>
                                 </div>
-                                <span class="conv-time <?= $unread > 0 ? 'unread' : '' ?>"><?= esc($timeStr) ?></span>
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <?php if (!empty($conv['is_pinned'])): ?>
+                                        <span class="conv-pin-badge" title="Disematkan ke atas">📌</span>
+                                    <?php endif; ?>
+                                    <span class="conv-time <?= $unread > 0 ? 'unread' : '' ?>"><?= esc($timeStr) ?></span>
+                                    <button type="button" class="conv-menu-btn" onclick="openConvOptions(event, 'direct', <?= (int)$conv['target_id'] ?>, 0, <?= !empty($conv['is_pinned']) ? '1' : '0' ?>, <?= !empty($conv['is_archived']) ? '1' : '0' ?>, '<?= esc(addslashes($partnerName)) ?>')" title="Opsi Obrolan">⋮</button>
+                                </div>
                             </div>
 
                             <div class="conv-user-handle">@<?= esc($conv['partner_username'] ?: 'user') ?></div>
@@ -152,7 +168,14 @@
                         $isSeller   = ((int)$conv['seller_id'] === (int)$userId);
                         $partnerRole = $isSeller ? 'Calon Pembeli' : 'Penjual';
                     ?>
-                    <div class="conv-item market-item <?= $unread > 0 ? 'unread' : '' ?>" data-type="marketplace" onclick="openChatFromConv(<?= (int)$conv['listing_id'] ?>, <?= (int)$conv['buyer_id'] ?>, '<?= esc(addslashes($conv['listing_title'])) ?>', '<?= esc(addslashes($partnerName)) ?>', '<?= esc(addslashes($conv['partner_phone'] ?? '')) ?>')">
+                    <div class="conv-item market-item <?= $unread > 0 ? 'unread' : '' ?> <?= !empty($conv['is_pinned']) ? 'pinned' : '' ?>" 
+                         data-type="marketplace" 
+                         data-target-id="<?= (int)$conv['target_id'] ?>" 
+                         data-target-sub-id="<?= (int)($conv['target_sub_id'] ?? 0) ?>" 
+                         data-pinned="<?= !empty($conv['is_pinned']) ? '1' : '0' ?>" 
+                         data-archived="<?= !empty($conv['is_archived']) ? '1' : '0' ?>" 
+                         id="convCard_marketplace_<?= (int)$conv['target_id'] ?>_<?= (int)($conv['target_sub_id'] ?? 0) ?>"
+                         onclick="openChatFromConv(<?= (int)$conv['listing_id'] ?>, <?= (int)$conv['buyer_id'] ?>, '<?= esc(addslashes($conv['listing_title'])) ?>', '<?= esc(addslashes($partnerName)) ?>', '<?= esc(addslashes($conv['partner_phone'] ?? '')) ?>')">
                         <div class="conv-avatar">
                             <span><?= esc($initial) ?></span>
                             <span class="conv-status-badge"></span>
@@ -163,7 +186,13 @@
                                     <span class="conv-partner-name"><?= esc($partnerName) ?></span>
                                     <span class="conv-role-tag <?= $isSeller ? 'buyer' : 'seller' ?>"><?= esc($partnerRole) ?></span>
                                 </div>
-                                <span class="conv-time <?= $unread > 0 ? 'unread' : '' ?>"><?= esc($timeStr) ?></span>
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <?php if (!empty($conv['is_pinned'])): ?>
+                                        <span class="conv-pin-badge" title="Disematkan ke atas">📌</span>
+                                    <?php endif; ?>
+                                    <span class="conv-time <?= $unread > 0 ? 'unread' : '' ?>"><?= esc($timeStr) ?></span>
+                                    <button type="button" class="conv-menu-btn" onclick="openConvOptions(event, 'marketplace', <?= (int)$conv['target_id'] ?>, <?= (int)($conv['target_sub_id'] ?? 0) ?>, <?= !empty($conv['is_pinned']) ? '1' : '0' ?>, <?= !empty($conv['is_archived']) ? '1' : '0' ?>, '<?= esc(addslashes($partnerName)) ?>')" title="Opsi Obrolan">⋮</button>
+                                </div>
                             </div>
 
                             <div class="conv-listing-pill">
@@ -358,6 +387,41 @@
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL 5: CONVERSATION ACTION SHEET (PIN, ARCHIVE, DELETE)
+══════════════════════════════════════════════════════════════ -->
+<div class="mini-modal-overlay" id="convActionModalOverlay" onclick="if(event.target===this)closeConvActionModal()">
+    <div class="mini-modal" style="max-width:380px;padding:20px;border-radius:22px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                <div class="conv-avatar sm" id="convActionAvatar" style="width:36px;height:36px;font-size:14px;flex-shrink:0;">
+                    <span>T</span>
+                </div>
+                <div style="min-width:0;">
+                    <h4 id="convActionName" style="margin:0;font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Nama Pengguna</h4>
+                    <span id="convActionSub" style="font-size:11px;color:var(--text-muted);">Opsi Obrolan</span>
+                </div>
+            </div>
+            <button type="button" class="modal-close" onclick="closeConvActionModal()">✕</button>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+            <button type="button" id="btnActionPin" onclick="executeConvAction('pin')" class="conv-sheet-action-btn">
+                <span class="conv-action-icon" id="iconActionPin">📌</span>
+                <span class="conv-action-text" id="textActionPin">Sematkan ke Atas</span>
+            </button>
+            <button type="button" id="btnActionArchive" onclick="executeConvAction('archive')" class="conv-sheet-action-btn">
+                <span class="conv-action-icon" id="iconActionArchive">📦</span>
+                <span class="conv-action-text" id="textActionArchive">Arsipkan Obrolan</span>
+            </button>
+            <button type="button" id="btnActionDelete" onclick="executeConvAction('delete')" class="conv-sheet-action-btn danger">
+                <span class="conv-action-icon">🗑️</span>
+                <span class="conv-action-text">Hapus Obrolan</span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -599,6 +663,69 @@
 .conv-item.unread {
     border-color: rgba(37, 99, 235, 0.4);
     background: var(--primary-dim, rgba(37, 99, 235, 0.03));
+}
+.conv-item.pinned {
+    background: var(--primary-dim, rgba(37, 99, 235, 0.04));
+    border-color: rgba(37, 99, 235, 0.3);
+}
+.conv-pin-badge {
+    font-size: 12px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+.conv-menu-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    line-height: 1;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.conv-menu-btn:hover {
+    background: var(--border);
+    color: var(--text-primary);
+}
+.conv-tab-badge {
+    background: #2563EB;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 10px;
+    margin-left: 4px;
+}
+.conv-sheet-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+}
+.conv-sheet-action-btn:hover {
+    background: var(--primary-dim, rgba(37, 99, 235, 0.08));
+    border-color: #2563EB;
+}
+.conv-sheet-action-btn.danger {
+    color: #DC2626;
+    border-color: rgba(220, 38, 38, 0.2);
+}
+.conv-sheet-action-btn.danger:hover {
+    background: #FEE2E2;
+    border-color: #DC2626;
 }
 .conv-avatar {
     width: 46px;
@@ -1035,19 +1162,101 @@ let currentChatBuyerId    = null;
 let chatPollTimer         = null;
 let isSendingMsg          = false;
 
-/* Filter tabs */
+/* Filter tabs (support archived exclusion & inclusion) */
+let currentConvFilter = 'all';
+
 function filterConversations(type, btn) {
+    currentConvFilter = type;
     document.querySelectorAll('.conv-tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    if (btn) btn.classList.add('active');
 
     const items = document.querySelectorAll('.conv-item');
     items.forEach(item => {
         const itemType = item.getAttribute('data-type');
-        if (type === 'all' || itemType === type) {
-            item.style.display = 'flex';
+        const isArchived = item.getAttribute('data-archived') === '1';
+
+        if (type === 'archived') {
+            item.style.display = isArchived ? 'flex' : 'none';
         } else {
-            item.style.display = 'none';
+            // Main tabs exclude archived
+            if (isArchived) {
+                item.style.display = 'none';
+            } else if (type === 'all' || itemType === type) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
         }
+    });
+}
+
+let activeActionConv = null;
+
+function openConvOptions(e, type, targetId, targetSubId, isPinned, isArchived, partnerName) {
+    if (e) e.stopPropagation();
+    activeActionConv = {
+        type: type,
+        targetId: targetId,
+        targetSubId: targetSubId,
+        isPinned: (isPinned == 1 || isPinned === true),
+        isArchived: (isArchived == 1 || isArchived === true),
+        name: partnerName
+    };
+
+    document.getElementById('convActionName').textContent = partnerName;
+    document.getElementById('convActionSub').textContent = (type === 'direct' ? 'Teman (Direct)' : 'Marketplace');
+    document.getElementById('convActionAvatar').querySelector('span').textContent = partnerName.charAt(0).toUpperCase();
+
+    // Text & icon based on current state
+    document.getElementById('textActionPin').textContent = activeActionConv.isPinned ? 'Lepas Sematan' : 'Sematkan ke Atas';
+    document.getElementById('textActionArchive').textContent = activeActionConv.isArchived ? 'Buka dari Arsip' : 'Arsipkan Obrolan';
+    document.getElementById('iconActionArchive').textContent = activeActionConv.isArchived ? '📂' : '📦';
+
+    document.getElementById('convActionModalOverlay').classList.add('open');
+}
+
+function closeConvActionModal() {
+    const modal = document.getElementById('convActionModalOverlay');
+    if (modal) modal.classList.remove('open');
+    activeActionConv = null;
+}
+
+function executeConvAction(action) {
+    if (!activeActionConv) return;
+    const conv = activeActionConv;
+
+    if (action === 'delete') {
+        if (!confirm(`Hapus seluruh riwayat obrolan dengan "${conv.name}"?\nPesan yang dihapus tidak dapat dikembalikan.`)) {
+            return;
+        }
+    }
+
+    const endpoint = '/chat/conversation/' + action;
+    const formData = new FormData();
+    formData.append('type', conv.type);
+    formData.append('target_id', conv.targetId);
+    formData.append('target_sub_id', conv.targetSubId);
+
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': getCsrfToken(),
+        },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(res => {
+        closeConvActionModal();
+        if (res.status === 'success') {
+            window.location.reload();
+        } else {
+            alert(res.message || 'Gagal memproses aksi.');
+        }
+    })
+    .catch(err => {
+        closeConvActionModal();
+        alert('Gagal menghubungi server: ' + err);
     });
 }
 
@@ -1484,6 +1693,7 @@ function escapeHtml(str) {
 
 // Check URL query for direct user chat auto-opening (e.g. /chat?direct_user=123)
 document.addEventListener('DOMContentLoaded', () => {
+    filterConversations('all');
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('direct_user')) {
         const dUid = urlParams.get('direct_user');
