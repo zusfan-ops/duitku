@@ -419,6 +419,46 @@ table { max-width: 100%; }
     stroke: #ffffff;
 }
 
+/* ── Floating Action Button (+ Catat Transaksi) ────────────────── */
+.fab-floating-add {
+    position: fixed;
+    bottom: 84px;
+    right: 20px;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+    color: #ffffff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.45), 0 2px 6px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    z-index: 150;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+.fab-floating-add:hover {
+    transform: scale(1.08);
+    box-shadow: 0 14px 28px rgba(37, 99, 235, 0.55);
+}
+.fab-floating-add:active {
+    transform: scale(0.92);
+}
+.fab-floating-add svg {
+    width: 26px;
+    height: 26px;
+    stroke: #ffffff;
+}
+@media (max-width: 480px) {
+    .fab-floating-add {
+        bottom: 80px;
+        right: 16px;
+        width: 52px;
+        height: 52px;
+    }
+}
+
 /* ─── HOME PAGE ──────────────────────────────────────────────────────────── */
 .home-page { display: flex; flex-direction: column; gap: 16px; }
 
