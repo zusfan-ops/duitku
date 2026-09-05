@@ -1012,6 +1012,14 @@
 </style>
 
 <script>
+const csrfTokenName = '<?= csrf_token() ?>';
+const csrfTokenHash = '<?= csrf_hash() ?>';
+
+function getCsrfToken() {
+    const match = document.cookie.match(new RegExp('(^|;\\s*)csrf_cookie_name=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : csrfTokenHash;
+}
+
 let currentDirectFriendId = null;
 let currentChatListingId  = null;
 let currentChatBuyerId    = null;
@@ -1134,11 +1142,15 @@ function sendDirectMessage(e) {
     const formData = new FormData();
     formData.append('friend_id', currentDirectFriendId);
     formData.append('message', text);
+    formData.append(csrfTokenName, getCsrfToken());
 
-    fetch('/chat/direct/send', {
+    fetch('<?= base_url('chat/direct/send') ?>', {
         method: 'POST',
         body: formData,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': getCsrfToken()
+        }
     })
     .then(r => r.json())
     .then(res => {
@@ -1196,27 +1208,21 @@ function closeMarketChat() {
 function loadChatMessages(autoScroll = false) {
     if (!currentChatListingId || !currentChatBuyerId) return;
 
-    fetch(`/marketplace/chat/messages?listing_id=${currentChatListingId}&buyer_id=${currentChatBuyerId}`, {
+    fetch(`<?= base_url('marketplace/chat/messages') ?>?listing_id=${currentChatListingId}&buyer_id=${currentChatBuyerId}`, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
     .then(r => r.json())
-    .then(res => {
-        if (!res.success) return;
-        const messages = res.messages || [];
-        const bodyEl   = document.getElementById('chatModalMessages');
+    .then(data => {
+        const bodyEl = document.getElementById('marketChatModalBody');
         if (!bodyEl) return;
 
-        if (messages.length === 0) {
-            bodyEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);font-size:12px;">Belum ada pesan. Mulai kirim penawaran atau pertanyaan!</div>';
-            return;
-        }
-
+        const messages = (data && data.messages) ? data.messages : [];
         let html = '';
-        let lastDateStr = '';
+        let lastDateStr = null;
 
         messages.forEach(msg => {
-            const isMe = (msg.is_me === true);
-            let msgDate = msg.created_at ? msg.created_at.split(' ')[0] : '';
+            const isMe = msg.is_me == 1 || msg.is_me === true;
+            const msgDate = msg.created_at ? msg.created_at.slice(0, 10) : '';
 
             if (msgDate && msgDate !== lastDateStr) {
                 lastDateStr = msgDate;
@@ -1373,11 +1379,15 @@ function searchUserFriends(e) {
 function sendFriendRequestTo(username) {
     const formData = new FormData();
     formData.append('username', username);
+    formData.append(csrfTokenName, getCsrfToken());
 
-    fetch('/friends/request', {
+    fetch('<?= base_url('friends/request') ?>', {
         method: 'POST',
         body: formData,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': getCsrfToken()
+        }
     })
     .then(r => r.json())
     .then(res => {
@@ -1397,11 +1407,15 @@ function respondFriendRequest(requestId, action, reloadAfter = false) {
     const formData = new FormData();
     formData.append('request_id', requestId);
     formData.append('action', action);
+    formData.append(csrfTokenName, getCsrfToken());
 
-    fetch('/friends/respond', {
+    fetch('<?= base_url('friends/respond') ?>', {
         method: 'POST',
         body: formData,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': getCsrfToken()
+        }
     })
     .then(r => r.json())
     .then(res => {

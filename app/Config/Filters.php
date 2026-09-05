@@ -72,6 +72,8 @@ class Filters extends BaseFilters
                     'toko/*/order',
                     'toko/*/verify-voucher',
                     'marketplace/*',
+                    'friends/*',
+                    'chat/*',
                 ]
             ],
             'invalidchars',
