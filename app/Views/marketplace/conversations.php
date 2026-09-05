@@ -59,6 +59,65 @@
         </div>
     <?php endif; ?>
 
+    <!-- Status Stories Tray (Khusus Teman & 24 Jam) -->
+    <div class="status-tray-container">
+        <div class="status-tray-title-bar">
+            <span class="status-tray-heading">Status Teman (24 Jam)</span>
+            <button type="button" class="btn-create-status-text" onclick="openCreateStatusModal()">
+                <span>✏️ Buat Status</span>
+            </button>
+        </div>
+        <div class="status-tray-scroll">
+            <!-- Bubble Buat Status Saya -->
+            <div class="status-bubble-item" onclick="openCreateStatusModal()" title="Buat Status Baru">
+                <div class="status-ring-wrap me-ring">
+                    <div class="status-ring-avatar">
+                        <span style="font-size:18px;">➕</span>
+                    </div>
+                    <span class="status-add-badge">+</span>
+                </div>
+                <span class="status-bubble-label">Status Saya</span>
+            </div>
+
+            <!-- Bubble Status Teman-Teman -->
+            <?php if (!empty($statuses)): ?>
+                <?php
+                    $groupedStatuses = [];
+                    foreach ($statuses as $st) {
+                        $uid = $st['user_id'];
+                        if (!isset($groupedStatuses[$uid])) {
+                            $groupedStatuses[$uid] = [];
+                        }
+                        $groupedStatuses[$uid][] = $st;
+                    }
+                ?>
+                <?php foreach ($groupedStatuses as $stUserId => $userStList): ?>
+                    <?php
+                        $firstSt = $userStList[0];
+                        $isMe = ((int)$stUserId === (int)$userId);
+                        $authorName = $isMe ? 'Status Anda' : ($firstSt['author_name'] ?: ($firstSt['author_username'] ?: 'Teman'));
+                        $authorAvatar = $firstSt['author_avatar_url'] ?? '';
+                        $initial = strtoupper(mb_substr($firstSt['author_name'] ?: ($firstSt['author_username'] ?: 'T'), 0, 1));
+                        $payloadJson = htmlspecialchars(json_encode($userStList), ENT_QUOTES, 'UTF-8');
+                    ?>
+                    <div class="status-bubble-item" onclick='openStatusViewerModal(<?= $payloadJson ?>)' title="Lihat Status <?= esc($authorName) ?>">
+                        <div class="status-ring-wrap active-story-ring">
+                            <div class="status-ring-avatar">
+                                <?php if (!empty($authorAvatar)): ?>
+                                    <img src="<?= esc($authorAvatar) ?>" alt="<?= esc($authorName) ?>" class="conv-avatar-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                    <span style="display:none;"><?= esc($initial) ?></span>
+                                <?php else: ?>
+                                    <span><?= esc($initial) ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <span class="status-bubble-label"><?= esc($authorName) ?></span>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <!-- Segmented Filter Tabs (WhatsApp Style) -->
     <div class="conv-tabs-bar">
         <button type="button" class="conv-tab-btn active" data-filter="all" onclick="filterConversations('all', this)">
@@ -128,7 +187,12 @@
                          id="convCard_direct_<?= (int)$conv['target_id'] ?>_0"
                          onclick="openDirectChat(<?= (int)$conv['partner_id'] ?>, '<?= esc(addslashes($partnerName)) ?>', '<?= esc(addslashes($conv['partner_username'] ?? '')) ?>', '<?= esc(addslashes($conv['partner_avatar'] ?? '')) ?>')">
                         <div class="conv-avatar">
-                            <span><?= esc($initial) ?></span>
+                            <?php if (!empty($conv['partner_avatar_url'])): ?>
+                                <img src="<?= esc($conv['partner_avatar_url']) ?>" alt="<?= esc($partnerName) ?>" class="conv-avatar-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                <span style="display:none;"><?= esc($initial) ?></span>
+                            <?php else: ?>
+                                <span><?= esc($initial) ?></span>
+                            <?php endif; ?>
                             <span class="conv-status-badge direct"></span>
                         </div>
                         <div class="conv-content">
@@ -459,7 +523,246 @@
     </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL 6: BUAT STATUS (TEKS / FOTO KHUSUS TEMAN 24 JAM)
+══════════════════════════════════════════════════════════════ -->
+<div class="mini-modal-overlay" id="createStatusModalOverlay" style="display:none;" onclick="if(event.target===this)closeCreateStatusModal()">
+    <div class="mini-modal" style="max-width:460px;padding:22px;border-radius:24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:22px;">✨</span>
+                <h3 style="margin:0;font-size:17px;font-weight:800;">Buat Status Baru</h3>
+            </div>
+            <button type="button" class="modal-close" onclick="closeCreateStatusModal()">✕</button>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin:0 0 14px;line-height:1.4;">
+            🔒 <strong>Khusus Teman:</strong> Hanya dapat dilihat & dikomentari oleh teman Anda. Hilang otomatis dalam 24 jam.
+        </p>
+
+        <!-- Segmented Tab: Teks / Foto -->
+        <div style="display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:12px;margin-bottom:14px;border:1px solid var(--border);">
+            <button type="button" id="tabStatusTypeStory" class="conv-tab-btn active" onclick="switchStatusType('text')">📝 Status Teks</button>
+            <button type="button" id="tabStatusTypePhoto" class="conv-tab-btn" onclick="switchStatusType('image')">📷 Status Foto</button>
+        </div>
+
+        <form id="createStatusForm" onsubmit="submitCreateStatus(event)">
+            <input type="hidden" id="statusMediaType" value="text">
+
+            <!-- Section Teks -->
+            <div id="statusTextSection">
+                <div id="statusTextPreview" style="background:#2563EB;border-radius:18px;min-height:130px;padding:16px;display:flex;align-items:center;justify-content:center;color:#fff;margin-bottom:12px;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,0.15);transition:background 0.2s ease;">
+                    <textarea id="statusCaptionText" placeholder="Ketik apa yang Anda pikirkan..." style="width:100%;border:none;background:transparent;color:#fff;font-size:16px;font-weight:700;text-align:center;resize:none;outline:none;font-family:inherit;line-height:1.4;" rows="3" required></textarea>
+                </div>
+
+                <label style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;display:block;">Pilih Warna Latar Belakang:</label>
+                <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+                    <div class="color-pill active" data-color="#2563EB" style="background:#2563EB;" onclick="selectStatusColor('#2563EB', this)"></div>
+                    <div class="color-pill" data-color="#059669" style="background:#059669;" onclick="selectStatusColor('#059669', this)"></div>
+                    <div class="color-pill" data-color="#D97706" style="background:#D97706;" onclick="selectStatusColor('#D97706', this)"></div>
+                    <div class="color-pill" data-color="#DC2626" style="background:#DC2626;" onclick="selectStatusColor('#DC2626', this)"></div>
+                    <div class="color-pill" data-color="#7C3AED" style="background:#7C3AED;" onclick="selectStatusColor('#7C3AED', this)"></div>
+                    <div class="color-pill" data-color="#0F172A" style="background:#0F172A;" onclick="selectStatusColor('#0F172A', this)"></div>
+                </div>
+                <input type="hidden" id="statusBgColor" value="#2563EB">
+            </div>
+
+            <!-- Section Foto -->
+            <div id="statusPhotoSection" style="display:none;">
+                <div style="margin-bottom:12px;">
+                    <input type="file" id="statusImageInput" accept="image/*" class="form-input" style="padding:8px;" onchange="previewStatusImage(this)">
+                </div>
+                <div id="statusPhotoPreviewWrap" style="display:none;text-align:center;margin-bottom:12px;">
+                    <img id="statusPhotoPreviewImg" src="" style="max-height:180px;border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" alt="Pratinjau Foto">
+                </div>
+                <input type="text" id="statusPhotoCaption" class="form-input" placeholder="Tulis keterangan foto (opsional)..." style="margin-bottom:16px;">
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;gap:10px;">
+                <button type="button" class="btn-cancel" onclick="closeCreateStatusModal()">Batal</button>
+                <button type="submit" id="btnSubmitStatus" class="btn-save-small" style="padding:10px 22px;border-radius:999px;">
+                    <span>Bagikan ke Teman 🚀</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL 7: STATUS VIEWER (STORIES + COMMENTS KHUSUS TEMAN)
+══════════════════════════════════════════════════════════════ -->
+<div class="market-chat-modal-overlay" id="statusViewerModalOverlay" style="display:none;z-index:99998;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;" onclick="if(event.target===this)closeStatusViewerModal()">
+    <div style="position:relative;width:100%;max-width:440px;height:92vh;max-height:780px;background:#000;border-radius:24px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,0.8);">
+        <!-- Top Story Progress Bar -->
+        <div id="statusProgressBarWrap" style="display:flex;gap:4px;padding:12px 14px 6px;position:relative;z-index:10;">
+            <!-- Generated dynamically -->
+        </div>
+
+        <!-- Story Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px;position:relative;z-index:10;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div class="conv-avatar sm" id="viewerAuthorAvatar" style="width:36px;height:36px;border:2px solid #fff;">
+                    <span>T</span>
+                </div>
+                <div>
+                    <div id="viewerAuthorName" style="color:#fff;font-weight:800;font-size:14px;">Nama Teman</div>
+                    <div id="viewerTimeAgo" style="color:rgba(255,255,255,0.7);font-size:11px;">Hanya Teman • 24 Jam</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <button type="button" id="btnDeleteMyStatus" onclick="deleteActiveStatus()" style="display:none;background:rgba(239,68,68,0.3);color:#ef4444;border:none;border-radius:50%;width:32px;height:32px;font-size:14px;cursor:pointer;" title="Hapus Status">🗑️</button>
+                <button type="button" onclick="closeStatusViewerModal()" style="background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:14px;cursor:pointer;">✕</button>
+            </div>
+        </div>
+
+        <!-- Story Main Body / Content -->
+        <div id="viewerContentContainer" style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;" onclick="handleStoryTouchTap(event)">
+            <!-- Story visual dynamically injected -->
+        </div>
+
+        <!-- Comments Drawer & Quick Reply Bar -->
+        <div style="background:#1E293B;padding:10px 14px;position:relative;z-index:10;border-top:1px solid rgba(255,255,255,0.1);">
+            <div id="viewerCommentsToggleRow" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <button type="button" onclick="toggleStatusCommentsDrawer()" style="background:transparent;border:none;color:#38BDF8;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                    💬 <span id="viewerCommentsCountLabel">Lihat Komentar Teman</span>
+                </button>
+            </div>
+            <div id="viewerCommentsDrawer" style="display:none;max-height:160px;overflow-y:auto;background:rgba(0,0,0,0.35);border-radius:12px;padding:8px;margin-bottom:8px;color:#fff;font-size:12px;">
+                <div id="viewerCommentsList">Memuat komentar...</div>
+            </div>
+            <form onsubmit="submitStatusComment(event)" style="display:flex;gap:8px;align-items:center;">
+                <input type="text" id="viewerCommentInput" placeholder="Kirim balasan / komentar..." style="flex:1;background:rgba(255,255,255,0.12);border:none;border-radius:999px;padding:9px 16px;color:#fff;font-size:13px;outline:none;" required autocomplete="off">
+                <button type="submit" style="background:#2563EB;color:#fff;border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">➤</button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
+/* ══════════════════════════════════════════════════════════════
+   STATUS / STORIES TRAY STYLES
+══════════════════════════════════════════════════════════════ */
+.status-tray-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+.status-tray-title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.status-tray-heading {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+.btn-create-status-text {
+    background: transparent;
+    border: none;
+    color: #2563EB;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+}
+.btn-create-status-text:hover {
+    background: rgba(37,99,235,0.08);
+}
+.status-tray-scroll {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+}
+.status-bubble-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    min-width: 62px;
+    max-width: 70px;
+    text-align: center;
+    user-select: none;
+    transition: transform 0.15s ease;
+}
+.status-bubble-item:hover {
+    transform: translateY(-2px);
+}
+.status-ring-wrap {
+    position: relative;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    padding: 2.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.status-ring-wrap.active-story-ring {
+    background: linear-gradient(135deg, #2563EB 0%, #06B6D4 50%, #10B981 100%);
+}
+.status-ring-wrap.me-ring {
+    border: 2px dashed #94A3B8;
+    background: transparent;
+}
+.status-ring-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg-card);
+}
+.status-add-badge {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: #2563EB;
+    color: #fff;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+}
+.status-bubble-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    margin-top: 5px;
+}
+.color-pill {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.15s ease;
+}
+.color-pill.active {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px #2563EB;
+    transform: scale(1.15);
+}
+
 /* ══════════════════════════════════════════════════════════════
    PWA WHATSAPP CONVERSATIONS & FRIEND SYSTEM STYLES
 ══════════════════════════════════════════════════════════════ */
@@ -774,8 +1077,15 @@
     justify-content: center;
     position: relative;
     flex-shrink: 0;
+    overflow: hidden;
 }
 .conv-avatar.sm { width: 38px; height: 38px; font-size: 14px; }
+.conv-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
 .conv-status-badge {
     position: absolute;
     bottom: 0;
@@ -785,6 +1095,7 @@
     border-radius: 50%;
     background: #10B981;
     border: 2px solid var(--bg-card);
+    z-index: 2;
 }
 .conv-status-badge.direct { background: #3B82F6; }
 
@@ -2328,6 +2639,335 @@ function refreshConversationsListSilently(detectNew = false) {
     })
     .catch(() => {
         isRefreshingList = false;
+    });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATUS / STORIES (KHUSUS TEMAN & 24 JAM) PWA JAVASCRIPT
+   ═══════════════════════════════════════════════════════════════ */
+function openCreateStatusModal() {
+    const overlay = document.getElementById('createStatusModalOverlay');
+    if (overlay) overlay.style.display = 'flex';
+}
+
+function closeCreateStatusModal() {
+    const overlay = document.getElementById('createStatusModalOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function switchStatusType(type) {
+    document.getElementById('statusMediaType').value = type;
+    const tabStory = document.getElementById('tabStatusTypeStory');
+    const tabPhoto = document.getElementById('tabStatusTypePhoto');
+    const secText = document.getElementById('statusTextSection');
+    const secPhoto = document.getElementById('statusPhotoSection');
+    const captionText = document.getElementById('statusCaptionText');
+
+    if (type === 'text') {
+        tabStory.classList.add('active');
+        tabPhoto.classList.remove('active');
+        secText.style.display = 'block';
+        secPhoto.style.display = 'none';
+        captionText.required = true;
+    } else {
+        tabPhoto.classList.add('active');
+        tabStory.classList.remove('active');
+        secText.style.display = 'none';
+        secPhoto.style.display = 'block';
+        captionText.required = false;
+    }
+}
+
+function selectStatusColor(color, el) {
+    document.getElementById('statusBgColor').value = color;
+    document.getElementById('statusTextPreview').style.background = color;
+    document.querySelectorAll('.color-pill').forEach(p => p.classList.remove('active'));
+    if (el) el.classList.add('active');
+}
+
+function previewStatusImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewWrap = document.getElementById('statusPhotoPreviewWrap');
+            const previewImg = document.getElementById('statusPhotoPreviewImg');
+            previewImg.src = e.target.result;
+            previewWrap.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function submitCreateStatus(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmitStatus');
+    const origText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span>Mengirim...</span>';
+
+    const mediaType = document.getElementById('statusMediaType').value;
+    const formData = new FormData();
+    formData.append('media_type', mediaType);
+
+    if (mediaType === 'text') {
+        formData.append('caption', document.getElementById('statusCaptionText').value.trim());
+        formData.append('background_color', document.getElementById('statusBgColor').value);
+    } else {
+        const fileInput = document.getElementById('statusImageInput');
+        if (!fileInput.files || !fileInput.files[0]) {
+            alert('Silakan pilih foto terlebih dahulu.');
+            btn.disabled = false;
+            btn.innerHTML = origText;
+            return;
+        }
+        formData.append('media', fileInput.files[0]);
+        formData.append('caption', document.getElementById('statusPhotoCaption').value.trim());
+    }
+
+    fetch('/chat/status/create', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = origText;
+        if (data.status === 'success') {
+            closeCreateStatusModal();
+            location.reload();
+        } else {
+            alert(data.message || 'Gagal membuat status.');
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = origText;
+        alert('Terjadi kesalahan jaringan.');
+    });
+}
+
+// STORY VIEWER STATE
+let activeStoryList = [];
+let currentStoryIdx = 0;
+let storyAutoTimer = null;
+
+function openStatusViewerModal(stories) {
+    if (!stories || stories.length === 0) return;
+    activeStoryList = stories;
+    currentStoryIdx = 0;
+
+    const overlay = document.getElementById('statusViewerModalOverlay');
+    if (overlay) overlay.style.display = 'flex';
+
+    // Reset drawer komentar
+    const drawer = document.getElementById('viewerCommentsDrawer');
+    if (drawer) drawer.style.display = 'none';
+
+    renderCurrentStory();
+}
+
+function closeStatusViewerModal() {
+    clearTimeout(storyAutoTimer);
+    const overlay = document.getElementById('statusViewerModalOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function renderCurrentStory() {
+    clearTimeout(storyAutoTimer);
+    if (!activeStoryList || currentStoryIdx >= activeStoryList.length) {
+        closeStatusViewerModal();
+        return;
+    }
+
+    const st = activeStoryList[currentStoryIdx];
+    const isMine = (parseInt(st.user_id) === parseInt('<?= (int)$userId ?>'));
+
+    // Progress bar
+    const barWrap = document.getElementById('statusProgressBarWrap');
+    barWrap.innerHTML = '';
+    activeStoryList.forEach((_, i) => {
+        const seg = document.createElement('div');
+        seg.style.cssText = 'flex:1;height:3px;border-radius:2px;transition:background 0.2s ease;' +
+            (i <= currentStoryIdx ? 'background:#fff;' : 'background:rgba(255,255,255,0.3);');
+        barWrap.appendChild(seg);
+    });
+
+    // Header info
+    const authorName = st.author_name || st.author_username || 'Teman';
+    document.getElementById('viewerAuthorName').textContent = authorName;
+
+    // Avatar
+    const avatarEl = document.getElementById('viewerAuthorAvatar');
+    if (st.author_avatar_url) {
+        avatarEl.innerHTML = `<img src="${st.author_avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentNode.innerHTML='<span>${authorName.charAt(0).toUpperCase()}</span>'">`;
+    } else {
+        avatarEl.innerHTML = `<span>${authorName.charAt(0).toUpperCase()}</span>`;
+    }
+
+    // Delete button if own status
+    const delBtn = document.getElementById('btnDeleteMyStatus');
+    if (delBtn) delBtn.style.display = isMine ? 'block' : 'none';
+
+    // Content
+    const container = document.getElementById('viewerContentContainer');
+    if (st.media_type === 'image') {
+        container.style.backgroundColor = '#000';
+        container.innerHTML = `
+            <div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;">
+                <img src="${st.media_url}" style="max-width:100%;max-height:75%;object-fit:contain;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.6);" alt="Status Foto">
+                ${st.caption ? `<div style="margin-top:14px;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);color:#fff;padding:8px 16px;border-radius:999px;font-size:14px;font-weight:600;max-width:90%;text-align:center;">${escapeHtml(st.caption)}</div>` : ''}
+            </div>
+        `;
+    } else {
+        const bgCol = st.background_color || '#2563EB';
+        container.style.backgroundColor = bgCol;
+        container.innerHTML = `
+            <div style="padding:32px 24px;text-align:center;color:#fff;font-size:22px;font-weight:800;line-height:1.45;word-break:break-word;max-width:90%;">
+                ${escapeHtml(st.caption || '')}
+            </div>
+        `;
+    }
+
+    // Load comments count & list
+    loadActiveStatusComments();
+
+    // Auto advance after 6s for text, 7s for image
+    storyAutoTimer = setTimeout(() => {
+        if (currentStoryIdx < activeStoryList.length - 1) {
+            currentStoryIdx++;
+            renderCurrentStory();
+        } else {
+            closeStatusViewerModal();
+        }
+    }, st.media_type === 'image' ? 7000 : 6000);
+}
+
+function handleStoryTouchTap(e) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    if (clickX < rect.width * 0.35) {
+        // Tap left: previous story
+        if (currentStoryIdx > 0) {
+            currentStoryIdx--;
+            renderCurrentStory();
+        }
+    } else {
+        // Tap right: next story
+        if (currentStoryIdx < activeStoryList.length - 1) {
+            currentStoryIdx++;
+            renderCurrentStory();
+        } else {
+            closeStatusViewerModal();
+        }
+    }
+}
+
+function toggleStatusCommentsDrawer() {
+    const drawer = document.getElementById('viewerCommentsDrawer');
+    if (!drawer) return;
+    if (drawer.style.display === 'none') {
+        drawer.style.display = 'block';
+        clearTimeout(storyAutoTimer); // pause auto advance when reading comments
+    } else {
+        drawer.style.display = 'none';
+    }
+}
+
+function loadActiveStatusComments() {
+    const st = activeStoryList[currentStoryIdx];
+    if (!st || !st.id) return;
+
+    fetch(`/chat/status/comments/${st.id}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const comments = data.comments || [];
+            const countLabel = document.getElementById('viewerCommentsCountLabel');
+            if (countLabel) {
+                countLabel.textContent = comments.length > 0 ? `Lihat Komentar Teman (${comments.length})` : 'Komentar Teman (0)';
+            }
+            const listEl = document.getElementById('viewerCommentsList');
+            if (listEl) {
+                if (comments.length === 0) {
+                    listEl.innerHTML = '<div style="color:rgba(255,255,255,0.6);text-align:center;padding:10px;">Belum ada komentar dari teman.</div>';
+                } else {
+                    listEl.innerHTML = comments.map(c => `
+                        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-start;">
+                            <div style="width:24px;height:24px;border-radius:50%;background:#2563EB;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">
+                                ${(c.user_name || 'T').charAt(0).toUpperCase()}
+                            </div>
+                            <div style="flex:1;">
+                                <span style="font-weight:700;color:#38BDF8;font-size:11px;">${escapeHtml(c.user_name || 'Teman')}: </span>
+                                <span style="color:#fff;font-size:12px;">${escapeHtml(c.comment || '')}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+    })
+    .catch(() => {});
+}
+
+function submitStatusComment(e) {
+    e.preventDefault();
+    const st = activeStoryList[currentStoryIdx];
+    if (!st || !st.id) return;
+
+    const input = document.getElementById('viewerCommentInput');
+    const comment = input.value.trim();
+    if (!comment) return;
+
+    clearTimeout(storyAutoTimer);
+    input.value = '';
+
+    const formData = new FormData();
+    formData.append('status_id', st.id);
+    formData.append('comment', comment);
+
+    fetch('/chat/status/comment', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const drawer = document.getElementById('viewerCommentsDrawer');
+            if (drawer) drawer.style.display = 'block';
+            loadActiveStatusComments();
+        } else {
+            alert(data.message || 'Gagal mengirim komentar.');
+        }
+    })
+    .catch(() => {
+        alert('Terjadi kesalahan saat mengirim komentar.');
+    });
+}
+
+function deleteActiveStatus() {
+    const st = activeStoryList[currentStoryIdx];
+    if (!st || !st.id) return;
+    if (!confirm('Hapus status ini?')) return;
+
+    fetch(`/chat/status/delete/${st.id}`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            closeStatusViewerModal();
+            location.reload();
+        } else {
+            alert(data.message || 'Gagal menghapus status.');
+        }
+    })
+    .catch(() => {
+        alert('Terjadi kesalahan jaringan.');
     });
 }
 

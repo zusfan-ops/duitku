@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../config/api_config.dart';
 import '../../services/api_service.dart';
 import 'chat_media_helpers.dart';
 
@@ -295,13 +296,38 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         titleSpacing: 0,
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 19,
-              backgroundColor: isDark ? const Color(0xFF2A3942) : const Color(0xFF128C7E),
-              child: Text(
-                widget.friendName.isNotEmpty ? widget.friendName[0].toUpperCase() : 'T',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
-              ),
+            ClipOval(
+              child: (widget.friendAvatar != null &&
+                      widget.friendAvatar!.isNotEmpty &&
+                      (widget.friendAvatar!.startsWith('http') ||
+                       widget.friendAvatar!.contains('/') ||
+                       widget.friendAvatar!.endsWith('.jpg') ||
+                       widget.friendAvatar!.endsWith('.png') ||
+                       widget.friendAvatar!.endsWith('.webp')))
+                  ? Image.network(
+                      widget.friendAvatar!.startsWith('http')
+                          ? widget.friendAvatar!
+                          : '${ApiConfig.baseUrl}${widget.friendAvatar!.startsWith('/') ? widget.friendAvatar! : '/${widget.friendAvatar!}'}',
+                      width: 38,
+                      height: 38,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => CircleAvatar(
+                        radius: 19,
+                        backgroundColor: isDark ? const Color(0xFF2A3942) : const Color(0xFF128C7E),
+                        child: Text(
+                          widget.friendName.isNotEmpty ? widget.friendName[0].toUpperCase() : 'T',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                        ),
+                      ),
+                    )
+                  : CircleAvatar(
+                      radius: 19,
+                      backgroundColor: isDark ? const Color(0xFF2A3942) : const Color(0xFF128C7E),
+                      child: Text(
+                        widget.friendName.isNotEmpty ? widget.friendName[0].toUpperCase() : 'T',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                      ),
+                    ),
             ),
             const SizedBox(width: 10),
             Expanded(

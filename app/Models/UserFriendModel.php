@@ -176,9 +176,11 @@ class UserFriendModel extends Model
                 u.name,
                 u.username,
                 u.phone,
-                u.avatar
+                u.avatar,
+                s_img.value AS avatar_image
             FROM user_friends uf
             JOIN users u ON (u.id = CASE WHEN uf.user_id = ? THEN uf.friend_id ELSE uf.user_id END)
+            LEFT JOIN settings s_img ON s_img.user_id = u.id AND s_img.key = 'avatar_image'
             WHERE (uf.user_id = ? OR uf.friend_id = ?)
               AND uf.status = 'accepted'
             ORDER BY u.name ASC
@@ -201,9 +203,11 @@ class UserFriendModel extends Model
                 u.name AS requester_name,
                 u.username AS requester_username,
                 u.avatar AS requester_avatar,
+                s_img.value AS requester_avatar_image,
                 u.phone AS requester_phone
             FROM user_friends uf
             JOIN users u ON u.id = uf.user_id
+            LEFT JOIN settings s_img ON s_img.user_id = u.id AND s_img.key = 'avatar_image'
             WHERE uf.friend_id = ?
               AND uf.status = 'pending'
             ORDER BY uf.id DESC

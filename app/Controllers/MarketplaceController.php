@@ -13,6 +13,7 @@ use App\Models\NotificationModel;
 use App\Models\SettingModel;
 use App\Models\UserFriendModel;
 use App\Models\UserModel;
+use App\Models\UserStatusModel;
 use App\Services\FcmService;
 use App\Services\ReverbService;
 
@@ -27,6 +28,7 @@ class MarketplaceController extends BaseController
     protected UserFriendModel         $friendModel;
     protected UserModel               $userModel;
     protected SettingModel            $settingModel;
+    protected UserStatusModel         $statusModel;
     protected NotificationModel       $notificationModel;
     protected FcmService              $fcmService;
     protected ChatConversationSettingModel $convSettingModel;
@@ -43,6 +45,7 @@ class MarketplaceController extends BaseController
         $this->friendModel        = new UserFriendModel();
         $this->userModel          = new UserModel();
         $this->settingModel       = new SettingModel();
+        $this->statusModel        = new UserStatusModel();
         $this->notificationModel  = new NotificationModel();
         $this->fcmService         = new FcmService();
         $this->convSettingModel   = new ChatConversationSettingModel();
@@ -866,15 +869,16 @@ class MarketplaceController extends BaseController
                     continue;
                 }
                 $directConvs[] = [
-                    'partner_id'        => $fId,
-                    'partner_name'      => $f['name'] ?: ($f['username'] ?: 'Teman'),
-                    'partner_username'  => $f['username'] ?: '',
-                    'partner_avatar'    => $f['avatar'] ?: '',
-                    'partner_phone'     => $f['phone'] ?: '',
-                    'last_message'      => 'Ketuk untuk mulai mengobrol',
-                    'last_sender_id'    => 0,
-                    'last_message_time' => $f['friends_since'] ?? date('Y-m-d H:i:s'),
-                    'unread_count'      => 0,
+                    'partner_id'           => $fId,
+                    'partner_name'         => $f['name'] ?: ($f['username'] ?: 'Teman'),
+                    'partner_username'     => $f['username'] ?: '',
+                    'partner_avatar'       => $f['avatar'] ?: '',
+                    'partner_avatar_image' => $f['avatar_image'] ?? '',
+                    'partner_phone'        => $f['phone'] ?: '',
+                    'last_message'         => 'Ketuk untuk mulai mengobrol',
+                    'last_sender_id'       => 0,
+                    'last_message_time'    => $f['friends_since'] ?? date('Y-m-d H:i:s'),
+                    'unread_count'         => 0,
                 ];
             }
         }
@@ -897,6 +901,14 @@ class MarketplaceController extends BaseController
                 }
             }
 
+            $avatarImg = $c['partner_avatar_image'] ?? null;
+            if (empty($avatarImg)) {
+                $avatarImg = $this->settingModel->get($fId, 'avatar_image');
+            }
+            $avatarUrl = ($avatarImg && file_exists(FCPATH . 'uploads/avatars/' . $avatarImg))
+                ? ('/uploads/avatars/' . $avatarImg)
+                : '';
+
             $normalizedDirect[] = [
                 'type'              => 'direct',
                 'partner_id'        => $fId,
@@ -905,6 +917,7 @@ class MarketplaceController extends BaseController
                 'partner_name'      => $c['partner_name'] ?: ($c['partner_username'] ?: 'Teman'),
                 'partner_username'  => $c['partner_username'] ?: '',
                 'partner_avatar'    => $c['partner_avatar'] ?: '',
+                'partner_avatar_url'=> $avatarUrl,
                 'partner_phone'     => $c['partner_phone'] ?: '',
                 'last_message'      => $c['last_message'],
                 'last_sender_id'    => (int)$c['last_sender_id'],
@@ -999,10 +1012,25 @@ class MarketplaceController extends BaseController
         // 5. Total unread chat
         $totalUnread = $this->chatModel->getTotalUnreadCount($userId) + $this->directChatModel->getTotalUnreadCount($userId);
 
+        // 6. Status/Stories teman
+        $friendStatuses = $this->statusModel->getFriendStatuses($userId);
+        foreach ($friendStatuses as &$st) {
+            $st['is_mine'] = ((int)$st['user_id'] === (int)$userId);
+            $img = $st['author_avatar_image'] ?? null;
+            if (empty($img)) {
+                $img = $this->settingModel->get((int)$st['user_id'], 'avatar_image');
+            }
+            $st['author_avatar_url'] = ($img && file_exists(FCPATH . 'uploads/avatars/' . $img)) ? ('/uploads/avatars/' . $img) : '';
+            if (!empty($st['media_url']) && !str_starts_with($st['media_url'], 'http')) {
+                $st['media_url'] = '/' . ltrim($st['media_url'], '/');
+            }
+        }
+
         if ($this->request->isAJAX() || $this->request->getGet('format') === 'json') {
             return $this->response->setJSON([
                 'status'           => 'success',
                 'conversations'    => $allConvs,
+                'statuses'         => $friendStatuses,
                 'archivedCount'    => $archivedCount,
                 'incomingRequests' => $incomingRequests,
                 'totalUnread'      => $totalUnread,
@@ -1013,6 +1041,7 @@ class MarketplaceController extends BaseController
         return view('marketplace/conversations', [
             'pageTitle'        => 'Pesan & Obrolan',
             'conversations'    => $allConvs,
+            'statuses'         => $friendStatuses,
             'archivedCount'    => $archivedCount,
             'incomingRequests' => $incomingRequests,
             'friends'          => $friends,
@@ -1663,5 +1692,107 @@ class MarketplaceController extends BaseController
         } catch (\Throwable $e) {
             return $this->response->setJSON(['success' => false, 'message' => 'Gagal mengirim pesan: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * POST /status/create (Web PWA)
+     */
+    public function createStatus()
+    {
+        $userId = session()->get('user_id');
+        if (!$userId) return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
+
+        $type = $this->request->getPost('type') ?: 'text';
+        $caption = trim((string)($this->request->getPost('caption') ?? ''));
+        $bgColor = trim((string)($this->request->getPost('background_color') ?? '#2563EB'));
+        $mediaUrl = null;
+
+        if ($type === 'image') {
+            $file = $this->request->getFile('image');
+            if ($file && $file->isValid() && !$file->hasMoved()) {
+                $dir = FCPATH . 'uploads/statuses';
+                if (!is_dir($dir)) mkdir($dir, 0755, true);
+                $newName = $file->getRandomName();
+                $file->move($dir, $newName);
+                $mediaUrl = 'uploads/statuses/' . $newName;
+            } else {
+                return $this->response->setJSON(['success' => false, 'message' => 'Foto status wajib diunggah.']);
+            }
+        } else {
+            if (empty($caption)) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Teks status tidak boleh kosong.']);
+            }
+        }
+
+        $status = $this->statusModel->createStatus($userId, $type, $mediaUrl, $caption, $bgColor);
+        return $this->response->setJSON(['success' => true, 'message' => 'Status berhasil dibuat!', 'status' => $status]);
+    }
+
+    /**
+     * POST /status/comment (Web PWA)
+     */
+    public function commentStatus()
+    {
+        $userId = session()->get('user_id');
+        if (!$userId) return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
+
+        $statusId = (int)$this->request->getPost('status_id');
+        $commentText = trim((string)($this->request->getPost('comment') ?? ''));
+
+        if ($statusId <= 0 || empty($commentText)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Status dan komentar wajib diisi.']);
+        }
+
+        $status = $this->statusModel->getStatusIfAllowed($statusId, $userId);
+        if (!$status) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Akses ditolak atau status sudah kedaluwarsa.']);
+        }
+
+        $commentModel = new \App\Models\UserStatusCommentModel();
+        $saved = $commentModel->addComment($statusId, $userId, $commentText);
+
+        $authorId = (int)$status['user_id'];
+        if ($authorId !== $userId) {
+            $myInfo = $this->userModel->find($userId);
+            $myName = $myInfo['name'] ?: ($myInfo['username'] ?: 'Teman');
+
+            try {
+                $this->notificationModel->insert([
+                    'user_id'    => $authorId,
+                    'title'      => "💬 Komentar Status dari {$myName}",
+                    'message'    => $commentText,
+                    'type'       => 'status_comment',
+                    'action_url' => '/chat?status_id=' . $statusId,
+                ]);
+            } catch (\Throwable $e) {}
+        }
+
+        return $this->response->setJSON(['success' => true, 'message' => 'Komentar terkirim!', 'comment' => $saved]);
+    }
+
+    /**
+     * GET /status/(:num)/comments (Web PWA)
+     */
+    public function statusComments(int $statusId)
+    {
+        $userId = session()->get('user_id');
+        if (!$userId) return $this->response->setJSON(['success' => false, 'message' => 'Unauthorized']);
+
+        $status = $this->statusModel->getStatusIfAllowed($statusId, $userId);
+        if (!$status) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Akses ditolak atau status tidak ditemukan.']);
+        }
+
+        $commentModel = new \App\Models\UserStatusCommentModel();
+        $comments = $commentModel->getCommentsForStatus($statusId);
+        foreach ($comments as &$c) {
+            $img = $c['user_avatar_image'] ?? null;
+            if (empty($img)) {
+                $img = $this->settingModel->get((int)$c['user_id'], 'avatar_image');
+            }
+            $c['user_avatar_url'] = ($img && file_exists(FCPATH . 'uploads/avatars/' . $img)) ? ('/uploads/avatars/' . $img) : '';
+        }
+
+        return $this->response->setJSON(['success' => true, 'comments' => $comments]);
     }
 }

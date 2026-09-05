@@ -287,6 +287,9 @@ $routes->post('/chat/conversation/pin',              'MarketplaceController::pin
 $routes->post('/chat/conversation/archive',          'MarketplaceController::archiveConversation', ['filter' => 'auth']);
 $routes->post('/chat/conversation/delete',           'MarketplaceController::deleteConversation', ['filter' => 'auth']);
 $routes->post('/chat/upload',                        'MarketplaceController::uploadChatAttachment', ['filter' => 'auth']);
+$routes->post('/status/create',                      'MarketplaceController::createStatus', ['filter' => 'auth']);
+$routes->post('/status/comment',                     'MarketplaceController::commentStatus', ['filter' => 'auth']);
+$routes->get('/status/(:num)/comments',              'MarketplaceController::statusComments/$1', ['filter' => 'auth']);
 $routes->post('/marketplace/status/(:num)',          'MarketplaceController::updateStatus/$1', ['filter' => 'auth']);
 $routes->post('/marketplace/delete/(:num)',          'MarketplaceController::delete/$1', ['filter' => 'auth']);
 $routes->get('/u/(:segment)',                        'MarketplaceController::userStore/$1');
@@ -488,6 +491,13 @@ $routes->group('api', function ($routes) {
         $routes->post('chat/conversation/archive',        'Api\ChatController::archiveConversation');
         $routes->post('chat/conversation/delete',         'Api\ChatController::deleteConversation');
         $routes->post('chat/upload',                      'Api\ChatController::uploadAttachment');
+
+        // Friend-Only Status / Stories API
+        $routes->get('status/feed',                       'Api\StatusController::feed');
+        $routes->post('status/create',                    'Api\StatusController::create');
+        $routes->post('status/comment',                   'Api\StatusController::comment');
+        $routes->get('status/(:num)/comments',            'Api\StatusController::comments/$1');
+        $routes->post('status/delete/(:num)',             'Api\StatusController::delete/$1');
     });
 });
 

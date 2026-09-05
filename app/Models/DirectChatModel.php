@@ -132,6 +132,7 @@ class DirectChatModel extends Model
                     u.name AS partner_name,
                     u.username AS partner_username,
                     u.avatar AS partner_avatar,
+                    s_img.value AS partner_avatar_image,
                     u.phone AS partner_phone,
                     last_m.message AS last_message,
                     last_m.sender_id AS last_sender_id,
@@ -153,6 +154,7 @@ class DirectChatModel extends Model
                 ) dc
                 JOIN direct_chats last_m ON last_m.id = dc.max_id
                 JOIN users u ON u.id = dc.partner_id
+                LEFT JOIN settings s_img ON s_img.user_id = u.id AND s_img.key = 'avatar_image'
                 ORDER BY last_m.id DESC
             ";
 

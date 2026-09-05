@@ -6,6 +6,7 @@ use App\Models\ChatConversationSettingModel;
 use App\Models\DirectChatModel;
 use App\Models\MarketplaceChatModel;
 use App\Models\NotificationModel;
+use App\Models\SettingModel;
 use App\Models\UserFriendModel;
 use App\Models\UserModel;
 use App\Services\FcmService;
@@ -17,6 +18,7 @@ class ChatController extends ApiController
     protected DirectChatModel      $directChatModel;
     protected MarketplaceChatModel $marketChatModel;
     protected UserModel            $userModel;
+    protected SettingModel         $settingModel;
     protected NotificationModel    $notifModel;
     protected FcmService           $fcmService;
     protected ChatConversationSettingModel $convSettingModel;
@@ -28,10 +30,22 @@ class ChatController extends ApiController
         $this->directChatModel = new DirectChatModel();
         $this->marketChatModel = new MarketplaceChatModel();
         $this->userModel       = new UserModel();
+        $this->settingModel    = new SettingModel();
         $this->notifModel      = new NotificationModel();
         $this->fcmService      = new FcmService();
         $this->convSettingModel = new ChatConversationSettingModel();
         $this->reverbService   = new ReverbService();
+    }
+
+    private function resolveAvatarUrl(int $userId, ?string $avatarImage = null): string
+    {
+        if (empty($avatarImage)) {
+            $avatarImage = $this->settingModel->get($userId, 'avatar_image');
+        }
+        if ($avatarImage && file_exists(FCPATH . 'uploads/avatars/' . $avatarImage)) {
+            return '/uploads/avatars/' . $avatarImage;
+        }
+        return '';
     }
 
     /**
@@ -226,15 +240,17 @@ class ChatController extends ApiController
 
         $messages = $this->directChatModel->getMessages($userId, $friendId, $afterId);
         $friend   = $this->userModel->find($friendId);
+        $friendAvatarUrl = $this->resolveAvatarUrl($friendId);
 
         return $this->ok([
             'messages' => $messages,
             'friend'   => [
-                'id'       => (int)$friendId,
-                'name'     => $friend['name'] ?? '',
-                'username' => $friend['username'] ?? '',
-                'avatar'   => $friend['avatar'] ?? '',
-                'phone'    => $friend['phone'] ?? '',
+                'id'         => (int)$friendId,
+                'name'       => $friend['name'] ?? '',
+                'username'   => $friend['username'] ?? '',
+                'avatar'     => $friend['avatar'] ?? '',
+                'avatar_url' => $friendAvatarUrl,
+                'phone'      => $friend['phone'] ?? '',
             ],
             'my_id'    => $userId,
         ]);
@@ -254,68 +270,64 @@ class ChatController extends ApiController
         if ($friendId <= 0) {
             return $this->fail('ID Teman tidak valid.');
         }
-        if (empty($message)) {
+
+        if ($friendId === $userId) {
+            return $this->fail('Tidak dapat mengirim pesan ke diri sendiri.');
+        }
+
+        if ($message === '') {
             return $this->fail('Pesan tidak boleh kosong.');
         }
 
-        // Pastikan keduanya berteman sebelum bisa chat
-        if (!$this->friendModel->isFriend($userId, $friendId)) {
-            return $this->fail('Anda harus berteman terlebih dahulu untuk mengirim pesan langsung.');
-        }
-
+        // Simpan pesan
         $chat = $this->directChatModel->sendMessage($userId, $friendId, $message);
-        $sender = $this->userModel->find($userId);
-        $senderName = $sender['name'] ?? 'Teman';
-
-        // 1. In-app notifikasi
-        try {
-            $this->notifModel->insert([
-                'user_id'    => $friendId,
-                'title'      => "💬 {$senderName}",
-                'message'    => $message,
-                'type'       => 'direct_chat',
-                'action_url' => '/chat?direct_user=' . $userId,
-            ]);
-        } catch (\Throwable $e) {
-            log_message('error', 'Direct chat in-app notif error: ' . $e->getMessage());
+        if (!$chat) {
+            return $this->fail('Gagal mengirim pesan.');
         }
 
-        // 2. FCM Push notification
+        // Ambil info pengirim
+        $sender = $this->userModel->find($userId);
+        $senderName = $sender['name'] ?: ($sender['username'] ?: 'Teman');
+
+        // Kirim event Reverb WebSocket secara realtime
+        try {
+            $this->reverbService->broadcast(
+                "user.{$friendId}",
+                'chat.received',
+                [
+                    'type'         => 'direct',
+                    'sender_id'    => $userId,
+                    'sender_name'  => $senderName,
+                    'sender_username' => $sender['username'] ?? '',
+                    'message'      => $message,
+                    'created_at'   => $chat['created_at'] ?? date('Y-m-d H:i:s'),
+                    'chat_id'      => (int)($chat['id'] ?? 0),
+                    'partner_id'   => $userId,
+                ]
+            );
+        } catch (\Throwable $e) {
+            log_message('error', 'Reverb direct chat broadcast error: ' . $e->getMessage());
+        }
+
+        // Kirim notifikasi FCM Push ke teman jika offline
         try {
             if ($this->fcmService->isConfigured()) {
                 $this->fcmService->sendToTopic(
                     "user_{$friendId}",
-                    "💬 {$senderName}",
+                    $senderName,
                     $message,
                     [
                         'type'         => 'direct_chat',
-                        'sender_id'    => (string)$userId,
-                        'sender_name'  => (string)$senderName,
+                        'friend_id'    => (string)$userId,
+                        'friend_name'  => (string)$senderName,
                         'message'      => (string)$message,
-                        'action_url'   => '/chat?direct_user=' . $userId,
+                        'action_url'   => '/chat',
                         'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
                     ]
                 );
             }
         } catch (\Throwable $e) {
             log_message('error', 'Direct chat FCM error: ' . $e->getMessage());
-        }
-
-        // 3. Broadcast via Laravel Reverb / Pusher WebSocket
-        try {
-            $this->reverbService->broadcast("user.{$friendId}", 'new-message', [
-                'type'              => 'direct',
-                'chat_id'           => $chat['id'] ?? null,
-                'sender_id'         => $userId,
-                'sender_name'       => $senderName,
-                'sender_username'   => $sender['username'] ?? '',
-                'sender_avatar'     => $sender['avatar'] ?? '',
-                'receiver_id'       => $friendId,
-                'message'           => $message,
-                'created_at'        => date('Y-m-d H:i:s'),
-            ]);
-        } catch (\Throwable $e) {
-            log_message('error', 'Reverb direct chat broadcast error: ' . $e->getMessage());
         }
 
         return $this->ok([
@@ -352,15 +364,16 @@ class ChatController extends ApiController
                     continue;
                 }
                 $directConvs[] = [
-                    'partner_id'        => $fId,
-                    'partner_name'      => $f['name'] ?: ($f['username'] ?: 'Teman'),
-                    'partner_username'  => $f['username'] ?: '',
-                    'partner_avatar'    => $f['avatar'] ?: '',
-                    'partner_phone'     => $f['phone'] ?: '',
-                    'last_message'      => 'Ketuk untuk mulai mengobrol',
-                    'last_sender_id'    => 0,
-                    'last_message_time' => $f['friends_since'] ?? date('Y-m-d H:i:s'),
-                    'unread_count'      => 0,
+                    'partner_id'           => $fId,
+                    'partner_name'         => $f['name'] ?: ($f['username'] ?: 'Teman'),
+                    'partner_username'     => $f['username'] ?: '',
+                    'partner_avatar'       => $f['avatar'] ?: '',
+                    'partner_avatar_image' => $f['avatar_image'] ?? '',
+                    'partner_phone'        => $f['phone'] ?: '',
+                    'last_message'         => 'Ketuk untuk mulai mengobrol',
+                    'last_sender_id'       => 0,
+                    'last_message_time'    => $f['friends_since'] ?? date('Y-m-d H:i:s'),
+                    'unread_count'         => 0,
                 ];
             }
         }
@@ -383,6 +396,8 @@ class ChatController extends ApiController
                 }
             }
 
+            $avatarUrl = $this->resolveAvatarUrl($fId, $c['partner_avatar_image'] ?? null);
+
             $normalizedDirect[] = [
                 'type'              => 'direct',
                 'partner_id'        => $fId,
@@ -391,6 +406,7 @@ class ChatController extends ApiController
                 'partner_name'      => $c['partner_name'] ?: ($c['partner_username'] ?: 'Teman'),
                 'partner_username'  => $c['partner_username'] ?: '',
                 'partner_avatar'    => $c['partner_avatar'] ?: '',
+                'partner_avatar_url'=> $avatarUrl,
                 'partner_phone'     => $c['partner_phone'] ?: '',
                 'last_message'      => $c['last_message'],
                 'last_sender_id'    => (int)$c['last_sender_id'],

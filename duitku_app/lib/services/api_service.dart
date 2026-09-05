@@ -1013,6 +1013,50 @@ class ApiService {
       'image_base64': base64Image,
     });
   }
+
+  // ── Friend-Only Status / Stories ──────────────────────────────
+  Future<Map<String, dynamic>> getStatusFeed() async {
+    return get('status/feed');
+  }
+
+  Future<Map<String, dynamic>> createTextStatus({
+    required String text,
+    String backgroundColor = '#2563EB',
+  }) async {
+    return post('status/create', {
+      'type': 'text',
+      'caption': text,
+      'background_color': backgroundColor,
+    });
+  }
+
+  Future<Map<String, dynamic>> createImageStatus({
+    required String imageBase64,
+    String? caption,
+  }) async {
+    final uploadRes = await uploadChatImage(imageBase64);
+    final mediaUrl = uploadRes['file_url'] ?? uploadRes['url'] ?? '';
+    return post('status/create', {
+      'type': 'image',
+      'media_url': mediaUrl,
+      'caption': caption ?? '',
+    });
+  }
+
+  Future<Map<String, dynamic>> commentStatus(int statusId, String comment) async {
+    return post('status/comment', {
+      'status_id': statusId,
+      'comment': comment,
+    });
+  }
+
+  Future<Map<String, dynamic>> getStatusComments(int statusId) async {
+    return get('status/$statusId/comments');
+  }
+
+  Future<Map<String, dynamic>> deleteStatus(int statusId) async {
+    return post('status/delete/$statusId', {});
+  }
 }
 
 

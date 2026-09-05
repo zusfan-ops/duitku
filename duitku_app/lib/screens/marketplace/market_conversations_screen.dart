@@ -7,6 +7,7 @@ import '../../models/friend.dart';
 import '../../providers/app_data_provider.dart';
 import '../../services/api_service.dart';
 import '../../theme.dart';
+import 'package:image_picker/image_picker.dart';
 import '../chat/direct_chat_screen.dart';
 import 'market_chat_screen.dart';
 
@@ -24,6 +25,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
   List<Map<String, dynamic>> _conversations = [];
   List<FriendRequest> _incomingRequests = [];
   List<Friend> _friends = [];
+  List<Map<String, dynamic>> _statuses = [];
   int _myId = 0;
   int _archivedCount = 0;
   Timer? _refreshTimer;
@@ -73,6 +75,14 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
       final friendsList = await ApiService.instance.getFriends();
       final parsedFriends = friendsList.map((e) => Friend.fromJson(Map<String, dynamic>.from(e as Map))).toList();
 
+      // 3. Ambil feed status teman
+      List<Map<String, dynamic>> parsedStatuses = [];
+      try {
+        final statusRes = await ApiService.instance.getStatusFeed();
+        final sList = (statusRes['statuses'] as List<dynamic>?) ?? [];
+        parsedStatuses = sList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      } catch (_) {}
+
       if (mounted) {
         final totalUnread = int.tryParse('${res['total_unread']}') ?? 0;
         final archived = int.tryParse('${res['archived_count']}') ?? 0;
@@ -96,6 +106,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
           _conversations = uniqueConvs;
           _incomingRequests = parsedReqs;
           _friends = parsedFriends;
+          _statuses = parsedStatuses;
           _archivedCount = archived;
           _isLoading = false;
         });
@@ -594,6 +605,10 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(14, 10, 14, 90),
         children: [
+          // 0. Friend-Only Status / Stories Tray
+          _buildStatusStoriesTray(),
+          const SizedBox(height: 12),
+
           // 1. Incoming Friend Requests Banner
           if (_incomingRequests.isNotEmpty) ...[
             Container(
@@ -641,10 +656,24 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                       ),
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: const Color(0xFF3B82F6),
-                            child: Text(rInit, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+                          ClipOval(
+                            child: (req.requesterAvatarImage != null && req.requesterAvatarImage!.isNotEmpty)
+                                ? Image.network(
+                                    _fullImageUrl(req.requesterAvatarImage),
+                                    width: 32,
+                                    height: 32,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: const Color(0xFF3B82F6),
+                                      child: Text(rInit, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+                                    ),
+                                  )
+                                : CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: const Color(0xFF3B82F6),
+                                    child: Text(rInit, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+                                  ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -752,6 +781,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                 final partnerName = (conv['partner_name'] ?? 'Teman').toString();
                 final partnerUsername = (conv['partner_username'] ?? '').toString();
                 final partnerAvatar = conv['partner_avatar'];
+                final partnerAvatarUrl = (conv['partner_avatar_url'] ?? conv['partner_avatar_image'] ?? '').toString();
                 final lastMsg = (conv['last_message'] ?? '').toString();
                 final unreadCount = int.tryParse('${conv['unread_count']}') ?? 0;
                 final lastSenderId = int.tryParse('${conv['last_sender_id']}') ?? 0;
@@ -783,7 +813,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                             friendId: partnerId,
                             friendName: partnerName,
                             friendUsername: partnerUsername,
-                            friendAvatar: partnerAvatar,
+                            friendAvatar: partnerAvatarUrl.isNotEmpty ? partnerAvatarUrl : partnerAvatar,
                           ),
                         ),
                       );
@@ -794,10 +824,24 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundColor: const Color(0xFF2563EB),
-                            child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
+                          ClipOval(
+                            child: partnerAvatarUrl.isNotEmpty
+                                ? Image.network(
+                                    _fullImageUrl(partnerAvatarUrl),
+                                    width: 48,
+                                    height: 48,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => CircleAvatar(
+                                      radius: 24,
+                                      backgroundColor: const Color(0xFF2563EB),
+                                      child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
+                                    ),
+                                  )
+                                : CircleAvatar(
+                                    radius: 24,
+                                    backgroundColor: const Color(0xFF2563EB),
+                                    child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
+                                  ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -1236,6 +1280,657 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
             child: const Text('Hapus', style: TextStyle(color: Colors.white)),
           ),
         ],
+      ),
+    );
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // STATUS / STORIES FEATURE (FRIEND-ONLY)
+  // ═════════════════════════════════════════════════════════════════════════
+
+  Widget _buildStatusStoriesTray() {
+    final myStatuses = _statuses.where((s) => s['is_mine'] == true).toList();
+    final friendsStatuses = _statuses.where((s) => s['is_mine'] != true).toList();
+
+    // Group friends statuses by user_id
+    final Map<int, List<Map<String, dynamic>>> groupedFriends = {};
+    for (final st in friendsStatuses) {
+      final uId = int.tryParse('${st['user_id']}') ?? 0;
+      groupedFriends.putIfAbsent(uId, () => []).add(st);
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 6, bottom: 8),
+            child: Row(
+              children: [
+                const Icon(Icons.circle_notifications_rounded, size: 16, color: Color(0xFF2563EB)),
+                const SizedBox(width: 6),
+                const Text(
+                  'Status Teman',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                ),
+                const Spacer(),
+                Text(
+                  'Hanya Teman',
+                  style: TextStyle(fontSize: 10.5, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. My Status Item
+                GestureDetector(
+                  onTap: () {
+                    if (myStatuses.isNotEmpty) {
+                      _openStatusViewer(myStatuses, 0);
+                    } else {
+                      _showCreateStatusSheet();
+                    }
+                  },
+                  child: Container(
+                    width: 68,
+                    margin: const EdgeInsets.only(right: 10),
+                    child: Column(
+                      children: [
+                        Stack(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(2.5),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: myStatuses.isNotEmpty ? const Color(0xFF2563EB) : Colors.grey.shade300,
+                                  width: 2.2,
+                                ),
+                              ),
+                              child: const CircleAvatar(
+                                radius: 24,
+                                backgroundColor: Color(0xFFEFF6FF),
+                                child: Icon(Icons.person_rounded, color: Color(0xFF2563EB), size: 28),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: _showCreateStatusSheet,
+                                child: Container(
+                                  width: 20,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF2563EB),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  child: const Icon(Icons.add, size: 13, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          myStatuses.isNotEmpty ? 'Status Anda' : 'Buat Status',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // 2. Friends Statuses
+                ...groupedFriends.entries.map((entry) {
+                  final list = entry.value;
+                  final latest = list.first;
+                  final name = (latest['author_name'] ?? 'Teman').toString();
+                  final avatarUrl = (latest['author_avatar_url'] ?? '').toString();
+                  final init = name.isNotEmpty ? name[0].toUpperCase() : 'T';
+
+                  return GestureDetector(
+                    onTap: () => _openStatusViewer(list, 0),
+                    child: Container(
+                      width: 68,
+                      margin: const EdgeInsets.only(right: 10),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(2.5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF2563EB), Color(0xFF10B981)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+                            child: ClipOval(
+                              child: avatarUrl.isNotEmpty
+                                  ? Image.network(
+                                      _fullImageUrl(avatarUrl),
+                                      width: 48,
+                                      height: 48,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => CircleAvatar(
+                                        radius: 24,
+                                        backgroundColor: const Color(0xFF3B82F6),
+                                        child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                                      ),
+                                    )
+                                  : CircleAvatar(
+                                      radius: 24,
+                                      backgroundColor: const Color(0xFF3B82F6),
+                                      child: Text(init, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            name,
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCreateStatusSheet() {
+    final textCtrl = TextEditingController();
+    String selectedColor = '#2563EB';
+    bool isPosting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final colors = ['#2563EB', '#7C3AED', '#059669', '#DC2626', '#D97706', '#0F172A'];
+
+          return Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              left: 18,
+              right: 18,
+              top: 18,
+            ),
+            decoration: BoxDecoration(
+              color: Theme.of(ctx).scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Buat Status Baru',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDBEAFE),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text('Hanya Teman', style: TextStyle(color: Color(0xFF1D4ED8), fontSize: 11, fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Preview Box
+                  Container(
+                    height: 140,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Color(int.parse(selectedColor.replaceFirst('#', '0xFF'))),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(int.parse(selectedColor.replaceFirst('#', '0x40'))),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    alignment: Alignment.center,
+                    child: TextField(
+                      controller: textCtrl,
+                      maxLines: 4,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+                      decoration: const InputDecoration(
+                        hintText: 'Ketik apa yang Anda pikirkan...',
+                        hintStyle: TextStyle(color: Colors.white70),
+                        border: InputBorder.none,
+                      ),
+                      onChanged: (_) => setModalState(() {}),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Color Picker
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: colors.map((c) {
+                      final isSel = selectedColor == c;
+                      return GestureDetector(
+                        onTap: () => setModalState(() => selectedColor = c),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 5),
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: Color(int.parse(c.replaceFirst('#', '0xFF'))),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSel ? Colors.white : Colors.transparent,
+                              width: 2.5,
+                            ),
+                            boxShadow: isSel
+                                ? [const BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))]
+                                : null,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 18),
+
+                  Row(
+                    children: [
+                      // Upload Foto Option
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: isPosting
+                              ? null
+                              : () async {
+                                  final picker = ImagePicker();
+                                  final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 75);
+                                  if (picked == null) return;
+                                  final b64 = await ApiService.instance.base64FromFile(picked.path);
+                                  if (b64 == null) return;
+
+                                  if (sheetCtx.mounted) {
+                                    Navigator.pop(sheetCtx);
+                                  }
+                                  setState(() => _isLoading = true);
+                                  try {
+                                    await ApiService.instance.createImageStatus(
+                                      imageBase64: b64,
+                                      caption: textCtrl.text.trim(),
+                                    );
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Foto status berhasil dibagikan ke teman!')),
+                                      );
+                                      _loadData(isSilent: true);
+                                    }
+                                  } catch (e) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                                      setState(() => _isLoading = false);
+                                    }
+                                  }
+                                },
+                          icon: const Icon(Icons.photo_camera_rounded, size: 18),
+                          label: const Text('Foto'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Post Text Status
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton.icon(
+                          onPressed: isPosting || textCtrl.text.trim().isEmpty
+                              ? null
+                              : () async {
+                                  setModalState(() => isPosting = true);
+                                  try {
+                                    await ApiService.instance.createTextStatus(
+                                      text: textCtrl.text.trim(),
+                                      backgroundColor: selectedColor,
+                                    );
+                                    if (sheetCtx.mounted) Navigator.pop(sheetCtx);
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Status berhasil dibagikan ke teman!')),
+                                      );
+                                      _loadData(isSilent: true);
+                                    }
+                                  } catch (e) {
+                                    if (sheetCtx.mounted) {
+                                      setModalState(() => isPosting = false);
+                                      ScaffoldMessenger.of(sheetCtx).showSnackBar(SnackBar(content: Text('Error: $e')));
+                                    }
+                                  }
+                                },
+                          icon: isPosting
+                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : const Icon(Icons.send_rounded, size: 18),
+                          label: const Text('Bagikan'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2563EB),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _openStatusViewer(List<Map<String, dynamic>> statuses, int initialIndex) {
+    int currentIndex = initialIndex;
+    final commentCtrl = TextEditingController();
+    List<Map<String, dynamic>> comments = [];
+    bool loadingComments = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.black,
+      builder: (viewerCtx) => StatefulBuilder(
+        builder: (ctx, setViewerState) {
+          final st = statuses[currentIndex];
+          final authorName = (st['author_name'] ?? 'Teman').toString();
+          final authorAvatar = (st['author_avatar_url'] ?? '').toString();
+          final caption = (st['caption'] ?? '').toString();
+          final mediaType = st['media_type'] ?? 'text';
+          final mediaUrl = st['media_url'] ?? '';
+          final bgColorStr = st['background_color'] ?? '#2563EB';
+          final isMine = st['is_mine'] == true;
+          final statusId = int.tryParse('${st['id']}') ?? 0;
+
+          Color bgColor = const Color(0xFF2563EB);
+          try {
+            bgColor = Color(int.parse(bgColorStr.replaceFirst('#', '0xFF')));
+          } catch (_) {}
+
+          return Container(
+            height: MediaQuery.of(ctx).size.height * 0.92,
+            color: Colors.black,
+            child: Column(
+              children: [
+                // Top Progress Indicators
+                Padding(
+                  padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
+                  child: Row(
+                    children: List.generate(statuses.length, (i) {
+                      return Expanded(
+                        child: Container(
+                          height: 3,
+                          margin: const EdgeInsets.symmetric(horizontal: 2),
+                          decoration: BoxDecoration(
+                            color: i <= currentIndex ? Colors.white : Colors.white24,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+
+                // Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    children: [
+                      ClipOval(
+                        child: authorAvatar.isNotEmpty
+                            ? Image.network(
+                                _fullImageUrl(authorAvatar),
+                                width: 36,
+                                height: 36,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => const CircleAvatar(radius: 18, child: Icon(Icons.person)),
+                              )
+                            : const CircleAvatar(radius: 18, child: Icon(Icons.person)),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              authorName,
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14),
+                            ),
+                            const Text('Hanya Teman • 24 Jam', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                      if (isMine)
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                          onPressed: () async {
+                            Navigator.pop(viewerCtx);
+                            try {
+                              await ApiService.instance.deleteStatus(statusId);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Status dihapus')));
+                                _loadData(isSilent: true);
+                              }
+                            } catch (_) {}
+                          },
+                        ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Colors.white),
+                        onPressed: () => Navigator.pop(viewerCtx),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Status Body
+                Expanded(
+                  child: GestureDetector(
+                    onTapUp: (details) {
+                      final width = MediaQuery.of(ctx).size.width;
+                      if (details.localPosition.dx > width / 2) {
+                        if (currentIndex < statuses.length - 1) {
+                          setViewerState(() => currentIndex++);
+                        } else {
+                          Navigator.pop(viewerCtx);
+                        }
+                      } else {
+                        if (currentIndex > 0) {
+                          setViewerState(() => currentIndex--);
+                        }
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      color: mediaType == 'image' ? Colors.black : bgColor,
+                      padding: const EdgeInsets.all(24),
+                      alignment: Alignment.center,
+                      child: mediaType == 'image'
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Image.network(
+                                    _fullImageUrl(mediaUrl),
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, _, _) => const Icon(Icons.broken_image_rounded, size: 64, color: Colors.white),
+                                  ),
+                                ),
+                                if (caption.isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      caption,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            )
+                          : Text(
+                              caption,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800, height: 1.4),
+                            ),
+                    ),
+                  ),
+                ),
+
+                // Bottom Comments Button & Quick Comment Bar
+                Container(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(ctx).viewInsets.bottom + 12,
+                    left: 14,
+                    right: 14,
+                    top: 10,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF1E293B),
+                    border: Border(top: BorderSide(color: Colors.white12)),
+                  ),
+                  child: Row(
+                    children: [
+                      // View Comments icon
+                      IconButton(
+                        icon: loadingComments
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.comment_outlined, color: Colors.white),
+                        tooltip: 'Lihat Komentar',
+                        onPressed: () async {
+                          setViewerState(() => loadingComments = true);
+                          try {
+                            final res = await ApiService.instance.getStatusComments(statusId);
+                            final cList = (res['comments'] as List<dynamic>?) ?? [];
+                            comments = cList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+                          } catch (_) {}
+                          setViewerState(() => loadingComments = false);
+
+                          if (ctx.mounted) {
+                            showModalBottomSheet(
+                              context: ctx,
+                              backgroundColor: Colors.white,
+                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                              builder: (_) => Container(
+                                padding: const EdgeInsets.all(16),
+                                height: 350,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Komentar Teman', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                                    const Divider(),
+                                    Expanded(
+                                      child: comments.isEmpty
+                                          ? const Center(child: Text('Belum ada komentar dari teman.', style: TextStyle(color: Colors.grey)))
+                                          : ListView.builder(
+                                              itemCount: comments.length,
+                                              itemBuilder: (_, i) {
+                                                final c = comments[i];
+                                                return ListTile(
+                                                  leading: CircleAvatar(child: Text((c['user_name'] ?? 'T')[0])),
+                                                  title: Text(c['user_name'] ?? 'Teman', style: const TextStyle(fontWeight: FontWeight.w700)),
+                                                  subtitle: Text(c['comment'] ?? ''),
+                                                );
+                                              },
+                                            ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: commentCtrl,
+                          style: const TextStyle(color: Colors.white, fontSize: 14),
+                          decoration: InputDecoration(
+                            hintText: 'Kirim balasan/komentar teman...',
+                            hintStyle: const TextStyle(color: Colors.white54, fontSize: 13),
+                            filled: true,
+                            fillColor: Colors.white10,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.send_rounded, color: Color(0xFF38BDF8)),
+                        onPressed: () async {
+                          final cText = commentCtrl.text.trim();
+                          if (cText.isEmpty) return;
+                          commentCtrl.clear();
+                          try {
+                            await ApiService.instance.commentStatus(statusId, cText);
+                            if (ctx.mounted) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Komentar terkirim!')));
+                            }
+                          } catch (e) {
+                            if (ctx.mounted) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Gagal: $e')));
+                            }
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

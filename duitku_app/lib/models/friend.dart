@@ -3,6 +3,7 @@ class Friend {
   final String name;
   final String username;
   final String? avatar;
+  final String? avatarImage;
   final String? phone;
   final String? friendsSince;
 
@@ -11,6 +12,7 @@ class Friend {
     required this.name,
     required this.username,
     this.avatar,
+    this.avatarImage,
     this.phone,
     this.friendsSince,
   });
@@ -21,6 +23,7 @@ class Friend {
       name: json['name'] ?? '',
       username: json['username'] ?? '',
       avatar: json['avatar'],
+      avatarImage: json['avatar_image'] ?? json['avatar_url'],
       phone: json['phone'],
       friendsSince: json['friends_since'],
     );
@@ -33,6 +36,7 @@ class FriendRequest {
   final String requesterName;
   final String requesterUsername;
   final String? requesterAvatar;
+  final String? requesterAvatarImage;
   final String? createdAt;
 
   FriendRequest({
@@ -41,6 +45,7 @@ class FriendRequest {
     required this.requesterName,
     required this.requesterUsername,
     this.requesterAvatar,
+    this.requesterAvatarImage,
     this.createdAt,
   });
 
@@ -51,6 +56,7 @@ class FriendRequest {
       requesterName: json['requester_name'] ?? '',
       requesterUsername: json['requester_username'] ?? '',
       requesterAvatar: json['requester_avatar'],
+      requesterAvatarImage: json['requester_avatar_image'] ?? json['avatar_image'] ?? json['avatar_url'],
       createdAt: json['created_at'],
     );
   }
@@ -61,6 +67,7 @@ class UserSearchResult {
   final String name;
   final String username;
   final String? avatar;
+  final String? avatarImage;
   final String friendStatus; // 'none', 'pending_sent', 'pending_received', 'friends'
   final int? requestId;
 
@@ -69,6 +76,7 @@ class UserSearchResult {
     required this.name,
     required this.username,
     this.avatar,
+    this.avatarImage,
     required this.friendStatus,
     this.requestId,
   });
@@ -79,6 +87,7 @@ class UserSearchResult {
       name: json['name'] ?? '',
       username: json['username'] ?? '',
       avatar: json['avatar'],
+      avatarImage: json['avatar_image'] ?? json['avatar_url'],
       friendStatus: json['friend_status'] ?? 'none',
       requestId: json['request_id'] != null ? int.tryParse('${json['request_id']}') : null,
     );
