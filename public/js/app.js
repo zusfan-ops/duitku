@@ -20,26 +20,53 @@
     // ── Body scroll lock ────────────────────────────────────────────────────
     // overflow:hidden alone doesn't stop touch-drag scrolling on iOS Safari,
     // which lets the background "slide" behind an open modal. Pin the body
-    // with position:fixed instead and restore the scroll position on unlock.
+    // with position:fixed and modal-open class, restore scroll position on unlock.
     let _scrollLockY = 0;
     window.DuitkuLockScroll = function () {
         _scrollLockY = window.scrollY || window.pageYOffset || 0;
+        document.documentElement.classList.add('modal-open');
+        document.body.classList.add('modal-open');
         document.body.style.position = 'fixed';
         document.body.style.top      = `-${_scrollLockY}px`;
         document.body.style.left     = '0';
         document.body.style.right    = '0';
         document.body.style.width    = '100%';
+        document.body.style.height   = '100%';
         document.body.style.overflow = 'hidden';
     };
     window.DuitkuUnlockScroll = function () {
+        document.documentElement.classList.remove('modal-open');
+        document.body.classList.remove('modal-open');
         document.body.style.position = '';
         document.body.style.top      = '';
         document.body.style.left     = '';
         document.body.style.right    = '';
         document.body.style.width    = '';
+        document.body.style.height   = '';
         document.body.style.overflow = '';
         window.scrollTo(0, _scrollLockY);
     };
+
+    // Prevent mobile rubber-band dragging of background when any modal is open
+    document.addEventListener('touchmove', function (e) {
+        if (document.body.classList.contains('modal-open') || document.querySelector('.modal-overlay.open')) {
+            if (e.target.closest('.modal-sheet, .todo-modal-sheet, .hs-sheet, .modal-body, .sheet-body, .mini-modal')) {
+                return; // allow smooth scrolling inside the sheet
+            }
+            e.preventDefault(); // stop background drag & size jitter
+        }
+    }, { passive: false });
+
+    // ESC key closes modal
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            if (typeof window.closeModal === 'function') window.closeModal();
+            document.querySelectorAll('.modal-overlay.open').forEach(el => {
+                el.classList.remove('open');
+            });
+            window.DuitkuUnlockScroll();
+        }
+    });
 
     // ── CSRF Helper ──────────────────────────────────────────────────────────
     function csrfHeaders() {
