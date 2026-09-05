@@ -288,7 +288,7 @@ table { max-width: 100%; }
     display: flex;
     align-items: center;
     justify-content: space-around;
-    z-index: 200;
+    z-index: 600;
     padding: 0 4px;
     box-sizing: border-box;
     box-shadow:
@@ -1009,30 +1009,38 @@ body:has(.modal-overlay.open) {
     overscroll-behavior: none !important;
 }
 
-/* Hide Dynamic Island Bottom Nav & Floating FAB when any modal is open */
+/* Bottom Nav STAYS VISIBLE just like in native apps! */
+.bottom-nav {
+    z-index: 600; /* stays above modal backdrop overlay (500) */
+    transition: opacity 0.2s ease, transform 0.25s ease;
+}
 body.modal-open .bottom-nav,
 body:has(.modal-overlay.open) .bottom-nav {
-    transform: translateX(-50%) translateY(120px) !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+    transform: translateX(-50%) translateY(0) !important;
+    opacity: 1 !important;
+    pointer-events: none !important; /* Modal barrier prevents accidental tab click while modal is open */
 }
 
+/* Hide floating FAB (+) when modal is open so it doesn't overlap modal sheet */
 body.modal-open .fab-floating-add,
 body:has(.modal-overlay.open) .fab-floating-add {
     transform: scale(0) !important;
     opacity: 0 !important;
     pointer-events: none !important;
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s ease;
 }
 
-.modal-overlay { /* z-index must beat bottom-nav (200) and fab (150) */
+.modal-overlay { /* backdrop dims behind bottom-nav (600) */
     position: fixed; inset: 0;
     background: rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     z-index: 500;
-    display: flex; align-items: flex-end; justify-content: center;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 12px;
+    padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
     opacity: 0; pointer-events: none;
     transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     overscroll-behavior: contain;
@@ -1043,19 +1051,18 @@ body:has(.modal-overlay.open) .fab-floating-add {
 }
 .modal-sheet {
     background: var(--bg-card);
-    border-radius: 24px 24px 0 0;
-    width: 100%; max-width: 480px;
+    border-radius: 24px !important;
+    width: 100%; max-width: 452px;
     margin: 0 auto;
-    padding: 0 20px;
-    padding-bottom: max(24px, env(safe-area-inset-bottom, 20px));
-    max-height: min(88dvh, 88vh);
+    padding: 0 20px 20px 20px;
+    max-height: calc(100dvh - 96px - env(safe-area-inset-bottom, 0px));
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     touch-action: pan-y;
     transform: translateY(100%);
     transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 .modal-overlay.open .modal-sheet { transform: translateY(0); }
 
