@@ -284,13 +284,14 @@
                             if (empty($ub['is_read'])) {
                                 $_layoutNotifs[] = [
                                     'id' => 'notif_' . $ub['id'],
+                                    'db_id' => (int)$ub['id'],
                                     'type' => 'broadcast',
                                     'title' => $ub['title'] ?? 'Pengumuman',
                                     'subtitle' => mb_strimwidth($ub['message'] ?? '', 0, 50, '...'),
                                     'amount' => 0,
                                     'days_left' => -99, // prioritas atas
                                     'icon' => '📢',
-                                    'action_url' => '/notifications',
+                                    'action_url' => $ub['action_url'] ?: '/notifications',
                                 ];
                             }
                         }
@@ -526,15 +527,22 @@
             <div style="display:flex;align-items:center;gap:8px">
                 <h3 style="margin:0;font-size:16px;font-weight:800">🔔 Notifikasi & Pengingat</h3>
                 <?php if (!empty($_layoutNotifs)): ?>
-                <span style="font-size:11px;font-weight:800;background:#FEE2E2;color:#DC2626;padding:2px 8px;border-radius:10px">
+                <span style="font-size:11px;font-weight:800;background:#FEE2E2;color:#DC2626;padding:2px 8px;border-radius:10px" id="notifModalBadge">
                     <?= count($_layoutNotifs) ?>
                 </span>
                 <?php endif; ?>
             </div>
-            <button class="modal-close" id="notifModalClose">✕</button>
+            <div style="display:flex;align-items:center;gap:8px">
+                <?php if (!empty($_layoutNotifs)): ?>
+                <button type="button" id="btnClearAllNotifs" onclick="clearAllNotifications()" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);border-radius:8px;padding:4px 10px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Bersihkan Notifikasi">
+                    🧹 Bersihkan
+                </button>
+                <?php endif; ?>
+                <button class="modal-close" id="notifModalClose">✕</button>
+            </div>
         </div>
 
-        <div style="padding:14px 16px 30px;overflow-y:auto;display:flex;flex-direction:column;gap:12px">
+        <div id="notifModalBody" style="padding:14px 16px 30px;overflow-y:auto;display:flex;flex-direction:column;gap:12px">
             <!-- Web Notification permission prompt -->
             <div id="webNotifPrompt" style="display:none;background:var(--primary-dim);border:1px solid var(--primary);border-radius:14px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
                 <div style="font-size:12px;color:var(--text-primary)">
@@ -550,15 +558,16 @@
             <div style="text-align:center;padding:40px 20px;color:var(--text-muted)">
                 <div style="font-size:44px;margin-bottom:10px">🎉</div>
                 <div style="font-weight:800;font-size:15px;color:var(--text-primary);margin-bottom:4px">Semua Aman Terkendali!</div>
-                <div style="font-size:12px">Tidak ada tagihan, hutang, atau pajak yang jatuh tempo dalam waktu dekat.</div>
+                <div style="font-size:12px">Tidak ada tagihan, hutang, atau notifikasi baru.</div>
             </div>
             <?php else: ?>
                 <?php foreach ($_layoutNotifs as $item):
                     $daysLeft = (int)($item['days_left'] ?? 0);
                     $cardClass = $daysLeft <= 0 ? 'urgent' : ($daysLeft <= 2 ? 'warning' : '');
                     $badgeColor = $daysLeft <= 0 ? '#DC2626' : ($daysLeft <= 2 ? '#D97706' : 'var(--text-muted)');
+                    $dbId = (int)($item['db_id'] ?? 0);
                 ?>
-                <div class="notif-item-card <?= $cardClass ?>">
+                <div class="notif-item-card <?= $cardClass ?>" id="notifCard_<?= esc($item['id']) ?>" data-type="<?= esc($item['type']) ?>" data-db-id="<?= $dbId ?>">
                     <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
                         <div style="font-size:24px;flex-shrink:0"><?= $item['icon'] ?? '📢' ?></div>
                         <div style="min-width:0">
@@ -573,9 +582,14 @@
                             <?php endif; ?>
                         </div>
                     </div>
-                    <a href="<?= esc($item['action_url'] ?? '#') ?>" style="background:var(--primary);color:#fff;text-decoration:none;padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:700;white-space:nowrap">
-                        <?= ($item['type'] ?? '') === 'bill' || ($item['type'] ?? '') === 'debt' ? 'Bayar' : 'Buka' ?>
-                    </a>
+                    <div style="display:flex;align-items:center;gap:6px">
+                        <a href="<?= esc($item['action_url'] ?? '#') ?>" onclick="dismissNotifCard('<?= esc($item['id']) ?>', <?= $dbId ?>)" style="background:var(--primary);color:#fff;text-decoration:none;padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:700;white-space:nowrap">
+                            <?= ($item['type'] ?? '') === 'bill' || ($item['type'] ?? '') === 'debt' ? 'Bayar' : 'Buka' ?>
+                        </a>
+                        <?php if (($item['type'] ?? '') === 'broadcast'): ?>
+                        <button type="button" onclick="dismissNotifCard('<?= esc($item['id']) ?>', <?= $dbId ?>)" style="background:transparent;border:none;color:var(--text-muted);font-size:16px;cursor:pointer;padding:2px 6px;line-height:1;" title="Hapus notifikasi ini">✕</button>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -631,6 +645,103 @@
         notifOverlay?.addEventListener('click', (e) => {
             if (e.target === notifOverlay) notifOverlay.classList.remove('open');
         });
+
+        window.clearAllNotifications = function() {
+            const btn = document.getElementById('btnClearAllNotifs');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Membersihkan...';
+            }
+
+            fetch('/notifications/read-all', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': window.DUITKU ? window.DUITKU.csrfToken : ''
+                }
+            })
+            .then(r => r.json().catch(() => ({})))
+            .finally(() => {
+                document.querySelectorAll('.notif-item-card[data-type="broadcast"]').forEach(el => el.remove());
+                const remaining = document.querySelectorAll('.notif-item-card').length;
+                const modalBadge = document.getElementById('notifModalBadge');
+                const topbarBadge = document.querySelector('.notif-badge');
+
+                if (remaining === 0) {
+                    if (modalBadge) modalBadge.remove();
+                    if (topbarBadge) topbarBadge.remove();
+                    if (btn) btn.remove();
+                    const body = document.getElementById('notifModalBody');
+                    if (body) {
+                        const prompt = document.getElementById('webNotifPrompt');
+                        body.innerHTML = '';
+                        if (prompt) body.appendChild(prompt);
+                        const emptyDiv = document.createElement('div');
+                        emptyDiv.style.cssText = 'text-align:center;padding:40px 20px;color:var(--text-muted)';
+                        emptyDiv.innerHTML = `
+                            <div style="font-size:44px;margin-bottom:10px">🎉</div>
+                            <div style="font-weight:800;font-size:15px;color:var(--text-primary);margin-bottom:4px">Semua Aman Terkendali!</div>
+                            <div style="font-size:12px">Tidak ada tagihan, hutang, atau notifikasi baru.</div>
+                        `;
+                        body.appendChild(emptyDiv);
+                    }
+                } else {
+                    if (modalBadge) modalBadge.textContent = remaining;
+                    if (topbarBadge) topbarBadge.textContent = remaining;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '🧹 Bersihkan';
+                    }
+                }
+            });
+        };
+
+        window.dismissNotifCard = function(cardId, dbId) {
+            const card = document.getElementById('notifCard_' + cardId);
+            if (card) {
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(20px)';
+                card.style.transition = 'all 0.2s ease';
+                setTimeout(() => {
+                    card.remove();
+                    const remaining = document.querySelectorAll('.notif-item-card').length;
+                    const modalBadge = document.getElementById('notifModalBadge');
+                    const topbarBadge = document.querySelector('.notif-badge');
+                    if (remaining === 0) {
+                        if (modalBadge) modalBadge.remove();
+                        if (topbarBadge) topbarBadge.remove();
+                        const btn = document.getElementById('btnClearAllNotifs');
+                        if (btn) btn.remove();
+                        const body = document.getElementById('notifModalBody');
+                        if (body) {
+                            const prompt = document.getElementById('webNotifPrompt');
+                            body.innerHTML = '';
+                            if (prompt) body.appendChild(prompt);
+                            const emptyDiv = document.createElement('div');
+                            emptyDiv.style.cssText = 'text-align:center;padding:40px 20px;color:var(--text-muted)';
+                            emptyDiv.innerHTML = `
+                                <div style="font-size:44px;margin-bottom:10px">🎉</div>
+                                <div style="font-weight:800;font-size:15px;color:var(--text-primary);margin-bottom:4px">Semua Aman Terkendali!</div>
+                                <div style="font-size:12px">Tidak ada tagihan, hutang, atau notifikasi baru.</div>
+                            `;
+                            body.appendChild(emptyDiv);
+                        }
+                    } else {
+                        if (modalBadge) modalBadge.textContent = remaining;
+                        if (topbarBadge) topbarBadge.textContent = remaining;
+                    }
+                }, 200);
+            }
+            if (dbId > 0) {
+                fetch('/notifications/read/' + dbId, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': window.DUITKU ? window.DUITKU.csrfToken : ''
+                    }
+                }).catch(() => {});
+            }
+        };
 
         // Universal Search Modal
         const searchOverlay = document.getElementById('searchModalOverlay');

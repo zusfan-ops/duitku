@@ -3199,6 +3199,28 @@ void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback on
                     ),
                     Row(
                       children: [
+                        if (notifs.isNotEmpty)
+                          TextButton.icon(
+                            onPressed: () async {
+                              Navigator.pop(ctx);
+                              try {
+                                await ApiService.instance.markAllNotificationsRead();
+                                onRefresh();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Notifikasi berhasil dibersihkan')),
+                                  );
+                                }
+                              } catch (_) {}
+                            },
+                            icon: const Icon(Icons.done_all_rounded, size: 16, color: AppColors.primary),
+                            label: const Text('Bersihkan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
                         IconButton(
                           icon: const Icon(Icons.campaign_rounded, size: 22, color: AppColors.primary),
                           tooltip: 'Pesan & Pengumuman',
