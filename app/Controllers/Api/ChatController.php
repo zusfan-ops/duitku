@@ -9,6 +9,7 @@ use App\Models\NotificationModel;
 use App\Models\UserFriendModel;
 use App\Models\UserModel;
 use App\Services\FcmService;
+use App\Services\ReverbService;
 
 class ChatController extends ApiController
 {
@@ -19,6 +20,7 @@ class ChatController extends ApiController
     protected NotificationModel    $notifModel;
     protected FcmService           $fcmService;
     protected ChatConversationSettingModel $convSettingModel;
+    protected ReverbService        $reverbService;
 
     public function __construct()
     {
@@ -29,6 +31,7 @@ class ChatController extends ApiController
         $this->notifModel      = new NotificationModel();
         $this->fcmService      = new FcmService();
         $this->convSettingModel = new ChatConversationSettingModel();
+        $this->reverbService   = new ReverbService();
     }
 
     /**
@@ -298,6 +301,23 @@ class ChatController extends ApiController
             log_message('error', 'Direct chat FCM error: ' . $e->getMessage());
         }
 
+        // 3. Broadcast via Laravel Reverb / Pusher WebSocket
+        try {
+            $this->reverbService->broadcast("user.{$friendId}", 'new-message', [
+                'type'              => 'direct',
+                'chat_id'           => $chat['id'] ?? null,
+                'sender_id'         => $userId,
+                'sender_name'       => $senderName,
+                'sender_username'   => $sender['username'] ?? '',
+                'sender_avatar'     => $sender['avatar'] ?? '',
+                'receiver_id'       => $friendId,
+                'message'           => $message,
+                'created_at'        => date('Y-m-d H:i:s'),
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Reverb direct chat broadcast error: ' . $e->getMessage());
+        }
+
         return $this->ok([
             'message' => 'Pesan berhasil dikirim!',
             'chat'    => $chat,
@@ -318,13 +338,14 @@ class ChatController extends ApiController
         // 1. Direct chats
         $directConvs = $this->directChatModel->getConversations($userId);
 
-        // Ambil semua teman yang disetujui
+        // Ambil semua teman yang disetujui (Accepted)
         $allFriends = $this->friendModel->getFriends($userId);
-        $existingPartnerIds = array_column($directConvs, 'partner_id');
+        $existingPartnerIds = array_map('intval', array_column($directConvs, 'partner_id'));
 
         foreach ($allFriends as $f) {
             $fId = (int)$f['friend_id'];
             if (!in_array($fId, $existingPartnerIds, true)) {
+                $existingPartnerIds[] = $fId;
                 $settingKey = 'direct_' . $fId . '_0';
                 $s = $convSettings[$settingKey] ?? null;
                 if ($s && !empty($s['cleared_at'])) {
@@ -345,8 +366,14 @@ class ChatController extends ApiController
         }
 
         $normalizedDirect = [];
+        $seenDirectIds = [];
         foreach ($directConvs as $c) {
             $fId = (int)$c['partner_id'];
+            if (isset($seenDirectIds[$fId])) {
+                continue;
+            }
+            $seenDirectIds[$fId] = true;
+
             $settingKey = 'direct_' . $fId . '_0';
             $s = $convSettings[$settingKey] ?? null;
 
@@ -379,9 +406,16 @@ class ChatController extends ApiController
         // 2. Marketplace chats
         $marketConvs = $this->marketChatModel->getConversationsForUser($userId);
         $normalizedMarket = [];
+        $seenMarketKeys = [];
         foreach ($marketConvs as $c) {
             $lid = (int)$c['listing_id'];
             $bid = (int)$c['buyer_id'];
+            $mKey = $lid . '_' . $bid;
+            if (isset($seenMarketKeys[$mKey])) {
+                continue;
+            }
+            $seenMarketKeys[$mKey] = true;
+
             $settingKey = 'marketplace_' . $lid . '_' . $bid;
             $s = $convSettings[$settingKey] ?? null;
 

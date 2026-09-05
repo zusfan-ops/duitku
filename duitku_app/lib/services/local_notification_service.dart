@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../main.dart';
+import '../screens/chat/direct_chat_screen.dart';
 import '../screens/marketplace/market_chat_screen.dart';
 import 'update_checker_service.dart';
 
@@ -294,51 +295,114 @@ class LocalNotificationService {
     }
   }
 
-  /// Memproses payload chat marketplace dan langsung membuka room chat
+  /// Memproses payload chat (Direct Teman & Marketplace) dan langsung membuka room chat
   bool _handleChatPayload(String payload) {
-    int listingId = 0;
-    int buyerId = 0;
-    String? title;
-    String? senderName;
-
+    // 1. Coba decode JSON payload
     if (payload.startsWith('{') && payload.endsWith('}')) {
       try {
         final data = jsonDecode(payload) as Map<String, dynamic>;
+        
+        // A. Direct Chat Teman
+        if (data['type'] == 'direct_chat') {
+          final senderId = int.tryParse('${data['sender_id']}') ?? 0;
+          final senderName = data['sender_name']?.toString() ?? 'Teman';
+          final senderUsername = data['sender_username']?.toString() ?? '';
+          final senderAvatar = data['sender_avatar']?.toString();
+
+          if (senderId > 0) {
+            final navContext = rootNavigatorKey.currentContext;
+            if (navContext != null && navContext.mounted) {
+              Navigator.push(
+                navContext,
+                MaterialPageRoute(
+                  builder: (_) => DirectChatScreen(
+                    friendId: senderId,
+                    friendName: senderName,
+                    friendUsername: senderUsername,
+                    friendAvatar: senderAvatar,
+                  ),
+                ),
+              );
+              return true;
+            }
+          }
+        }
+
+        // B. Chat Marketplace
         if (data['type'] == 'marketplace_chat') {
-          listingId = int.tryParse('${data['listing_id']}') ?? 0;
-          buyerId = int.tryParse('${data['buyer_id']}') ?? 0;
-          title = data['listing_title']?.toString() ?? data['title']?.toString();
-          senderName = data['sender_name']?.toString();
+          final listingId = int.tryParse('${data['listing_id']}') ?? 0;
+          final buyerId = int.tryParse('${data['buyer_id']}') ?? 0;
+          final title = data['listing_title']?.toString() ?? data['title']?.toString();
+          final senderName = data['sender_name']?.toString();
+
+          if (listingId > 0) {
+            final navContext = rootNavigatorKey.currentContext;
+            if (navContext != null && navContext.mounted) {
+              Navigator.push(
+                navContext,
+                MaterialPageRoute(
+                  builder: (_) => MarketChatScreen(
+                    listingId: listingId,
+                    buyerId: buyerId > 0 ? buyerId : null,
+                    initialListingTitle: title,
+                    targetUserName: senderName,
+                  ),
+                ),
+              );
+              return true;
+            }
+          }
         }
       } catch (_) {}
     }
 
-    if (listingId == 0) {
-      // Coba parse format URL internal: /marketplace?tab=chat&listing_id=123&buyer_id=456
-      final uri = Uri.tryParse(payload.startsWith('/') ? 'app://duitku$payload' : payload);
-      if (uri != null && (uri.path.contains('marketplace') || uri.queryParameters.containsKey('listing_id'))) {
-        listingId = int.tryParse(uri.queryParameters['listing_id'] ?? '') ?? 0;
-        buyerId = int.tryParse(uri.queryParameters['buyer_id'] ?? '') ?? 0;
+    // 2. Coba parse format URL internal
+    final uri = Uri.tryParse(payload.startsWith('/') ? 'app://duitku$payload' : payload);
+    if (uri != null) {
+      // Direct chat: /chat?direct_user=123
+      if (uri.queryParameters.containsKey('direct_user')) {
+        final dUid = int.tryParse(uri.queryParameters['direct_user'] ?? '') ?? 0;
+        if (dUid > 0) {
+          final navContext = rootNavigatorKey.currentContext;
+          if (navContext != null && navContext.mounted) {
+            Navigator.push(
+              navContext,
+              MaterialPageRoute(
+                builder: (_) => DirectChatScreen(
+                  friendId: dUid,
+                  friendName: 'Teman',
+                  friendUsername: '',
+                ),
+              ),
+            );
+            return true;
+          }
+        }
+      }
+
+      // Marketplace chat: /marketplace?tab=chat&listing_id=123&buyer_id=456
+      if (uri.path.contains('marketplace') || uri.queryParameters.containsKey('listing_id')) {
+        final listingId = int.tryParse(uri.queryParameters['listing_id'] ?? '') ?? 0;
+        final buyerId = int.tryParse(uri.queryParameters['buyer_id'] ?? '') ?? 0;
+        if (listingId > 0) {
+          final navContext = rootNavigatorKey.currentContext;
+          if (navContext != null && navContext.mounted) {
+            Navigator.push(
+              navContext,
+              MaterialPageRoute(
+                builder: (_) => MarketChatScreen(
+                  listingId: listingId,
+                  buyerId: buyerId > 0 ? buyerId : null,
+                  initialListingTitle: 'Produk Marketplace',
+                ),
+              ),
+            );
+            return true;
+          }
+        }
       }
     }
 
-    if (listingId > 0) {
-      final navContext = rootNavigatorKey.currentContext;
-      if (navContext != null && navContext.mounted) {
-        Navigator.push(
-          navContext,
-          MaterialPageRoute(
-            builder: (_) => MarketChatScreen(
-              listingId: listingId,
-              buyerId: buyerId > 0 ? buyerId : null,
-              initialListingTitle: title,
-              targetUserName: senderName,
-            ),
-          ),
-        );
-        return true;
-      }
-    }
     return false;
   }
 

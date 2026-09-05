@@ -1298,6 +1298,7 @@
 }
 </style>
 
+<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 <script>
 const csrfTokenName = '<?= csrf_token() ?>';
 const csrfTokenHash = '<?= csrf_hash() ?>';
@@ -1312,6 +1313,26 @@ let currentChatListingId  = null;
 let currentChatBuyerId    = null;
 let chatPollTimer         = null;
 let isSendingMsg          = false;
+
+/* Web Audio Chime untuk Pesan Masuk (Ringan & Tanpa File Eksternal) */
+function playChatNotificationSound() {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+    } catch (_) {}
+}
 
 /* Filter tabs (support archived exclusion & inclusion) */
 let currentConvFilter = 'all';
@@ -2112,26 +2133,207 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Request notification permission if not yet decided
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {});
+    }
 });
 
-// Auto-poll total unread count on PWA bottom nav badge
-setInterval(() => {
-    fetch('/marketplace/chat/unread-count', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+/* ═══════════════════════════════════════════════════════════════════════════
+   LARAVEL REVERB / PUSHER REALTIME WEBSOCKET LISTENER
+   ═══════════════════════════════════════════════════════════════════════════ */
+const CURRENT_USER_ID = <?= (int)$userId ?>;
+const REVERB_CONFIG = {
+    key: '<?= esc(env('REVERB_APP_KEY', 'duitku-key')) ?>',
+    wsHost: '<?= esc(env('REVERB_HOST', '127.0.0.1')) ?>',
+    wsPort: <?= (int)env('REVERB_PORT', 8080) ?>,
+    wssPort: <?= (int)env('REVERB_PORT', 8080) ?>,
+    forceTLS: <?= env('REVERB_SCHEME', 'http') === 'https' ? 'true' : 'false' ?>,
+};
+
+let reverbClient = null;
+if (typeof Pusher !== 'undefined' && REVERB_CONFIG.key) {
+    try {
+        reverbClient = new Pusher(REVERB_CONFIG.key, {
+            wsHost: REVERB_CONFIG.wsHost,
+            wsPort: REVERB_CONFIG.wsPort,
+            wssPort: REVERB_CONFIG.wssPort,
+            forceTLS: REVERB_CONFIG.forceTLS,
+            enabledTransports: ['ws', 'wss'],
+            cluster: 'mt1',
+            disableStats: true
+        });
+
+        const ch = reverbClient.subscribe(`user.${CURRENT_USER_ID}`);
+        ch.bind('new-message', function(data) {
+            handleIncomingRealtimeMessage(data);
+        });
+    } catch (e) {
+        console.warn('Reverb WebSocket init error:', e);
+    }
+}
+
+function handleIncomingRealtimeMessage(data) {
+    playChatNotificationSound();
+
+    // Browser Web Notification (saat PWA terbuka di background atau tab lain)
+    if (document.hidden && ('Notification' in window) && Notification.permission === 'granted') {
+        try {
+            const senderTitle = data.sender_name ? `💬 ${data.sender_name}` : '💬 Pesan Baru';
+            const notif = new Notification(senderTitle, {
+                body: data.message || 'Mengirim pesan kepada Anda',
+                icon: '/images/logo.png',
+                tag: 'chat_msg_' + (data.sender_id || '0')
+            });
+            notif.onclick = function() {
+                window.focus();
+                if (data.type === 'direct' && data.sender_id) {
+                    openDirectChat(data.sender_id, data.sender_name, data.sender_username, data.sender_avatar);
+                }
+            };
+        } catch (_) {}
+    }
+
+    // Jika room chat dengan pengirim sedang dibuka, muat pesan baru langsung
+    if (data.type === 'direct' && currentDirectFriendId && parseInt(currentDirectFriendId) === parseInt(data.sender_id)) {
+        loadDirectMessages(true);
+    } else if (data.type === 'marketplace' && currentChatListingId && parseInt(currentChatListingId) === parseInt(data.listing_id)) {
+        loadChatMessages(true);
+    }
+
+    // Segarkan daftar percakapan tanpa reload
+    refreshConversationsListSilently();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AUTO-REFRESH REALTIME DAFTAR PERCAKAPAN (PWA AUTO SYNC)
+   ═══════════════════════════════════════════════════════════════════════════ */
+let prevTotalUnread = -1;
+let prevLastTimesHash = '';
+let isRefreshingList = false;
+
+function refreshConversationsListSilently(detectNew = false) {
+    if (isRefreshingList) return;
+    isRefreshingList = true;
+
+    fetch('/chat?format=json', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
     .then(r => r.json())
     .then(data => {
-        if (data.status === 'success') {
-            const badge = document.getElementById('navChatBadge');
-            if (badge) {
-                if (data.unread_count > 0) {
-                    badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
-                    badge.style.display = '';
-                } else {
-                    badge.style.display = 'none';
+        isRefreshingList = false;
+        if (data.status !== 'success' || !data.conversations) return;
+
+        const convs = data.conversations;
+        const totalUnread = parseInt(data.totalUnread || 0);
+
+        // Update badge bottom navigation
+        const badge = document.getElementById('navChatBadge');
+        if (badge) {
+            if (totalUnread > 0) {
+                badge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // Hitung hash waktu pesan terakhir untuk mendeteksi pesan baru
+        const currentHash = convs.map(c => `${c.type}_${c.target_id}_${c.last_message_time}_${c.unread_count}`).join('|');
+        if (detectNew && prevLastTimesHash && prevLastTimesHash !== currentHash) {
+            if (prevTotalUnread >= 0 && totalUnread > prevTotalUnread) {
+                playChatNotificationSound();
+                if (document.hidden && ('Notification' in window) && Notification.permission === 'granted') {
+                    try {
+                        new Notification('💬 Pesan Baru DuitKu', {
+                            body: 'Anda memiliki pesan chat baru yang belum dibaca.',
+                            icon: '/images/logo.png',
+                            tag: 'chat_new_unread'
+                        });
+                    } catch (_) {}
                 }
             }
         }
+        prevLastTimesHash = currentHash;
+        prevTotalUnread = totalUnread;
+
+        // Perbarui setiap card obrolan di DOM
+        const convList = document.getElementById('convList');
+        if (!convList) return;
+
+        convs.forEach(c => {
+            const isDirect = (c.type === 'direct');
+            const cardId = isDirect 
+                ? `convCard_direct_${c.target_id}_0` 
+                : `convCard_marketplace_${c.target_id}_${c.target_sub_id || 0}`;
+            
+            let card = document.getElementById(cardId);
+            if (card) {
+                // Update snippet
+                const snippetEl = card.querySelector('.conv-snippet');
+                if (snippetEl) {
+                    const isMyLast = (parseInt(c.last_sender_id) === parseInt(data.userId));
+                    const tick = isMyLast ? '<span class="conv-tick-icon">✓✓</span> ' : '';
+                    snippetEl.innerHTML = tick + escapeHtml(c.last_message || '');
+                    if (parseInt(c.unread_count) > 0) {
+                        snippetEl.classList.add('bold');
+                    } else {
+                        snippetEl.classList.remove('bold');
+                    }
+                }
+
+                // Update unread count badge
+                let unreadBadge = card.querySelector('.conv-badge');
+                if (parseInt(c.unread_count) > 0) {
+                    card.classList.add('unread');
+                    if (!unreadBadge) {
+                        const bottomLine = card.querySelector('.conv-bottom-line');
+                        if (bottomLine) {
+                            unreadBadge = document.createElement('span');
+                            unreadBadge.className = 'conv-badge';
+                            bottomLine.appendChild(unreadBadge);
+                        }
+                    }
+                    if (unreadBadge) {
+                        unreadBadge.textContent = c.unread_count > 99 ? '99+' : c.unread_count;
+                    }
+                } else {
+                    card.classList.remove('unread');
+                    if (unreadBadge) unreadBadge.remove();
+                }
+
+                // Update waktu pesan
+                const timeEl = card.querySelector('.conv-time');
+                if (timeEl && c.last_message_time) {
+                    const t = new Date(c.last_message_time.replace(/-/g, '/'));
+                    const now = new Date();
+                    const isToday = t.toDateString() === now.toDateString();
+                    if (isToday) {
+                        timeEl.textContent = t.getHours().toString().padStart(2, '0') + ':' + t.getMinutes().toString().padStart(2, '0');
+                    } else {
+                        timeEl.textContent = t.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                    }
+                }
+
+                // Pindahkan kartu ke paling atas jika bukan pinned di bawah
+                if (!card.classList.contains('pinned')) {
+                    const firstNonPinned = convList.querySelector('.conv-item:not(.pinned)');
+                    if (firstNonPinned && firstNonPinned !== card) {
+                        convList.insertBefore(card, firstNonPinned);
+                    }
+                }
+            }
+        });
     })
-    .catch(() => {});
-}, 6000);
+    .catch(() => {
+        isRefreshingList = false;
+    });
+}
+
+// Auto-poll sync setiap 3.5 detik (Realtime Fallback jika Reverb WebSocket offline)
+setInterval(() => {
+    refreshConversationsListSilently(true);
+}, 3500);
 </script>
 <?= $this->endSection() ?>

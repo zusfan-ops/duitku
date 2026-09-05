@@ -742,7 +742,26 @@
     // ════════════════════════════════════════════════════════════════════════
     (function initChatUnreadPolling() {
         const badge = document.getElementById('navChatBadge');
-        if (!badge) return;
+        let prevUnreadCount = -1;
+
+        function playGlobalChatChime() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.25);
+            } catch (_) {}
+        }
 
         function checkUnread() {
             fetch('/marketplace/chat/unread-count', {
@@ -751,20 +770,48 @@
             .then(r => r.json())
             .then(data => {
                 if (data && data.status === 'success') {
-                    if (data.unread_count > 0) {
-                        badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
-                        badge.style.display = '';
-                    } else {
-                        badge.style.display = 'none';
+                    const count = parseInt(data.unread_count || 0);
+                    if (badge) {
+                        if (count > 0) {
+                            badge.textContent = count > 99 ? '99+' : count;
+                            badge.style.display = '';
+                        } else {
+                            badge.style.display = 'none';
+                        }
                     }
+
+                    // Deteksi pesan baru yang masuk saat membuka halaman apa pun
+                    if (prevUnreadCount >= 0 && count > prevUnreadCount) {
+                        playGlobalChatChime();
+
+                        // Jangan tampilkan toast jika user sedang berada di halaman /chat
+                        if (!window.location.pathname.startsWith('/chat') && !window.location.pathname.startsWith('/pesan')) {
+                            showToast('💬 Pesan chat baru masuk! Ketuk ikon Obrolan untuk membaca.', 'info');
+                        }
+
+                        if (document.hidden && ('Notification' in window) && Notification.permission === 'granted') {
+                            try {
+                                const notif = new Notification('💬 Pesan Chat DuitKu', {
+                                    body: 'Ada pesan baru masuk. Ketuk untuk membuka obrolan.',
+                                    icon: '/images/logo.png',
+                                    tag: 'global_chat_new'
+                                });
+                                notif.onclick = () => {
+                                    window.focus();
+                                    window.location.href = '/chat';
+                                };
+                            } catch (_) {}
+                        }
+                    }
+                    prevUnreadCount = count;
                 }
             })
             .catch(() => {});
         }
 
-        // Check after 3s, then poll every 7s
-        setTimeout(checkUnread, 3000);
-        setInterval(checkUnread, 7000);
+        // Cek pertama setelah 2 detik, lalu polling setiap 4 detik
+        setTimeout(checkUnread, 2000);
+        setInterval(checkUnread, 4000);
     })();
 
 })();

@@ -78,8 +78,22 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
         final archived = int.tryParse('${res['archived_count']}') ?? 0;
         context.read<AppDataProvider>().setMarketChatUnread(totalUnread);
 
+        final rawList = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        final Set<String> seenKeys = {};
+        final List<Map<String, dynamic>> uniqueConvs = [];
+        for (final item in rawList) {
+          final type = item['type']?.toString() ?? 'direct';
+          final targetId = item['target_id']?.toString() ?? (type == 'direct' ? item['partner_id']?.toString() : item['listing_id']?.toString()) ?? '0';
+          final subId = item['target_sub_id']?.toString() ?? (type == 'direct' ? '0' : item['buyer_id']?.toString()) ?? '0';
+          final key = '${type}_${targetId}_$subId';
+          if (!seenKeys.contains(key)) {
+            seenKeys.add(key);
+            uniqueConvs.add(item);
+          }
+        }
+
         setState(() {
-          _conversations = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          _conversations = uniqueConvs;
           _incomingRequests = parsedReqs;
           _friends = parsedFriends;
           _archivedCount = archived;

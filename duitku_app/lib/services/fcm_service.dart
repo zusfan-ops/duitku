@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../firebase_options.dart';
 import '../main.dart';
 import '../screens/marketplace/market_chat_screen.dart';
+import '../screens/chat/direct_chat_screen.dart';
 import 'local_notification_service.dart';
 import 'session_manager.dart';
 import 'update_checker_service.dart';
@@ -24,7 +25,30 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     final rawType = (data['type'] ?? data['broadcast_type'] ?? 'info').toString().toLowerCase();
     final actionUrl = data['action_url']?.toString();
 
-    // Jika ini adalah pesan chat marketplace masuk saat aplikasi tertutup
+    // 1. Direct Chat Teman saat aplikasi tertutup / background
+    if (rawType == 'direct_chat' || data['type'] == 'direct_chat') {
+      final payloadJson = jsonEncode({
+        'type': 'direct_chat',
+        'sender_id': data['sender_id'],
+        'sender_name': data['sender_name'] ?? title.replaceFirst('💬 ', ''),
+        'sender_username': data['sender_username'] ?? '',
+        'sender_avatar': data['sender_avatar'] ?? '',
+        'title': title,
+        'message': body,
+        'action_url': actionUrl ?? '/chat?direct_user=${data['sender_id']}',
+      });
+
+      await LocalNotificationService.instance.showChatNotification(
+        id: message.messageId.hashCode,
+        title: title,
+        body: body,
+        payload: payloadJson,
+        subText: 'Pesan Teman',
+      );
+      return;
+    }
+
+    // 2. Chat Marketplace saat aplikasi tertutup / background
     if (rawType == 'marketplace_chat' || data['type'] == 'marketplace_chat') {
       final payloadJson = jsonEncode({
         'type': 'marketplace_chat',
@@ -162,7 +186,30 @@ class FcmService {
         final actionUrl = data['action_url']?.toString();
         final apkUrl = data['apk_url']?.toString() ?? actionUrl;
 
-        // Notifikasi Chat Marketplace saat aplikasi sedang terbuka
+        // 1. Notifikasi Direct Chat Teman saat aplikasi terbuka
+        if (rawType == 'direct_chat' || data['type'] == 'direct_chat') {
+          final payloadJson = jsonEncode({
+            'type': 'direct_chat',
+            'sender_id': data['sender_id'],
+            'sender_name': data['sender_name'] ?? title.replaceFirst('💬 ', ''),
+            'sender_username': data['sender_username'] ?? '',
+            'sender_avatar': data['sender_avatar'] ?? '',
+            'title': title,
+            'message': body,
+            'action_url': actionUrl ?? '/chat?direct_user=${data['sender_id']}',
+          });
+
+          LocalNotificationService.instance.showChatNotification(
+            id: message.messageId.hashCode,
+            title: title,
+            body: body,
+            payload: payloadJson,
+            subText: 'Pesan Teman',
+          );
+          return;
+        }
+
+        // 2. Notifikasi Chat Marketplace saat aplikasi sedang terbuka
         if (rawType == 'marketplace_chat' || data['type'] == 'marketplace_chat') {
           final payloadJson = jsonEncode({
             'type': 'marketplace_chat',
@@ -225,7 +272,33 @@ class FcmService {
     final apkUrl = data['apk_url']?.toString() ?? actionUrl;
     final version = data['version']?.toString();
 
-    // 1. Tangani klik notifikasi Chat Marketplace langsung ke Room Chat
+    // 1. Tangani klik notifikasi Direct Chat Teman langsung ke DirectChatScreen
+    if (rawType == 'direct_chat' || data['type'] == 'direct_chat') {
+      final senderId = int.tryParse('${data['sender_id']}') ?? 0;
+      final senderName = data['sender_name']?.toString() ?? title.replaceFirst('💬 ', '');
+      final senderUsername = data['sender_username']?.toString() ?? '';
+      final senderAvatar = data['sender_avatar']?.toString();
+
+      if (senderId > 0) {
+        final context = rootNavigatorKey.currentContext;
+        if (context != null && context.mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DirectChatScreen(
+                friendId: senderId,
+                friendName: senderName,
+                friendUsername: senderUsername,
+                friendAvatar: senderAvatar,
+              ),
+            ),
+          );
+          return;
+        }
+      }
+    }
+
+    // 2. Tangani klik notifikasi Chat Marketplace langsung ke Room Chat
     if (rawType == 'marketplace_chat' || data['type'] == 'marketplace_chat') {
       final listingId = int.tryParse('${data['listing_id']}') ?? 0;
       final buyerId = int.tryParse('${data['buyer_id']}') ?? 0;
@@ -251,7 +324,7 @@ class FcmService {
       }
     }
 
-    // 2. Tangani Update APK
+    // 3. Tangani Update APK
     final isUpdate = rawType == 'update' || (apkUrl != null && (apkUrl.endsWith('.apk') || apkUrl.contains('.apk?')));
 
     if (isUpdate && apkUrl != null && apkUrl.isNotEmpty) {

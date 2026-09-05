@@ -14,6 +14,7 @@ use App\Models\SettingModel;
 use App\Models\UserFriendModel;
 use App\Models\UserModel;
 use App\Services\FcmService;
+use App\Services\ReverbService;
 
 class MarketplaceController extends BaseController
 {
@@ -29,6 +30,7 @@ class MarketplaceController extends BaseController
     protected NotificationModel       $notificationModel;
     protected FcmService              $fcmService;
     protected ChatConversationSettingModel $convSettingModel;
+    protected ReverbService           $reverbService;
 
     public function __construct()
     {
@@ -44,6 +46,7 @@ class MarketplaceController extends BaseController
         $this->notificationModel  = new NotificationModel();
         $this->fcmService         = new FcmService();
         $this->convSettingModel   = new ChatConversationSettingModel();
+        $this->reverbService      = new ReverbService();
     }
 
     /**
@@ -850,12 +853,13 @@ class MarketplaceController extends BaseController
 
         // Ambil semua teman yang sudah disetujui (Accepted)
         $allFriends = $this->friendModel->getFriends($userId);
-        $existingPartnerIds = array_column($directConvs, 'partner_id');
+        $existingPartnerIds = array_map('intval', array_column($directConvs, 'partner_id'));
 
         // Tambahkan teman yang belum pernah diajak chat agar langsung muncul di tab Teman (kecuali sudah pernah dibersihkan)
         foreach ($allFriends as $f) {
             $fId = (int)$f['friend_id'];
             if (!in_array($fId, $existingPartnerIds, true)) {
+                $existingPartnerIds[] = $fId;
                 $settingKey = 'direct_' . $fId . '_0';
                 $s = $convSettings[$settingKey] ?? null;
                 if ($s && !empty($s['cleared_at'])) {
@@ -876,8 +880,14 @@ class MarketplaceController extends BaseController
         }
 
         $normalizedDirect = [];
+        $seenDirectIds = [];
         foreach ($directConvs as $c) {
             $fId = (int)$c['partner_id'];
+            if (isset($seenDirectIds[$fId])) {
+                continue;
+            }
+            $seenDirectIds[$fId] = true;
+
             $settingKey = 'direct_' . $fId . '_0';
             $s = $convSettings[$settingKey] ?? null;
 
@@ -910,9 +920,16 @@ class MarketplaceController extends BaseController
         // 2. Marketplace chats
         $marketConvs = $this->chatModel->getConversationsForUser($userId);
         $normalizedMarket = [];
+        $seenMarketKeys = [];
         foreach ($marketConvs as $c) {
             $lid = (int)$c['listing_id'];
             $bid = (int)$c['buyer_id'];
+            $mKey = $lid . '_' . $bid;
+            if (isset($seenMarketKeys[$mKey])) {
+                continue;
+            }
+            $seenMarketKeys[$mKey] = true;
+
             $settingKey = 'marketplace_' . $lid . '_' . $bid;
             $s = $convSettings[$settingKey] ?? null;
 
@@ -981,6 +998,17 @@ class MarketplaceController extends BaseController
 
         // 5. Total unread chat
         $totalUnread = $this->chatModel->getTotalUnreadCount($userId) + $this->directChatModel->getTotalUnreadCount($userId);
+
+        if ($this->request->isAJAX() || $this->request->getGet('format') === 'json') {
+            return $this->response->setJSON([
+                'status'           => 'success',
+                'conversations'    => $allConvs,
+                'archivedCount'    => $archivedCount,
+                'incomingRequests' => $incomingRequests,
+                'totalUnread'      => $totalUnread,
+                'userId'           => $userId,
+            ]);
+        }
 
         return view('marketplace/conversations', [
             'pageTitle'        => 'Pesan & Obrolan',
@@ -1363,6 +1391,23 @@ class MarketplaceController extends BaseController
             log_message('error', 'Direct chat FCM error: ' . $e->getMessage());
         }
 
+        // 3. Broadcast via Laravel Reverb / Pusher WebSocket
+        try {
+            $this->reverbService->broadcast("user.{$friendId}", 'new-message', [
+                'type'              => 'direct',
+                'chat_id'           => $chat['id'] ?? null,
+                'sender_id'         => $userId,
+                'sender_name'       => $senderName,
+                'sender_username'   => $sender['username'] ?? '',
+                'sender_avatar'     => $sender['avatar'] ?? '',
+                'receiver_id'       => $friendId,
+                'message'           => $message,
+                'created_at'        => date('Y-m-d H:i:s'),
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Reverb PWA direct chat broadcast error: ' . $e->getMessage());
+        }
+
         return $this->response->setJSON([
             'status'  => 'success',
             'message' => 'Pesan terkirim',
@@ -1559,6 +1604,45 @@ class MarketplaceController extends BaseController
                     'target'     => 'user',
                     'user_id'    => $recipientId,
                     'action_url' => '/marketplace?tab=orders',
+                ]);
+            } catch (\Throwable $e) {}
+
+            // FCM Push notification penerima
+            try {
+                if ($this->fcmService->isConfigured()) {
+                    $this->fcmService->sendToTopic(
+                        "user_{$recipientId}",
+                        "💬 {$senderName}",
+                        $message,
+                        [
+                            'type'          => 'marketplace_chat',
+                            'listing_id'    => (string)$listingId,
+                            'listing_title' => (string)$listing['title'],
+                            'buyer_id'      => (string)$buyerId,
+                            'seller_id'     => (string)$sellerId,
+                            'sender_id'     => (string)$userId,
+                            'sender_name'   => (string)$senderName,
+                            'action_url'    => "/chat?tab=marketplace",
+                            'click_action'  => 'FLUTTER_NOTIFICATION_CLICK',
+                        ]
+                    );
+                }
+            } catch (\Throwable $e) {}
+
+            // Broadcast via Laravel Reverb / Pusher WebSocket
+            try {
+                $this->reverbService->broadcast("user.{$recipientId}", 'new-message', [
+                    'type'          => 'marketplace',
+                    'chat_id'       => $chatId,
+                    'listing_id'    => $listingId,
+                    'listing_title' => $listing['title'],
+                    'buyer_id'      => $buyerId,
+                    'seller_id'     => $sellerId,
+                    'sender_id'     => $userId,
+                    'sender_name'   => $senderName,
+                    'receiver_id'   => $recipientId,
+                    'message'       => $message,
+                    'created_at'    => date('Y-m-d H:i:s'),
                 ]);
             } catch (\Throwable $e) {}
 
