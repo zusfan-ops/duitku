@@ -254,10 +254,19 @@
             </div>
         </div>
 
+        <!-- Integrated Emoji Tray (WhatsApp style) -->
+        <div class="wa-emoji-tray" id="directChatEmojiTray" style="display:none;">
+            <div class="wa-emoji-tray-header">
+                <span class="wa-emoji-tray-title">Pilih Emoji</span>
+                <button type="button" class="wa-emoji-tray-close" onclick="closeChatEmojiTray('direct')">✕</button>
+            </div>
+            <div class="wa-emoji-tray-grid" id="directEmojiGrid"></div>
+        </div>
+
         <!-- Input Footer -->
         <form class="market-chat-footer wa-footer" id="directChatForm" onsubmit="sendDirectMessage(event)">
             <div class="wa-input-pill">
-                <span class="wa-input-icon" onclick="togglePwaEmojiPicker(this, 'directChatInputMsg')" title="Pilih Emoji" role="button" style="cursor:pointer;">😊</span>
+                <span class="wa-input-icon" onclick="toggleChatEmojiTray('direct')" title="Pilih Emoji" role="button" style="cursor:pointer;">😊</span>
                 <input type="text" id="directChatInputMsg" class="market-chat-input wa-input" placeholder="Ketik pesan..." autocomplete="off">
                 <span class="wa-input-icon" onclick="triggerPwaChatUpload('file')" title="Lampirkan Berkas" role="button" style="cursor:pointer;">📎</span>
                 <span class="wa-input-icon" onclick="triggerPwaChatUpload('photo')" title="Kirim Foto" role="button" style="cursor:pointer;">📷</span>
@@ -310,9 +319,18 @@
             </div>
         </div>
 
+        <!-- Integrated Emoji Tray (WhatsApp style) -->
+        <div class="wa-emoji-tray" id="marketChatEmojiTray" style="display:none;">
+            <div class="wa-emoji-tray-header">
+                <span class="wa-emoji-tray-title">Pilih Emoji</span>
+                <button type="button" class="wa-emoji-tray-close" onclick="closeChatEmojiTray('market')">✕</button>
+            </div>
+            <div class="wa-emoji-tray-grid" id="marketEmojiGrid"></div>
+        </div>
+
         <form class="market-chat-footer wa-footer" id="marketChatForm" onsubmit="sendChatMessage(event)">
             <div class="wa-input-pill">
-                <span class="wa-input-icon" onclick="togglePwaEmojiPicker(this, 'chatInputMessage')" title="Pilih Emoji" role="button" style="cursor:pointer;">😊</span>
+                <span class="wa-input-icon" onclick="toggleChatEmojiTray('market')" title="Pilih Emoji" role="button" style="cursor:pointer;">😊</span>
                 <input type="text" id="chatInputMessage" class="market-chat-input wa-input" placeholder="Ketik pesan..." autocomplete="off">
                 <span class="wa-input-icon" onclick="triggerPwaChatUpload('file')" title="Lampirkan Berkas" role="button" style="cursor:pointer;">📎</span>
                 <span class="wa-input-icon" onclick="triggerPwaChatUpload('photo')" title="Kirim Foto" role="button" style="cursor:pointer;">📷</span>
@@ -432,15 +450,6 @@
 <!-- Hidden file inputs for PWA Chat Uploads -->
 <input type="file" id="pwaChatFileInput" style="display:none;" onchange="handlePwaFileSelected(this)">
 <input type="file" id="pwaChatPhotoInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePwaFileSelected(this)">
-
-<!-- Floating Emoji Picker Popover -->
-<div id="pwaEmojiPickerPopover" class="pwa-emoji-popover" style="display:none;">
-    <div class="pwa-emoji-header">
-        <span style="font-weight:700;font-size:12.5px;color:var(--text-primary);">Pilih Emoji 😊</span>
-        <button type="button" onclick="closePwaEmojiPicker()" style="background:none;border:none;cursor:pointer;font-size:15px;color:var(--text-muted);padding:4px;">✕</button>
-    </div>
-    <div class="pwa-emoji-grid" id="pwaEmojiGrid"></div>
-</div>
 
 <!-- Image Lightbox Modal for PWA -->
 <div id="pwaChatLightbox" class="market-chat-modal-overlay" style="display:none;z-index:99999;background:rgba(0,0,0,0.88);cursor:zoom-out;align-items:center;justify-content:center;" onclick="closePwaLightbox()">
@@ -1171,53 +1180,86 @@
 .market-chat-send-btn.wa-send-btn:hover { background: #059669; transform: scale(1.05); }
 .market-chat-send-btn.wa-send-btn:active { transform: scale(0.95); }
 
-/* PWA Emoji Picker & Upload Enhancements */
-.pwa-emoji-popover {
-    position: fixed;
-    bottom: 75px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(340px, 92vw);
-    background: var(--card-bg, #fff);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.22);
-    z-index: 9999;
-    overflow: hidden;
-    animation: pwaPopoverFade 0.2s ease-out;
+/* PWA WhatsApp Emoji Tray Styles */
+.wa-emoji-tray {
+    background: #FFFFFF;
+    border-top: 1px solid #E2E8F0;
+    max-height: 200px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 100%;
+    z-index: 10;
 }
-@keyframes pwaPopoverFade {
-    from { opacity: 0; transform: translate(-50%, 10px); }
-    to { opacity: 1; transform: translate(-50%, 0); }
+[data-theme="dark"] .wa-emoji-tray {
+    background: #1F2C34;
+    border-top-color: #2A3942;
 }
-.pwa-emoji-header {
+.wa-emoji-tray-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg);
+    padding: 6px 12px;
+    background: rgba(0,0,0,0.03);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
 }
-.pwa-emoji-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
-    padding: 10px;
-    max-height: 220px;
-    overflow-y: auto;
+[data-theme="dark"] .wa-emoji-tray-header {
+    background: rgba(255,255,255,0.04);
+    border-bottom-color: rgba(255,255,255,0.06);
 }
-.pwa-emoji-item {
-    font-size: 22px;
-    padding: 6px;
-    border-radius: 8px;
-    text-align: center;
+.wa-emoji-tray-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+[data-theme="dark"] .wa-emoji-tray-title {
+    color: #8696A0;
+}
+.wa-emoji-tray-close {
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: #64748B;
     cursor: pointer;
-    user-select: none;
-    transition: transform 0.1s, background 0.1s;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.pwa-emoji-item:hover {
-    background: var(--primary-dim, rgba(0, 168, 132, 0.12));
-    transform: scale(1.2);
+.wa-emoji-tray-close:hover {
+    background: rgba(0,0,0,0.08);
+}
+.wa-emoji-tray-grid {
+    padding: 8px 10px;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    overflow-y: auto;
+    max-height: 160px;
+}
+.wa-emoji-btn {
+    font-size: 22px;
+    line-height: 1;
+    padding: 6px 2px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 8px;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease, background 0.1s ease;
+}
+.wa-emoji-btn:hover {
+    background: rgba(0, 168, 132, 0.15);
+    transform: scale(1.22);
+}
+.wa-emoji-btn:active {
+    transform: scale(0.95);
 }
 .chat-bubble-img-wrap {
     margin: 3px 0 5px;
@@ -1391,53 +1433,73 @@ function openActiveChatOptions(type) {
 
 /* PWA Chat Media & Emoji Handlers */
 const pwaPopularEmojis = [
-    '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😋','😜','🤪','😎','🥳','🥺','😭','😱','🤔','😴','🤐','🤯','🤠',
-    '👍','👎','👏','🙌','🤝','🙏','✌️','🤞','🤟','👌','👈','👉','👆','👇','✋','👋','💪','👀','❤️','🧡','💛','💚','💙','💜','🖤','💔','❣️','💕','🔥','⭐',
-    '✨','⚡','💯','💥','🎉','🎊','🎁','💰','💵','💸','📦','🛒','🏷️','✅','❌','⚠️','🔔','💬'
+    '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😋',
+    '😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌',
+    '😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓',
+    '🧐','😕','😟','🙁','😮','😯','😲','😳','🥺','😭','😱','👍','👎','👏','🙌','🤝','🙏','✌️','🤞','🤟',
+    '👌','👈','👉','👆','👇','✋','👋','💪','👀','❤️','🧡','💛','💚','💙','💜','🖤','💔','❣️','💕','🔥',
+    '⭐','✨','⚡','💯','💥','🎉','🎊','🎁','💰','💵','💸','📦','🛒','🏷️','✅','❌','⚠️','🔔','💬','🚀'
 ];
-let activePwaEmojiInputId = 'directChatInputMsg';
 
-function togglePwaEmojiPicker(triggerEl, inputId) {
-    activePwaEmojiInputId = inputId;
-    const pop = document.getElementById('pwaEmojiPickerPopover');
-    if (!pop) return;
+function toggleChatEmojiTray(type) {
+    const isDirect = (type === 'direct');
+    const trayId   = isDirect ? 'directChatEmojiTray' : 'marketChatEmojiTray';
+    const gridId   = isDirect ? 'directEmojiGrid' : 'marketEmojiGrid';
+    const inputId  = isDirect ? 'directChatInputMsg' : 'chatInputMessage';
 
-    if (pop.style.display === 'block') {
-        pop.style.display = 'none';
+    const tray = document.getElementById(trayId);
+    if (!tray) return;
+
+    if (tray.style.display === 'flex') {
+        tray.style.display = 'none';
         return;
     }
 
-    const grid = document.getElementById('pwaEmojiGrid');
+    const grid = document.getElementById(gridId);
     if (grid && grid.children.length === 0) {
-        grid.innerHTML = pwaPopularEmojis.map(e => `<span class="pwa-emoji-item" onclick="insertPwaEmoji('${e}')">${e}</span>`).join('');
+        grid.innerHTML = pwaPopularEmojis.map(e => `
+            <button type="button" class="wa-emoji-btn" onclick="insertEmojiIntoInput('${inputId}', '${e}')">${e}</button>
+        `).join('');
     }
-    pop.style.display = 'block';
+
+    tray.style.display = 'flex';
 }
 
-function closePwaEmojiPicker() {
-    const pop = document.getElementById('pwaEmojiPickerPopover');
-    if (pop) pop.style.display = 'none';
+function closeChatEmojiTray(type) {
+    const isDirect = (type === 'direct');
+    const tray = document.getElementById(isDirect ? 'directChatEmojiTray' : 'marketChatEmojiTray');
+    if (tray) tray.style.display = 'none';
 }
 
-function insertPwaEmoji(emoji) {
-    const inp = document.getElementById(activePwaEmojiInputId);
-    if (!inp) return;
-    const start = inp.selectionStart || 0;
-    const end = inp.selectionEnd || 0;
-    const val = inp.value;
-    inp.value = val.substring(0, start) + emoji + val.substring(end);
-    inp.selectionStart = inp.selectionEnd = start + emoji.length;
-    inp.focus();
+function insertEmojiIntoInput(inputId, emoji) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    const start = (input.selectionStart !== null && input.selectionStart !== undefined) ? input.selectionStart : input.value.length;
+    const end = (input.selectionEnd !== null && input.selectionEnd !== undefined) ? input.selectionEnd : input.value.length;
+    const text = input.value;
+
+    input.value = text.substring(0, start) + emoji + text.substring(end);
+    const newPos = start + emoji.length;
+    input.setSelectionRange(newPos, newPos);
+    input.focus();
 }
 
-document.addEventListener('click', (e) => {
-    const pop = document.getElementById('pwaEmojiPickerPopover');
-    if (pop && pop.style.display === 'block') {
-        if (!pop.contains(e.target) && !e.target.closest('.wa-input-icon')) {
-            pop.style.display = 'none';
-        }
+function markCardAsRead(type, targetId, subId = 0) {
+    const cardId = (type === 'direct')
+        ? `convCard_direct_${targetId}`
+        : `convCard_marketplace_${targetId}_${subId}`;
+    const card = document.getElementById(cardId);
+    if (card) {
+        card.classList.remove('unread');
+        const badge = card.querySelector('.conv-badge');
+        if (badge) badge.remove();
+        const snippet = card.querySelector('.conv-snippet');
+        if (snippet) snippet.classList.remove('bold');
+        const time = card.querySelector('.conv-time');
+        if (time) time.classList.remove('unread');
     }
-});
+}
 
 function openPwaLightbox(url) {
     const box = document.getElementById('pwaChatLightbox');
@@ -1600,6 +1662,9 @@ function sendMarketMessagePayload(text) {
 /* Direct Chat WhatsApp Modal */
 function openDirectChat(friendId, friendName, friendUser, friendAvatar) {
     currentDirectFriendId = friendId;
+    markCardAsRead('direct', friendId);
+    closeChatEmojiTray('direct');
+
     const modal = document.getElementById('directChatModal');
     if (!modal) return;
 
@@ -1624,6 +1689,7 @@ function openDirectChat(friendId, friendName, friendUser, friendAvatar) {
 
 function closeDirectChat() {
     currentDirectFriendId = null;
+    closeChatEmojiTray('direct');
     clearInterval(chatPollTimer);
     const modal = document.getElementById('directChatModal');
     if (modal) {
@@ -1734,6 +1800,8 @@ function sendDirectMessage(e) {
 function openChatFromConv(listingId, buyerId, listingTitle, partnerName, partnerPhone) {
     currentChatListingId = listingId;
     currentChatBuyerId   = buyerId;
+    markCardAsRead('marketplace', listingId, buyerId);
+    closeChatEmojiTray('market');
 
     const modal = document.getElementById('marketChatModal');
     if (!modal) return;
@@ -1759,6 +1827,7 @@ function openChatFromConv(listingId, buyerId, listingTitle, partnerName, partner
 function closeMarketChat() {
     currentChatListingId = null;
     currentChatBuyerId   = null;
+    closeChatEmojiTray('market');
     clearInterval(chatPollTimer);
     const modal = document.getElementById('marketChatModal');
     if (modal) {
