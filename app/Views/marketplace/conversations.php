@@ -1248,34 +1248,58 @@
 }
 .btn-req-reject:hover { background: #FEE2E2; }
 
-/* Filter Tabs Bar (WhatsApp Style) */
+/* Filter Tabs Bar (WhatsApp Style - Smooth Horizontal Scroll in PWA) */
 .conv-tabs-bar {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     background: var(--bg);
     padding: 4px;
-    border-radius: 12px;
+    border-radius: 14px;
     margin-bottom: 14px;
     border: 1px solid var(--border);
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    touch-action: pan-x;
+    scroll-behavior: smooth;
+    overscroll-behavior-x: contain;
+}
+.conv-tabs-bar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }
 .conv-tab-btn {
-    flex: 1;
+    flex: 0 0 auto;
+    white-space: nowrap;
     background: transparent;
     border: none;
-    padding: 8px 12px;
-    border-radius: 9px;
-    font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12.5px;
     font-weight: 600;
     color: var(--text-muted);
     cursor: pointer;
     transition: all 0.15s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.conv-tab-btn:active {
+    transform: scale(0.96);
 }
 .conv-tab-btn.active {
     background: var(--bg-card);
     color: var(--text-primary);
     font-weight: 700;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 /* Empty State */
@@ -1983,7 +2007,12 @@ let currentConvFilter = 'all';
 function filterConversations(type, btn) {
     currentConvFilter = type;
     document.querySelectorAll('.conv-tab-btn').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
+    if (btn) {
+        btn.classList.add('active');
+        try {
+            btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        } catch (_) {}
+    }
 
     const statusView = document.getElementById('statusWhatsAppView');
     const convList = document.getElementById('convList');
@@ -3564,5 +3593,40 @@ function deleteActiveStatus() {
 setInterval(() => {
     refreshConversationsListSilently(true);
 }, 3500);
+
+// Smooth drag-to-scroll untuk tab bar dan status tray di PWA & Desktop
+document.addEventListener('DOMContentLoaded', function() {
+    function enableDragScroll(el) {
+        if (!el) return;
+        let isDown = false;
+        let startX = 0;
+        let scrollLeft = 0;
+
+        el.addEventListener('mousedown', (e) => {
+            isDown = true;
+            el.style.cursor = 'grabbing';
+            startX = e.pageX - el.offsetLeft;
+            scrollLeft = el.scrollLeft;
+        });
+        el.addEventListener('mouseleave', () => {
+            isDown = false;
+            el.style.cursor = '';
+        });
+        el.addEventListener('mouseup', () => {
+            isDown = false;
+            el.style.cursor = '';
+        });
+        el.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - el.offsetLeft;
+            const walk = (x - startX) * 1.5;
+            el.scrollLeft = scrollLeft - walk;
+        });
+    }
+
+    enableDragScroll(document.querySelector('.conv-tabs-bar'));
+    enableDragScroll(document.querySelector('.status-tray-scroll'));
+});
 </script>
 <?= $this->endSection() ?>
