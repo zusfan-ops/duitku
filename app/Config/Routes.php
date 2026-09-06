@@ -321,6 +321,12 @@ $routes->group('api', function ($routes) {
     $routes->get('me',        'Api\AuthController::me',  ['filter' => 'api_auth']);
     $routes->post('logout',   'Api\AuthController::logout', ['filter' => 'api_auth']);
 
+    // Public: Berita Terkini RSS API & In-App Article Reader (Accessible by web & app without auth token)
+    $routes->get('berita',          'NewsController::apiList');
+    $routes->get('news',            'NewsController::apiList');
+    $routes->get('berita/article',  'NewsController::article');
+    $routes->post('berita/refresh', 'NewsController::apiRefresh');
+
     // Protected
     $routes->group('', ['filter' => 'api_auth'], function ($routes) {
 
@@ -340,12 +346,6 @@ $routes->group('api', function ($routes) {
 
         // Emergency Services Directory API
         $routes->get('emergency',                   'EmergencyController::apiList');
-
-        // Berita Terkini RSS API
-        $routes->get('berita',                      'NewsController::apiList');
-        $routes->get('news',                        'NewsController::apiList');
-        $routes->get('berita/article',              'NewsController::article');
-        $routes->post('berita/refresh',             'NewsController::apiRefresh');
 
         // My Home / Barang API
         $routes->get('barang',                      'Api\BarangController::index');

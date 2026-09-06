@@ -748,7 +748,7 @@
                     <div class="news-card-desc"><?= esc($item['description']) ?></div>
                     <div class="news-card-footer">
                         <button type="button" class="news-read-btn">
-                            <span>Baca Ringkasan</span>
+                            <span>Baca Selengkapnya</span>
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                         </button>
                         <button type="button" class="news-share-icon-btn" title="Bagikan Berita" onclick="event.stopPropagation(); shareNewsArticle(<?= esc(json_encode($item), 'attr') ?>)">
@@ -762,32 +762,39 @@
     </div>
 </div>
 
-<!-- Modal In-App Reader -->
+<!-- Modal In-App Reader (100% In-App Full Reading Experience) -->
 <div class="news-modal-overlay" id="newsModalOverlay" onclick="closeNewsReader(event)">
     <div class="news-modal-sheet" onclick="event.stopPropagation()">
         <div class="news-modal-handle"></div>
         <div class="news-modal-hdr">
-            <span class="news-modal-src-badge" id="modalSourceBadge">Media</span>
-            <button type="button" class="news-modal-close" onclick="closeNewsReaderDirect()">✕</button>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span class="news-modal-src-badge" id="modalSourceBadge">Media</span>
+                <span style="font-size:11.5px;color:var(--text-muted);font-weight:600;" id="modalCategory">Nasional</span>
+            </div>
+            <button type="button" class="news-modal-close" onclick="closeNewsReaderDirect()" title="Tutup Bacaan">✕</button>
         </div>
-        <div class="news-modal-body">
+        <div class="news-modal-body" id="newsModalBodyScroll">
             <img src="" alt="" id="modalImage" class="news-modal-img" style="display:none">
             <div class="news-modal-title" id="modalTitle">Judul Berita</div>
             <div class="news-modal-meta">
-                <span id="modalCategory">Nasional</span>
+                <span id="modalPubDate" style="display:inline-flex;align-items:center;gap:4px;">🕒 Waktu Terbit</span>
                 <span>•</span>
-                <span id="modalPubDate">Waktu Terbit</span>
+                <span style="color:var(--primary);font-weight:700;">DuitKu News Reader</span>
             </div>
-            <div class="news-modal-text" id="modalDescription">Ringkasan berita...</div>
+            <div class="news-modal-text" id="modalDescription">Memuat ringkasan...</div>
         </div>
-        <div class="news-modal-ftr">
-            <a href="#" target="_blank" rel="noopener noreferrer" class="news-btn-source" id="modalLinkBtn">
-                <span>Buka Berita di Situs Asli</span>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
-            </a>
-            <button type="button" class="news-btn-modal-share" id="modalShareBtn" title="Bagikan" onclick="shareCurrentModalNews()">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            </button>
+        <div class="news-modal-ftr" style="display:flex;flex-direction:column;gap:10px;padding:12px 18px;">
+            <div style="display:flex;align-items:center;gap:10px;width:100%;">
+                <button type="button" class="news-btn-source" onclick="closeNewsReaderDirect()" style="flex:1;background:var(--primary);">
+                    <span>Selesai Membaca</span>
+                </button>
+                <button type="button" class="news-btn-modal-share" id="modalShareBtn" title="Bagikan Berita" onclick="shareCurrentModalNews()">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                </button>
+            </div>
+            <div style="text-align:center;font-size:11px;color:var(--text-muted);">
+                Dikutip langsung dari sumber resmi • <a href="#" target="_blank" rel="noopener noreferrer" id="modalLinkBtn" style="color:var(--primary);text-decoration:underline;">Tautan Asli</a>
+            </div>
         </div>
     </div>
 </div>
@@ -807,6 +814,9 @@ function openNewsReader(item) {
     const pubDate = document.getElementById('modalPubDate');
     const desc = document.getElementById('modalDescription');
     const linkBtn = document.getElementById('modalLinkBtn');
+    const scrollBody = document.getElementById('newsModalBodyScroll');
+
+    if (scrollBody) scrollBody.scrollTop = 0;
 
     badge.textContent = item.source || 'Berita';
     badge.style.background = item.color || '#2563EB';
@@ -820,38 +830,41 @@ function openNewsReader(item) {
 
     title.textContent = item.title || '';
     cat.textContent = (item.category || 'Nasional') + ' • ' + (item.time_ago || '');
-    pubDate.textContent = item.pub_date || '';
+    pubDate.innerHTML = '🕒 ' + (item.pub_date || item.time_ago || '');
     linkBtn.href = item.link || '#';
 
-    // Tampilkan ringkasan awal dan loader teks lengkap
-    desc.innerHTML = '<div style="margin-bottom:12px;font-style:italic;color:var(--text-muted);font-size:13px;border-left:3px solid var(--primary);padding-left:10px;">' + 
+    // Bersihkan dan pasang placeholder loading artikel lengkap
+    desc.innerHTML = '<div style="margin-bottom:14px;padding:10px 14px;background:rgba(37,99,235,0.06);border-left:3px solid var(--primary);border-radius:4px 8px 8px 4px;font-size:13px;color:var(--text-secondary);line-height:1.5;">' + 
                      (item.description ? escapeHtml(item.description) : '') + 
-                     '</div><div id="fullArticleLoader" style="display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--bg);border-radius:12px;font-size:12.5px;color:var(--text-muted);margin-bottom:10px;"><span style="display:inline-block;animation:spin 1s linear infinite">⏳</span> Sedang memuat isi berita lengkap...</div><div id="fullArticleContainer"></div>';
+                     '</div><div id="fullArticleLoader" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:24px 16px;background:var(--bg);border-radius:14px;font-size:13px;font-weight:600;color:var(--primary);margin:14px 0;"><span style="display:inline-block;animation:spin 0.8s linear infinite;font-size:18px;">⏳</span> Memuat naskah lengkap berita...</div><div id="fullArticleContainer"></div>';
 
     overlay.classList.add('active');
     document.body.style.overflow = 'hidden';
 
-    // Ambil naskah lengkap dari endpoint grabber backend
-    fetch('/api/berita/article?url=' + encodeURIComponent(item.link), { credentials: 'same-origin' })
+    // Ambil naskah lengkap berita langsung dari endpoint reader
+    fetch('/api/berita/article?url=' + encodeURIComponent(item.link))
         .then(r => r.json())
         .then(res => {
             const loader = document.getElementById('fullArticleLoader');
             const cont = document.getElementById('fullArticleContainer');
             if (loader) loader.style.display = 'none';
             if (res.success && res.paragraphs && res.paragraphs.length > 0) {
-                let html = '<div style="display:flex;flex-direction:column;gap:14px;">';
+                let html = '<div style="display:flex;flex-direction:column;gap:14px;margin-top:6px;">';
                 res.paragraphs.forEach(p => {
-                    html += '<p style="font-size:14.5px;line-height:1.75;color:var(--text-primary);margin:0;letter-spacing:-0.1px;">' + escapeHtml(p) + '</p>';
+                    html += '<p style="font-size:14.5px;line-height:1.8;color:var(--text-primary);margin:0;letter-spacing:-0.1px;text-align:justify;">' + escapeHtml(p) + '</p>';
                 });
                 html += '</div>';
                 if (cont) cont.innerHTML = html;
             } else {
-                if (cont) cont.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">(Halaman asli memerlukan interaksi khusus atau berbayar, gunakan tombol di bawah untuk membuka artikel asli)</div>';
+                // Jika halaman tidak memiliki paragraf terpisah, tampilkan ringkasan berita sebagai isi
+                if (cont) cont.innerHTML = '<div style="font-size:14px;line-height:1.75;color:var(--text-primary);padding:10px 0;">' + escapeHtml(item.description || '') + '</div>';
             }
         })
         .catch(() => {
             const loader = document.getElementById('fullArticleLoader');
+            const cont = document.getElementById('fullArticleContainer');
             if (loader) loader.style.display = 'none';
+            if (cont) cont.innerHTML = '<div style="font-size:14px;line-height:1.75;color:var(--text-primary);padding:10px 0;">' + escapeHtml(item.description || '') + '</div>';
         });
 }
 

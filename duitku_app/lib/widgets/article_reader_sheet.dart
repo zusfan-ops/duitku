@@ -29,7 +29,6 @@ class ArticleReaderSheet extends StatefulWidget {
 class _ArticleReaderSheetState extends State<ArticleReaderSheet> {
   List<String> _paragraphs = [];
   bool _loading = true;
-  String? _error;
 
   @override
   void initState() {
@@ -51,10 +50,9 @@ class _ArticleReaderSheetState extends State<ArticleReaderSheet> {
           _loading = false;
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
         _loading = false;
       });
     }
@@ -289,43 +287,56 @@ class _ArticleReaderSheetState extends State<ArticleReaderSheet> {
                           );
                         }).toList(),
                       )
-                    else if (_error != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                    else
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Text(
-                          'Naskah lengkap dapat dibaca langsung melalui website asli di bawah.',
+                          item.description,
                           style: TextStyle(
-                            fontSize: 12,
-                            color: isDark ? Colors.amber[200] : Colors.amber[900],
+                            fontSize: 14.5,
+                            height: 1.75,
+                            color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B),
                           ),
                         ),
                       ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
-                    // External Source Button
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        side: BorderSide(
-                          color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                    // In-App Action: Done Button & Source Credit
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          'Selesai Membaca',
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
                         ),
                       ),
-                      onPressed: () async {
-                        final uri = Uri.tryParse(item.link);
-                        if (uri != null && await canLaunchUrl(uri)) {
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
-                        }
-                      },
-                      icon: const Icon(Icons.open_in_browser, size: 16),
-                      label: Text(
-                        'Buka di Situs Asli (${item.source})',
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
+                    ),
+                    const SizedBox(height: 10),
+                    Center(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final uri = Uri.tryParse(item.link);
+                          if (uri != null && await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        child: Text(
+                          'Dikutip dari ${item.source} • Kunjungi Halaman Asli',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? Colors.white38 : Colors.black38,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
                       ),
                     ),
                   ],

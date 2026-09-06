@@ -4,24 +4,15 @@ namespace App\Services;
 
 class NewsService
 {
-    private const CACHE_KEY = 'rss_news_feeds_v1';
+    private const CACHE_KEY = 'rss_news_feeds_v2';
     private const CACHE_TTL = 900; // 15 menit sesuai siklus update RSS
 
     /**
-     * Daftar feed RSS Berita Indonesia
+     * Daftar feed RSS Berita Indonesia yang 100% bisa di-grab teks lengkapnya
      */
     public static function getSourceDefinitions(): array
     {
         return [
-            'detik' => [
-                'name'     => 'Detik News',
-                'url'      => 'https://news.detik.com/berita/rss',
-                'category' => 'Nasional',
-                'color'    => '#1E40AF',
-                'bg_color' => 'rgba(30, 64, 175, 0.12)',
-                'icon'     => '⚡',
-                'priority' => 1,
-            ],
             'cnn' => [
                 'name'     => 'CNN Indonesia',
                 'url'      => 'https://www.cnnindonesia.com/nasional/rss',
@@ -29,7 +20,7 @@ class NewsService
                 'color'    => '#DC2626',
                 'bg_color' => 'rgba(220, 38, 38, 0.12)',
                 'icon'     => '🔴',
-                'priority' => 2,
+                'priority' => 1,
             ],
             'antara' => [
                 'name'     => 'ANTARA',
@@ -38,7 +29,7 @@ class NewsService
                 'color'    => '#0284C7',
                 'bg_color' => 'rgba(2, 132, 199, 0.12)',
                 'icon'     => '🌐',
-                'priority' => 3,
+                'priority' => 2,
             ],
             'cnbc' => [
                 'name'     => 'CNBC Indonesia',
@@ -47,7 +38,7 @@ class NewsService
                 'color'    => '#0369A1',
                 'bg_color' => 'rgba(3, 105, 161, 0.12)',
                 'icon'     => '📈',
-                'priority' => 4,
+                'priority' => 3,
             ],
             'cnn_ekonomi' => [
                 'name'     => 'CNN Ekonomi',
@@ -56,7 +47,7 @@ class NewsService
                 'color'    => '#059669',
                 'bg_color' => 'rgba(5, 150, 105, 0.12)',
                 'icon'     => '💼',
-                'priority' => 5,
+                'priority' => 4,
             ],
             'liputan6' => [
                 'name'     => 'Liputan6',
@@ -65,25 +56,7 @@ class NewsService
                 'color'    => '#EA580C',
                 'bg_color' => 'rgba(234, 88, 12, 0.12)',
                 'icon'     => '📰',
-                'priority' => 6,
-            ],
-            'tempo' => [
-                'name'     => 'Tempo',
-                'url'      => 'http://rss.tempo.co/nasional',
-                'category' => 'Nasional',
-                'color'    => '#B91C1C',
-                'bg_color' => 'rgba(185, 28, 28, 0.12)',
-                'icon'     => '🏛️',
-                'priority' => 7,
-            ],
-            'sindonews' => [
-                'name'     => 'SINDOnews',
-                'url'      => 'https://nasional.sindonews.com/rss',
-                'category' => 'Nasional',
-                'color'    => '#7C3AED',
-                'bg_color' => 'rgba(124, 58, 237, 0.12)',
-                'icon'     => '📢',
-                'priority' => 8,
+                'priority' => 5,
             ],
             'republika' => [
                 'name'     => 'Republika',
@@ -92,52 +65,7 @@ class NewsService
                 'color'    => '#047857',
                 'bg_color' => 'rgba(4, 120, 87, 0.12)',
                 'icon'     => '📖',
-                'priority' => 9,
-            ],
-            'mediaindonesia' => [
-                'name'     => 'Media Indonesia',
-                'url'      => 'https://mediaindonesia.com/feed',
-                'category' => 'Nasional',
-                'color'    => '#D97706',
-                'bg_color' => 'rgba(217, 119, 6, 0.12)',
-                'icon'     => '🗞️',
-                'priority' => 10,
-            ],
-            'kompas' => [
-                'name'     => 'Kompas',
-                'url'      => 'https://rss.kompas.com/api/feed/social?apikey=bc58c81819dff4b8d5c53540a2fc7ffd83e6314a',
-                'category' => 'Top News',
-                'color'    => '#2563EB',
-                'bg_color' => 'rgba(37, 99, 235, 0.12)',
-                'icon'     => '🧭',
-                'priority' => 11,
-            ],
-            'kontan' => [
-                'name'     => 'Kontan',
-                'url'      => 'https://rss.kontan.co.id/news/keuangan',
-                'category' => 'Keuangan',
-                'color'    => '#CA8A04',
-                'bg_color' => 'rgba(202, 138, 4, 0.12)',
-                'icon'     => '💰',
-                'priority' => 12,
-            ],
-            'suara' => [
-                'name'     => 'Suara',
-                'url'      => 'https://www.suara.com/rss/news',
-                'category' => 'Nasional',
-                'color'    => '#E11D48',
-                'bg_color' => 'rgba(225, 29, 72, 0.12)',
-                'icon'     => '🎙️',
-                'priority' => 13,
-            ],
-            'suara_bisnis' => [
-                'name'     => 'Suara Bisnis',
-                'url'      => 'https://www.suara.com/rss/bisnis',
-                'category' => 'Ekonomi & Bisnis',
-                'color'    => '#0D9488',
-                'bg_color' => 'rgba(13, 148, 136, 0.12)',
-                'icon'     => '📊',
-                'priority' => 14,
+                'priority' => 6,
             ],
         ];
     }
@@ -162,13 +90,14 @@ class NewsService
 
         // Fetch fresh feeds via parallel cURL
         $sources = self::getSourceDefinitions();
-        $rawResponses = self::multiFetch(array_column($sources, 'url', 'detik'));
-        
-        // Re-map with actual keys
+        $urlsToFetch = [];
         $urlToKey = [];
         foreach ($sources as $k => $cfg) {
+            $urlsToFetch[$k] = $cfg['url'];
             $urlToKey[$cfg['url']] = $k;
         }
+
+        $rawResponses = self::multiFetch($urlsToFetch);
 
         $allItems = [];
         foreach ($rawResponses as $url => $xmlString) {
@@ -638,7 +567,7 @@ class NewsService
 
         // Selektor kontainer artikel di berbagai media Indonesia
         $candidateQueries = [
-            '//*[contains(@class, "detail__body-text") or contains(@class, "detail-text") or contains(@class, "detail-desc") or @id="detail-desc" or contains(@class, "read__content") or contains(@class, "article__content") or contains(@class, "article-content") or contains(@class, "post-content") or contains(@class, "content-detail") or contains(@class, "detail-body") or @id="content"]',
+            '//*[contains(@class, "detail__body-text") or contains(@class, "detail-text") or contains(@class, "detail_text") or contains(@class, "detail-desc") or @id="detail-desc" or contains(@class, "read__content") or contains(@class, "article__content") or contains(@class, "article-content") or contains(@class, "article-content-body") or contains(@class, "post-content") or contains(@class, "content-detail") or contains(@class, "detail-body") or contains(@class, "artikel-isi") or contains(@class, "read__body") or @id="content"]',
             '//article',
         ];
 
