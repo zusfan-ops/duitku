@@ -103,6 +103,13 @@ class ApiService {
     } catch (_) {}
   }
 
+  /// Daftarkan FCM Device Token ke backend untuk push notification realtime instan
+  Future<void> registerFcmToken(String fcmToken) async {
+    try {
+      await post('user/fcm-token', {'fcm_token': fcmToken});
+    } catch (_) {}
+  }
+
   // ── Dashboard ────────────────────────────────────────────────
   Future<DashboardData> dashboard() async {
     final json = await get('dashboard');

@@ -197,7 +197,7 @@ class FcmService
         $stringData['title'] = $title;
         $stringData['message'] = $body;
 
-        $chatTypes = ['marketplace_chat', 'direct_chat', 'friend_request', 'friend_accepted'];
+        $chatTypes = ['marketplace_chat', 'direct_chat', 'friend_request', 'friend_accepted', 'status_comment'];
         $isChat = (!empty($data['type']) && in_array($data['type'], $chatTypes, true));
         $channelId = $isChat ? 'duitku_chat_channel' : 'duitku_broadcast_channel';
 
@@ -209,11 +209,15 @@ class FcmService
             'notification_priority'   => 'PRIORITY_MAX',
             'visibility'              => 'PUBLIC',
             'click_action'            => 'FLUTTER_NOTIFICATION_CLICK',
+            'color'                   => '#059669',
+            'icon'                    => 'ic_launcher',
         ];
 
         if ($isChat) {
             if (!empty($data['type']) && $data['type'] === 'direct_chat') {
-                $tag = 'direct_chat_' . ($data['sender_id'] ?? '0');
+                $tag = 'direct_chat_' . ($data['sender_id'] ?? $data['friend_id'] ?? '0');
+            } elseif (!empty($data['type']) && $data['type'] === 'status_comment') {
+                $tag = 'status_comment_' . ($data['status_id'] ?? '0');
             } else {
                 $tag = 'chat_' . ($data['listing_id'] ?? '0') . '_' . ($data['buyer_id'] ?? '0');
             }
@@ -312,64 +316,117 @@ class FcmService
     }
 
     /**
-     * Kirim push notifikasi langsung ke Token Perangkat tertentu
+     * Kirim push notifikasi langsung ke Token Perangkat tertentu secara instan (realtime)
      */
-    public function sendToToken(string $deviceToken, string $title, string $body, array $data = []): array
+     public function sendToToken(string $deviceToken, string $title, string $body, array $data = []): array
+     {
+         $accessToken = $this->getAccessToken();
+         if (!$accessToken) {
+             return ['success' => false, 'message' => 'Service Account Firebase belum dikonfigurasi atau Access Token gagal dibuat.'];
+         }
+
+         $url = "https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send";
+
+         $stringData = [];
+         foreach ($data as $k => $v) {
+             $stringData[(string)$k] = (string)$v;
+         }
+         $stringData['title'] = $title;
+         $stringData['message'] = $body;
+
+         $chatTypes = ['marketplace_chat', 'direct_chat', 'friend_request', 'friend_accepted', 'status_comment'];
+         $isChat = (!empty($data['type']) && in_array($data['type'], $chatTypes, true));
+         $channelId = $isChat ? 'duitku_chat_channel' : 'duitku_broadcast_channel';
+
+         $androidNotification = [
+             'channel_id'              => $channelId,
+             'sound'                   => 'default',
+             'default_vibrate_timings' => true,
+             'default_sound'           => true,
+             'notification_priority'   => 'PRIORITY_MAX',
+             'visibility'              => 'PUBLIC',
+             'click_action'            => 'FLUTTER_NOTIFICATION_CLICK',
+             'color'                   => '#059669',
+             'icon'                    => 'ic_launcher',
+         ];
+
+         if ($isChat) {
+             if (!empty($data['type']) && $data['type'] === 'direct_chat') {
+                 $androidNotification['tag'] = 'direct_chat_' . ($data['sender_id'] ?? $data['friend_id'] ?? '0');
+             } elseif (!empty($data['type']) && $data['type'] === 'status_comment') {
+                 $androidNotification['tag'] = 'status_comment_' . ($data['status_id'] ?? '0');
+             } else {
+                 $androidNotification['tag'] = 'chat_' . ($data['listing_id'] ?? '0') . '_' . ($data['buyer_id'] ?? '0');
+             }
+         }
+
+         $payload = [
+             'message' => [
+                 'token' => $deviceToken,
+                 'notification' => [
+                     'title' => $title,
+                     'body'  => $body,
+                 ],
+                 'data' => $stringData,
+                 'android' => [
+                     'priority'     => 'HIGH',
+                     'notification' => $androidNotification,
+                 ],
+             ],
+         ];
+
+         $ch = curl_init($url);
+         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+         curl_setopt($ch, CURLOPT_POST, true);
+         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+         curl_setopt($ch, CURLOPT_HTTPHEADER, [
+             'Authorization: Bearer ' . $accessToken,
+             'Content-Type: application/json; UTF-8',
+         ]);
+         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
+         $response = curl_exec($ch);
+         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+         curl_close($ch);
+
+         $resData = json_decode($response, true);
+         if ($httpCode >= 200 && $httpCode < 300) {
+             return ['success' => true, 'response' => $resData];
+         }
+
+         return ['success' => false, 'http_code' => $httpCode, 'response' => $resData];
+     }
+
+    /**
+     * Kirim notifikasi realtime ke User tertentu:
+     * 1. Jika pengguna memiliki FCM device token tersimpan, kirim langsung ke token (INSTAN <1 detik).
+     * 2. Sekaligus kirim ke Topic user_{id} sebagai cadangan/fallback terjamin.
+     */
+    public function sendToUser(int $userId, string $title, string $body, array $data = []): array
     {
-        $accessToken = $this->getAccessToken();
-        if (!$accessToken) {
-            return ['success' => false, 'message' => 'Service Account Firebase belum dikonfigurasi atau Access Token gagal dibuat.'];
+        $userModel = new \App\Models\UserModel();
+        $user = $userModel->find($userId);
+
+        $directSuccess = false;
+        $directMsg = '';
+        if ($user && !empty($user['fcm_token'])) {
+            $tokenRes = $this->sendToToken($user['fcm_token'], $title, $body, $data);
+            if (!empty($tokenRes['success'])) {
+                $directSuccess = true;
+            } else {
+                $directMsg = $tokenRes['message'] ?? 'Direct token failed';
+            }
         }
 
-        $url = "https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send";
+        // Kirim juga ke topic user_{id} sebagai fallback terjamin
+        $topicRes = $this->sendToTopic("user_{$userId}", $title, $body, $data);
 
-        $stringData = [];
-        foreach ($data as $k => $v) {
-            $stringData[(string)$k] = (string)$v;
-        }
-        $stringData['title'] = $title;
-        $stringData['message'] = $body;
-
-        $payload = [
-            'message' => [
-                'token' => $deviceToken,
-                'notification' => [
-                    'title' => $title,
-                    'body'  => $body,
-                ],
-                'data' => $stringData,
-                'android' => [
-                    'priority' => 'high',
-                    'notification' => [
-                        'channel_id' => 'duitku_broadcast_channel',
-                        'sound'      => 'default',
-                        'default_vibrate_timings' => true,
-                        'default_sound'           => true,
-                    ],
-                ],
-            ],
+        return [
+            'success' => $directSuccess || !empty($topicRes['success']),
+            'direct'  => $directSuccess,
+            'topic'   => !empty($topicRes['success']),
+            'direct_error' => $directMsg ?: null,
         ];
-
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $accessToken,
-            'Content-Type: application/json; UTF-8',
-        ]);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        $resData = json_decode($response, true);
-        if ($httpCode >= 200 && $httpCode < 300) {
-            return ['success' => true, 'response' => $resData];
-        }
-
-        return ['success' => false, 'http_code' => $httpCode, 'response' => $resData];
     }
 
     protected function base64UrlEncode(string $data): string

@@ -14,8 +14,34 @@ class UserModel extends Model
     protected $protectFields    = true;
 
     protected $allowedFields = [
-        'name', 'username', 'email', 'phone', 'password', 'avatar', 'role'
+        'name', 'username', 'email', 'phone', 'password', 'avatar', 'role', 'fcm_token'
     ];
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureFcmTokenColumn();
+    }
+
+    public function ensureFcmTokenColumn(): void
+    {
+        try {
+            $db = \Config\Database::connect();
+            if ($db->tableExists($this->table) && !$db->fieldExists('fcm_token', $this->table)) {
+                $forge = \Config\Database::forge();
+                $forge->addColumn($this->table, [
+                    'fcm_token' => [
+                        'type'       => 'TEXT',
+                        'null'       => true,
+                        'default'    => null,
+                        'after'      => 'role',
+                    ],
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // Ignore if already added or no permission
+        }
+    }
 
     protected $useTimestamps  = true;
     protected $createdField   = 'created_at';

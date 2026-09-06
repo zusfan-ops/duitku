@@ -7,6 +7,7 @@ import '../firebase_options.dart';
 import '../main.dart';
 import '../screens/marketplace/market_chat_screen.dart';
 import '../screens/chat/direct_chat_screen.dart';
+import 'api_service.dart';
 import 'local_notification_service.dart';
 import 'session_manager.dart';
 import 'update_checker_service.dart';
@@ -27,15 +28,16 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
     // 1. Direct Chat Teman saat aplikasi tertutup / background
     if (rawType == 'direct_chat' || data['type'] == 'direct_chat') {
+      final senderId = data['sender_id'] ?? data['friend_id'];
       final payloadJson = jsonEncode({
         'type': 'direct_chat',
-        'sender_id': data['sender_id'],
-        'sender_name': data['sender_name'] ?? title.replaceFirst('💬 ', ''),
+        'sender_id': senderId,
+        'sender_name': data['sender_name'] ?? data['friend_name'] ?? title.replaceFirst('💬 ', ''),
         'sender_username': data['sender_username'] ?? '',
         'sender_avatar': data['sender_avatar'] ?? '',
         'title': title,
         'message': body,
-        'action_url': actionUrl ?? '/chat?direct_user=${data['sender_id']}',
+        'action_url': actionUrl ?? '/chat?direct_user=$senderId',
       });
 
       await LocalNotificationService.instance.showChatNotification(
@@ -67,6 +69,49 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         body: body,
         payload: payloadJson,
         subText: 'Chat Baru',
+      );
+      return;
+    }
+
+    // 3. Komentar Status saat aplikasi tertutup / background
+    if (rawType == 'status_comment' || data['type'] == 'status_comment') {
+      final payloadJson = jsonEncode({
+        'type': 'status_comment',
+        'status_id': data['status_id'],
+        'sender_id': data['sender_id'],
+        'sender_name': data['sender_name'],
+        'title': title,
+        'message': body,
+        'action_url': actionUrl ?? '/chat?status_id=${data['status_id']}',
+      });
+
+      await LocalNotificationService.instance.showChatNotification(
+        id: message.messageId.hashCode,
+        title: title,
+        body: body,
+        payload: payloadJson,
+        subText: 'Komentar Status',
+      );
+      return;
+    }
+
+    // 4. Permintaan & Penerimaan Pertemanan
+    if (rawType == 'friend_request' || rawType == 'friend_accepted') {
+      final payloadJson = jsonEncode({
+        'type': rawType,
+        'sender_id': data['sender_id'] ?? data['friend_id'],
+        'sender_name': data['sender_name'] ?? data['friend_name'],
+        'title': title,
+        'message': body,
+        'action_url': actionUrl ?? '/chat?tab=friends',
+      });
+
+      await LocalNotificationService.instance.showChatNotification(
+        id: message.messageId.hashCode,
+        title: title,
+        body: body,
+        payload: payloadJson,
+        subText: rawType == 'friend_request' ? 'Pertemanan' : 'Teman Baru',
       );
       return;
     }
@@ -148,10 +193,11 @@ class FcmService {
         debugPrint('FCM restore user topic error: $e');
       }
 
-      // Pantau perubahan token perangkat (re-subscribe jika token di-refresh)
+      // Pantau perubahan token perangkat (re-subscribe jika token di-refresh & sync ke backend)
       FirebaseMessaging.instance.onTokenRefresh.listen((token) async {
         debugPrint('FCM Token refreshed: $token');
         try {
+          await ApiService.instance.registerFcmToken(token);
           await FirebaseMessaging.instance.subscribeToTopic('duitku_broadcasts');
           await FirebaseMessaging.instance.subscribeToTopic('all_users');
           if (_currentSubscribedUserId != null && _currentSubscribedUserId! > 0) {
@@ -159,6 +205,9 @@ class FcmService {
           }
         } catch (_) {}
       });
+
+      // Segera daftarkan device token ke server
+      registerCurrentToken();
 
       // Tangani pesan saat aplikasi dibuka dari background (user tap push notification)
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
@@ -188,15 +237,16 @@ class FcmService {
 
         // 1. Notifikasi Direct Chat Teman saat aplikasi terbuka
         if (rawType == 'direct_chat' || data['type'] == 'direct_chat') {
+          final senderId = data['sender_id'] ?? data['friend_id'];
           final payloadJson = jsonEncode({
             'type': 'direct_chat',
-            'sender_id': data['sender_id'],
-            'sender_name': data['sender_name'] ?? title.replaceFirst('💬 ', ''),
+            'sender_id': senderId,
+            'sender_name': data['sender_name'] ?? data['friend_name'] ?? title.replaceFirst('💬 ', ''),
             'sender_username': data['sender_username'] ?? '',
             'sender_avatar': data['sender_avatar'] ?? '',
             'title': title,
             'message': body,
-            'action_url': actionUrl ?? '/chat?direct_user=${data['sender_id']}',
+            'action_url': actionUrl ?? '/chat?direct_user=$senderId',
           });
 
           LocalNotificationService.instance.showChatNotification(
@@ -232,6 +282,49 @@ class FcmService {
           return;
         }
 
+        // 3. Notifikasi Komentar Status
+        if (rawType == 'status_comment' || data['type'] == 'status_comment') {
+          final payloadJson = jsonEncode({
+            'type': 'status_comment',
+            'status_id': data['status_id'],
+            'sender_id': data['sender_id'],
+            'sender_name': data['sender_name'],
+            'title': title,
+            'message': body,
+            'action_url': actionUrl ?? '/chat?status_id=${data['status_id']}',
+          });
+
+          LocalNotificationService.instance.showChatNotification(
+            id: message.messageId.hashCode,
+            title: title,
+            body: body,
+            payload: payloadJson,
+            subText: 'Komentar Status',
+          );
+          return;
+        }
+
+        // 4. Permintaan & Penerimaan Pertemanan
+        if (rawType == 'friend_request' || rawType == 'friend_accepted') {
+          final payloadJson = jsonEncode({
+            'type': rawType,
+            'sender_id': data['sender_id'] ?? data['friend_id'],
+            'sender_name': data['sender_name'] ?? data['friend_name'],
+            'title': title,
+            'message': body,
+            'action_url': actionUrl ?? '/chat?tab=friends',
+          });
+
+          LocalNotificationService.instance.showChatNotification(
+            id: message.messageId.hashCode,
+            title: title,
+            body: body,
+            payload: payloadJson,
+            subText: rawType == 'friend_request' ? 'Pertemanan' : 'Teman Baru',
+          );
+          return;
+        }
+
         String notifPayload = actionUrl ?? '';
         if (rawType == 'update' || (apkUrl != null && apkUrl.contains('.apk'))) {
           notifPayload = jsonEncode({
@@ -261,6 +354,19 @@ class FcmService {
     }
   }
 
+  /// Daftarkan token perangkat saat ini ke backend
+  Future<void> registerCurrentToken() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null && token.isNotEmpty) {
+        debugPrint('FCM Device Token: $token');
+        await ApiService.instance.registerFcmToken(token);
+      }
+    } catch (e) {
+      debugPrint('FCM registerCurrentToken error: $e');
+    }
+  }
+
   /// Penanganan saat pengguna mengklik notifikasi FCM dari bilah status Android
   void _handleRemoteMessageClick(RemoteMessage message) {
     final data = message.data;
@@ -274,8 +380,8 @@ class FcmService {
 
     // 1. Tangani klik notifikasi Direct Chat Teman langsung ke DirectChatScreen
     if (rawType == 'direct_chat' || data['type'] == 'direct_chat') {
-      final senderId = int.tryParse('${data['sender_id']}') ?? 0;
-      final senderName = data['sender_name']?.toString() ?? title.replaceFirst('💬 ', '');
+      final senderId = int.tryParse('${data['sender_id'] ?? data['friend_id']}') ?? 0;
+      final senderName = data['sender_name']?.toString() ?? data['friend_name']?.toString() ?? title.replaceFirst('💬 ', '');
       final senderUsername = data['sender_username']?.toString() ?? '';
       final senderAvatar = data['sender_avatar']?.toString();
 
@@ -324,6 +430,21 @@ class FcmService {
       }
     }
 
+    // 3. Tangani Komentar Status / Stories Teman
+    if (rawType == 'status_comment' || data['type'] == 'status_comment') {
+      final statusId = int.tryParse('${data['status_id']}') ?? 0;
+      final url = actionUrl ?? (statusId > 0 ? '/chat?status_id=$statusId' : '/chat');
+      LocalNotificationService.instance.handleNotificationClick(url);
+      return;
+    }
+
+    // 4. Tangani Permintaan / Pertemanan
+    if (rawType == 'friend_request' || rawType == 'friend_accepted') {
+      final url = actionUrl ?? '/chat?tab=friends';
+      LocalNotificationService.instance.handleNotificationClick(url);
+      return;
+    }
+
     // 3. Tangani Update APK
     final isUpdate = rawType == 'update' || (apkUrl != null && (apkUrl.endsWith('.apk') || apkUrl.contains('.apk?')));
 
@@ -366,6 +487,7 @@ class FcmService {
       await FirebaseMessaging.instance.subscribeToTopic('user_$userId');
       _currentSubscribedUserId = userId;
       debugPrint('FCM subscribed to topic: user_$userId');
+      await registerCurrentToken();
     } catch (e) {
       debugPrint('FCM subscribeToUserTopic error: $e');
     }

@@ -43,7 +43,7 @@ import '../services/sync_service.dart';
 import '../widgets/sync_status_banner.dart';
 import '../widgets/tv_streaming_card.dart';
 import '../widgets/my_home_card.dart';
-import '../services/update_checker_service.dart';
+import '../utils/app_navigator.dart';
 import '../widgets/marketplace_featured_card.dart';
 import '../models/jellyfin_movie.dart';
 import 'marketplace/market_screen.dart';
@@ -3301,141 +3301,300 @@ void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback on
                       )
                     : ListView.separated(
                         controller: scrollCtrl,
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                         itemCount: notifs.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
                         itemBuilder: (context, idx) {
                           final item = notifs[idx] as Map<String, dynamic>;
                           final daysLeft = (item['days_left'] as num?)?.toInt() ?? 0;
                           final isUrgent = daysLeft <= 0;
                           final isSoon = daysLeft > 0 && daysLeft <= 2;
                           final amount = Fmt.toDouble(item['amount']);
+                          final rawType = (item['type'] ?? '').toString().toLowerCase();
+                          final aUrl = (item['action_url'] ?? '').toString().toLowerCase();
+
+                          // Tentukan tema warna & ikon kategori
+                          Gradient avatarGradient;
+                          IconData categoryIcon;
+                          String categoryBadge;
+                          Color badgeBg;
+                          Color badgeTextColor;
+                          Color primaryAccent;
+
+                          if (rawType == 'status_comment' || aUrl.contains('status_id')) {
+                            avatarGradient = const LinearGradient(
+                              colors: [Color(0xFF833AB4), Color(0xFFFD1D1D), Color(0xFFF77737)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            );
+                            categoryIcon = Icons.auto_awesome_rounded;
+                            categoryBadge = '📸 KOMENTAR STATUS';
+                            badgeBg = const Color(0xFFFCE7F3);
+                            badgeTextColor = const Color(0xFFBE185D);
+                            primaryAccent = const Color(0xFFE1306C);
+                          } else if (rawType == 'direct_chat' || aUrl.contains('direct_user')) {
+                            avatarGradient = const LinearGradient(
+                              colors: [Color(0xFF1D4ED8), Color(0xFF3B82F6)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            );
+                            categoryIcon = Icons.chat_bubble_rounded;
+                            categoryBadge = '💬 CHAT TEMAN';
+                            badgeBg = const Color(0xFFDBEAFE);
+                            badgeTextColor = const Color(0xFF1D4ED8);
+                            primaryAccent = const Color(0xFF2563EB);
+                          } else if (rawType == 'marketplace_chat' || aUrl.contains('marketplace')) {
+                            avatarGradient = const LinearGradient(
+                              colors: [Color(0xFF047857), Color(0xFF10B981)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            );
+                            categoryIcon = Icons.storefront_rounded;
+                            categoryBadge = '🛍️ MARKETPLACE';
+                            badgeBg = const Color(0xFFD1FAE5);
+                            badgeTextColor = const Color(0xFF047857);
+                            primaryAccent = const Color(0xFF059669);
+                          } else if (rawType == 'friend_request' || rawType == 'friend_accepted') {
+                            avatarGradient = const LinearGradient(
+                              colors: [Color(0xFF6D28D9), Color(0xFF8B5CF6)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            );
+                            categoryIcon = Icons.person_add_alt_1_rounded;
+                            categoryBadge = '🤝 PERTEMANAN';
+                            badgeBg = const Color(0xFFEDE9FE);
+                            badgeTextColor = const Color(0xFF6D28D9);
+                            primaryAccent = const Color(0xFF7C3AED);
+                          } else if (rawType == 'update' || aUrl.contains('.apk')) {
+                            avatarGradient = const LinearGradient(
+                              colors: [Color(0xFF047857), Color(0xFF10B981)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            );
+                            categoryIcon = Icons.system_update_rounded;
+                            categoryBadge = '🚀 UPDATE APLIKASI';
+                            badgeBg = const Color(0xFFD1FAE5);
+                            badgeTextColor = const Color(0xFF065F46);
+                            primaryAccent = const Color(0xFF059669);
+                          } else if (rawType == 'bill') {
+                            avatarGradient = isUrgent
+                                ? const LinearGradient(colors: [Color(0xFFDC2626), Color(0xFFEF4444)])
+                                : const LinearGradient(colors: [Color(0xFFD97706), Color(0xFFF59E0B)]);
+                            categoryIcon = Icons.receipt_long_rounded;
+                            categoryBadge = isUrgent ? '⚠️ TAGIHAN JATUH TEMPO' : '⏰ TAGIHAN';
+                            badgeBg = isUrgent ? const Color(0xFFFEE2E2) : const Color(0xFFFEF3C7);
+                            badgeTextColor = isUrgent ? const Color(0xFFDC2626) : const Color(0xFFD97706);
+                            primaryAccent = isUrgent ? const Color(0xFFDC2626) : const Color(0xFFD97706);
+                          } else if (rawType == 'debt') {
+                            avatarGradient = const LinearGradient(
+                              colors: [Color(0xFF991B1B), Color(0xFFDC2626)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            );
+                            categoryIcon = Icons.handshake_rounded;
+                            categoryBadge = isUrgent ? '⚠️ HUTANG JATUH TEMPO' : '🤝 HUTANG PIUTANG';
+                            badgeBg = const Color(0xFFFEE2E2);
+                            badgeTextColor = const Color(0xFF991B1B);
+                            primaryAccent = const Color(0xFFDC2626);
+                          } else {
+                            avatarGradient = const LinearGradient(
+                              colors: [Color(0xFF0284C7), Color(0xFF38BDF8)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            );
+                            categoryIcon = Icons.notifications_active_rounded;
+                            categoryBadge = '🔔 PEMBERITAHUAN';
+                            badgeBg = const Color(0xFFE0F2FE);
+                            badgeTextColor = const Color(0xFF0369A1);
+                            primaryAccent = const Color(0xFF0284C7);
+                          }
 
                           return Container(
-                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: AppColors.bg,
-                              borderRadius: BorderRadius.circular(16),
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
                               border: Border.all(
                                 color: isUrgent
-                                    ? const Color(0xFFEF4444)
-                                    : (isSoon ? const Color(0xFFF59E0B) : AppColors.border),
+                                    ? const Color(0xFFF87171)
+                                    : (isSoon ? const Color(0xFFFBBF24) : primaryAccent.withValues(alpha: 0.2)),
                                 width: (isUrgent || isSoon) ? 1.5 : 1,
                               ),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item['icon']?.toString() ?? '⏰',
-                                  style: const TextStyle(fontSize: 24),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item['title']?.toString() ?? '',
-                                        style: const TextStyle(
-                                          fontSize: 13.5,
-                                          fontWeight: FontWeight.w800,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      Text(
-                                        item['subtitle']?.toString() ?? '',
-                                        style: TextStyle(
-                                          fontSize: 11.5,
-                                          fontWeight: FontWeight.w600,
-                                          color: isUrgent
-                                              ? const Color(0xFFDC2626)
-                                              : (isSoon ? const Color(0xFFD97706) : AppColors.textSecondary),
-                                        ),
-                                      ),
-                                      if (amount > 0) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          Fmt.money(amount, symbol: symbol),
-                                          style: const TextStyle(
-                                            fontSize: 12.5,
-                                            fontWeight: FontWeight.w800,
-                                            color: AppColors.textPrimary,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    Navigator.pop(ctx);
-                                    final type = item['type']?.toString();
-                                    if (type == 'bill') {
-                                      Navigator.push(context, MaterialPageRoute(builder: (_) => BillsScreen(symbol: symbol))).then((_) => onRefresh());
-                                    } else if (type == 'debt') {
-                                      Navigator.push(context, MaterialPageRoute(builder: (_) => const DebtScreen())).then((_) => onRefresh());
-                                    } else if (type == 'tax') {
-                                      Navigator.push(context, MaterialPageRoute(builder: (_) => const VehicleScreen())).then((_) => onRefresh());
-                                    } else if (type == 'recurring') {
-                                      Navigator.push(context, MaterialPageRoute(builder: (_) => const RecurringScreen())).then((_) => onRefresh());
-                                    } else if (type == 'broadcast') {
-                                      final notifId = (item['notif_id'] as num?)?.toInt();
-                                      if (notifId != null) {
-                                        try {
-                                          await ApiService.instance.markNotificationRead(notifId);
-                                        } catch (_) {}
-                                      }
-                                      final actionUrl = item['action_url']?.toString();
-                                      final broadcastType = (item['broadcast_type'] ?? '').toString().toLowerCase();
-                                      final isUpdate = broadcastType == 'update' ||
-                                          (actionUrl != null && (actionUrl.toLowerCase().endsWith('.apk') || actionUrl.toLowerCase().contains('.apk?')));
-
-                                      // Jika ini pengumuman update aplikasi, langsung unduh di dalam aplikasi & buka installer (tanpa browser)
-                                      if (isUpdate && actionUrl != null && actionUrl.isNotEmpty) {
-                                        if (!context.mounted) return;
-                                         UpdateCheckerService.instance.showUpdateFromNotification(
-                                          context,
-                                          title: item['title']?.toString() ?? 'Pembaruan Aplikasi DuitKu',
-                                          message: item['message']?.toString() ?? item['subtitle']?.toString() ?? '',
-                                          apkUrl: actionUrl,
-                                          autoStart: true,
-                                        );
-                                        return;
-                                      }
-
-                                      if (actionUrl != null && actionUrl.isNotEmpty) {
-                                        final uri = Uri.tryParse(actionUrl);
-                                        if (uri != null && await canLaunchUrl(uri)) {
-                                          await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                          return;
-                                        }
-                                      }
-                                      if (!context.mounted) return;
-                                      Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())).then((_) => onRefresh());
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: isUrgent ? const Color(0xFFDC2626) : AppColors.primary,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    minimumSize: const Size(60, 32),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    item['type'] == 'broadcast'
-                                        ? (item['action_url'] != null && item['action_url'].toString().isNotEmpty
-                                            ? ((item['broadcast_type'] == 'update' || (item['action_url'] != null && item['action_url'].toString().contains('.apk'))) ? 'Update Sekarang' : (item['action_url'] != null && item['action_url'].toString().isNotEmpty ? 'Buka Link' : 'Baca'))
-                                            : 'Baca')
-                                        : (item['type'] == 'bill' || item['type'] == 'debt' ? 'Bayar' : 'Buka'),
-                                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
-                                  ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: primaryAccent.withValues(alpha: 0.07),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(18),
+                              child: IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    // Garis aksen vertikal berwarna di sebelah kiri
+                                    Container(
+                                      width: 4.5,
+                                      decoration: BoxDecoration(gradient: avatarGradient),
+                                    ),
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(13),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            // Avatar Ikon Gradien Mewah
+                                            Container(
+                                              width: 44,
+                                              height: 44,
+                                              decoration: BoxDecoration(
+                                                gradient: avatarGradient,
+                                                borderRadius: BorderRadius.circular(14),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: primaryAccent.withValues(alpha: 0.3),
+                                                    blurRadius: 6,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Center(
+                                                child: Icon(categoryIcon, color: Colors.white, size: 22),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            // Isi Informasi
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  // Badge Kategori & Status
+                                                  Row(
+                                                    children: [
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                                        decoration: BoxDecoration(
+                                                          color: badgeBg,
+                                                          borderRadius: BorderRadius.circular(6),
+                                                        ),
+                                                        child: Text(
+                                                          categoryBadge,
+                                                          style: TextStyle(
+                                                            fontSize: 9,
+                                                            fontWeight: FontWeight.w800,
+                                                            color: badgeTextColor,
+                                                            letterSpacing: 0.3,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const Spacer(),
+                                                      if (daysLeft > 0)
+                                                        Text(
+                                                          '$daysLeft hari lagi',
+                                                          style: TextStyle(
+                                                            fontSize: 10.5,
+                                                            fontWeight: FontWeight.w700,
+                                                            color: isSoon ? const Color(0xFFD97706) : AppColors.textMuted,
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  Text(
+                                                    item['title']?.toString() ?? '',
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.w800,
+                                                      color: AppColors.textPrimary,
+                                                      height: 1.25,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 3),
+                                                  Text(
+                                                    item['subtitle']?.toString() ?? '',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.w500,
+                                                      color: isUrgent
+                                                          ? const Color(0xFFDC2626)
+                                                          : (isSoon ? const Color(0xFFD97706) : AppColors.textSecondary),
+                                                      height: 1.35,
+                                                    ),
+                                                  ),
+                                                  if (amount > 0) ...[
+                                                    const SizedBox(height: 6),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                      decoration: BoxDecoration(
+                                                        color: primaryAccent.withValues(alpha: 0.08),
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                      child: Text(
+                                                        Fmt.money(amount, symbol: symbol),
+                                                        style: TextStyle(
+                                                          fontSize: 12.5,
+                                                          fontWeight: FontWeight.w900,
+                                                          color: primaryAccent,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            // Tombol Aksi Mewah
+                                            Align(
+                                              alignment: Alignment.center,
+                                              child: ElevatedButton(
+                                                onPressed: () async {
+                                                  Navigator.pop(ctx);
+                                                  await AppNavigator.openTarget(
+                                                    context,
+                                                    actionUrl: item['action_url']?.toString(),
+                                                    type: item['type']?.toString(),
+                                                    title: item['title']?.toString(),
+                                                    message: item['message']?.toString() ?? item['subtitle']?.toString(),
+                                                    notifId: (item['notif_id'] as num?)?.toInt() ?? (item['id'] as num?)?.toInt(),
+                                                    onRefresh: onRefresh,
+                                                  );
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: primaryAccent,
+                                                  foregroundColor: Colors.white,
+                                                  elevation: 2,
+                                                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                                                  minimumSize: const Size(64, 34),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(10),
+                                                  ),
+                                                ),
+                                                child: Builder(
+                                                  builder: (_) {
+                                                    if (rawType == 'bill' || rawType == 'debt') {
+                                                      return const Text('Bayar', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800));
+                                                    } else if (aUrl.contains('status_id') || rawType == 'status_comment') {
+                                                      return const Text('Lihat', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800));
+                                                    } else if (aUrl.contains('direct_user') || rawType == 'direct_chat') {
+                                                      return const Text('Balas', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800));
+                                                    } else if (rawType == 'update' || aUrl.contains('.apk')) {
+                                                      return const Text('Update', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800));
+                                                    } else if (aUrl.isNotEmpty) {
+                                                      return const Text('Buka', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800));
+                                                    }
+                                                    return const Text('Baca', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800));
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           );
                         },

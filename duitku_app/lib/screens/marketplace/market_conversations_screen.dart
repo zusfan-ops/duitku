@@ -13,7 +13,17 @@ import 'market_chat_screen.dart';
 
 class MarketConversationsScreen extends StatefulWidget {
   final bool isRootTab;
-  const MarketConversationsScreen({super.key, this.isRootTab = false});
+  final int? initialStatusId;
+  final int? initialDirectUserId;
+  final String? initialTab;
+
+  const MarketConversationsScreen({
+    super.key,
+    this.isRootTab = false,
+    this.initialStatusId,
+    this.initialDirectUserId,
+    this.initialTab,
+  });
 
   @override
   State<MarketConversationsScreen> createState() => _MarketConversationsScreenState();
@@ -30,10 +40,19 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
   int _archivedCount = 0;
   Timer? _refreshTimer;
   String _activeFilter = 'all'; // 'all', 'direct', 'marketplace', 'archived'
+  bool _hasHandledInitialStatus = false;
+  bool _hasHandledInitialDirectUser = false;
 
   @override
   void initState() {
     super.initState();
+    if (widget.initialTab != null) {
+      if (widget.initialTab == 'friends' || widget.initialTab == 'direct') {
+        _activeFilter = 'direct';
+      } else if (widget.initialTab == 'marketplace') {
+        _activeFilter = 'marketplace';
+      }
+    }
     _loadData();
     _startAutoRefresh();
   }
@@ -110,6 +129,52 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
           _archivedCount = archived;
           _isLoading = false;
         });
+
+        // ── Auto-Open Target dari Notifikasi (Status / Direct Chat) ──
+        if (widget.initialStatusId != null && !_hasHandledInitialStatus) {
+          _hasHandledInitialStatus = true;
+          final targetIdx = _statuses.indexWhere((s) => int.tryParse('${s['id']}') == widget.initialStatusId);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              if (targetIdx >= 0) {
+                _openStatusViewer(_statuses, targetIdx, autoOpenComments: true);
+              } else {
+                _showInstagramCommentsSheet(
+                  parentCtx: context,
+                  statusId: widget.initialStatusId!,
+                  authorName: 'Status',
+                  authorAvatar: '',
+                  caption: '',
+                  timeStr: '',
+                  onCountUpdated: (_) {},
+                );
+              }
+            }
+          });
+        }
+
+        if (widget.initialDirectUserId != null && !_hasHandledInitialDirectUser) {
+          _hasHandledInitialDirectUser = true;
+          final friend = _friends.firstWhere(
+            (f) => f.friendId == widget.initialDirectUserId,
+            orElse: () => Friend(friendId: widget.initialDirectUserId!, name: 'Teman', username: ''),
+          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DirectChatScreen(
+                    friendId: friend.friendId,
+                    friendName: friend.name,
+                    friendUsername: friend.username,
+                    friendAvatar: friend.avatarImage,
+                  ),
+                ),
+              );
+            }
+          });
+        }
       }
     } catch (e) {
       if (mounted && !isSilent) {

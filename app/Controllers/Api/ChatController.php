@@ -119,11 +119,11 @@ class ChatController extends ApiController
                 log_message('error', 'Friend request notif error: ' . $e->getMessage());
             }
 
-            // 2. FCM Push notification
+            // 2. FCM Push notification realtime ke user (token perangkat + topic)
             try {
                 if ($this->fcmService->isConfigured()) {
-                    $this->fcmService->sendToTopic(
-                        "user_{$friendId}",
+                    $this->fcmService->sendToUser(
+                        $friendId,
                         $notifTitle,
                         $notifMsg,
                         [
@@ -183,13 +183,14 @@ class ChatController extends ApiController
                 ]);
 
                 if ($this->fcmService->isConfigured()) {
-                    $this->fcmService->sendToTopic(
-                        "user_{$senderId}",
+                    $this->fcmService->sendToUser(
+                        $senderId,
                         "🤝 Permintaan Diterima!",
                         "{$myName} menerima permintaan pertemanan Anda. Ketuk untuk mulai chat!",
                         [
                             'type'         => 'friend_accepted',
                             'friend_id'    => (string)$userId,
+                            'sender_id'    => (string)$userId,
                             'friend_name'  => (string)$myName,
                             'action_url'   => '/chat?direct_user=' . $userId,
                             'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
@@ -309,20 +310,36 @@ class ChatController extends ApiController
             log_message('error', 'Reverb direct chat broadcast error: ' . $e->getMessage());
         }
 
-        // Kirim notifikasi FCM Push ke teman jika offline
+        // Simpan ke notifikasi in-app untuk penerima
+        try {
+            $this->notifModel->insert([
+                'user_id'    => $friendId,
+                'title'      => "💬 {$senderName}",
+                'message'    => $message,
+                'type'       => 'direct_chat',
+                'action_url' => '/chat?direct_user=' . $userId,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Direct chat in-app notif error: ' . $e->getMessage());
+        }
+
+        // Kirim notifikasi FCM Push realtime langsung ke HP teman (via Direct Token + Topic fallback)
         try {
             if ($this->fcmService->isConfigured()) {
-                $this->fcmService->sendToTopic(
-                    "user_{$friendId}",
-                    $senderName,
+                $this->fcmService->sendToUser(
+                    $friendId,
+                    "💬 {$senderName}",
                     $message,
                     [
-                        'type'         => 'direct_chat',
-                        'friend_id'    => (string)$userId,
-                        'friend_name'  => (string)$senderName,
-                        'message'      => (string)$message,
-                        'action_url'   => '/chat',
-                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                        'type'            => 'direct_chat',
+                        'sender_id'       => (string)$userId,
+                        'friend_id'       => (string)$userId,
+                        'sender_name'     => (string)$senderName,
+                        'friend_name'     => (string)$senderName,
+                        'sender_username' => (string)($sender['username'] ?? ''),
+                        'message'         => (string)$message,
+                        'action_url'      => '/chat?direct_user=' . $userId,
+                        'click_action'    => 'FLUTTER_NOTIFICATION_CLICK',
                     ]
                 );
             }
@@ -599,5 +616,30 @@ class ChatController extends ApiController
         }
 
         return $this->fail('Tidak ada file atau gambar yang diunggah.');
+    }
+
+    /**
+     * POST /api/user/fcm-token
+     * Daftarkan FCM device token untuk pengiriman push notification realtime instan
+     * Body: { fcm_token: "..." }
+     */
+    public function registerFcmToken()
+    {
+        $userId = $this->uid();
+        $token  = trim((string)($this->request->getVar('fcm_token') ?? ''));
+
+        if (empty($token)) {
+            return $this->fail('FCM Token tidak boleh kosong.');
+        }
+
+        try {
+            $this->userModel->update($userId, ['fcm_token' => $token]);
+            return $this->ok([
+                'message' => 'FCM Token berhasil diperbarui.',
+                'user_id' => $userId,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->fail('Gagal memperbarui FCM Token: ' . $e->getMessage());
+        }
     }
 }

@@ -156,8 +156,8 @@ class StatusController extends ApiController
 
             try {
                 if ($this->fcmService->isConfigured()) {
-                    $this->fcmService->sendToTopic(
-                        "user_{$authorId}",
+                    $this->fcmService->sendToUser(
+                        $authorId,
                         "💬 {$myName} mengomentari status Anda",
                         $comment,
                         [
@@ -165,7 +165,7 @@ class StatusController extends ApiController
                             'status_id'    => (string)$statusId,
                             'sender_id'    => (string)$userId,
                             'sender_name'  => (string)$myName,
-                            'action_url'   => '/chat',
+                            'action_url'   => '/chat?status_id=' . $statusId,
                             'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
                         ]
                     );

@@ -1402,17 +1402,20 @@ class MarketplaceController extends BaseController
 
         try {
             if ($this->fcmService->isConfigured()) {
-                $this->fcmService->sendToTopic(
-                    "user_{$friendId}",
+                $this->fcmService->sendToUser(
+                    $friendId,
                     "💬 {$senderName}",
                     $message,
                     [
-                        'type'         => 'direct_chat',
-                        'sender_id'    => (string)$userId,
-                        'sender_name'  => (string)$senderName,
-                        'message'      => (string)$message,
-                        'action_url'   => '/chat?direct_user=' . $userId,
-                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                        'type'            => 'direct_chat',
+                        'sender_id'       => (string)$userId,
+                        'friend_id'       => (string)$userId,
+                        'sender_name'     => (string)$senderName,
+                        'friend_name'     => (string)$senderName,
+                        'sender_username' => (string)($sender['username'] ?? ''),
+                        'message'         => (string)$message,
+                        'action_url'      => '/chat?direct_user=' . $userId,
+                        'click_action'    => 'FLUTTER_NOTIFICATION_CLICK',
                     ]
                 );
             }

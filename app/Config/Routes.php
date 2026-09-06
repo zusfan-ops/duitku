@@ -496,6 +496,7 @@ $routes->group('api', function ($routes) {
         $routes->post('chat/conversation/archive',        'Api\ChatController::archiveConversation');
         $routes->post('chat/conversation/delete',         'Api\ChatController::deleteConversation');
         $routes->post('chat/upload',                      'Api\ChatController::uploadAttachment');
+        $routes->post('user/fcm-token',                   'Api\ChatController::registerFcmToken');
 
         // Friend-Only Status / Stories API
         $routes->get('status/feed',                       'Api\StatusController::feed');

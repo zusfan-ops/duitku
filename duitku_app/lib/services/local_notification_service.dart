@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../main.dart';
 import '../screens/chat/direct_chat_screen.dart';
 import '../screens/marketplace/market_chat_screen.dart';
+import '../screens/marketplace/market_conversations_screen.dart';
 import 'update_checker_service.dart';
 
 class NotificationToneOption {
@@ -228,6 +229,9 @@ class LocalNotificationService {
       sound: sound,
       enableVibration: true,
       subText: subText,
+      color: const Color(0xFF059669),
+      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      channelShowBadge: true,
       styleInformation: BigTextStyleInformation(
         body,
         contentTitle: title,
@@ -272,6 +276,9 @@ class LocalNotificationService {
       enableVibration: true,
       category: AndroidNotificationCategory.message,
       subText: subText ?? 'Chat Masuk',
+      color: const Color(0xFF2563EB),
+      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      channelShowBadge: true,
       styleInformation: BigTextStyleInformation(
         body,
         contentTitle: title,
@@ -473,12 +480,50 @@ class LocalNotificationService {
             }
           }
         }
+
+        // C. Komentar Status
+        if (data['type'] == 'status_comment' || data['status_id'] != null) {
+          final sId = int.tryParse('${data['status_id']}') ?? 0;
+          if (sId > 0) {
+            final navContext = rootNavigatorKey.currentContext;
+            if (navContext != null && navContext.mounted) {
+              Navigator.push(
+                navContext,
+                MaterialPageRoute(
+                  builder: (_) => MarketConversationsScreen(
+                    initialStatusId: sId,
+                  ),
+                ),
+              );
+              return true;
+            }
+          }
+        }
       } catch (_) {}
     }
 
     // 2. Coba parse format URL internal
     final uri = Uri.tryParse(payload.startsWith('/') ? 'app://duitku$payload' : payload);
     if (uri != null) {
+      // Komentar status: /chat?status_id=123
+      if (uri.queryParameters.containsKey('status_id')) {
+        final sId = int.tryParse(uri.queryParameters['status_id'] ?? '') ?? 0;
+        if (sId > 0) {
+          final navContext = rootNavigatorKey.currentContext;
+          if (navContext != null && navContext.mounted) {
+            Navigator.push(
+              navContext,
+              MaterialPageRoute(
+                builder: (_) => MarketConversationsScreen(
+                  initialStatusId: sId,
+                ),
+              ),
+            );
+            return true;
+          }
+        }
+      }
+
       // Direct chat: /chat?direct_user=123
       if (uri.queryParameters.containsKey('direct_user')) {
         final dUid = int.tryParse(uri.queryParameters['direct_user'] ?? '') ?? 0;
