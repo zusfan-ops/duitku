@@ -495,6 +495,59 @@
     color: #ffffff;
 }
 
+/* ── RT Community & Tool Sharing Home Card ────────────────────── */
+.native-rt-card {
+    background: linear-gradient(135deg, #065F46 0%, #059669 50%, #10B981 100%);
+    border-radius: 20px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    color: #ffffff;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 6px 22px rgba(16, 185, 129, 0.28);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.native-rt-card:active {
+    transform: scale(0.98);
+}
+.native-rt-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.native-rt-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.native-rt-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #ffffff;
+}
+.native-rt-sub {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+    margin-top: 2px;
+}
+.native-rt-arrow {
+    font-size: 12px;
+    font-weight: 800;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 10px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
 /* ── Wallet Strip ─────────────────────────────────────────────── */
 .wallet-strip-wrap { margin-bottom: 16px; }
 .wallet-strip-hdr {
@@ -2449,6 +2502,18 @@
         <?php endif; ?>
     </div>
 
+    <!-- ── RT COMMUNITY & TOOL SHARING QUICK CARD ── -->
+    <a href="/neighborhood" class="native-rt-card">
+        <div class="native-rt-left">
+            <div class="native-rt-icon">🏘️</div>
+            <div>
+                <div class="native-rt-title">Komunitas RT &amp; Pinjam Alat</div>
+                <div class="native-rt-sub">Pinjam alat warga, titip belanja tetangga &amp; info RT</div>
+            </div>
+        </div>
+        <div class="native-rt-arrow">Buka RT →</div>
+    </a>
+
     <!-- ── WALLET STRIP ─────────────────────────────────────── -->
     <?php if (!empty($wallets)): ?>
     <div class="wallet-strip-wrap">
@@ -2637,7 +2702,15 @@
             <span class="home-qa-label">Jual &amp; Sewa</span>
         </a>
 
-        <!-- 8. Statistik & Analisis -->
+        <!-- 8. Komunitas RT -->
+        <a href="/neighborhood" class="home-qa-btn">
+            <div class="home-qa-icon" style="background:rgba(5,150,105,0.12)">
+                <span style="font-size:18px;line-height:1">🏘️</span>
+            </div>
+            <span class="home-qa-label">Sistem RT</span>
+        </a>
+
+        <!-- 9. Statistik & Analisis -->
         <a href="/stats" class="home-qa-btn">
             <div class="home-qa-icon" style="background:rgba(236,72,153,0.12)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
