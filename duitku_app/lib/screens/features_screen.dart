@@ -35,6 +35,8 @@ import 'nearby/nearby_places_screen.dart';
 import 'wallet_screen.dart';
 import 'zakat_pajak/zakat_pajak_screen.dart';
 import 'marketplace/market_screen.dart';
+import 'neighborhood/neighborhood_screen.dart';
+import 'faq/faq_screen.dart';
 
 class FeaturesScreen extends StatelessWidget {
   const FeaturesScreen({super.key});
@@ -172,6 +174,28 @@ class FeaturesScreen extends StatelessWidget {
           _buildSectionHeader('GAYA HIDUP & PASAR KOMUNITAS'),
           const SizedBox(height: 8),
           _buildFeatureGrid(context, [
+            _FeatureItem(
+              title: 'Komunitas RT',
+              subtitle: 'Sistem RT, pinjam alat & jastip',
+              icon: Icons.holiday_village_rounded,
+              gradient: const [Color(0xFF065F46), Color(0xFF10B981)],
+              shadowColor: const Color(0xFF10B981),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NeighborhoodScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Bantuan & FAQ',
+              subtitle: 'Panduan lengkap & tour sistem',
+              icon: Icons.help_outline_rounded,
+              gradient: const [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+              shadowColor: const Color(0xFF3B82F6),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const FaqScreen()),
+              ),
+            ),
             _FeatureItem(
               title: 'Jual Beli & Sewa',
               subtitle: 'Pasar motor, mobil, properti',

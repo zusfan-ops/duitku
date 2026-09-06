@@ -51,6 +51,10 @@ import 'marketplace/market_screen.dart';
 import 'traveling/traveling_screen.dart';
 import 'traveling/currency_converter_sheet.dart';
 import 'games/game_hub_screen.dart';
+import 'neighborhood/neighborhood_screen.dart';
+import 'neighborhood/tool_sharing_screen.dart';
+import 'neighborhood/errand_screen.dart';
+import '../widgets/onboarding_dialog.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -79,6 +83,12 @@ class DashboardScreenState extends State<DashboardScreen> {
         _load();
       }
     };
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        OnboardingDialog.showIfNeeded(context);
+      }
+    });
   }
 
   Future<void> _loadFromCacheFirst() async {
@@ -401,6 +411,7 @@ class DashboardScreenState extends State<DashboardScreen> {
           _ThreeColumnStatsCard(data: data, recentCount: recent.length),
           const _BelanjaHomeCard(),
           const _TodoHomeCard(),
+          const _NeighborhoodHomeCard(),
           if ((data.wallets as List).isNotEmpty) _WalletStrip(wallets: data.wallets as List<Wallet>),
           if ((data.dailyBalance as List).length > 1)
             _DailyChart(data: data),
@@ -2819,6 +2830,202 @@ class _TodoHomeCardState extends State<_TodoHomeCard> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Neighborhood Community & Sharing Home Card ─────────────────
+class _NeighborhoodHomeCard extends StatelessWidget {
+  const _NeighborhoodHomeCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF047857), Color(0xFF059669), Color(0xFF10B981)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF10B981).withValues(alpha: 0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NeighborhoodScreen()),
+              );
+            },
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -10,
+                  bottom: -15,
+                  child: Transform.rotate(
+                    angle: -0.15,
+                    child: Icon(
+                      Icons.holiday_village_rounded,
+                      size: 130,
+                      color: Colors.white.withValues(alpha: 0.12),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.people_alt_rounded, color: Colors.white, size: 20),
+                              ),
+                              const SizedBox(width: 10),
+                              const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Komunitas RT & Pinjam Alat',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                      letterSpacing: -0.3,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Saling bantu, pinjam alat & titip belanja',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.22),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Masuk',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(width: 3),
+                                Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Colors.white),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildPillAction(
+                              context,
+                              icon: Icons.build_circle_rounded,
+                              label: 'Pinjam Alat',
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ToolSharingScreen()),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildPillAction(
+                              context,
+                              icon: Icons.delivery_dining_rounded,
+                              label: 'Titip Belanja',
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ErrandScreen()),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildPillAction(
+                              context,
+                              icon: Icons.home_work_rounded,
+                              label: 'Warga RT',
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const NeighborhoodScreen()),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPillAction(BuildContext context, {required IconData icon, required String label, required VoidCallback onTap}) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.18),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14, color: Colors.white),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Colors.white),
+                ),
+              ),
+            ],
           ),
         ),
       ),

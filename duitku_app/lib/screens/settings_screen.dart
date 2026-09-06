@@ -18,6 +18,8 @@ import 'recurring/recurring_screen.dart';
 import 'savings/savings_screen.dart';
 import 'notifications/notification_tone_sheet.dart';
 import '../services/widget_helper.dart';
+import 'faq/faq_screen.dart';
+import '../widgets/onboarding_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -671,6 +673,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: const Text('Tambah Kategori',
                           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary)),
                       onTap: _addCategory,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+                  const Text('BANTUAN & PANDUAN',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .5, color: AppColors.textMuted)),
+                  const SizedBox(height: 8),
+                  _card(
+                    ListTile(
+                      leading: _icon(Icons.help_center_rounded, color: const Color(0xFF059669)),
+                      title: const Text('Pusat Bantuan & FAQ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: const Text('Panduan lengkap Sistem RT, Pinjam Alat, dll.', style: TextStyle(fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const FaqScreen()));
+                      },
+                    ),
+                  ),
+                  _card(
+                    ListTile(
+                      leading: _icon(Icons.tour_rounded, color: const Color(0xFF8B5CF6)),
+                      title: const Text('Tour & Panduan Interaktif', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: const Text('Buka kembali pengenalan fitur aplikasi', style: TextStyle(fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                      onTap: () => OnboardingDialog.showManual(context),
                     ),
                   ),
 
