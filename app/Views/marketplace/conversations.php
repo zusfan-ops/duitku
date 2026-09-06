@@ -797,8 +797,51 @@
             <button type="button" onclick="event.stopPropagation(); goToNextStory();" class="story-nav-btn next" title="Berikutnya">›</button>
         </div>
 
-        <!-- Comments Drawer & Instagram Quick Reply Bar -->
-        <div style="background:#0F172A;padding:8px 12px 12px;position:relative;z-index:10;border-top:1px solid rgba(255,255,255,0.12);">
+        <!-- Instagram-Style Slide-up Comment Sheet -->
+        <div id="storyCommentsSheet" style="display:none;position:absolute;bottom:0;left:0;right:0;height:75%;background:#0F172A;border-radius:22px 22px 0 0;z-index:60;box-shadow:0 -12px 35px rgba(0,0,0,0.8);flex-direction:column;border-top:1px solid rgba(255,255,255,0.14);overflow:hidden;animation:slideUpComments 0.25s cubic-bezier(0.16,1,0.3,1);">
+            <!-- Sheet Header with Drag Handle & Close -->
+            <div style="padding:10px 14px 8px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-weight:800;color:#fff;font-size:14px;">💬 Komentar</span>
+                    <span id="sheetCommentsCountBadge" style="background:#2563EB;color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;">0</span>
+                </div>
+                <button type="button" onclick="closeStoryCommentsSheet()" style="background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">✕</button>
+            </div>
+
+            <!-- Author Context Row (Instagram style) -->
+            <div id="sheetAuthorContextRow" style="padding:8px 14px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:10px;flex-shrink:0;">
+                <div id="sheetAuthorAvatar" style="width:30px;height:30px;border-radius:50%;background:#2563EB;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;overflow:hidden;"></div>
+                <div style="flex:1;overflow:hidden;">
+                    <div id="sheetAuthorName" style="font-weight:700;color:#38BDF8;font-size:12px;"></div>
+                    <div id="sheetStatusCaption" style="color:rgba(255,255,255,0.85);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                </div>
+            </div>
+
+            <!-- Scrollable Comments List -->
+            <div id="sheetCommentsList" style="flex:1;overflow-y:auto;padding:12px 14px;color:#fff;font-size:13px;display:flex;flex-direction:column;gap:12px;">
+                <div style="color:rgba(255,255,255,0.5);text-align:center;padding:20px 0;">Memuat komentar...</div>
+            </div>
+
+            <!-- Sticky Reply Input at Bottom of Comments Sheet -->
+            <div style="background:#1E293B;padding:10px 12px;border-top:1px solid rgba(255,255,255,0.1);flex-shrink:0;">
+                <!-- Quick Reaction strip inside comment sheet -->
+                <div style="display:flex;justify-content:space-around;padding-bottom:8px;">
+                    <span class="insta-reaction-pill" onclick="sendQuickReaction('❤️')">❤️</span>
+                    <span class="insta-reaction-pill" onclick="sendQuickReaction('😂')">😂</span>
+                    <span class="insta-reaction-pill" onclick="sendQuickReaction('🔥')">🔥</span>
+                    <span class="insta-reaction-pill" onclick="sendQuickReaction('👏')">👏</span>
+                    <span class="insta-reaction-pill" onclick="sendQuickReaction('😮')">😮</span>
+                    <span class="insta-reaction-pill" onclick="sendQuickReaction('😍')">😍</span>
+                </div>
+                <form onsubmit="submitStatusComment(event, true)" style="display:flex;gap:8px;align-items:center;">
+                    <input type="text" id="sheetCommentInput" placeholder="Balas komentar..." style="flex:1;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);border-radius:999px;padding:9px 16px;color:#fff;font-size:13px;outline:none;" required autocomplete="off">
+                    <button type="submit" style="background:#2563EB;color:#fff;border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">➤</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Instagram Quick Reply Bar & Comments Sheet Trigger -->
+        <div style="background:#0F172A;padding:8px 12px 14px;position:relative;z-index:10;border-top:1px solid rgba(255,255,255,0.12);">
             <!-- Quick Reaction Emojis (Instagram Style: ❤️ 😂 🔥 👏 😮 😍) -->
             <div id="viewerQuickReactionsRow" style="display:flex;justify-content:space-around;padding:4px 0 8px;">
                 <span class="insta-reaction-pill" onclick="sendQuickReaction('❤️')">❤️</span>
@@ -809,16 +852,14 @@
                 <span class="insta-reaction-pill" onclick="sendQuickReaction('😍')">😍</span>
             </div>
 
-            <div id="viewerCommentsToggleRow" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                <button type="button" onclick="toggleStatusCommentsDrawer()" style="background:transparent;border:none;color:#38BDF8;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
+                <button type="button" onclick="openStoryCommentsSheet()" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.18);color:#38BDF8;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;transition:all 0.15s ease;">
                     💬 <span id="viewerCommentsCountLabel">Lihat Komentar Teman</span>
                 </button>
             </div>
-            <div id="viewerCommentsDrawer" style="display:none;max-height:160px;overflow-y:auto;background:rgba(0,0,0,0.45);border-radius:12px;padding:8px 10px;margin-bottom:8px;color:#fff;font-size:12px;">
-                <div id="viewerCommentsList">Memuat komentar...</div>
-            </div>
-            <form onsubmit="submitStatusComment(event)" style="display:flex;gap:8px;align-items:center;">
-                <input type="text" id="viewerCommentInput" placeholder="Kirim balasan / komentar..." style="flex:1;background:rgba(255,255,255,0.15);border:none;border-radius:999px;padding:10px 16px;color:#fff;font-size:13px;outline:none;" required autocomplete="off">
+
+            <form onsubmit="submitStatusComment(event, false)" style="display:flex;gap:8px;align-items:center;">
+                <input type="text" id="viewerCommentInput" placeholder="Kirim balasan ke status..." style="flex:1;background:rgba(255,255,255,0.15);border:none;border-radius:999px;padding:10px 16px;color:#fff;font-size:13px;outline:none;" required autocomplete="off">
                 <button type="submit" style="background:#2563EB;color:#fff;border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">➤</button>
             </form>
         </div>
@@ -3120,11 +3161,9 @@ function openStatusViewerModal(stories, initialIdx = 0) {
         overlay.style.display = 'flex';
         overlay.classList.add('open', 'show');
     }
+    document.body.classList.add('status-viewer-open');
 
-    // Reset drawer komentar
-    const drawer = document.getElementById('viewerCommentsDrawer');
-    if (drawer) drawer.style.display = 'none';
-
+    closeStoryCommentsSheet();
     renderCurrentStory();
 }
 
@@ -3135,6 +3174,8 @@ function closeStatusViewerModal() {
         overlay.classList.remove('open', 'show');
         overlay.style.display = 'none';
     }
+    document.body.classList.remove('status-viewer-open');
+    closeStoryCommentsSheet();
 }
 
 function goToPrevStory() {
@@ -3246,14 +3287,73 @@ function handleStoryTouchTap(e) {
     }
 }
 
+function openStoryCommentsSheet() {
+    clearTimeout(storyAutoTimer); // pause auto advance when reading comments
+    const sheet = document.getElementById('storyCommentsSheet');
+    if (!sheet) return;
+    sheet.style.display = 'flex';
+
+    const st = activeStoryList[currentStoryIdx];
+    if (st) {
+        const authorName = (parseInt(st.user_id) === parseInt('<?= (int)$userId ?>'))
+            ? 'Status Anda'
+            : (st.author_name || st.author_username || 'Teman');
+        const authorEl = document.getElementById('sheetAuthorName');
+        if (authorEl) authorEl.textContent = authorName;
+
+        const captionEl = document.getElementById('sheetStatusCaption');
+        if (captionEl) {
+            captionEl.textContent = st.caption || (st.media_type === 'image' ? 'Foto status' : 'Pembaruan status');
+        }
+
+        const avatarEl = document.getElementById('sheetAuthorAvatar');
+        if (avatarEl) {
+            if (st.author_avatar_url) {
+                avatarEl.innerHTML = `<img src="${st.author_avatar_url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.innerHTML='<span>${authorName.charAt(0).toUpperCase()}</span>'">`;
+            } else {
+                avatarEl.innerHTML = `<span>${authorName.charAt(0).toUpperCase()}</span>`;
+            }
+        }
+    }
+
+    loadActiveStatusComments();
+    setTimeout(() => {
+        const input = document.getElementById('sheetCommentInput');
+        if (input) input.focus();
+    }, 150);
+}
+
+function closeStoryCommentsSheet() {
+    const sheet = document.getElementById('storyCommentsSheet');
+    if (sheet) sheet.style.display = 'none';
+}
+
 function toggleStatusCommentsDrawer() {
-    const drawer = document.getElementById('viewerCommentsDrawer');
-    if (!drawer) return;
-    if (drawer.style.display === 'none') {
-        drawer.style.display = 'block';
-        clearTimeout(storyAutoTimer); // pause auto advance when reading comments
+    const sheet = document.getElementById('storyCommentsSheet');
+    if (!sheet) return;
+    if (sheet.style.display === 'none' || !sheet.style.display) {
+        openStoryCommentsSheet();
     } else {
-        drawer.style.display = 'none';
+        closeStoryCommentsSheet();
+    }
+}
+
+function formatTimeAgoJs(dateStr) {
+    if (!dateStr) return 'Baru saja';
+    try {
+        const dt = new Date(dateStr.replace(/-/g, '/'));
+        const now = new Date();
+        const diffMs = now - dt;
+        const diffSec = Math.floor(diffMs / 1000);
+        if (diffSec < 60) return 'Baru saja';
+        const diffMin = Math.floor(diffSec / 60);
+        if (diffMin < 60) return diffMin + 'm lalu';
+        const diffHours = Math.floor(diffMin / 60);
+        if (diffHours < 24) return diffHours + 'j lalu';
+        const diffDays = Math.floor(diffHours / 24);
+        return diffDays + 'h lalu';
+    } catch (_) {
+        return 'Baru saja';
     }
 }
 
@@ -3336,26 +3436,53 @@ function loadActiveStatusComments() {
     .then(data => {
         if (data.status === 'success' || data.success) {
             const comments = data.comments || [];
+            st.comment_count = comments.length;
+
             const countLabel = document.getElementById('viewerCommentsCountLabel');
             if (countLabel) {
-                countLabel.textContent = comments.length > 0 ? `Lihat Komentar Teman (${comments.length})` : 'Komentar Teman (0)';
+                countLabel.textContent = comments.length > 0 ? `💬 ${comments.length} Komentar` : '💬 Komentar Teman';
             }
-            const listEl = document.getElementById('viewerCommentsList');
-            if (listEl) {
+            const badge = document.getElementById('sheetCommentsCountBadge');
+            if (badge) {
+                badge.textContent = comments.length;
+            }
+
+            const sheetList = document.getElementById('sheetCommentsList');
+            if (sheetList) {
                 if (comments.length === 0) {
-                    listEl.innerHTML = '<div style="color:rgba(255,255,255,0.6);text-align:center;padding:10px;">Belum ada komentar dari teman.</div>';
-                } else {
-                    listEl.innerHTML = comments.map(c => `
-                        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-start;">
-                            <div style="width:24px;height:24px;border-radius:50%;background:#2563EB;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">
-                                ${(c.user_name || 'T').charAt(0).toUpperCase()}
-                            </div>
-                            <div style="flex:1;">
-                                <span style="font-weight:700;color:#38BDF8;font-size:11px;">${escapeHtml(c.user_name || 'Teman')}: </span>
-                                <span style="color:#fff;font-size:12px;">${escapeHtml(c.comment || '')}</span>
-                            </div>
+                    sheetList.innerHTML = `
+                        <div style="color:rgba(255,255,255,0.6);text-align:center;padding:30px 10px;">
+                            <div style="font-size:32px;margin-bottom:6px;">💭</div>
+                            <div style="font-weight:700;color:#fff;font-size:13px;">Belum ada komentar</div>
+                            <div style="font-size:12px;margin-top:2px;">Jadilah yang pertama mengomentari status ini!</div>
                         </div>
-                    `).join('');
+                    `;
+                } else {
+                    sheetList.innerHTML = comments.map(c => {
+                        const init = (c.user_name || 'T').charAt(0).toUpperCase();
+                        const timeAgo = formatTimeAgoJs(c.created_at);
+                        const avUrl = c.user_avatar_url || '';
+                        const avatarHtml = avUrl
+                            ? `<img src="${avUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentNode.innerHTML='<span>${init}</span>'">`
+                            : `<span>${init}</span>`;
+
+                        return `
+                            <div style="display:flex;gap:10px;align-items:flex-start;">
+                                <div style="width:32px;height:32px;border-radius:50%;background:#2563EB;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;overflow:hidden;">
+                                    ${avatarHtml}
+                                </div>
+                                <div style="flex:1;background:rgba(255,255,255,0.07);border-radius:14px;padding:8px 12px;">
+                                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+                                        <span style="font-weight:700;color:#38BDF8;font-size:12px;">${escapeHtml(c.user_name || 'Teman')}</span>
+                                        <span style="color:rgba(255,255,255,0.45);font-size:10px;">${timeAgo}</span>
+                                    </div>
+                                    <div style="color:#fff;font-size:13px;word-break:break-word;line-height:1.35;">${escapeHtml(c.comment || '')}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    sheetList.scrollTop = sheetList.scrollHeight;
                 }
             }
         }
@@ -3363,17 +3490,18 @@ function loadActiveStatusComments() {
     .catch(() => {});
 }
 
-function submitStatusComment(e) {
-    e.preventDefault();
+function submitStatusComment(e, fromSheet = false) {
+    if (e) e.preventDefault();
     const st = activeStoryList[currentStoryIdx];
     if (!st || !st.id) return;
 
-    const input = document.getElementById('viewerCommentInput');
-    const comment = input.value.trim();
+    const inputId = fromSheet ? 'sheetCommentInput' : 'viewerCommentInput';
+    const input = document.getElementById(inputId);
+    const comment = input ? input.value.trim() : '';
     if (!comment) return;
 
     clearTimeout(storyAutoTimer);
-    input.value = '';
+    if (input) input.value = '';
 
     const formData = new FormData();
     formData.append('status_id', st.id);
@@ -3391,9 +3519,8 @@ function submitStatusComment(e) {
     .then(r => r.json())
     .then(data => {
         if (data.status === 'success' || data.success) {
-            const drawer = document.getElementById('viewerCommentsDrawer');
-            if (drawer) drawer.style.display = 'block';
-            loadActiveStatusComments();
+            openStoryCommentsSheet();
+            showStoryReactionToast('Komentar berhasil dikirim! 🚀');
         } else {
             alert(data.message || 'Gagal mengirim komentar.');
         }

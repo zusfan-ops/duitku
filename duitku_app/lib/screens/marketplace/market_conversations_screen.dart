@@ -1308,14 +1308,65 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  timeStr.isNotEmpty ? timeStr : 'Baru saja',
-                                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                const SizedBox(height: 3),
+                                Row(
+                                  children: [
+                                    Text(
+                                      timeStr.isNotEmpty ? timeStr : 'Baru saja',
+                                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                    ),
+                                    if ((int.tryParse('${st['comment_count']}') ?? 0) > 0) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFDBEAFE),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.chat_bubble_rounded, size: 10, color: Color(0xFF1D4ED8)),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              '${st['comment_count']} komentar',
+                                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF1D4ED8)),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ],
                             ),
                           ),
+                        ),
+                        IconButton(
+                          icon: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              const Icon(Icons.chat_bubble_outline_rounded, size: 18, color: Color(0xFF10B981)),
+                              if ((int.tryParse('${st['comment_count']}') ?? 0) > 0)
+                                Positioned(
+                                  top: -4,
+                                  right: -6,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
+                                    constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
+                                    child: Text(
+                                      '${st['comment_count']}',
+                                      style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w800),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          tooltip: 'Lihat & Balas Komentar',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _openStatusViewer(myStatuses, idx, autoOpenComments: true),
                         ),
                         IconButton(
                           icon: const Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF2563EB)),
@@ -1443,6 +1494,10 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
             final init = name.isNotEmpty ? name[0].toUpperCase() : 'T';
             final timeStr = _formatTimeAgo(latest['created_at']);
             final count = list.length;
+            int totalComments = 0;
+            for (final s in list) {
+              totalComments += (int.tryParse('${s['comment_count']}') ?? 0);
+            }
 
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
@@ -1502,12 +1557,23 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              timeStr.isNotEmpty ? '$timeStr • $count cerita' : '$count cerita baru',
-                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                              (timeStr.isNotEmpty ? '$timeStr • $count cerita' : '$count cerita baru') +
+                                  (totalComments > 0 ? ' • 💬 $totalComments komentar' : ''),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: totalComments > 0 ? const Color(0xFF1D4ED8) : Colors.grey.shade600,
+                                fontWeight: totalComments > 0 ? FontWeight.w700 : FontWeight.normal,
+                              ),
                             ),
                           ],
                         ),
                       ),
+                      if (totalComments > 0)
+                        IconButton(
+                          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18, color: Color(0xFF2563EB)),
+                          tooltip: 'Lihat Komentar',
+                          onPressed: () => _openStatusViewer(list, 0, autoOpenComments: true),
+                        ),
                       const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
                     ],
                   ),
@@ -2176,11 +2242,36 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
     );
   }
 
-  void _openStatusViewer(List<Map<String, dynamic>> statuses, int initialIndex) {
+  void _showInstagramCommentsSheet({
+    required BuildContext parentCtx,
+    required int statusId,
+    required String authorName,
+    required String authorAvatar,
+    required String caption,
+    required String timeStr,
+    required ValueChanged<int> onCountUpdated,
+  }) {
+    showModalBottomSheet(
+      context: parentCtx,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => _InstagramCommentsModal(
+        statusId: statusId,
+        authorName: authorName,
+        authorAvatar: authorAvatar,
+        caption: caption,
+        timeStr: timeStr,
+        formatTimeAgo: _formatTimeAgo,
+        fullImageUrl: _fullImageUrl,
+        onCountUpdated: onCountUpdated,
+      ),
+    );
+  }
+
+  void _openStatusViewer(List<Map<String, dynamic>> statuses, int initialIndex, {bool autoOpenComments = false}) {
     int currentIndex = initialIndex;
     final commentCtrl = TextEditingController();
-    List<Map<String, dynamic>> comments = [];
-    bool loadingComments = false;
+    bool hasAutoOpened = false;
 
     showModalBottomSheet(
       context: context,
@@ -2198,6 +2289,26 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
           final isMine = st['is_mine'] == true;
           final statusId = int.tryParse('${st['id']}') ?? 0;
           final timeStr = _formatTimeAgo(st['created_at']);
+          final commentCount = int.tryParse('${st['comment_count']}') ?? 0;
+
+          if (autoOpenComments && !hasAutoOpened) {
+            hasAutoOpened = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (ctx.mounted) {
+                _showInstagramCommentsSheet(
+                  parentCtx: ctx,
+                  statusId: statusId,
+                  authorName: authorName,
+                  authorAvatar: authorAvatar,
+                  caption: caption,
+                  timeStr: timeStr,
+                  onCountUpdated: (cnt) {
+                    setViewerState(() => st['comment_count'] = cnt);
+                  },
+                );
+              }
+            });
+          }
 
           Color bgColor = const Color(0xFF2563EB);
           try {
@@ -2386,6 +2497,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                                           backgroundColor: const Color(0xFF2563EB),
                                         ),
                                       );
+                                      setViewerState(() => st['comment_count'] = commentCount + 1);
                                     }
                                   } catch (_) {}
                                 },
@@ -2398,66 +2510,52 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                           ),
                         ),
 
-                      // Floating Input Pill + Comment Drawer Button
+                      // Floating Instagram Comment Sheet Trigger Button
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () {
+                            _showInstagramCommentsSheet(
+                              parentCtx: ctx,
+                              statusId: statusId,
+                              authorName: authorName,
+                              authorAvatar: authorAvatar,
+                              caption: caption,
+                              timeStr: timeStr,
+                              onCountUpdated: (cnt) {
+                                setViewerState(() => st['comment_count'] = cnt);
+                              },
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.white24),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF38BDF8), size: 16),
+                                const SizedBox(width: 8),
+                                Text(
+                                  commentCount > 0
+                                      ? '💬 $commentCount Komentar • Ketuk untuk membaca/membalas'
+                                      : '💬 Komentar Teman • Tulis balasan',
+                                  style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w700),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.keyboard_arrow_up_rounded, color: Colors.white70, size: 18),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
                       Row(
                         children: [
-                          IconButton(
-                            icon: loadingComments
-                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 22),
-                            tooltip: 'Lihat Komentar Teman',
-                            onPressed: () async {
-                              setViewerState(() => loadingComments = true);
-                              try {
-                                final res = await ApiService.instance.getStatusComments(statusId);
-                                final cList = (res['comments'] as List<dynamic>?) ?? [];
-                                comments = cList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-                              } catch (_) {}
-                              setViewerState(() => loadingComments = false);
-
-                              if (ctx.mounted) {
-                                showModalBottomSheet(
-                                  context: ctx,
-                                  backgroundColor: const Color(0xFF1E293B),
-                                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-                                  builder: (_) => Container(
-                                    padding: const EdgeInsets.all(16),
-                                    height: 380,
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Center(
-                                          child: Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        const Text('Komentar Teman', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Colors.white)),
-                                        const SizedBox(height: 8),
-                                        const Divider(color: Colors.white12),
-                                        Expanded(
-                                          child: comments.isEmpty
-                                              ? const Center(child: Text('Belum ada komentar dari teman.', style: TextStyle(color: Colors.white54)))
-                                              : ListView.builder(
-                                                  itemCount: comments.length,
-                                                  itemBuilder: (_, i) {
-                                                    final c = comments[i];
-                                                    return ListTile(
-                                                      leading: CircleAvatar(
-                                                        backgroundColor: const Color(0xFF2563EB),
-                                                        child: Text((c['user_name'] ?? 'T')[0], style: const TextStyle(color: Colors.white)),
-                                                      ),
-                                                      title: Text(c['user_name'] ?? 'Teman', style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white, fontSize: 13)),
-                                                      subtitle: Text(c['comment'] ?? '', style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                                                    );
-                                                  },
-                                                ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
                           Expanded(
                             child: TextField(
                               controller: commentCtrl,
@@ -2483,8 +2581,19 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                               commentCtrl.clear();
                               try {
                                 await ApiService.instance.commentStatus(statusId, cText);
+                                setViewerState(() => st['comment_count'] = commentCount + 1);
                                 if (ctx.mounted) {
-                                  ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Komentar terkirim!'), backgroundColor: Color(0xFF10B981)));
+                                  _showInstagramCommentsSheet(
+                                    parentCtx: ctx,
+                                    statusId: statusId,
+                                    authorName: authorName,
+                                    authorAvatar: authorAvatar,
+                                    caption: caption,
+                                    timeStr: timeStr,
+                                    onCountUpdated: (cnt) {
+                                      setViewerState(() => st['comment_count'] = cnt);
+                                    },
+                                  );
                                 }
                               } catch (e) {
                                 if (ctx.mounted) {
@@ -2502,6 +2611,363 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// INSTAGRAM-STYLE INTERACTIVE COMMENTS MODAL (FULL EXPERIENCE)
+// ═════════════════════════════════════════════════════════════════════════════
+
+class _InstagramCommentsModal extends StatefulWidget {
+  final int statusId;
+  final String authorName;
+  final String authorAvatar;
+  final String caption;
+  final String timeStr;
+  final String Function(dynamic) formatTimeAgo;
+  final String Function(String?) fullImageUrl;
+  final ValueChanged<int> onCountUpdated;
+
+  const _InstagramCommentsModal({
+    required this.statusId,
+    required this.authorName,
+    required this.authorAvatar,
+    required this.caption,
+    required this.timeStr,
+    required this.formatTimeAgo,
+    required this.fullImageUrl,
+    required this.onCountUpdated,
+  });
+
+  @override
+  State<_InstagramCommentsModal> createState() => _InstagramCommentsModalState();
+}
+
+class _InstagramCommentsModalState extends State<_InstagramCommentsModal> {
+  final TextEditingController _commentCtrl = TextEditingController();
+  final ScrollController _scrollCtrl = ScrollController();
+  List<Map<String, dynamic>> _comments = [];
+  bool _loading = true;
+  bool _sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadComments();
+  }
+
+  @override
+  void dispose() {
+    _commentCtrl.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadComments() async {
+    try {
+      final res = await ApiService.instance.getStatusComments(widget.statusId);
+      if (mounted) {
+        final cList = (res['comments'] as List<dynamic>?) ?? [];
+        setState(() {
+          _comments = cList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          _loading = false;
+        });
+        widget.onCountUpdated(_comments.length);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _sendComment(String text) async {
+    final clean = text.trim();
+    if (clean.isEmpty || _sending) return;
+    setState(() => _sending = true);
+    _commentCtrl.clear();
+
+    try {
+      await ApiService.instance.commentStatus(widget.statusId, clean);
+      await _loadComments();
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollCtrl.hasClients) {
+            _scrollCtrl.animateTo(
+              _scrollCtrl.position.maxScrollExtent + 80,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengirim komentar: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.78,
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F172A),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 10, bottom: 6),
+              width: 38,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Row(
+              children: [
+                const Text(
+                  'Komentar',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2563EB),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${_comments.length}',
+                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 22),
+                  onPressed: () => Navigator.pop(context),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
+          ),
+
+          // Pinned status preview (Instagram style)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: Colors.white.withValues(alpha: 0.04),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: const Color(0xFF2563EB),
+                  backgroundImage: widget.authorAvatar.isNotEmpty
+                      ? NetworkImage(widget.fullImageUrl(widget.authorAvatar))
+                      : null,
+                  child: widget.authorAvatar.isEmpty
+                      ? Text(widget.authorName.isNotEmpty ? widget.authorName[0].toUpperCase() : 'T', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700))
+                      : null,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            widget.authorName,
+                            style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.w700, fontSize: 13),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            widget.timeStr,
+                            style: const TextStyle(color: Colors.white38, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                      if (widget.caption.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.caption,
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Colors.white12),
+
+          // Comments List
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF38BDF8), strokeWidth: 2.5))
+                : _comments.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.chat_bubble_outline_rounded, size: 44, color: Colors.white24),
+                            const SizedBox(height: 10),
+                            const Text('Belum ada komentar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                            const SizedBox(height: 4),
+                            const Text('Jadilah yang pertama mengomentari status ini!', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: _scrollCtrl,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        itemCount: _comments.length,
+                        itemBuilder: (ctx, i) {
+                          final c = _comments[i];
+                          final uName = (c['user_name'] ?? 'Teman').toString();
+                          final uInit = uName.isNotEmpty ? uName[0].toUpperCase() : 'T';
+                          final uAvatar = (c['user_avatar_url'] ?? '').toString();
+                          final commentText = (c['comment'] ?? '').toString();
+                          final cTime = widget.formatTimeAgo(c['created_at']);
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CircleAvatar(
+                                  radius: 17,
+                                  backgroundColor: const Color(0xFF2563EB),
+                                  backgroundImage: uAvatar.isNotEmpty
+                                      ? NetworkImage(widget.fullImageUrl(uAvatar))
+                                      : null,
+                                  child: uAvatar.isEmpty
+                                      ? Text(uInit, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13))
+                                      : null,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              uName,
+                                              style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF38BDF8), fontSize: 12.5),
+                                            ),
+                                            if (cTime.isNotEmpty)
+                                              Text(
+                                                cTime,
+                                                style: const TextStyle(color: Colors.white38, fontSize: 10.5),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 3),
+                                        SelectableText(
+                                          commentText,
+                                          style: const TextStyle(color: Colors.white, fontSize: 13.5, height: 1.3),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+          ),
+
+          // Sticky Bottom Input Area
+          Container(
+            padding: EdgeInsets.only(
+              left: 12,
+              right: 12,
+              top: 8,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 12,
+            ),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1E293B),
+              border: Border(top: BorderSide(color: Colors.white12)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Quick Reaction Strip
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: ['❤️', '😂', '🔥', '👏', '😮', '😍'].map((emoji) {
+                      return GestureDetector(
+                        onTap: () => _sendComment(emoji),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          child: Text(emoji, style: const TextStyle(fontSize: 22)),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+
+                // Text field + Send button
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _commentCtrl,
+                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: 'Balas komentar untuk ${widget.authorName}...',
+                          hintStyle: const TextStyle(color: Colors.white54, fontSize: 13),
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.12),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 1.2)),
+                        ),
+                        onSubmitted: _sendComment,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: _sending
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF38BDF8)))
+                          : const Icon(Icons.send_rounded, color: Color(0xFF38BDF8)),
+                      onPressed: _sending ? null : () => _sendComment(_commentCtrl.text),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

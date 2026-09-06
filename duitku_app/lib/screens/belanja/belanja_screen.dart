@@ -163,6 +163,38 @@ class _BelanjaScreenState extends State<BelanjaScreen> {
     }
   }
 
+  void _showTopSyncNotice(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    final screenHeight = MediaQuery.of(context).size.height;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isError ? Icons.cloud_off_rounded : Icons.cloud_done_rounded,
+              size: 16,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 8),
+            Text(message, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          ],
+        ),
+        duration: const Duration(milliseconds: 1600),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(
+          bottom: screenHeight > 200 ? screenHeight - 120 : 20,
+          left: 24,
+          right: 24,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        backgroundColor: isError ? const Color(0xFF475569) : const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
+    );
+  }
+
   Future<void> _pull() async {
     if (_syncing) return;
     setState(() => _syncing = true);
@@ -170,9 +202,10 @@ class _BelanjaScreenState extends State<BelanjaScreen> {
     await _loadLocal();
     if (!mounted) return;
     setState(() => _syncing = false);
+    _showTopSyncNotice('Data belanja berhasil disinkronkan');
   }
 
-  Future<void> _push() async {
+  Future<void> _push({bool isManual = false}) async {
     if (_syncing) return;
     setState(() => _syncing = true);
     final ok = await BelanjaStore.push();
@@ -184,11 +217,13 @@ class _BelanjaScreenState extends State<BelanjaScreen> {
     if (ok) {
       await _loadLocal();
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Data Belanja disinkronkan')));
+      if (isManual) {
+        _showTopSyncNotice('Data belanja disinkronkan');
+      }
     } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Offline — data tersimpan lokal')));
+      if (isManual) {
+        _showTopSyncNotice('Offline — data tersimpan lokal', isError: true);
+      }
     }
   }
 
@@ -560,7 +595,7 @@ class _BelanjaScreenState extends State<BelanjaScreen> {
           else if (_dirty)
             IconButton(
               tooltip: 'Perlu disinkronkan',
-              onPressed: _push,
+              onPressed: () => _push(isManual: true),
               icon: const Icon(Icons.cloud_upload_outlined, color: AppColors.textMuted),
             )
           else
