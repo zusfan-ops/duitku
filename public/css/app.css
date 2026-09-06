@@ -1009,42 +1009,76 @@ body:has(.modal-overlay.open) {
     overscroll-behavior: none !important;
 }
 
-/* Bottom Nav STAYS VISIBLE just like in native apps! */
+/* ══════════════════════════════════════════════════════════════
+   GLOBAL MODAL ISOLATION & OVERLAP PREVENTION (PWA & MOBILE WEB)
+══════════════════════════════════════════════════════════════ */
 .bottom-nav {
-    z-index: 600; /* stays above modal backdrop overlay (500) */
-    transition: opacity 0.2s ease, transform 0.25s ease;
+    z-index: 600;
+    transition: opacity 0.25s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
-body.modal-open .bottom-nav,
+.topbar {
+    transition: opacity 0.25s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 1. Sembunyikan TOPBAR saat modal fullscreen / status / news reader / wa-chat dibuka */
+body.status-viewer-open .topbar,
+body.news-reader-open .topbar,
+body.modal-open-fullscreen .topbar,
+body:has(#statusViewerModalOverlay.open) .topbar,
+body:has(#statusViewerModalOverlay.show) .topbar,
+body:has(.news-modal-overlay.active) .topbar,
+body:has(#pwaChatLightbox.show) .topbar,
+body:has(#pwaChatLightbox.open) .topbar,
+body:has(.market-chat-modal-overlay.show) .topbar,
+body:has(.market-chat-modal-overlay.open) .topbar {
+    transform: translateY(-130%) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+/* 2. Sembunyikan BOTTOM-NAV saat modal status / news reader / wa-chat / lightbox dibuka */
+body.status-viewer-open .bottom-nav,
+body.news-reader-open .bottom-nav,
+body.modal-open-fullscreen .bottom-nav,
+body:has(#statusViewerModalOverlay.open) .bottom-nav,
+body:has(#statusViewerModalOverlay.show) .bottom-nav,
+body:has(.news-modal-overlay.active) .bottom-nav,
+body:has(#pwaChatLightbox.show) .bottom-nav,
+body:has(#pwaChatLightbox.open) .bottom-nav,
+body:has(.market-chat-modal-overlay.show) .bottom-nav,
+body:has(.market-chat-modal-overlay.open) .bottom-nav {
+    transform: translateX(-50%) translateY(220%) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+/* Untuk modal transaksi biasa: bottom-nav tetap dipertahankan namun disabled */
+body.modal-open .bottom-nav:not(:has(.news-modal-overlay.active)),
 body:has(.modal-overlay.open) .bottom-nav {
     transform: translateX(-50%) translateY(0) !important;
     opacity: 1 !important;
-    pointer-events: none !important; /* Modal barrier prevents accidental tab click while modal is open */
+    pointer-events: none !important;
 }
 
-/* Hide floating FAB (+) when modal is open so it doesn't overlap modal sheet */
+/* 3. Sembunyikan FAB (+) saat modal apapun aktif agar tidak menimpa sheet / tombol */
 body.modal-open .fab-floating-add,
-body:has(.modal-overlay.open) .fab-floating-add {
-    transform: scale(0) !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s ease;
-}
-
-/* Hide bottom-nav and FAB completely when viewing full-screen Status/Stories */
-body.status-viewer-open .bottom-nav,
-body:has(#statusViewerModalOverlay.open) .bottom-nav {
-    transform: translateX(-50%) translateY(160%) !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    visibility: hidden !important;
-    transition: transform 0.22s ease, opacity 0.18s ease;
-}
 body.status-viewer-open .fab-floating-add,
-body:has(#statusViewerModalOverlay.open) .fab-floating-add {
+body.news-reader-open .fab-floating-add,
+body:has(.modal-overlay.open) .fab-floating-add,
+body:has(#statusViewerModalOverlay.open) .fab-floating-add,
+body:has(#statusViewerModalOverlay.show) .fab-floating-add,
+body:has(.news-modal-overlay.active) .fab-floating-add,
+body:has(#pwaChatLightbox.show) .fab-floating-add,
+body:has(#pwaChatLightbox.open) .fab-floating-add,
+body:has(.market-chat-modal-overlay.show) .fab-floating-add,
+body:has(.market-chat-modal-overlay.open) .fab-floating-add {
     transform: scale(0) !important;
     opacity: 0 !important;
     pointer-events: none !important;
     visibility: hidden !important;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
 }
 
 .modal-overlay { /* backdrop dims behind bottom-nav (600) */

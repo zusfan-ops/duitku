@@ -17,6 +17,7 @@ class ArticleReaderSheet extends StatefulWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => ArticleReaderSheet(item: item),
     );
@@ -162,7 +163,7 @@ class _ArticleReaderSheetState extends State<ArticleReaderSheet> {
               Expanded(
                 child: ListView(
                   controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+                  padding: EdgeInsets.fromLTRB(20, 16, 20, 36 + MediaQuery.of(context).padding.bottom),
                   children: [
                     // Meta: Date & Category
                     Row(

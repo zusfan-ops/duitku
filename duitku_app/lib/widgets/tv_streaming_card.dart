@@ -229,6 +229,7 @@ class _TvStreamingCardState extends State<TvStreamingCard> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _JellyfinCatalogSheet(
         movies: _movies,

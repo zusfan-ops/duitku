@@ -215,6 +215,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
@@ -460,6 +461,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
   void _showContactsSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -610,12 +612,15 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab_whatsapp_new_chat',
-        backgroundColor: const Color(0xFF00A884), // WhatsApp Green
-        tooltip: 'Chat Baru',
-        onPressed: () => _showContactsSheet(context),
-        child: const Icon(Icons.chat_rounded, color: Colors.white, size: 24),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 84),
+        child: FloatingActionButton(
+          heroTag: 'fab_whatsapp_new_chat',
+          backgroundColor: const Color(0xFF00A884), // WhatsApp Green
+          tooltip: 'Chat Baru',
+          onPressed: () => _showContactsSheet(context),
+          child: const Icon(Icons.chat_rounded, color: Colors.white, size: 24),
+        ),
       ),
       body: _buildBody(),
     );
@@ -1668,6 +1673,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -2100,6 +2106,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetCtx) => StatefulBuilder(
@@ -2319,6 +2326,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
     showModalBottomSheet(
       context: parentCtx,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (sheetCtx) => _InstagramCommentsModal(
         statusId: statusId,
@@ -2338,56 +2346,71 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
     final commentCtrl = TextEditingController();
     bool hasAutoOpened = false;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.black,
-      builder: (viewerCtx) => StatefulBuilder(
-        builder: (ctx, setViewerState) {
-          final st = statuses[currentIndex];
-          final authorName = (st['author_name'] ?? 'Teman').toString();
-          final authorAvatar = (st['author_avatar_url'] ?? '').toString();
-          final caption = (st['caption'] ?? '').toString();
-          final mediaType = st['media_type'] ?? 'text';
-          final mediaUrl = st['media_url'] ?? '';
-          final bgColorStr = st['background_color'] ?? '#2563EB';
-          final isMine = st['is_mine'] == true;
-          final statusId = int.tryParse('${st['id']}') ?? 0;
-          final timeStr = _formatTimeAgo(st['created_at']);
-          final commentCount = int.tryParse('${st['comment_count']}') ?? 0;
+    Navigator.of(context, rootNavigator: true).push(
+      PageRouteBuilder(
+        opaque: true,
+        transitionDuration: const Duration(milliseconds: 250),
+        reverseTransitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (viewerCtx, anim, secAnim) => Scaffold(
+          backgroundColor: Colors.black,
+          resizeToAvoidBottomInset: false,
+          body: StatefulBuilder(
+            builder: (ctx, setViewerState) {
+              final st = statuses[currentIndex];
+              final authorName = (st['author_name'] ?? 'Teman').toString();
+              final authorAvatar = (st['author_avatar_url'] ?? '').toString();
+              final caption = (st['caption'] ?? '').toString();
+              final mediaType = st['media_type'] ?? 'text';
+              final mediaUrl = st['media_url'] ?? '';
+              final bgColorStr = st['background_color'] ?? '#2563EB';
+              final isMine = st['is_mine'] == true;
+              final statusId = int.tryParse('${st['id']}') ?? 0;
+              final timeStr = _formatTimeAgo(st['created_at']);
+              final commentCount = int.tryParse('${st['comment_count']}') ?? 0;
 
-          if (autoOpenComments && !hasAutoOpened) {
-            hasAutoOpened = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (ctx.mounted) {
-                _showInstagramCommentsSheet(
-                  parentCtx: ctx,
-                  statusId: statusId,
-                  authorName: authorName,
-                  authorAvatar: authorAvatar,
-                  caption: caption,
-                  timeStr: timeStr,
-                  onCountUpdated: (cnt) {
-                    setViewerState(() => st['comment_count'] = cnt);
-                  },
-                );
+              if (autoOpenComments && !hasAutoOpened) {
+                hasAutoOpened = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (ctx.mounted) {
+                    _showInstagramCommentsSheet(
+                      parentCtx: ctx,
+                      statusId: statusId,
+                      authorName: authorName,
+                      authorAvatar: authorAvatar,
+                      caption: caption,
+                      timeStr: timeStr,
+                      onCountUpdated: (cnt) {
+                        setViewerState(() => st['comment_count'] = cnt);
+                      },
+                    );
+                  }
+                });
               }
-            });
-          }
 
-          Color bgColor = const Color(0xFF2563EB);
-          try {
-            bgColor = Color(int.parse(bgColorStr.replaceFirst('#', '0xFF')));
-          } catch (_) {}
+              Color bgColor = const Color(0xFF2563EB);
+              try {
+                bgColor = Color(int.parse(bgColorStr.replaceFirst('#', '0xFF')));
+              } catch (_) {}
 
-          return Container(
-            height: MediaQuery.of(ctx).size.height * 0.92,
-            color: Colors.black,
-            child: Column(
-              children: [
-                // Top Progress Indicators
+              return GestureDetector(
+                onVerticalDragEnd: (details) {
+                  if (details.primaryVelocity != null && details.primaryVelocity! > 250) {
+                    Navigator.pop(viewerCtx);
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  color: Colors.black,
+                  child: Column(
+                    children: [
+                // Top Progress Indicators with Safe Area
                 Padding(
-                  padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(ctx).padding.top > 0 ? MediaQuery.of(ctx).padding.top + 4 : 12,
+                    left: 12,
+                    right: 12,
+                  ),
                   child: Row(
                     children: List.generate(statuses.length, (i) {
                       return Expanded(
@@ -2531,7 +2554,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                 // Instagram Style Bottom Bar: Quick Reactions + Pill Comment Bar
                 Container(
                   padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(ctx).viewInsets.bottom + 12,
+                    bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 10,
                     left: 12,
                     right: 12,
                     top: 8,
@@ -2674,9 +2697,12 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                 ),
               ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
+    ),
+  ),
+),
     );
   }
 }
@@ -2974,7 +3000,7 @@ class _InstagramCommentsModalState extends State<_InstagramCommentsModal> {
               left: 12,
               right: 12,
               top: 8,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 12,
+              bottom: MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 12,
             ),
             decoration: const BoxDecoration(
               color: Color(0xFF1E293B),

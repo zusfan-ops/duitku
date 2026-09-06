@@ -127,6 +127,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       useSafeArea: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
@@ -255,7 +256,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
       onRefresh: () => _load(reset: true),
       child: ListView.builder(
         controller: _scrollCtrl,
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
         itemCount: _items.length + (_loadingMore ? 1 : 0),
         itemBuilder: (context, i) {
           if (i >= _items.length) {

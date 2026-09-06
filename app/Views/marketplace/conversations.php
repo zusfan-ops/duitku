@@ -763,15 +763,15 @@
 <!-- ══════════════════════════════════════════════════════════════
      MODAL 7: STATUS VIEWER (STORIES + COMMENTS KHUSUS TEMAN)
 ══════════════════════════════════════════════════════════════ -->
-<div class="market-chat-modal-overlay" id="statusViewerModalOverlay" style="display:none;z-index:99998;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;" onclick="if(event.target===this)closeStatusViewerModal()">
-    <div style="position:relative;width:100%;max-width:440px;height:92vh;max-height:780px;background:#000;border-radius:24px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,0.8);">
+<div class="market-chat-modal-overlay" id="statusViewerModalOverlay" style="display:none;position:fixed!important;inset:0!important;z-index:999999!important;background:rgba(0,0,0,0.96);align-items:center;justify-content:center;padding:0;margin:0;" onclick="if(event.target===this)closeStatusViewerModal()">
+    <div style="position:relative;width:100%;max-width:440px;height:100dvh;max-height:100dvh;background:#000;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,0.9);">
         <!-- Top Story Progress Bar -->
-        <div id="statusProgressBarWrap" style="display:flex;gap:4px;padding:12px 14px 6px;position:relative;z-index:10;">
+        <div id="statusProgressBarWrap" style="display:flex;gap:4px;padding:max(14px, env(safe-area-inset-top, 14px)) 14px 6px;position:relative;z-index:10;">
             <!-- Generated dynamically -->
         </div>
 
         <!-- Story Header -->
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px;position:relative;z-index:10;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;position:relative;z-index:10;">
             <div style="display:flex;align-items:center;gap:10px;">
                 <div class="conv-avatar sm" id="viewerAuthorAvatar" style="width:36px;height:36px;border:2px solid #fff;">
                     <span>T</span>
@@ -3187,6 +3187,9 @@ function openStatusViewerModal(stories, initialIdx = 0) {
 
     const overlay = document.getElementById('statusViewerModalOverlay');
     if (overlay) {
+        if (overlay.parentNode !== document.body) {
+            document.body.appendChild(overlay);
+        }
         overlay.style.display = 'flex';
         overlay.classList.add('open', 'show');
     }
@@ -3627,6 +3630,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     enableDragScroll(document.querySelector('.conv-tabs-bar'));
     enableDragScroll(document.querySelector('.status-tray-scroll'));
+
+    // Pindahkan semua overlay modal ke document.body agar terbebas dari stacking context #app
+    ['statusViewerModalOverlay', 'directChatModal', 'marketChatModal', 'createStatusModalOverlay', 'pwaChatLightbox', 'convActionModalOverlay', 'addFriendModalOverlay', 'friendsListModalOverlay'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.parentNode !== document.body) {
+            document.body.appendChild(el);
+        }
+    });
 });
 </script>
 <?= $this->endSection() ?>

@@ -466,17 +466,19 @@
 
 /* ── Modal In-App Reader ───────────────────────────────────── */
 .news-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.65);
-    backdrop-filter: blur(4px);
-    z-index: 9999;
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 999999 !important;
     display: flex;
     align-items: flex-end;
     justify-content: center;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.25s ease;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 .news-modal-overlay.active {
     opacity: 1;
@@ -488,13 +490,14 @@
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 24px 24px 0 0;
-    max-height: 90vh;
+    max-height: 94dvh;
+    height: auto;
     display: flex;
     flex-direction: column;
     transform: translateY(100%);
     transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     overflow: hidden;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
 }
 @media (min-width: 640px) {
     .news-modal-overlay {
@@ -503,7 +506,7 @@
     }
     .news-modal-sheet {
         border-radius: 24px;
-        max-height: 85vh;
+        max-height: 88vh;
         transform: scale(0.94);
     }
     .news-modal-overlay.active .news-modal-sheet {
@@ -760,6 +763,8 @@
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
+    <!-- Bottom Spacer to prevent overlap with docked Bottom Nav and FAB -->
+    <div style="height: calc(var(--nav-height, 64px) + 40px); width: 100%;"></div>
 </div>
 
 <!-- Modal In-App Reader (100% In-App Full Reading Experience) -->
@@ -807,6 +812,11 @@ let currentModalItem = null;
 function openNewsReader(item) {
     currentModalItem = item;
     const overlay = document.getElementById('newsModalOverlay');
+    if (overlay && overlay.parentNode !== document.body) {
+        document.body.appendChild(overlay);
+    }
+    document.body.classList.add('news-reader-open');
+
     const badge = document.getElementById('modalSourceBadge');
     const img = document.getElementById('modalImage');
     const title = document.getElementById('modalTitle');
@@ -881,7 +891,9 @@ function closeNewsReader(e) {
 }
 
 function closeNewsReaderDirect() {
-    document.getElementById('newsModalOverlay').classList.remove('active');
+    const overlay = document.getElementById('newsModalOverlay');
+    if (overlay) overlay.classList.remove('active');
+    document.body.classList.remove('news-reader-open');
     document.body.style.overflow = '';
 }
 
@@ -941,6 +953,13 @@ function refreshNewsFeed(btn) {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeNewsReaderDirect();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const overlay = document.getElementById('newsModalOverlay');
+    if (overlay && overlay.parentNode !== document.body) {
+        document.body.appendChild(overlay);
     }
 });
 </script>

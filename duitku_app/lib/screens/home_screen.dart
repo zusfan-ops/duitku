@@ -51,6 +51,15 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  late final List<_TabNavObserver> _tabNavObservers = List.generate(
+    5,
+    (_) => _TabNavObserver(
+      onRoutesChanged: () {
+        if (mounted) setState(() {});
+      },
+    ),
+  );
+
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
     GlobalKey<NavigatorState>(),
     GlobalKey<NavigatorState>(),
@@ -62,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTabNavigator(int index, Widget root) {
     return Navigator(
       key: _navigatorKeys[index],
+      observers: [_tabNavObservers[index]],
       onGenerateRoute: (settings) => MaterialPageRoute(
         builder: (_) => root,
         settings: settings,
@@ -83,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final unreadChat = context.watch<AppDataProvider>().marketChatUnread;
+    final isAtTabRoot = _tabNavObservers[_index].depth == 0;
 
     return PopScope(
       canPop: false,
@@ -109,15 +120,24 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildTabNavigator(4, const SettingsScreen()),
           ],
         ),
-        bottomNavigationBar: SafeArea(
-          bottom: true,
-          minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: SizedBox(
-            height: 88.0,
-            child: Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.bottomCenter,
-              children: [
+        bottomNavigationBar: AnimatedSlide(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOutCubic,
+          offset: isAtTabRoot ? Offset.zero : const Offset(0, 1.5),
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: isAtTabRoot ? 1.0 : 0.0,
+            child: IgnorePointer(
+              ignoring: !isAtTabRoot,
+              child: SafeArea(
+                bottom: true,
+                minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: SizedBox(
+                  height: 88.0,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.bottomCenter,
+                    children: [
                 // ── Floating Frosted Glass Capsule Bar ────────────────────────
                 Positioned(
                   left: 0,
@@ -183,6 +203,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    ),
+  ),
+),
     );
   }
 
@@ -393,5 +416,46 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+}
+
+class _TabNavObserver extends NavigatorObserver {
+  final VoidCallback onRoutesChanged;
+  int _depth = 0;
+  int get depth => _depth;
+
+  _TabNavObserver({required this.onRoutesChanged});
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    if (previousRoute != null) {
+      _depth++;
+      WidgetsBinding.instance.addPostFrameCallback((_) => onRoutesChanged());
+    }
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPop(route, previousRoute);
+    if (_depth > 0) {
+      _depth--;
+      WidgetsBinding.instance.addPostFrameCallback((_) => onRoutesChanged());
+    }
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didRemove(route, previousRoute);
+    if (_depth > 0) {
+      _depth--;
+      WidgetsBinding.instance.addPostFrameCallback((_) => onRoutesChanged());
+    }
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    WidgetsBinding.instance.addPostFrameCallback((_) => onRoutesChanged());
   }
 }

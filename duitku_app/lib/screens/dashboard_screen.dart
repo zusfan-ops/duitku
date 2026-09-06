@@ -316,12 +316,15 @@ class DashboardScreenState extends State<DashboardScreen> {
         onRefresh: refresh,
         child: _buildBody(),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab_dashboard_add_tx',
-        onPressed: _openNewTransaction,
-        backgroundColor: const Color(0xFF2563EB),
-        tooltip: 'Catat Transaksi',
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 84),
+        child: FloatingActionButton(
+          heroTag: 'fab_dashboard_add_tx',
+          onPressed: _openNewTransaction,
+          backgroundColor: const Color(0xFF2563EB),
+          tooltip: 'Catat Transaksi',
+          child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+        ),
       ),
     );
   }
@@ -333,6 +336,7 @@ class DashboardScreenState extends State<DashboardScreen> {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       useSafeArea: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
@@ -363,7 +367,7 @@ class DashboardScreenState extends State<DashboardScreen> {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
       children: [
         const SyncStatusBanner(),
         // Mode Switcher Pill
