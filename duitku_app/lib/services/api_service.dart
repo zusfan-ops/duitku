@@ -858,6 +858,10 @@ class ApiService {
     return post('berita/refresh', {});
   }
 
+  Future<Map<String, dynamic>> getArticleContent(String url) async {
+    return get('berita/article', query: {'url': url});
+  }
+
   // ── Todos & Tasks API ─────────────────────────────────────────
   Future<Map<String, dynamic>> getTodos({String? filter, String? category, String? search}) async {
     final query = <String, String>{};

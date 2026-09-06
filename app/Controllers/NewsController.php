@@ -89,4 +89,24 @@ class NewsController extends BaseController
             'count'   => count($items),
         ]);
     }
+
+    /**
+     * Grab Full Article Body: GET /api/berita/article?url=...
+     */
+    public function article()
+    {
+        $url = $this->request->getGet('url') ?? '';
+        if (empty($url)) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'success' => false,
+                'error'   => 'Parameter url wajib disertakan',
+            ]);
+        }
+
+        $result = NewsService::fetchArticleContent($url);
+
+        return $this->response->setJSON(array_merge([
+            'success' => $result['success'] ?? false,
+        ], $result));
+    }
 }

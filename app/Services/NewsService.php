@@ -569,4 +569,128 @@ class NewsService
 
         return date('d M Y', $timestamp);
     }
+
+    /**
+     * Grab & Parse teks lengkap artikel berita dari halaman website aslinya
+     */
+    public static function fetchArticleContent(string $url): array
+    {
+        $url = trim($url);
+        if (empty($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return ['success' => false, 'error' => 'URL tidak valid'];
+        }
+
+        $cacheKey = 'article_body_' . md5($url);
+        $cache = null;
+        try {
+            if (function_exists('service')) {
+                $cache = \Config\Services::cache();
+                if ($cache !== null) {
+                    $cached = $cache->get($cacheKey);
+                    if ($cached !== null && is_array($cached) && !empty($cached['paragraphs'])) {
+                        return $cached;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL            => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS      => 3,
+            CURLOPT_TIMEOUT        => 8,
+            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 DuitKuInAppReader/1.0',
+            CURLOPT_HTTPHEADER     => [
+                'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language: id,en;q=0.8',
+            ],
+        ]);
+
+        $html = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode < 200 || $httpCode >= 400 || empty($html)) {
+            return ['success' => false, 'error' => "Gagal mengambil halaman (HTTP $httpCode)"];
+        }
+
+        libxml_use_internal_errors(true);
+        $dom = new \DOMDocument();
+        @$dom->loadHTML('<?xml encoding="UTF-8">' . $html);
+        libxml_clear_errors();
+
+        $xpath = new \DOMXPath($dom);
+
+        // Hapus elemen yang bukan isi artikel (iklan, navigasi, komentar, dll.)
+        $unwanted = $xpath->query('//script | //style | //nav | //header | //footer | //aside | //iframe | //noscript | //form | //*[contains(@class, "ads")] | //*[contains(@class, "banner")] | //*[contains(@class, "baca-juga")] | //*[contains(@class, "terkait")] | //*[contains(@class, "detail__body__tag")] | //*[contains(@class, "social-share")] | //*[contains(@class, "comment")]');
+        if ($unwanted) {
+            foreach ($unwanted as $node) {
+                if ($node->parentNode) {
+                    $node->parentNode->removeChild($node);
+                }
+            }
+        }
+
+        // Selektor kontainer artikel di berbagai media Indonesia
+        $candidateQueries = [
+            '//*[contains(@class, "detail__body-text") or contains(@class, "detail-text") or contains(@class, "detail-desc") or @id="detail-desc" or contains(@class, "read__content") or contains(@class, "article__content") or contains(@class, "article-content") or contains(@class, "post-content") or contains(@class, "content-detail") or contains(@class, "detail-body") or @id="content"]',
+            '//article',
+        ];
+
+        $articleNode = null;
+        foreach ($candidateQueries as $q) {
+            $nodes = $xpath->query($q);
+            if ($nodes && $nodes->length > 0) {
+                $articleNode = $nodes->item(0);
+                break;
+            }
+        }
+
+        $paragraphs = [];
+        if ($articleNode) {
+            $pNodes = $xpath->query('.//p', $articleNode);
+            if ($pNodes) {
+                foreach ($pNodes as $p) {
+                    $text = trim(preg_replace('/\s+/', ' ', $p->textContent));
+                    if (mb_strlen($text) > 25 && !preg_match('/^(baca juga|simak juga|pilihan redaksi|foto:|sumber:|simak video:)/i', $text)) {
+                        $paragraphs[] = $text;
+                    }
+                }
+            }
+        }
+
+        // Fallback: cari semua tag <p> bermakna di dalam body
+        if (count($paragraphs) < 2) {
+            $allP = $xpath->query('//body//p');
+            if ($allP) {
+                foreach ($allP as $p) {
+                    $text = trim(preg_replace('/\s+/', ' ', $p->textContent));
+                    if (mb_strlen($text) > 40 && !preg_match('/^(copyright|baca juga|ikuti kuis|unduh aplikasi|hak cipta)/i', $text)) {
+                        $paragraphs[] = $text;
+                    }
+                }
+            }
+        }
+
+        $result = [
+            'success'    => !empty($paragraphs),
+            'paragraphs' => $paragraphs,
+            'full_text'  => implode("\n\n", $paragraphs),
+            'count'      => count($paragraphs),
+        ];
+
+        // Simpan di cache selama 24 jam
+        if (!empty($paragraphs) && $cache !== null) {
+            try {
+                $cache->save($cacheKey, $result, 86400);
+            } catch (\Throwable $e) {}
+        }
+
+        return $result;
+    }
 }

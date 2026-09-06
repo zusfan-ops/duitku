@@ -821,11 +821,44 @@ function openNewsReader(item) {
     title.textContent = item.title || '';
     cat.textContent = (item.category || 'Nasional') + ' • ' + (item.time_ago || '');
     pubDate.textContent = item.pub_date || '';
-    desc.textContent = item.description || 'Tidak ada ringkasan teks.';
     linkBtn.href = item.link || '#';
+
+    // Tampilkan ringkasan awal dan loader teks lengkap
+    desc.innerHTML = '<div style="margin-bottom:12px;font-style:italic;color:var(--text-muted);font-size:13px;border-left:3px solid var(--primary);padding-left:10px;">' + 
+                     (item.description ? escapeHtml(item.description) : '') + 
+                     '</div><div id="fullArticleLoader" style="display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--bg);border-radius:12px;font-size:12.5px;color:var(--text-muted);margin-bottom:10px;"><span style="display:inline-block;animation:spin 1s linear infinite">⏳</span> Sedang memuat isi berita lengkap...</div><div id="fullArticleContainer"></div>';
 
     overlay.classList.add('active');
     document.body.style.overflow = 'hidden';
+
+    // Ambil naskah lengkap dari endpoint grabber backend
+    fetch('/api/berita/article?url=' + encodeURIComponent(item.link), { credentials: 'same-origin' })
+        .then(r => r.json())
+        .then(res => {
+            const loader = document.getElementById('fullArticleLoader');
+            const cont = document.getElementById('fullArticleContainer');
+            if (loader) loader.style.display = 'none';
+            if (res.success && res.paragraphs && res.paragraphs.length > 0) {
+                let html = '<div style="display:flex;flex-direction:column;gap:14px;">';
+                res.paragraphs.forEach(p => {
+                    html += '<p style="font-size:14.5px;line-height:1.75;color:var(--text-primary);margin:0;letter-spacing:-0.1px;">' + escapeHtml(p) + '</p>';
+                });
+                html += '</div>';
+                if (cont) cont.innerHTML = html;
+            } else {
+                if (cont) cont.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">(Halaman asli memerlukan interaksi khusus atau berbayar, gunakan tombol di bawah untuk membuka artikel asli)</div>';
+            }
+        })
+        .catch(() => {
+            const loader = document.getElementById('fullArticleLoader');
+            if (loader) loader.style.display = 'none';
+        });
+}
+
+function escapeHtml(str) {
+    return (str || '').replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
 }
 
 function closeNewsReader(e) {

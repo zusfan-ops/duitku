@@ -185,6 +185,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     // Berita Terkini RSS Feeds
     $routes->get('/berita',                     'NewsController::index');
     $routes->get('/news',                       'NewsController::index');
+    $routes->get('/berita/article',             'NewsController::article');
 
     // Kalkulator Zakat & Pajak
     $routes->get('/zakat-pajak',                'ZakatPajakController::index');
@@ -343,6 +344,7 @@ $routes->group('api', function ($routes) {
         // Berita Terkini RSS API
         $routes->get('berita',                      'NewsController::apiList');
         $routes->get('news',                        'NewsController::apiList');
+        $routes->get('berita/article',              'NewsController::article');
         $routes->post('berita/refresh',             'NewsController::apiRefresh');
 
         // My Home / Barang API
