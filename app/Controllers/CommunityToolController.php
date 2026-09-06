@@ -49,18 +49,23 @@ class CommunityToolController extends BaseController
             'search'   => $search,
         ]);
 
-        $myRentals = $this->rentalModel->getRentalsForBorrower($userId);
-        $isRtAdmin = in_array(strtolower(trim((string)($user['role'] ?? ''))), ['rt_admin', 'admin', 'administrator'], true);
+        $myRentals   = $this->rentalModel->getRentalsForBorrower($userId);
+        $isRtAdmin   = in_array(strtolower(trim((string)($user['role'] ?? ''))), ['rt_admin', 'admin', 'administrator'], true);
+        $kasSummary  = $this->rentalService->getNeighborhoodToolKasRecords($neighborhoodId);
+        $neighborhood = $this->neighborhoodModel->find($neighborhoodId);
 
         return view('neighborhood/tools/index', [
-            'pageTitle'  => 'Pinjam Alat Bersama RT',
-            'tools'      => $tools,
-            'myRentals'  => $myRentals,
-            'categories' => CommunityToolModel::getCategories(),
-            'user'       => $user,
-            'isRtAdmin'  => $isRtAdmin,
+            'pageTitle'        => 'Pinjam Alat Bersama RT',
+            'tools'            => $tools,
+            'myRentals'        => $myRentals,
+            'categories'       => CommunityToolModel::getCategories(),
+            'user'             => $user,
+            'isRtAdmin'        => $isRtAdmin,
             'selectedCategory' => $category ?: 'Semua',
-            'symbol'     => 'Rp',
+            'kasSummary'       => $kasSummary,
+            'toolRentalFee'    => (float)($neighborhood['tool_rental_fee'] ?? 2000.00),
+            'neighborhood'     => $neighborhood,
+            'symbol'           => 'Rp',
         ]);
     }
 
@@ -160,6 +165,21 @@ class CommunityToolController extends BaseController
         $conditionNote = $this->request->getPost('condition_note');
 
         $result = $this->rentalService->confirmReturn($actorId, $rentalId, $token, $conditionNote);
+        return $this->response->setJSON($result);
+    }
+
+    /**
+     * Update Tarif Kas RT Peminjaman Alat oleh RT Admin
+     * POST /neighborhood/tools/fee-setting
+     */
+    public function updateFee()
+    {
+        $userId = session()->get('user_id');
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+        $newFee = (float)str_replace(['.', ','], ['', '.'], $this->request->getPost('tool_rental_fee') ?? '2000');
+
+        $result = $this->rentalService->updateToolRentalFee($userId, $neighborhoodId, $newFee);
         return $this->response->setJSON($result);
     }
 }

@@ -30,6 +30,8 @@ class ToolRentalModel extends Model
         'borrower_note',
         'admin_note',
         'dispute_reason',
+        'rt_fee_amount',
+        'rt_fee_transaction_id',
         'fee_transaction_id',
         'deposit_transaction_id',
         'refund_transaction_id',
@@ -38,6 +40,24 @@ class ToolRentalModel extends Model
     protected $useTimestamps = true;
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
+
+    public function ensureTable(): void
+    {
+        $db = \Config\Database::connect();
+        if ($db->tableExists($this->table)) {
+            $cols = [
+                'rt_fee_amount'         => "DECIMAL(12,2) NOT NULL DEFAULT 2000.00",
+                'rt_fee_transaction_id' => "INT UNSIGNED NULL DEFAULT NULL",
+            ];
+            foreach ($cols as $colName => $colDef) {
+                if (!$db->fieldExists($colName, $this->table)) {
+                    try {
+                        $db->query("ALTER TABLE `{$this->table}` ADD COLUMN `{$colName}` {$colDef}");
+                    } catch (\Throwable $e) {}
+                }
+            }
+        }
+    }
 
     /**
      * Dapatkan detail peminjaman lengkap beserta data alat dan peminjam

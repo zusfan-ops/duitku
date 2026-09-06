@@ -62,16 +62,33 @@ class NeighborhoodController extends ApiController
     public function registerRt()
     {
         $userId = $this->uid();
-        $json   = $this->request->getJSON(true) ?? [];
+        $post   = $this->request->getPost();
+        if (empty($post)) {
+            $post = $this->request->getJSON(true) ?? [];
+        }
 
-        if (empty($json['subdistrict']) || empty($json['rt']) || empty($json['rw'])) {
+        if (empty($post['subdistrict']) || empty($post['rt']) || empty($post['rw'])) {
             return $this->fail('Data wilayah tidak lengkap (RT, RW, Kelurahan/Desa wajib diisi).');
         }
 
+        // Handle File Upload Surat Pengesahan/Penunjukan (SK)
+        $skDocumentPath = null;
+        $skFile = $this->request->getFile('sk_document');
+        if ($skFile && $skFile->isValid() && !$skFile->hasMoved()) {
+            $uploadDir = FCPATH . 'uploads/rt_sk/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            $newName = $skFile->getRandomName();
+            $skFile->move($uploadDir, $newName);
+            $skDocumentPath = '/uploads/rt_sk/' . $newName;
+        }
+
         try {
-            $id = $this->neighborhoodService->registerNeighborhood($json, $userId);
+            $id = $this->neighborhoodService->registerNeighborhood($post, $userId, $skDocumentPath);
             return $this->ok([
-                'message'         => 'Lingkungan RT berhasil didaftarkan!',
+                'status'          => 'pending',
+                'message'         => 'Pengajuan RT berhasil dikirim dan sedang ditinjau Superadmin!',
                 'neighborhood_id' => $id,
             ]);
         } catch (\Throwable $e) {

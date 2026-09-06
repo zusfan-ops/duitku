@@ -102,9 +102,16 @@ class NeighborhoodController extends BaseController
         $userId = session()->get('user_id');
         $user   = $this->userModel->find($userId);
 
+        // Cek jika pengguna sudah memiliki pengajuan RT yang pending
+        $existingRt = null;
+        if (!empty($user['neighborhood_id'])) {
+            $existingRt = $this->neighborhoodModel->find($user['neighborhood_id']);
+        }
+
         return view('neighborhood/create', [
-            'pageTitle' => 'Daftarkan Lingkungan RT Baru',
-            'user'      => $user,
+            'pageTitle'  => 'Daftarkan Lingkungan RT Baru',
+            'user'       => $user,
+            'existingRt' => $existingRt,
         ]);
     }
 
@@ -118,19 +125,46 @@ class NeighborhoodController extends BaseController
 
         $rtName = trim($post['name'] ?? '');
         if (empty($rtName) || empty($post['subdistrict']) || empty($post['rt']) || empty($post['rw'])) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Harap lengkapi semua data wilayah (RT, RW, Kelurahan, Kota, Provinsi).']);
+            $msg = 'Harap lengkapi semua data wilayah (RT, RW, Kelurahan, Kota, Provinsi).';
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => $msg]);
+            }
+            return redirect()->back()->withInput()->with('error', $msg);
+        }
+
+        // Handle File Upload Surat Pengesahan/Penunjukan (SK)
+        $skDocumentPath = null;
+        $skFile = $this->request->getFile('sk_document');
+        if ($skFile && $skFile->isValid() && !$skFile->hasMoved()) {
+            $uploadDir = FCPATH . 'uploads/rt_sk/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            $newName = $skFile->getRandomName();
+            $skFile->move($uploadDir, $newName);
+            $skDocumentPath = '/uploads/rt_sk/' . $newName;
         }
 
         try {
-            $id = $this->neighborhoodService->registerNeighborhood($post, $userId);
-            return $this->response->setJSON([
-                'success'         => true,
-                'message'         => 'Lingkungan RT berhasil didaftarkan!',
-                'neighborhood_id' => $id,
-                'redirect'        => '/neighborhood',
-            ]);
+            $id = $this->neighborhoodService->registerNeighborhood($post, $userId, $skDocumentPath);
+            $msg = 'Pengajuan RT berhasil dikirim! Menunggu verifikasi dokumen SK oleh Admin Master.';
+            
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success'         => true,
+                    'message'         => $msg,
+                    'neighborhood_id' => $id,
+                    'redirect'        => '/neighborhood/join',
+                ]);
+            }
+
+            return redirect()->to('/neighborhood/join')->with('success', $msg);
         } catch (\Throwable $e) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Gagal mendaftarkan RT: ' . $e->getMessage()]);
+            $err = 'Gagal mendaftarkan RT: ' . $e->getMessage();
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => $err]);
+            }
+            return redirect()->back()->withInput()->with('error', $err);
         }
     }
 

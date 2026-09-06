@@ -690,6 +690,10 @@
                 <span class="rail-icon">👥</span>
                 <span class="rail-label">Pengguna</span>
             </button>
+            <button type="button" class="rail-btn <?= ($activeMenu ?? '') === 'neighborhoods' ? 'active' : '' ?>" data-group="komunitas" data-tip="Pengajuan &amp; Sistem RT" onclick="openRailFlyout('komunitas')">
+                <span class="rail-icon">🏛️</span>
+                <span class="rail-label">Komunitas</span>
+            </button>
             <button type="button" class="rail-btn" data-group="pintasan" data-tip="Aplikasi & Pintasan" onclick="openRailFlyout('pintasan')">
                 <span class="rail-icon">⚡</span>
                 <span class="rail-label">Pintasan</span>
@@ -776,6 +780,24 @@
                 <a href="/admin/users" class="nav-item <?= ($activeMenu ?? '') === 'users' ? 'active' : '' ?>" onclick="handleMenuClick(event, 'users', '/admin/users'); closeRailFlyout();">
                     <span class="nav-icon">👥</span>
                     <span class="nav-label">Daftar Pengguna</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Panel: Komunitas & RT -->
+        <div class="rail-flyout-panel" data-group="komunitas">
+            <div class="rail-flyout-head">
+                <h2>Pengajuan &amp; Komunitas RT</h2>
+                <div class="rail-flyout-rule"></div>
+            </div>
+            <div class="rail-flyout-grid cols-2">
+                <a href="/admin/neighborhoods" class="nav-item <?= ($activeMenu ?? '') === 'neighborhoods' ? 'active' : '' ?>" onclick="handleMenuClick(event, 'neighborhoods', '/admin/neighborhoods'); closeRailFlyout();">
+                    <span class="nav-icon">🏛️</span>
+                    <span class="nav-label">Approval &amp; Data RT</span>
+                </a>
+                <a href="/neighborhood" target="_blank" class="nav-item" onclick="closeRailFlyout();">
+                    <span class="nav-icon">🏘️</span>
+                    <span class="nav-label">Portal RT Warga ↗</span>
                 </a>
             </div>
         </div>

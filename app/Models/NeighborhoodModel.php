@@ -22,23 +22,67 @@ class NeighborhoodModel extends Model
         'rw',
         'rt',
         'unique_code',
+        'status',
+        'sk_number',
+        'sk_document_path',
+        'rejection_reason',
+        'verified_at',
+        'verified_by',
         'qr_join_token',
         'admin_user_id',
         'bank_wallet_id',
         'address_note',
         'auto_approval',
         'max_borrow_limit_domisili',
+        'tool_rental_fee',
     ];
 
     protected $useTimestamps = true;
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
+    public function ensureTable(): void
+    {
+        $db = \Config\Database::connect();
+        if ($db->tableExists($this->table)) {
+            $cols = [
+                'status'           => "ENUM('pending', 'verified', 'rejected') DEFAULT 'pending'",
+                'sk_number'        => "VARCHAR(120) NULL DEFAULT NULL",
+                'sk_document_path' => "VARCHAR(255) NULL DEFAULT NULL",
+                'rejection_reason' => "TEXT NULL DEFAULT NULL",
+                'verified_at'      => "DATETIME NULL DEFAULT NULL",
+                'verified_by'      => "INT UNSIGNED NULL DEFAULT NULL",
+                'tool_rental_fee'  => "DECIMAL(12,2) NOT NULL DEFAULT 2000.00",
+            ];
+            foreach ($cols as $colName => $colDef) {
+                if (!$db->fieldExists($colName, $this->table)) {
+                    try {
+                        $db->query("ALTER TABLE `{$this->table}` ADD COLUMN `{$colName}` {$colDef}");
+                    } catch (\Throwable $e) {}
+                }
+            }
+        }
+    }
+
+    /**
+     * Ambil semua RT yang masih menunggu persetujuan Superadmin
+     */
+    public function getPendingApprovals(): array
+    {
+        $this->ensureTable();
+        return $this->select('neighborhoods.*, u.name AS applicant_name, u.email AS applicant_email, u.phone AS applicant_phone')
+            ->join('users u', 'u.id = neighborhoods.admin_user_id', 'left')
+            ->where('neighborhoods.status', 'pending')
+            ->orderBy('neighborhoods.created_at', 'DESC')
+            ->findAll();
+    }
+
     /**
      * Cari RT berdasarkan kode unik (case insensitive)
      */
     public function findByUniqueCode(string $code): ?array
     {
+        $this->ensureTable();
         return $this->where('LOWER(unique_code)', strtolower(trim($code)))->first();
     }
 

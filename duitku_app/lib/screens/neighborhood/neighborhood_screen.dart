@@ -80,16 +80,55 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
     }
   }
 
-  Future<void> _verifyResident(int userId, String action) async {
+  Future<void> _verifyResident(int userId, String action, String residentName) async {
+    final isApprove = action == 'approve';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(isApprove ? 'Setujui Warga?' : 'Tolak Pengajuan?', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+        content: Text(
+          isApprove
+              ? 'Apakah Anda yakin ingin menyetujui $residentName sebagai warga resmi di RT Anda?'
+              : 'Apakah Anda yakin ingin menolak permohonan bergabung dari $residentName?',
+          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isApprove ? const Color(0xFF059669) : const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(isApprove ? 'Setujui' : 'Tolak'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     try {
       final res = await ApiService.instance.post('neighborhood/resident/verify', {
         'target_user_id': userId,
         'action': action,
       });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res['message']?.toString() ?? (isApprove ? 'Warga berhasil disetujui!' : 'Pengajuan ditolak.')),
+          backgroundColor: isApprove ? const Color(0xFF059669) : const Color(0xFFEF4444),
+        ),
+      );
       if (res['success'] == true) {
         _loadData();
       }
-    } catch (_) {}
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
   }
 
   void _showCreateRtDialog() {
@@ -645,13 +684,31 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                           ),
                           Row(
                             children: [
-                              IconButton(
-                                icon: const Icon(Icons.close_rounded, color: AppColors.expense, size: 20),
-                                onPressed: () => _verifyResident(pr.id, 'reject'),
+                              OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFFEF4444),
+                                  side: const BorderSide(color: Color(0xFFFCA5A5)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                onPressed: () => _verifyResident(pr.id, 'reject', pr.name),
+                                child: const Text('Tolak', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 22),
-                                onPressed: () => _verifyResident(pr.id, 'approve'),
+                              const SizedBox(width: 6),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF059669),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  elevation: 0,
+                                ),
+                                onPressed: () => _verifyResident(pr.id, 'approve', pr.name),
+                                child: const Text('Setujui ✓', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
                               ),
                             ],
                           ),

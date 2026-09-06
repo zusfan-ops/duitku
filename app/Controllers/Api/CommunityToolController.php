@@ -46,9 +46,16 @@ class CommunityToolController extends ApiController
             'search'   => $search,
         ]);
 
+        $kasSummary = $this->rentalService->getNeighborhoodToolKasRecords($neighborhoodId);
+        $neighborhoodModel = new \App\Models\NeighborhoodModel();
+        $neighborhood = $neighborhoodModel->find($neighborhoodId);
+
         return $this->ok([
-            'tools'      => $tools,
-            'categories' => array_keys(CommunityToolModel::getCategories()),
+            'tools'           => $tools,
+            'categories'      => array_keys(CommunityToolModel::getCategories()),
+            'tool_rental_fee' => (float)($neighborhood['tool_rental_fee'] ?? 2000.00),
+            'kas_summary'     => $kasSummary,
+            'kas_info_note'   => 'Biaya sewa alat Rp 2.000 sepenuhnya dibayarkan tunai ke Kas RT untuk kepentingan dan fasilitas bersama seluruh warga.',
         ]);
     }
 
@@ -160,5 +167,43 @@ class CommunityToolController extends ApiController
         $userId = $this->uid();
         $rentals = $this->rentalModel->getRentalsForBorrower($userId);
         return $this->ok(['rentals' => $rentals]);
+    }
+
+    /**
+     * Rekap Pemasukan Kas RT dari Peminjaman Alat
+     * GET /api/neighborhood/tools/kas-summary
+     */
+    public function kasSummary()
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+        if (!$neighborhoodId) {
+            return $this->fail('Belum terdaftar di RT.');
+        }
+
+        $summary = $this->rentalService->getNeighborhoodToolKasRecords($neighborhoodId);
+        return $this->ok($summary);
+    }
+
+    /**
+     * Ubah Tarif Kas RT Peminjaman Alat oleh Ketua RT
+     * POST /api/neighborhood/tools/fee-setting
+     */
+    public function updateFee()
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+        $json   = $this->request->getJSON(true) ?? [];
+
+        $newFee = (float)($json['tool_rental_fee'] ?? 2000);
+        $res = $this->rentalService->updateToolRentalFee($userId, $neighborhoodId, $newFee);
+
+        if (!$res['success']) {
+            return $this->fail($res['message']);
+        }
+
+        return $this->ok($res);
     }
 }

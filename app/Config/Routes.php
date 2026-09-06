@@ -219,6 +219,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/neighborhood/tools/rent',         'CommunityToolController::rent', ['filter' => 'resident']);
     $routes->post('/neighborhood/tools/handover',     'CommunityToolController::handover');
     $routes->post('/neighborhood/tools/return',       'CommunityToolController::returnTool');
+    $routes->post('/neighborhood/tools/fee-setting',  'CommunityToolController::updateFee');
 
     // Titip Belanja Antar-Warga (Errands)
     $routes->get('/neighborhood/errands',             'ErrandController::index');
@@ -263,6 +264,11 @@ $routes->group('admin', ['filter' => 'admin'], function ($routes) {
     $routes->post('users/update-role/(:num)',   'Admin\UserController::updateRole/$1');
     $routes->post('users/reset-password/(:num)','Admin\UserController::resetPassword/$1');
     $routes->post('users/delete/(:num)',        'Admin\UserController::delete/$1');
+
+    // Neighborhoods (Pengajuan & Approval RT)
+    $routes->get('neighborhoods',                       'Admin\NeighborhoodAdminController::index');
+    $routes->post('neighborhoods/approve/(:num)',       'Admin\NeighborhoodAdminController::approve/$1');
+    $routes->post('neighborhoods/reject/(:num)',        'Admin\NeighborhoodAdminController::reject/$1');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -558,6 +564,8 @@ $routes->group('api', function ($routes) {
         $routes->post('neighborhood/tools/handover',      'Api\CommunityToolController::handover');
         $routes->post('neighborhood/tools/return',        'Api\CommunityToolController::returnTool');
         $routes->get('neighborhood/tools/my-rentals',     'Api\CommunityToolController::myRentals');
+        $routes->get('neighborhood/tools/kas-summary',    'Api\CommunityToolController::kasSummary');
+        $routes->post('neighborhood/tools/fee-setting',   'Api\CommunityToolController::updateFee');
 
         // Errands (Titip Belanja API)
         $routes->get('neighborhood/errands',              'Api\ErrandController::index');

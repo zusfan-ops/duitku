@@ -13,7 +13,7 @@ class NeighborhoodService
     protected NeighborhoodModel      $neighborhoodModel;
     protected NeighborhoodVouchModel $vouchModel;
     protected UserModel              $userModel;
-    protected WalletModel           $walletModel;
+    protected WalletModel            $walletModel;
     protected NotificationModel      $notificationModel;
     protected FcmService             $fcmService;
 
@@ -28,21 +28,23 @@ class NeighborhoodService
     }
 
     /**
-     * Daftarkan RT Baru (Bisa oleh Platform Admin atau Calon Ketua RT)
+     * Daftarkan / Ajukan RT Baru Dilengkapi Nomor SK & Dokumen Pengesahan dari RW/Kelurahan
      */
-    public function registerNeighborhood(array $data, int $adminUserId): int
+    public function registerNeighborhood(array $data, int $applicantUserId, ?string $skDocumentPath = null): int
     {
+        $this->neighborhoodModel->ensureTable();
+
         $uniqueCode = !empty($data['unique_code'])
             ? strtoupper(trim($data['unique_code']))
             : NeighborhoodModel::generateUniqueCode($data['rt'] ?? '01', $data['rw'] ?? '01', $data['subdistrict'] ?? 'Wilayah');
 
         $qrJoinToken = bin2hex(random_bytes(16));
 
-        // Buat Dompet Kas RT jika belum ada
+        // Buat Dompet Kas RT default untuk RT
         $walletId = null;
         try {
             $walletId = $this->walletModel->insert([
-                'user_id'         => $adminUserId,
+                'user_id'         => $applicantUserId,
                 'name'            => 'Kas RT ' . ($data['rt'] ?? '') . ' / RW ' . ($data['rw'] ?? ''),
                 'type'            => 'cash',
                 'icon'            => '🏛️',
@@ -54,208 +56,328 @@ class NeighborhoodService
             log_message('error', 'Error creating RT wallet: ' . $e->getMessage());
         }
 
-        $neighborhoodId = $this->neighborhoodModel->insert([
-            'name'                      => $data['name'] ?? ('RT ' . ($data['rt'] ?? '') . ' RW ' . ($data['rw'] ?? '')),
-            'province'                  => $data['province'],
-            'city'                      => $data['city'],
-            'district'                  => $data['district'],
-            'subdistrict'               => $data['subdistrict'],
-            'rw'                        => $data['rw'],
-            'rt'                        => $data['rt'],
+        $rtName = !empty($data['name']) ? trim($data['name']) : ('RT ' . ($data['rt'] ?? '') . ' RW ' . ($data['rw'] ?? ''));
+
+        // Status awal pengajuan RT adalah PENDING menunggu approval superadmin
+        $neighborhoodId = (int)$this->neighborhoodModel->insert([
+            'name'                      => $rtName,
+            'province'                  => $data['province'] ?? '',
+            'city'                      => $data['city'] ?? '',
+            'district'                  => $data['district'] ?? '',
+            'subdistrict'               => $data['subdistrict'] ?? '',
+            'rw'                        => $data['rw'] ?? '',
+            'rt'                        => $data['rt'] ?? '',
             'unique_code'               => $uniqueCode,
+            'status'                    => 'pending',
+            'sk_number'                 => !empty($data['sk_number']) ? trim($data['sk_number']) : null,
+            'sk_document_path'          => $skDocumentPath,
             'qr_join_token'             => $qrJoinToken,
-            'admin_user_id'             => $adminUserId,
+            'admin_user_id'             => $applicantUserId,
             'bank_wallet_id'            => $walletId,
             'address_note'              => $data['address_note'] ?? null,
             'auto_approval'             => !empty($data['auto_approval']) ? 1 : 0,
             'max_borrow_limit_domisili' => (float)($data['max_borrow_limit_domisili'] ?? 250000),
         ]);
 
-        // Berikan role rt_admin kepada pengguna pembuat/ketua RT
-        $this->userModel->update($adminUserId, [
+        // Tandai pengguna pemohon sebagai pending RT admin
+        $this->userModel->update($applicantUserId, [
             'neighborhood_id'        => $neighborhoodId,
-            'role'                   => 'rt_admin',
             'residence_status'       => 'permanent',
-            'rt_verification_status' => 'verified',
-            'rt_verified_at'         => date('Y-m-d H:i:s'),
-            'rt_verified_by'         => $adminUserId,
+            'rt_verification_status' => 'pending',
         ]);
+
+        // Kirim Notifikasi ke Admin Master bahwa ada pengajuan RT baru masuk
+        $applicant = $this->userModel->find($applicantUserId);
+        $applicantName = $applicant['name'] ?? 'Pengguna';
+
+        try {
+            $this->notificationModel->insert([
+                'title'      => 'Pengajuan RT Baru Menunggu Approval 🏛️',
+                'message'    => "Pemohon {$applicantName} mengajukan pendaftaran {$rtName} (SK: " . ($data['sk_number'] ?? 'Terlampir') . "). Silakan verifikasi berkas di Admin Panel.",
+                'type'       => 'system',
+                'target'     => 'all',
+                'action_url' => '/admin/neighborhoods',
+                'is_pinned'  => 0,
+            ]);
+        } catch (\Throwable $e) {}
 
         return $neighborhoodId;
     }
 
     /**
-     * Warga Mengajukan Gabung ke RT (via Kode Unik RT atau Pilihan Wilayah)
+     * Persetujuan / Approval RT Baru oleh Superadmin Aplikasi
+     */
+    public function approveNeighborhoodBySuperadmin(int $superadminId, int $neighborhoodId): array
+    {
+        $this->neighborhoodModel->ensureTable();
+        $rt = $this->neighborhoodModel->find($neighborhoodId);
+        if (!$rt) {
+            return ['success' => false, 'message' => 'Data RT tidak ditemukan.'];
+        }
+
+        $now = date('Y-m-d H:i:s');
+
+        $this->neighborhoodModel->update($neighborhoodId, [
+            'status'           => 'verified',
+            'verified_at'      => $now,
+            'verified_by'      => $superadminId,
+            'rejection_reason' => null,
+        ]);
+
+        // Angkat pemohon menjadi rt_admin resmi
+        $adminUserId = (int)$rt['admin_user_id'];
+        if ($adminUserId > 0) {
+            $this->userModel->update($adminUserId, [
+                'role'                   => 'rt_admin',
+                'neighborhood_id'        => $neighborhoodId,
+                'rt_verification_status' => 'verified',
+                'rt_verified_at'         => $now,
+                'rt_verified_by'         => $superadminId,
+            ]);
+
+            // Kirim notifikasi selamat ke Ketua RT
+            try {
+                $this->notificationModel->insert([
+                    'title'      => 'Selamat! Pengajuan RT Anda Telah Disetujui 👑',
+                    'message'    => "Pengajuan lingkungan {$rt['name']} telah disetujui Superadmin. Kode Unik RT: {$rt['unique_code']}. Anda dapat mulai mengundang warga dan mengelola lingkungan RT.",
+                    'type'       => 'neighborhood_verified',
+                    'target'     => 'user',
+                    'user_id'    => $adminUserId,
+                    'action_url' => '/neighborhood',
+                    'is_pinned'  => 1,
+                ]);
+            } catch (\Throwable $e) {}
+        }
+
+        return ['success' => true, 'message' => "RT {$rt['name']} berhasil disetujui dan diaktifkan."];
+    }
+
+    /**
+     * Penolakan RT Baru oleh Superadmin Aplikasi
+     */
+    public function rejectNeighborhoodBySuperadmin(int $superadminId, int $neighborhoodId, ?string $reason = null): array
+    {
+        $this->neighborhoodModel->ensureTable();
+        $rt = $this->neighborhoodModel->find($neighborhoodId);
+        if (!$rt) {
+            return ['success' => false, 'message' => 'Data RT tidak ditemukan.'];
+        }
+
+        $this->neighborhoodModel->update($neighborhoodId, [
+            'status'           => 'rejected',
+            'rejection_reason' => $reason ?: 'Dokumen SK / bukti penunjukan RT tidak valid.',
+        ]);
+
+        $adminUserId = (int)$rt['admin_user_id'];
+        if ($adminUserId > 0) {
+            $this->userModel->update($adminUserId, [
+                'rt_verification_status' => 'rejected',
+            ]);
+
+            try {
+                $this->notificationModel->insert([
+                    'title'      => 'Pengajuan RT Ditolak ⚠️',
+                    'message'    => "Mohon maaf, pengajuan RT {$rt['name']} ditolak oleh Admin. Alasan: " . ($reason ?: 'Dokumen penunjukan tidak valid.'),
+                    'type'       => 'neighborhood_rejected',
+                    'target'     => 'user',
+                    'user_id'    => $adminUserId,
+                    'action_url' => '/neighborhood/create',
+                    'is_pinned'  => 0,
+                ]);
+            } catch (\Throwable $e) {}
+        }
+
+        return ['success' => true, 'message' => "Pengajuan RT {$rt['name']} telah ditolak."];
+    }
+
+    /**
+     * Warga Mengajukan Gabung ke Kawasan RT
      */
     public function joinNeighborhood(int $userId, string $uniqueCode, string $residenceStatus = 'permanent', ?string $houseNumber = null): array
     {
+        $this->neighborhoodModel->ensureTable();
+
         $neighborhood = $this->neighborhoodModel->findByUniqueCode($uniqueCode);
         if (!$neighborhood) {
-            return ['success' => false, 'message' => 'Kode unik RT tidak ditemukan. Silakan pastikan kode yang diberikan oleh Ketua RT sudah benar.'];
+            return ['success' => false, 'message' => 'Kode unik RT tidak ditemukan. Silakan periksa kembali kode dari Ketua RT Anda.'];
+        }
+
+        // Cek status RT
+        if (($neighborhood['status'] ?? 'pending') !== 'verified') {
+            return ['success' => false, 'message' => 'Lingkungan RT ini belum aktif atau masih dalam proses peninjauan SK oleh Admin Master.'];
         }
 
         $resStatus = in_array($residenceStatus, ['permanent', 'temporary']) ? $residenceStatus : 'permanent';
 
         // Jika auto_approval aktif di RT tersebut, langsung verified
         $verificationStatus = (!empty($neighborhood['auto_approval'])) ? 'verified' : 'pending';
-        $verifiedAt = ($verificationStatus === 'verified') ? date('Y-m-d H:i:s') : null;
 
         $this->userModel->update($userId, [
-            'neighborhood_id'        => $neighborhood['id'],
+            'neighborhood_id'        => (int)$neighborhood['id'],
             'residence_status'       => $resStatus,
             'rt_verification_status' => $verificationStatus,
-            'house_number'           => trim((string)$houseNumber) ?: null,
-            'rt_verified_at'         => $verifiedAt,
-            'rt_verified_by'         => ($verificationStatus === 'verified') ? $neighborhood['admin_user_id'] : null,
+            'house_number'           => $houseNumber,
+            'rt_verified_at'         => ($verificationStatus === 'verified') ? date('Y-m-d H:i:s') : null,
+            'rt_verified_by'         => ($verificationStatus === 'verified') ? (int)($neighborhood['admin_user_id'] ?? 0) : null,
         ]);
 
         $user = $this->userModel->find($userId);
-        $adminId = (int)$neighborhood['admin_user_id'];
+        $userName = $user['name'] ?? 'Warga';
 
-        // Jika butuh approval, kirim notifikasi ke Ketua RT
-        if ($verificationStatus === 'pending' && $adminId) {
-            $residentTypeLabel = ($resStatus === 'permanent') ? 'Warga Tetap (KTP)' : 'Warga Domisili/Kontrak';
-            $houseLabel = $houseNumber ? " di rumah No. {$houseNumber}" : '';
-
-            $this->notificationModel->insert([
-                'title'      => '📋 Pengajuan Warga Baru: ' . ($user['name'] ?? 'Warga'),
-                'message'    => "{$user['name']} mengajukan bergabung ke {$neighborhood['name']} sebagai {$residentTypeLabel}{$houseLabel}.",
-                'type'       => 'info',
-                'target'     => 'user',
-                'user_id'    => $adminId,
-                'action_url' => '/neighborhood/approval-queue',
-            ]);
-
-            try {
-                if ($this->fcmService->isConfigured()) {
-                    $this->fcmService->sendToTopic(
-                        "user_{$adminId}",
-                        '📋 Pengajuan Warga Baru: ' . ($user['name'] ?? 'Warga'),
-                        "{$user['name']} mendaftar sebagai {$residentTypeLabel}{$houseLabel}. Buka antrean persetujuan RT.",
-                        ['type' => 'rt_approval_queue', 'neighborhood_id' => (string)$neighborhood['id']]
-                    );
-                }
-            } catch (\Throwable $e) {
-                // Ignore FCM non-fatal error
+        // JIKA BUTUH APPROVAL: Kirim Notifikasi langsung ke aplikasi Ketua RT
+        if ($verificationStatus === 'pending') {
+            $rtAdminId = (int)($neighborhood['admin_user_id'] ?? 0);
+            if ($rtAdminId > 0) {
+                try {
+                    $this->notificationModel->insert([
+                        'title'      => 'Permintaan Warga Baru 👥',
+                        'message'    => "{$userName} (No. Rumah: " . ($houseNumber ?: '-') . ", Status: " . ($resStatus === 'permanent' ? 'Tetap' : 'Domisili') . ") mengajukan diri untuk bergabung ke RT Anda. Ketuk untuk meninjau dan menyetujui.",
+                        'type'       => 'rt_resident_request',
+                        'target'     => 'user',
+                        'user_id'    => $rtAdminId,
+                        'action_url' => '/neighborhood',
+                        'is_pinned'  => 0,
+                    ]);
+                } catch (\Throwable $e) {}
             }
+
+            return [
+                'success' => true,
+                'status'  => 'pending',
+                'message' => 'Pengajuan berhasil dikirim! Notifikasi telah diteruskan ke Ketua RT Anda untuk persetujuan.',
+            ];
         }
 
         return [
-            'success'                => true,
-            'status'                 => $verificationStatus,
-            'neighborhood'           => $neighborhood,
-            'message'                => ($verificationStatus === 'verified')
-                ? 'Selamat! Anda telah langsung terhubung dengan komunitas RT ' . $neighborhood['name'] . '.'
-                : 'Pengajuan Anda telah dikirim ke Ketua RT. Mohon menunggu konfirmasi persetujuan dari pengurus RT.',
+            'success' => true,
+            'status'  => 'verified',
+            'message' => 'Selamat, Anda telah resmi bergabung ke ' . $neighborhood['name'] . '!',
         ];
     }
 
     /**
-     * Ketua RT Menyetujui atau Menolak Warga di Antrean
+     * Verifikasi Permintaan Warga oleh Ketua RT (Approve / Reject)
      */
-    public function verifyResident(int $adminUserId, int $targetUserId, string $action, ?string $notes = null): array
+    public function verifyResident(int $rtAdminUserId, int $targetUserId, string $action, ?string $notes = null): array
     {
-        $admin = $this->userModel->find($adminUserId);
-        $adminRole = strtolower(trim((string)($admin['role'] ?? 'user')));
-        if (!in_array($adminRole, ['rt_admin', 'admin', 'administrator'])) {
-            return ['success' => false, 'message' => 'Anda tidak memiliki hak akses verifikasi RT.'];
+        $admin = $this->userModel->find($rtAdminUserId);
+        $targetUser = $this->userModel->find($targetUserId);
+
+        if (!$admin || !$targetUser) {
+            return ['success' => false, 'message' => 'Pengguna tidak ditemukan.'];
         }
 
-        $targetUser = $this->userModel->find($targetUserId);
-        if (!$targetUser || (int)$targetUser['neighborhood_id'] !== (int)$admin['neighborhood_id']) {
-            return ['success' => false, 'message' => 'Data warga tidak ditemukan di lingkungan RT Anda.'];
+        if ((int)$admin['neighborhood_id'] !== (int)$targetUser['neighborhood_id']) {
+            return ['success' => false, 'message' => 'Anda tidak memiliki hak akses verifikasi untuk warga di luar RT Anda.'];
         }
+
+        $now = date('Y-m-d H:i:s');
+        $rt = $this->neighborhoodModel->find($admin['neighborhood_id']);
+        $rtName = $rt['name'] ?? 'Komunitas RT';
 
         if ($action === 'approve') {
             $this->userModel->update($targetUserId, [
                 'rt_verification_status' => 'verified',
-                'rt_verified_at'         => date('Y-m-d H:i:s'),
-                'rt_verified_by'         => $adminUserId,
+                'rt_verified_at'         => $now,
+                'rt_verified_by'         => $rtAdminUserId,
             ]);
 
-            $this->notificationModel->insert([
-                'title'      => '✅ Akun Warga RT Disetujui!',
-                'message'    => 'Selamat! Ketua RT telah memverifikasi akun Anda. Sekarang Anda dapat meminjam alat warga dan menggunakan layanan titip belanja.',
-                'type'       => 'info',
-                'target'     => 'user',
-                'user_id'    => $targetUserId,
-                'action_url' => '/neighborhood',
-            ]);
+            try {
+                $this->notificationModel->insert([
+                    'title'      => 'Pendaftaran Warga Disetujui 🏠',
+                    'message'    => "Selamat! Ketua RT telah menyetujui akun Anda sebagai warga di {$rtName}. Anda sekarang dapat meminjam alat dan mengikuti kegiatan warga.",
+                    'type'       => 'resident_approved',
+                    'target'     => 'user',
+                    'user_id'    => $targetUserId,
+                    'action_url' => '/neighborhood',
+                    'is_pinned'  => 0,
+                ]);
+            } catch (\Throwable $e) {}
 
-            return ['success' => true, 'message' => 'Warga berhasil diverifikasi dan disetujui.'];
-        } else {
+            return ['success' => true, 'message' => 'Warga berhasil disetujui dan diaktifkan.'];
+        }
+
+        if ($action === 'reject') {
             $this->userModel->update($targetUserId, [
                 'rt_verification_status' => 'rejected',
+                'neighborhood_id'        => null,
             ]);
 
-            $this->notificationModel->insert([
-                'title'      => '❌ Pengajuan Bergabung RT Ditolak',
-                'message'    => 'Pengajuan bergabung RT Anda belum disetujui. Alasan/Catatan: ' . ($notes ?: 'Data tidak sesuai.'),
-                'type'       => 'warning',
-                'target'     => 'user',
-                'user_id'    => $targetUserId,
-                'action_url' => '/neighborhood/join',
-            ]);
+            try {
+                $this->notificationModel->insert([
+                    'title'      => 'Pengajuan Warga Ditolak ⚠️',
+                    'message'    => "Pengajuan Anda bergabung ke {$rtName} ditolak oleh Ketua RT." . ($notes ? " Alasan: {$notes}" : ""),
+                    'type'       => 'resident_rejected',
+                    'target'     => 'user',
+                    'user_id'    => $targetUserId,
+                    'action_url' => '/neighborhood/join',
+                    'is_pinned'  => 0,
+                ]);
+            } catch (\Throwable $e) {}
 
             return ['success' => true, 'message' => 'Pengajuan warga telah ditolak.'];
         }
+
+        return ['success' => false, 'message' => 'Aksi verifikasi tidak valid.'];
     }
 
     /**
-     * Sistem Penjamin (Vouching) oleh Sesama Warga Terverifikasi
+     * Vouching / Jaminan Tetangga
      */
     public function vouchForNeighbor(int $voucherUserId, int $targetUserId, ?string $notes = null): array
     {
         $voucher = $this->userModel->find($voucherUserId);
         $target  = $this->userModel->find($targetUserId);
 
-        if (!$voucher || ($voucher['rt_verification_status'] ?? '') !== 'verified') {
+        if (!$voucher || !$target) {
+            return ['success' => false, 'message' => 'Pengguna tidak ditemukan.'];
+        }
+
+        if ($voucher['rt_verification_status'] !== 'verified') {
             return ['success' => false, 'message' => 'Hanya warga yang sudah terverifikasi yang dapat menjadi penjamin tetangga.'];
         }
 
-        if (!$target || (int)$target['neighborhood_id'] !== (int)$voucher['neighborhood_id']) {
-            return ['success' => false, 'message' => 'Warga yang dijamin harus berada di lingkungan RT yang sama.'];
+        if ((int)$voucher['neighborhood_id'] !== (int)$target['neighborhood_id']) {
+            return ['success' => false, 'message' => 'Anda hanya dapat menjamin tetangga di satu RT yang sama.'];
         }
 
-        if ((int)$voucherUserId === (int)$targetUserId) {
-            return ['success' => false, 'message' => 'Anda tidak dapat menjamin akun Anda sendiri.'];
-        }
+        $neighborhoodId = (int)$voucher['neighborhood_id'];
 
-        // Cek apakah sudah pernah vouch
-        $existing = $this->vouchModel->where('target_user_id', $targetUserId)
-                                     ->where('voucher_user_id', $voucherUserId)
-                                     ->first();
+        $existing = $this->vouchModel->where([
+            'target_user_id'  => $targetUserId,
+            'voucher_user_id' => $voucherUserId,
+        ])->first();
+
         if ($existing) {
-            return ['success' => false, 'message' => 'Anda sudah memberikan jaminan untuk warga ini sebelumnya.'];
+            return ['success' => false, 'message' => 'Anda sudah pernah memberikan jaminan untuk tetangga ini.'];
         }
 
         $this->vouchModel->insert([
-            'neighborhood_id' => $voucher['neighborhood_id'],
+            'neighborhood_id' => $neighborhoodId,
             'target_user_id'  => $targetUserId,
             'voucher_user_id' => $voucherUserId,
             'status'          => 'approved',
             'notes'           => $notes,
         ]);
 
-        // Cek apakah sudah mencapai kuota vouching otomatis (minimal 2 penjamin terverifikasi)
-        $approvedCount = $this->vouchModel->countApprovedVouches($targetUserId);
-        if ($approvedCount >= 2 && ($target['rt_verification_status'] ?? '') !== 'verified') {
+        // Cek jika sudah mencapai batas minimal vouching (misal: 2 warga)
+        $vouchCount = $this->vouchModel->where('target_user_id', $targetUserId)->where('status', 'approved')->countAllResults();
+        if ($vouchCount >= 2 && $target['rt_verification_status'] === 'pending') {
             $this->userModel->update($targetUserId, [
                 'rt_verification_status' => 'verified',
                 'rt_verified_at'         => date('Y-m-d H:i:s'),
                 'rt_verified_by'         => $voucherUserId,
             ]);
 
-            $this->notificationModel->insert([
-                'title'      => '🎉 Akun Aktif via Jaminan Tetangga!',
-                'message'    => 'Akun Anda telah diverifikasi otomatis berkat jaminan dari 2 tetangga di lingkungan RT Anda.',
-                'type'       => 'info',
-                'target'     => 'user',
-                'user_id'    => $targetUserId,
-                'action_url' => '/neighborhood',
-            ]);
+            return [
+                'success' => true,
+                'message' => 'Jaminan berhasil diberikan! Target warga kini telah aktif otomatis karena telah dijamin oleh minimal 2 tetangga.',
+            ];
         }
 
-        return ['success' => true, 'message' => 'Jaminan untuk tetangga berhasil disimpan. Total jaminan: ' . $approvedCount];
+        return [
+            'success' => true,
+            'message' => "Jaminan berhasil dicatat ({$vouchCount}/2 penjamin). Butuh " . max(0, 2 - $vouchCount) . " penjamin lagi untuk aktivasi otomatis.",
+        ];
     }
 }

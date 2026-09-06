@@ -151,6 +151,7 @@ class ToolRental {
   final String status;
   final double rentalFee;
   final double depositAmount;
+  final double rtFeeAmount;
   final String startDate;
   final String dueDate;
   final String handoverToken;
@@ -165,6 +166,7 @@ class ToolRental {
     required this.status,
     required this.rentalFee,
     required this.depositAmount,
+    this.rtFeeAmount = 2000.0,
     required this.startDate,
     required this.dueDate,
     required this.handoverToken,
@@ -181,6 +183,7 @@ class ToolRental {
       status: json['status']?.toString() ?? 'requested',
       rentalFee: double.tryParse(json['rental_fee']?.toString() ?? '0') ?? 0.0,
       depositAmount: double.tryParse(json['deposit_amount']?.toString() ?? '0') ?? 0.0,
+      rtFeeAmount: double.tryParse(json['rt_fee_amount']?.toString() ?? '2000') ?? 2000.0,
       startDate: json['start_date']?.toString() ?? '',
       dueDate: json['due_date']?.toString() ?? '',
       handoverToken: json['handover_token']?.toString() ?? '',
