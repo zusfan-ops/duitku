@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/neighborhood.dart';
 import '../../services/api_service.dart';
 import '../../theme.dart';
@@ -139,83 +141,289 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
     final districtCtrl = TextEditingController();
     final cityCtrl = TextEditingController();
     final provinceCtrl = TextEditingController();
+    final skNumberCtrl = TextEditingController();
+    final addressNoteCtrl = TextEditingController();
+
+    XFile? skImage;
+    bool isSubmitting = false;
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              left: 20,
+              right: 20,
+              top: 20,
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.88,
+              ),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text('Daftarkan RT Baru', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 4),
+                    const Text('Lengkapi wilayah & lampirkan foto/dokumen SK untuk verifikasi Superadmin', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                    const SizedBox(height: 18),
+                    TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nama RT / Perumahan', hintText: 'Misal: RT 04 Jasmine Park')),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: TextField(controller: rtCtrl, decoration: const InputDecoration(labelText: 'RT', hintText: '04'))),
+                        const SizedBox(width: 10),
+                        Expanded(child: TextField(controller: rwCtrl, decoration: const InputDecoration(labelText: 'RW', hintText: '05'))),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: TextField(controller: subdistrictCtrl, decoration: const InputDecoration(labelText: 'Kelurahan / Desa', hintText: 'Mranggen'))),
+                        const SizedBox(width: 10),
+                        Expanded(child: TextField(controller: districtCtrl, decoration: const InputDecoration(labelText: 'Kecamatan', hintText: 'Batursari'))),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: TextField(controller: cityCtrl, decoration: const InputDecoration(labelText: 'Kota / Kab', hintText: 'Demak'))),
+                        const SizedBox(width: 10),
+                        Expanded(child: TextField(controller: provinceCtrl, decoration: const InputDecoration(labelText: 'Provinsi', hintText: 'Jawa Tengah'))),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: skNumberCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Nomor Surat Keputusan (SK) RT',
+                        hintText: 'Misal: SK/04/RW05/2026',
+                        prefixIcon: Icon(Icons.verified_outlined, size: 20),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // ── SECTION UPLOAD FOTO / DOKUMEN SK ──
+                    const Text(
+                      '📄 Foto / Dokumen Fisik SK Penunjukan RT',
+                      style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 6),
+                    if (skImage == null)
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.bg,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(Icons.document_scanner_rounded, size: 36, color: AppColors.primary),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Unggah foto SK atau surat penunjukan resmi dari RW / Kelurahan',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    icon: const Icon(Icons.camera_alt_rounded, size: 16),
+                                    label: const Text('Ambil Foto', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                                    onPressed: () async {
+                                      final picker = ImagePicker();
+                                      final img = await picker.pickImage(source: ImageSource.camera, maxWidth: 1600, imageQuality: 85);
+                                      if (img != null) {
+                                        setDlgState(() => skImage = img);
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    icon: const Icon(Icons.photo_library_rounded, size: 16),
+                                    label: const Text('Dari Galeri', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                                    onPressed: () async {
+                                      final picker = ImagePicker();
+                                      final img = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1600, imageQuality: 85);
+                                      if (img != null) {
+                                        setDlgState(() => skImage = img);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFA7F3D0)),
+                        ),
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.file(
+                                File(skImage!.path),
+                                width: 56,
+                                height: 56,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: const [
+                                      Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF059669)),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Foto SK Terlampir',
+                                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Color(0xFF065F46)),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    skImage!.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF047857)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 22),
+                              tooltip: 'Hapus Dokumen',
+                              onPressed: () => setDlgState(() => skImage = null),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: addressNoteCtrl,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        labelText: 'Catatan Alamat / Kawasan (Opsional)',
+                        hintText: 'Misal: Perumahan Jasmine Park Blok A - F',
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        elevation: 0,
+                      ),
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              if (nameCtrl.text.trim().isEmpty || rtCtrl.text.trim().isEmpty || rwCtrl.text.trim().isEmpty || subdistrictCtrl.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Harap lengkapi Nama RT, RT, RW, dan Kelurahan.')));
+                                return;
+                              }
+
+                              setDlgState(() => isSubmitting = true);
+
+                              String? b64Document;
+                              if (skImage != null) {
+                                try {
+                                  final rawB64 = await ApiService.instance.base64FromFile(skImage!.path);
+                                  if (rawB64 != null && rawB64.isNotEmpty) {
+                                    b64Document = 'data:image/jpeg;base64,$rawB64';
+                                  }
+                                } catch (_) {}
+                              }
+
+                              try {
+                                final payload = <String, dynamic>{
+                                  'name': nameCtrl.text.trim(),
+                                  'rt': rtCtrl.text.trim(),
+                                  'rw': rwCtrl.text.trim(),
+                                  'subdistrict': subdistrictCtrl.text.trim(),
+                                  'district': districtCtrl.text.trim(),
+                                  'city': cityCtrl.text.trim(),
+                                  'province': provinceCtrl.text.trim(),
+                                  'sk_number': skNumberCtrl.text.trim(),
+                                  'address_note': addressNoteCtrl.text.trim(),
+                                };
+                                if (b64Document != null) {
+                                  payload['sk_document_base64'] = b64Document;
+                                }
+
+                                final res = await ApiService.instance.post('neighborhood/register', payload);
+                                if (!mounted) return;
+                                if (ctx.mounted) {
+                                  Navigator.pop(ctx);
+                                }
+                                if (res['success'] == true) {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Pengajuan RT berhasil dikirim!')));
+                                  _loadData();
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Gagal mendaftar RT.')));
+                                }
+                              } catch (e) {
+                                if (!mounted) return;
+                                setDlgState(() => isSubmitting = false);
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                              }
+                            },
+                      child: isSubmitting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                            )
+                          : const Text('Ajukan Pendaftaran RT Sekarang →', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
               ),
-              const SizedBox(height: 14),
-              const Text('Daftarkan RT Baru', textAlign: TextAlign.center, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 16),
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nama RT / Perumahan', hintText: 'Misal: RT 04 Griya Asri')),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(child: TextField(controller: rtCtrl, decoration: const InputDecoration(labelText: 'RT', hintText: '04'))),
-                  const SizedBox(width: 10),
-                  Expanded(child: TextField(controller: rwCtrl, decoration: const InputDecoration(labelText: 'RW', hintText: '02'))),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(child: TextField(controller: subdistrictCtrl, decoration: const InputDecoration(labelText: 'Kelurahan'))),
-                  const SizedBox(width: 10),
-                  Expanded(child: TextField(controller: districtCtrl, decoration: const InputDecoration(labelText: 'Kecamatan'))),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(child: TextField(controller: cityCtrl, decoration: const InputDecoration(labelText: 'Kota / Kab'))),
-                  const SizedBox(width: 10),
-                  Expanded(child: TextField(controller: provinceCtrl, decoration: const InputDecoration(labelText: 'Provinsi'))),
-                ],
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                ),
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  try {
-                    final res = await ApiService.instance.post('neighborhood/store', {
-                      'name': nameCtrl.text.trim(),
-                      'rt': rtCtrl.text.trim(),
-                      'rw': rwCtrl.text.trim(),
-                      'subdistrict': subdistrictCtrl.text.trim(),
-                      'district': districtCtrl.text.trim(),
-                      'city': cityCtrl.text.trim(),
-                      'province': provinceCtrl.text.trim(),
-                    });
-                    if (res['success'] == true) {
-                      _loadData();
-                    }
-                  } catch (_) {}
-                },
-                child: const Text('Daftarkan RT', style: TextStyle(fontWeight: FontWeight.w800)),
-              ),
-              const SizedBox(height: 24),
-            ],
+            ),
           ),
         ),
       ),

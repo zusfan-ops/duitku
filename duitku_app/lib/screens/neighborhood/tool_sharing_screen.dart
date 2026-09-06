@@ -66,17 +66,25 @@ class _ToolSharingScreenState extends State<ToolSharingScreen> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDlgState) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+        builder: (ctx, setDlgState) => SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.85,
+              ),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                 Center(
                   child: Container(
                     width: 40,
@@ -175,14 +183,16 @@ class _ToolSharingScreenState extends State<ToolSharingScreen> {
                   },
                   child: const Text('Ajukan Peminjaman Sekarang →', style: TextStyle(fontWeight: FontWeight.w800)),
                 ),
-                const SizedBox(height: 24),
-              ],
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showFeeSettingDialog() {
     final feeCtrl = TextEditingController(text: _toolRentalFee.toInt().toString());
@@ -237,87 +247,13 @@ class _ToolSharingScreenState extends State<ToolSharingScreen> {
   void _showKasHistoryDialog() {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
-              ),
-            ),
-            const SizedBox(height: 14),
-            const Text('📜 Buku Kas Peminjaman Alat', textAlign: TextAlign.center, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFA7F3D0))),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Total Kas Terkumpul:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF065F46))),
-                  Text(Fmt.money(_totalKasCollected), style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF059669), fontSize: 16)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            if (_kasRecords.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(child: Text('Belum ada data peminjaman yang diserahterimakan.', style: TextStyle(color: AppColors.textMuted, fontSize: 12.5))),
-              )
-            else
-              ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.45),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: _kasRecords.length,
-                  separatorBuilder: (context, index) => const Divider(height: 12),
-                  itemBuilder: (ctx, i) {
-                    final rec = _kasRecords[i] as Map<String, dynamic>;
-                    final feeVal = (rec['rt_fee_amount'] as num? ?? _toolRentalFee).toDouble();
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(10)),
-                        alignment: Alignment.center,
-                        child: const Text('🏛️', style: TextStyle(fontSize: 18)),
-                      ),
-                      title: Text(rec['tool_name']?.toString() ?? 'Alat RT', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5)),
-                      subtitle: Text('Peminjam: ${rec['borrower_name'] ?? 'Warga'} • ${rec['start_date'] ?? ''}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                      trailing: Text('+ ${Fmt.money(feeVal)}', style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF059669), fontSize: 13)),
-                    );
-                  },
-                ),
-              ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showTokenValidationDialog(bool isHandover) {
-    final rentalIdCtrl = TextEditingController();
-    final tokenCtrl = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
-        child: SingleChildScrollView(
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -330,6 +266,91 @@ class _ToolSharingScreenState extends State<ToolSharingScreen> {
                 ),
               ),
               const SizedBox(height: 14),
+              const Text('📜 Buku Kas Peminjaman Alat', textAlign: TextAlign.center, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFA7F3D0))),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Total Kas Terkumpul:', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF065F46))),
+                    Text(Fmt.money(_totalKasCollected), style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF059669), fontSize: 16)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              if (_kasRecords.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(child: Text('Belum ada data peminjaman yang diserahterimakan.', style: TextStyle(color: AppColors.textMuted, fontSize: 12.5))),
+                )
+              else
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.45),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: _kasRecords.length,
+                    separatorBuilder: (context, index) => const Divider(height: 12),
+                    itemBuilder: (ctx, i) {
+                      final rec = _kasRecords[i] as Map<String, dynamic>;
+                      final feeVal = (rec['rt_fee_amount'] as num? ?? _toolRentalFee).toDouble();
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(10)),
+                          alignment: Alignment.center,
+                          child: const Text('🏛️', style: TextStyle(fontSize: 18)),
+                        ),
+                        title: Text(rec['tool_name']?.toString() ?? 'Alat RT', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5)),
+                        subtitle: Text('Peminjam: ${rec['borrower_name'] ?? 'Warga'} • ${rec['start_date'] ?? ''}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                        trailing: Text('+ ${Fmt.money(feeVal)}', style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF059669), fontSize: 13)),
+                      );
+                    },
+                  ),
+                ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showTokenValidationDialog(bool isHandover) {
+    final rentalIdCtrl = TextEditingController();
+    final tokenCtrl = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
               Text(isHandover ? 'Validasi Serah Terima & Terima Kas' : 'Validasi Pengembalian & Refund', textAlign: TextAlign.center, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
               const SizedBox(height: 16),
               if (isHandover)
@@ -389,13 +410,15 @@ class _ToolSharingScreenState extends State<ToolSharingScreen> {
                 },
                 child: Text(isHandover ? 'Validasi & Catat Kas RT' : 'Validasi & Refund Deposit', style: const TextStyle(fontWeight: FontWeight.w800)),
               ),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {

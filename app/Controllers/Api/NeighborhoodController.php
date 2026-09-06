@@ -82,6 +82,24 @@ class NeighborhoodController extends ApiController
             $newName = $skFile->getRandomName();
             $skFile->move($uploadDir, $newName);
             $skDocumentPath = '/uploads/rt_sk/' . $newName;
+        } elseif (!empty($post['sk_document_base64']) || (!empty($post['sk_document']) && is_string($post['sk_document']) && str_starts_with($post['sk_document'], 'data:image'))) {
+            $rawB64 = $post['sk_document_base64'] ?? $post['sk_document'];
+            $ext = 'jpg';
+            if (preg_match('/^data:image\/(\w+);base64,/', $rawB64, $type)) {
+                $rawB64 = substr($rawB64, strpos($rawB64, ',') + 1);
+                $ext = strtolower($type[1]);
+                if ($ext === 'jpeg') $ext = 'jpg';
+            }
+            $decoded = base64_decode($rawB64);
+            if ($decoded !== false) {
+                $uploadDir = FCPATH . 'uploads/rt_sk/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $filename = 'sk_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+                file_put_contents($uploadDir . $filename, $decoded);
+                $skDocumentPath = '/uploads/rt_sk/' . $filename;
+            }
         }
 
         try {

@@ -93,6 +93,108 @@
     gap: 12px;
 }
 
+/* ── Upload Box & Preview ── */
+.upload-dropzone {
+    border: 2px dashed var(--border, #CBD5E1);
+    border-radius: var(--radius-md, 16px);
+    background: var(--bg, #F8FAFC);
+    padding: 20px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.upload-dropzone:hover {
+    border-color: var(--primary, #059669);
+    background: #ECFDF5;
+}
+.upload-dropzone-icon {
+    font-size: 32px;
+    margin-bottom: 6px;
+    display: block;
+}
+.upload-dropzone-text {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-primary, #0F172A);
+    margin-bottom: 4px;
+}
+.upload-dropzone-hint {
+    font-size: 11px;
+    color: var(--text-secondary, #64748B);
+}
+.upload-btn-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 12px;
+}
+.upload-btn-chip {
+    padding: 6px 12px;
+    background: #ffffff;
+    border: 1.5px solid var(--border, #E2E8F0);
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-primary, #0F172A);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.upload-btn-chip:hover {
+    border-color: var(--primary, #059669);
+    color: var(--primary, #059669);
+}
+
+.upload-preview-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #ECFDF5;
+    border: 1.5px solid #A7F3D0;
+    border-radius: var(--radius-md, 16px);
+    padding: 12px 14px;
+}
+.upload-preview-thumb {
+    width: 54px;
+    height: 54px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid #6EE7B7;
+}
+.upload-preview-info {
+    flex: 1;
+    min-width: 0;
+}
+.upload-preview-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #065F46;
+}
+.upload-preview-name {
+    font-size: 11px;
+    color: #047857;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+}
+.upload-preview-remove {
+    background: none;
+    border: none;
+    color: #EF4444;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 6px;
+    border-radius: 8px;
+}
+.upload-preview-remove:hover {
+    background: #FEE2E2;
+}
+
 /* ── Toggle Switch Card ── */
 .create-toggle-card {
     background: var(--bg, #F8FAFC);
@@ -146,8 +248,22 @@
         <h1 class="create-topbar-title">Daftarkan Lingkungan RT Baru</h1>
     </div>
 
+    <?php if (!empty($existingRt) && ($existingRt['status'] ?? '') === 'pending'): ?>
+    <div style="background: #FEF3C7; border: 1.5px solid #FDE68A; border-radius: 16px; padding: 16px; margin-bottom: 20px;">
+        <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <span style="font-size: 22px;">⏳</span>
+            <div>
+                <strong style="color: #92400E; font-size: 13.5px; display: block; margin-bottom: 3px;">Pengajuan Anda Sedang Ditinjau</strong>
+                <p style="color: #B45309; font-size: 12px; margin: 0; line-height: 1.4;">
+                    Anda telah mengajukan RT <strong><?= esc($existingRt['name']) ?></strong>. Superadmin sedang memverifikasi SK penunjukan Anda.
+                </p>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <div class="create-card">
-        <form id="createRtForm">
+        <form id="createRtForm" enctype="multipart/form-data">
             
             <div class="create-section-title">
                 <span>📍</span> Informasi Wilayah &amp; Nama Lingkungan
@@ -155,7 +271,7 @@
 
             <div class="create-form-group">
                 <label class="create-form-label" for="rtNameInput">Nama Komunitas / Lingkungan RT</label>
-                <input type="text" id="rtNameInput" name="name" class="create-input-text" placeholder="Contoh: RT 04 Griya Asri Permai" required>
+                <input type="text" id="rtNameInput" name="name" class="create-input-text" placeholder="Contoh: RT 04 Jasmine Park" required>
             </div>
 
             <div class="create-grid-2">
@@ -165,30 +281,76 @@
                 </div>
                 <div class="create-form-group">
                     <label class="create-form-label">Nomor RW</label>
-                    <input type="text" name="rw" class="create-input-text" placeholder="Contoh: 02" required>
+                    <input type="text" name="rw" class="create-input-text" placeholder="Contoh: 05" required>
                 </div>
             </div>
 
             <div class="create-grid-2">
                 <div class="create-form-group">
                     <label class="create-form-label">Kelurahan / Desa</label>
-                    <input type="text" name="subdistrict" class="create-input-text" placeholder="Contoh: Sukamaju" required>
+                    <input type="text" name="subdistrict" class="create-input-text" placeholder="Contoh: Mranggen" required>
                 </div>
                 <div class="create-form-group">
                     <label class="create-form-label">Kecamatan</label>
-                    <input type="text" name="district" class="create-input-text" placeholder="Contoh: Cilodong" required>
+                    <input type="text" name="district" class="create-input-text" placeholder="Contoh: Batursari" required>
                 </div>
             </div>
 
             <div class="create-grid-2">
                 <div class="create-form-group">
                     <label class="create-form-label">Kota / Kabupaten</label>
-                    <input type="text" name="city" class="create-input-text" placeholder="Contoh: Kota Depok" required>
+                    <input type="text" name="city" class="create-input-text" placeholder="Contoh: Demak" required>
                 </div>
                 <div class="create-form-group">
                     <label class="create-form-label">Provinsi</label>
-                    <input type="text" name="province" class="create-input-text" placeholder="Contoh: Jawa Barat" required>
+                    <input type="text" name="province" class="create-input-text" placeholder="Contoh: Jawa Tengah" required>
                 </div>
+            </div>
+
+            <div class="create-section-title" style="margin-top: 14px;">
+                <span>📄</span> Legalitas &amp; Dokumen SK Penunjukan RT
+            </div>
+
+            <div class="create-form-group">
+                <label class="create-form-label">Nomor Surat Keputusan (SK) RT</label>
+                <input type="text" name="sk_number" class="create-input-text" placeholder="Contoh: SK/04/RW05/2026">
+            </div>
+
+            <div class="create-form-group">
+                <label class="create-form-label">Foto / Scan Dokumen Surat Penunjukan (SK)</label>
+                <input type="file" id="skFileInput" name="sk_document" accept="image/*,application/pdf" style="display: none;">
+                
+                <div id="uploadDropzone" class="upload-dropzone">
+                    <span class="upload-dropzone-icon">📷</span>
+                    <div class="upload-dropzone-text">Ambil Foto atau Pilih Berkas SK</div>
+                    <div class="upload-dropzone-hint">Format: JPG, PNG, atau PDF (Maks. 5 MB)</div>
+                    <div class="upload-btn-row">
+                        <button type="button" class="upload-btn-chip" id="btnTriggerCamera">
+                            <span>📸</span> Kamera
+                        </button>
+                        <button type="button" class="upload-btn-chip" id="btnTriggerGallery">
+                            <span>🖼️</span> Galeri / File
+                        </button>
+                    </div>
+                </div>
+
+                <div id="uploadPreviewCard" class="upload-preview-card" style="display: none;">
+                    <img id="uploadPreviewImg" class="upload-preview-thumb" src="" alt="Preview SK">
+                    <div class="upload-preview-info">
+                        <div class="upload-preview-badge">
+                            <span>✅</span> Dokumen Terlampir
+                        </div>
+                        <div id="uploadPreviewName" class="upload-preview-name">file.jpg</div>
+                    </div>
+                    <button type="button" id="btnRemoveFile" class="upload-preview-remove" title="Hapus Berkas">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+
+            <div class="create-form-group">
+                <label class="create-form-label">Catatan Alamat / Lingkup Kawasan (Opsional)</label>
+                <textarea name="address_note" class="create-input-text" rows="2" placeholder="Contoh: Perumahan Jasmine Park Blok A - F"></textarea>
             </div>
 
             <div class="create-section-title" style="margin-top: 14px;">
@@ -197,7 +359,7 @@
 
             <div class="create-form-group">
                 <label class="create-form-label">Kode Unik RT Kustom (Opsional)</label>
-                <input type="text" name="unique_code" class="create-input-text uppercase-code" placeholder="Kosongkan untuk otomatis (misal: RT04-RW02-GRIYA-2026)">
+                <input type="text" name="unique_code" class="create-input-text uppercase-code" placeholder="Kosongkan untuk otomatis (misal: RT04-RW05-JASMINE)">
             </div>
 
             <div class="create-form-group">
@@ -216,7 +378,7 @@
             </label>
 
             <button type="submit" class="btn-create-submit" id="btnSubmitCreate">
-                <span>Daftarkan RT &amp; Jadi Admin</span>
+                <span>Daftarkan RT &amp; Ajukan Verifikasi</span>
                 <span>👑</span>
             </button>
         </form>
@@ -225,11 +387,94 @@
 </div>
 
 <script>
+const skFileInput = document.getElementById('skFileInput');
+const uploadDropzone = document.getElementById('uploadDropzone');
+const uploadPreviewCard = document.getElementById('uploadPreviewCard');
+const uploadPreviewImg = document.getElementById('uploadPreviewImg');
+const uploadPreviewName = document.getElementById('uploadPreviewName');
+const btnRemoveFile = document.getElementById('btnRemoveFile');
+const btnTriggerCamera = document.getElementById('btnTriggerCamera');
+const btnTriggerGallery = document.getElementById('btnTriggerGallery');
+
+btnTriggerCamera.addEventListener('click', (e) => {
+    e.stopPropagation();
+    skFileInput.setAttribute('capture', 'environment');
+    skFileInput.click();
+});
+
+btnTriggerGallery.addEventListener('click', (e) => {
+    e.stopPropagation();
+    skFileInput.removeAttribute('capture');
+    skFileInput.click();
+});
+
+uploadDropzone.addEventListener('click', () => {
+    skFileInput.removeAttribute('capture');
+    skFileInput.click();
+});
+
+skFileInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+        alert('Ukuran berkas maksimal 5 MB.');
+        this.value = '';
+        return;
+    }
+
+    uploadPreviewName.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+    
+    if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            uploadPreviewImg.src = e.target.result;
+            uploadPreviewImg.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        uploadPreviewImg.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"><text y="20" font-size="20">📄</text></svg>';
+    }
+
+    uploadDropzone.style.display = 'none';
+    uploadPreviewCard.style.display = 'flex';
+});
+
+btnRemoveFile.addEventListener('click', () => {
+    skFileInput.value = '';
+    uploadPreviewImg.src = '';
+    uploadDropzone.style.display = 'block';
+    uploadPreviewCard.style.display = 'none';
+});
+
+// Drag and drop support
+uploadDropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadDropzone.style.borderColor = '#059669';
+    uploadDropzone.style.background = '#ECFDF5';
+});
+
+uploadDropzone.addEventListener('dragleave', () => {
+    uploadDropzone.style.borderColor = '';
+    uploadDropzone.style.background = '';
+});
+
+uploadDropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadDropzone.style.borderColor = '';
+    uploadDropzone.style.background = '';
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        skFileInput.files = e.dataTransfer.files;
+        skFileInput.dispatchEvent(new Event('change'));
+    }
+});
+
+// Form Submission
 document.getElementById('createRtForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const btn = document.getElementById('btnSubmitCreate');
     btn.disabled = true;
-    btn.innerHTML = '<span>Mendaftarkan...</span>';
+    btn.innerHTML = '<span>Mengirimkan Pengajuan...</span>';
 
     const formData = new FormData(this);
 
@@ -240,18 +485,18 @@ document.getElementById('createRtForm').addEventListener('submit', function(e) {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            alert(data.message || 'Lingkungan RT berhasil didaftarkan!');
-            window.location.href = data.redirect || '/neighborhood';
+            alert(data.message || 'Pengajuan RT berhasil dikirim! Menunggu verifikasi SK.');
+            window.location.href = data.redirect || '/neighborhood/join';
         } else {
             alert(data.message || 'Gagal mendaftarkan RT.');
             btn.disabled = false;
-            btn.innerHTML = '<span>Daftarkan RT &amp; Jadi Admin</span> <span>👑</span>';
+            btn.innerHTML = '<span>Daftarkan RT &amp; Ajukan Verifikasi</span> <span>👑</span>';
         }
     })
     .catch(err => {
         alert('Terjadi kesalahan jaringan.');
         btn.disabled = false;
-        btn.innerHTML = '<span>Daftarkan RT &amp; Jadi Admin</span> <span>👑</span>';
+        btn.innerHTML = '<span>Daftarkan RT &amp; Ajukan Verifikasi</span> <span>👑</span>';
     });
 });
 </script>
