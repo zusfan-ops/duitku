@@ -42,6 +42,7 @@ import '../services/offline_cache_service.dart';
 import '../services/sync_service.dart';
 import '../widgets/sync_status_banner.dart';
 import '../widgets/tv_streaming_card.dart';
+import '../widgets/news_dashboard_card.dart';
 import '../widgets/my_home_card.dart';
 import '../utils/app_navigator.dart';
 import '../widgets/marketplace_featured_card.dart';
@@ -412,6 +413,10 @@ class DashboardScreenState extends State<DashboardScreen> {
           TvStreamingCard(
             initialChannels: (data.tvChannels as List<TvChannel>? ?? []),
             initialMovies: (data.jellyfinMovies as List<JellyfinMovie>? ?? []),
+          ),
+          NewsDashboardCard(
+            initialNews: data.latestNews,
+            onRefresh: _load,
           ),
           if (data.savingsTarget > 0) _SavingsCard(data: data),
           if ((data.monthNote ?? '').isNotEmpty) _NotePreview(data: data),

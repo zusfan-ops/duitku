@@ -282,6 +282,7 @@ class HomeController extends BaseController
             'business'           => $businessSummary,
             'todoSummary'        => (new \App\Models\TodoModel())->getSummary($userId),
             'tvChannels'         => (new \App\Models\TvChannelModel())->getActiveChannels(),
+            'latestNews'         => \App\Services\NewsService::getHeadlines(8),
             'myHomeSummary'      => \App\Controllers\BarangController::getSummaryForUser($userId),
             'jellyfinMovies'     => \App\Services\JellyfinService::getMovies(24),
             'marketplaceFeatured'=> (function () {

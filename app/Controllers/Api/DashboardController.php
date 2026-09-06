@@ -301,6 +301,7 @@ class DashboardController extends ApiController
             'business'           => $businessSummary,
             'unreadCount'        => count($notifications),
             'tv_channels'        => (new \App\Models\TvChannelModel())->getActiveChannels(),
+            'latest_news'        => \App\Services\NewsService::getHeadlines(8),
             'my_home_summary'    => \App\Controllers\BarangController::getSummaryForUser($userId),
             'jellyfin_movies'    => \App\Services\JellyfinService::getMovies(24),
             'marketplace_featured' => (function () {

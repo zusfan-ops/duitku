@@ -1300,6 +1300,159 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
+/* ── 📰 Berita Terkini Home Card ────────────────────────── */
+.news-home-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.04);
+}
+.news-home-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.news-home-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.news-home-title {
+    font-size: 14.5px;
+    font-weight: 800;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+.news-badge-live-sm {
+    background: #EF4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    animation: newsHomePulse 1.8s infinite;
+}
+.news-badge-live-sm::before {
+    content: "";
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #fff;
+}
+@keyframes newsHomePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(0.97); }
+}
+.news-home-more-link {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: var(--primary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: transform 0.15s ease;
+}
+.news-home-more-link:hover {
+    transform: translateX(2px);
+}
+.news-home-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+.news-home-scroll::-webkit-scrollbar { display: none; }
+.news-home-item {
+    flex: 0 0 210px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.news-home-item:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+}
+.news-home-thumb-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #1E293B;
+    overflow: hidden;
+}
+.news-home-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.news-home-thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1E293B, #334155);
+    color: #fff;
+    font-size: 20px;
+}
+.news-home-item-body {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 5px;
+}
+.news-home-item-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+}
+.news-home-item-src {
+    font-weight: 800;
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 9.5px;
+    letter-spacing: 0.3px;
+}
+.news-home-item-time {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.news-home-item-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
 /* ── 📺 TV & Live Streaming Home Card ────────────────────────── */
 .tv-home-card {
     background: var(--bg-card);
@@ -2800,6 +2953,53 @@
                 </div>
             </div>
             <?php endif; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- ── 📰 WIDGET BERITA TERKINI (RSS FEEDS INDONESIA) ── -->
+    <?php if (!empty($latestNews)): ?>
+    <div class="news-home-card" id="newsHomeCard">
+        <div class="news-home-hdr">
+            <div class="news-home-title-wrap">
+                <span class="news-home-title">
+                    <span>📰</span> Berita Terkini
+                </span>
+                <span class="news-badge-live-sm">LIVE</span>
+            </div>
+            <a href="/berita" class="news-home-more-link">
+                <span>Selengkapnya</span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+
+        <!-- Horizontal Scroll of Headlines -->
+        <div class="news-home-scroll">
+            <?php foreach ($latestNews as $n): ?>
+            <a href="/berita?category=<?= urlencode($n['category']) ?>" class="news-home-item" title="<?= esc($n['title']) ?>">
+                <div class="news-home-thumb-wrap">
+                    <?php if ($n['has_image']): ?>
+                        <img src="<?= esc($n['image']) ?>" alt="<?= esc($n['title']) ?>" class="news-home-thumb" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="news-home-thumb-placeholder" style="display:none">
+                            <span><?= $n['icon'] ?></span>
+                        </div>
+                    <?php else: ?>
+                        <div class="news-home-thumb-placeholder">
+                            <span><?= $n['icon'] ?></span>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <div class="news-home-item-body">
+                    <div class="news-home-item-meta">
+                        <span class="news-home-item-src" style="background: <?= esc($n['color']) ?>;">
+                            <?= esc($n['source']) ?>
+                        </span>
+                        <span class="news-home-item-time">⏱️ <?= esc($n['time_ago']) ?></span>
+                    </div>
+                    <div class="news-home-item-title"><?= esc($n['title']) ?></div>
+                </div>
+            </a>
+            <?php endforeach; ?>
         </div>
     </div>
     <?php endif; ?>

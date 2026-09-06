@@ -182,6 +182,10 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('/emergency',                  'EmergencyController::index');
     $routes->get('/layanan-darurat',            'EmergencyController::index');
 
+    // Berita Terkini RSS Feeds
+    $routes->get('/berita',                     'NewsController::index');
+    $routes->get('/news',                       'NewsController::index');
+
     // Kalkulator Zakat & Pajak
     $routes->get('/zakat-pajak',                'ZakatPajakController::index');
     $routes->get('/pajak-zakat',                'ZakatPajakController::index');
@@ -335,6 +339,11 @@ $routes->group('api', function ($routes) {
 
         // Emergency Services Directory API
         $routes->get('emergency',                   'EmergencyController::apiList');
+
+        // Berita Terkini RSS API
+        $routes->get('berita',                      'NewsController::apiList');
+        $routes->get('news',                        'NewsController::apiList');
+        $routes->post('berita/refresh',             'NewsController::apiRefresh');
 
         // My Home / Barang API
         $routes->get('barang',                      'Api\BarangController::index');

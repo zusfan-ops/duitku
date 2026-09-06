@@ -29,6 +29,7 @@ import 'vehicle/vehicle_screen.dart';
 import 'notifications/notifications_screen.dart';
 import 'todo/todo_list_screen.dart';
 import 'tv/tv_streaming_screen.dart';
+import 'news/news_screen.dart';
 import 'emergency/emergency_screen.dart';
 import 'nearby/nearby_places_screen.dart';
 import 'wallet_screen.dart';
@@ -271,6 +272,17 @@ class FeaturesScreen extends StatelessWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const TvStreamingScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Berita Terkini',
+              subtitle: '10+ RSS feed berita nasional',
+              icon: Icons.newspaper_rounded,
+              gradient: const [Color(0xFF0284C7), Color(0xFF0EA5E9)],
+              shadowColor: const Color(0xFF0EA5E9),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NewsScreen()),
               ),
             ),
             _FeatureItem(

@@ -142,6 +142,10 @@
     background: linear-gradient(135deg, #7C3AED 0%, #A855F7 100%);
     box-shadow: 0 6px 18px rgba(168, 85, 247, 0.25);
 }
+.feat-news {
+    background: linear-gradient(135deg, #0284C7 0%, #0EA5E9 100%);
+    box-shadow: 0 6px 18px rgba(14, 165, 233, 0.25);
+}
 .feat-zakat {
     background: linear-gradient(135deg, #059669 0%, #34D399 100%);
     box-shadow: 0 6px 18px rgba(16, 185, 129, 0.25);
@@ -378,6 +382,21 @@
             <div class="feature-card-info">
                 <div class="feature-card-title">TV & Streaming</div>
                 <div class="feature-card-desc">Siaran live TV nasional</div>
+            </div>
+        </a>
+
+        <!-- 2b. Berita Terkini RSS -->
+        <a href="/berita" class="feature-card feat-news">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
+                <path d="M18 14h-8M15 18h-5M10 6h8v4h-8V6Z"/>
+            </svg>
+            <div class="feature-card-icon">
+                <span style="font-size: 16px;">📰</span>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Berita Terkini</div>
+                <div class="feature-card-desc">10+ RSS feed nasional &amp; bisnis</div>
             </div>
         </a>
 

@@ -153,6 +153,8 @@
                 str_starts_with($currentPath, '/arcade') ||
                 str_starts_with($currentPath, '/notifications') ||
                 str_starts_with($currentPath, '/tv') ||
+                str_starts_with($currentPath, '/berita') ||
+                str_starts_with($currentPath, '/news') ||
                 str_starts_with($currentPath, '/pos') ||
                 str_starts_with($currentPath, '/marketplace') ||
                 str_starts_with($currentPath, '/jual-beli-sewa')

@@ -2,7 +2,7 @@ name: duitku_app
 description: "DuitKu — Aplikasi pencatat keuangan pribadi versi native."
 publish_to: 'none'
 
-version: 1.2.45+48
+version: 1.2.47+50
 
 environment:
   sdk: ^3.12.2

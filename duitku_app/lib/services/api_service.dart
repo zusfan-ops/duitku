@@ -826,6 +826,38 @@ class ApiService {
     return get('emergency');
   }
 
+  // ── Berita Terkini RSS API ────────────────────────────────────
+  Future<Map<String, dynamic>> getNews({
+    String? category,
+    String? source,
+    String? search,
+    int page = 1,
+    int limit = 40,
+    bool refresh = false,
+  }) async {
+    final query = <String, String>{
+      'page': '$page',
+      'limit': '$limit',
+    };
+    if (category != null && category.isNotEmpty && category != 'Semua') {
+      query['category'] = category;
+    }
+    if (source != null && source.isNotEmpty && source != 'semua') {
+      query['source'] = source;
+    }
+    if (search != null && search.isNotEmpty) {
+      query['search'] = search;
+    }
+    if (refresh) {
+      query['refresh'] = '1';
+    }
+    return get('berita', query: query);
+  }
+
+  Future<Map<String, dynamic>> refreshNews() async {
+    return post('berita/refresh', {});
+  }
+
   // ── Todos & Tasks API ─────────────────────────────────────────
   Future<Map<String, dynamic>> getTodos({String? filter, String? category, String? search}) async {
     final query = <String, String>{};
