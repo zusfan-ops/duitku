@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/neighborhood.dart';
 import '../../services/api_service.dart';
+import '../../theme.dart';
+import '../../utils/format.dart';
 
 class ToolSharingScreen extends StatefulWidget {
   const ToolSharingScreen({super.key});
@@ -44,71 +46,108 @@ class _ToolSharingScreenState extends State<ToolSharingScreen> {
     int days = 1;
     final noteCtrl = TextEditingController();
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDlgState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: Text('Pinjam ${tool.name}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                tool.rentalFee > 0 ? 'Sewa: Rp ${tool.rentalFee.toStringAsFixed(0)} / sesi' : 'Biaya Sewa: Gratis',
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
-              ),
-              if (tool.depositAmount > 0)
-                Text('Uang Jaminan: Rp ${tool.depositAmount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 12),
-              const Text('Durasi Peminjaman (Hari):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.remove_circle_outline),
-                    onPressed: days > 1 ? () => setDlgState(() => days--) : null,
+        builder: (ctx, setDlgState) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
                   ),
-                  Text('$days Hari', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
-                    onPressed: days < tool.maxRentDays ? () => setDlgState(() => days++) : null,
-                  ),
-                ],
-              ),
-              TextField(
-                controller: noteCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Catatan Keperluan',
-                  hintText: 'Misal: Untuk pasang kanopi rumah',
                 ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF059669),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              ),
-              onPressed: () async {
-                Navigator.pop(ctx);
-                try {
-                  final res = await ApiService.instance.post('neighborhood/tools/rent', {
-                    'tool_id': tool.id,
-                    'rental_days': days,
-                    'borrower_note': noteCtrl.text.trim(),
-                  });
-                  if (res['success'] == true) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Peminjaman diajukan.')));
-                    _loadData();
-                  }
-                } catch (_) {}
-              },
-              child: const Text('Ajukan Pinjam'),
+                const SizedBox(height: 14),
+                Text('Pinjam ${tool.name}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.border)),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Biaya Sewa:', style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+                          Text(tool.rentalFee > 0 ? Fmt.money(tool.rentalFee) : 'Gratis', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primary)),
+                        ],
+                      ),
+                      if (tool.depositAmount > 0) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Uang Jaminan (Refund):', style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+                            Text(Fmt.money(tool.depositAmount), style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFFD97706))),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Durasi Pinjam:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline, color: AppColors.primary),
+                          onPressed: days > 1 ? () => setDlgState(() => days--) : null,
+                        ),
+                        Text('$days Hari', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                        IconButton(
+                          icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+                          onPressed: days < tool.maxRentDays ? () => setDlgState(() => days++) : null,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: noteCtrl,
+                  decoration: const InputDecoration(labelText: 'Catatan Keperluan (Opsional)', hintText: 'Misal: Untuk pasang kanopi rumah'),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    try {
+                      final res = await ApiService.instance.post('neighborhood/tools/rent', {
+                        'tool_id': tool.id,
+                        'rental_days': days,
+                        'borrower_note': noteCtrl.text.trim(),
+                      });
+                      if (!mounted) return;
+                      if (res['success'] == true) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Peminjaman diajukan.')));
+                        _loadData();
+                      }
+                    } catch (_) {}
+                  },
+                  child: const Text('Ajukan Peminjaman Sekarang →', style: TextStyle(fontWeight: FontWeight.w800)),
+                ),
+                const SizedBox(height: 24),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -118,51 +157,71 @@ class _ToolSharingScreenState extends State<ToolSharingScreen> {
     final rentalIdCtrl = TextEditingController();
     final tokenCtrl = TextEditingController();
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(isHandover ? 'Validasi Serah Terima' : 'Validasi Pengembalian', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: rentalIdCtrl,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'ID Rental / Peminjaman'),
-            ),
-            TextField(
-              controller: tokenCtrl,
-              textCapitalization: TextCapitalization.characters,
-              decoration: InputDecoration(labelText: isHandover ? 'Token Serah Terima (6 Digit)' : 'Token Pengembalian (6 Digit)'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isHandover ? const Color(0xFF2563EB) : const Color(0xFF059669),
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                final path = isHandover ? 'neighborhood/tools/handover' : 'neighborhood/tools/return';
-                final body = isHandover
-                    ? {'rental_id': int.tryParse(rentalIdCtrl.text) ?? 0, 'handover_token': tokenCtrl.text.trim()}
-                    : {'rental_id': int.tryParse(rentalIdCtrl.text) ?? 0, 'return_token': tokenCtrl.text.trim()};
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(isHandover ? 'Validasi Serah Terima' : 'Validasi Pengembalian', textAlign: TextAlign.center, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: rentalIdCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'ID Rental / Peminjaman'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: tokenCtrl,
+                textCapitalization: TextCapitalization.characters,
+                style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.5),
+                decoration: InputDecoration(labelText: isHandover ? 'Token Serah Terima (6 Digit)' : 'Token Pengembalian (6 Digit)'),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isHandover ? const Color(0xFF2563EB) : const Color(0xFF059669),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                ),
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  try {
+                    final path = isHandover ? 'neighborhood/tools/handover' : 'neighborhood/tools/return';
+                    final body = isHandover
+                        ? {'rental_id': int.tryParse(rentalIdCtrl.text) ?? 0, 'handover_token': tokenCtrl.text.trim()}
+                        : {'rental_id': int.tryParse(rentalIdCtrl.text) ?? 0, 'return_token': tokenCtrl.text.trim()};
 
-                final res = await ApiService.instance.post(path, body);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Sukses.')));
-                _loadData();
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-              }
-            },
-            child: const Text('Validasi'),
+                    final res = await ApiService.instance.post(path, body);
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Sukses.')));
+                    _loadData();
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                },
+                child: const Text('Validasi Token', style: TextStyle(fontWeight: FontWeight.w800)),
+              ),
+              const SizedBox(height: 24),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -170,12 +229,13 @@ class _ToolSharingScreenState extends State<ToolSharingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: const Text('Pinjam Alat Warga', style: TextStyle(fontWeight: FontWeight.w800)),
-        centerTitle: false,
+        titleSpacing: 0,
+        title: const Text('Pinjam Alat Warga', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.qr_code_scanner),
+            icon: const Icon(Icons.qr_code_scanner_rounded),
             tooltip: 'Validasi Token',
             onPressed: () => _showTokenValidationDialog(true),
           ),
@@ -186,109 +246,131 @@ class _ToolSharingScreenState extends State<ToolSharingScreen> {
           : RefreshIndicator(
               onRefresh: _loadData,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                 children: [
-                  // Active Rentals
+                  // Active Rentals Banner
                   if (_myRentals.isNotEmpty) ...[
-                    const Text('Peminjaman Saya', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const Text('PINJAMAN AKTIF SAYA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.textMuted, letterSpacing: 0.5)),
                     const SizedBox(height: 8),
                     ..._myRentals.map((r) => Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: r.status == 'borrowed' ? const Color(0xFFECFDF5) : const Color(0xFFFFFBEB),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: r.status == 'borrowed' ? const Color(0xFFECFDF5) : const Color(0xFFFFFBEB),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: r.status == 'borrowed' ? const Color(0xFFA7F3D0) : const Color(0xFFFDE68A)),
+                            boxShadow: AppColors.cardShadow,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(r.toolName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              Text('Jatuh tempo: ${r.dueDate}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(r.toolName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                                  const SizedBox(height: 2),
+                                  Text('Batas Kembali: ${r.dueDate}', style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.textPrimary,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  r.status == 'borrowed' ? '🔑 Kembalikan: ${r.returnToken}' : '🔑 Token: ${r.handoverToken}',
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11.5, letterSpacing: 0.5),
+                                ),
+                              ),
                             ],
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.black87,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              r.status == 'borrowed' ? 'Kembali: ${r.returnToken}' : 'Token: ${r.handoverToken}',
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )),
-                    const SizedBox(height: 16),
+                        )),
+                    const SizedBox(height: 14),
                   ],
 
                   // Tool Catalog Grid
-                  const Text('Katalog Alat Tersedia', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  const Text('KATALOG ALAT RT TERSEDIA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.textMuted, letterSpacing: 0.5)),
                   const SizedBox(height: 8),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 0.85,
-                    ),
-                    itemCount: _tools.length,
-                    itemBuilder: (ctx, i) {
-                      final t = _tools[i];
-                      final isAvail = t.status == 'available';
+                  if (_tools.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: AppColors.card,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: const Center(
+                        child: Text('Belum ada alat yang didaftarkan di katalog RT.', style: TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
+                      ),
+                    )
+                  else
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.82,
+                      ),
+                      itemCount: _tools.length,
+                      itemBuilder: (ctx, i) {
+                        final t = _tools[i];
+                        final isAvail = t.status == 'available';
 
-                      return Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  height: 60,
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF3F4F6),
-                                    borderRadius: BorderRadius.circular(12),
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.card,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.border),
+                            boxShadow: AppColors.cardShadow,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    height: 64,
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.bg,
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: const Center(child: Text('🔨', style: TextStyle(fontSize: 28))),
                                   ),
-                                  child: const Center(child: Text('🔨', style: TextStyle(fontSize: 28))),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(t.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                Text(t.rentalFee > 0 ? 'Sewa: Rp ${t.rentalFee.toStringAsFixed(0)}' : 'Gratis', style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
-                              ],
-                            ),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isAvail ? const Color(0xFF059669) : Colors.grey,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 4),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                onPressed: isAvail ? () => _showRentDialog(t) : null,
-                                child: Text(isAvail ? 'Pinjam' : 'Dipinjam', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 8),
+                                  Text(t.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    t.rentalFee > 0 ? Fmt.money(t.rentalFee) : 'Gratis',
+                                    style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w800),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isAvail ? AppColors.primary : AppColors.border,
+                                    foregroundColor: isAvail ? Colors.white : AppColors.textMuted,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  ),
+                                  onPressed: isAvail ? () => _showRentDialog(t) : null,
+                                  child: Text(isAvail ? 'Pinjam' : 'Dipinjam', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                 ],
               ),
             ),

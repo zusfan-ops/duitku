@@ -1,4 +1,4 @@
-<!-- ONBOARDING SYSTEM MODAL TOUR -->
+<!-- ONBOARDING SYSTEM MODAL TOUR (ALL-APP FEATURES) -->
 <style>
 .onboard-overlay {
     position: fixed;
@@ -35,7 +35,7 @@
     to { transform: translateY(0) scale(1); }
 }
 .onboard-header-graphic {
-    height: 170px;
+    height: 160px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -44,28 +44,28 @@
     color: #ffffff;
     text-align: center;
     padding: 20px;
+    transition: background 0.4s ease;
 }
 .onboard-icon-bubble {
-    width: 76px;
-    height: 76px;
-    border-radius: 24px;
+    width: 72px;
+    height: 72px;
+    border-radius: 22px;
     background: rgba(255, 255, 255, 0.22);
     backdrop-filter: blur(10px);
     border: 1.5px solid rgba(255, 255, 255, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 38px;
-    margin-bottom: 8px;
+    font-size: 36px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     animation: bubbleFloat 3s ease-in-out infinite;
 }
 @keyframes bubbleFloat {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
+    50% { transform: translateY(-5px); }
 }
 .onboard-body {
-    padding: 24px 22px 18px;
+    padding: 22px 22px 18px;
     text-align: center;
 }
 .onboard-step-badge {
@@ -74,57 +74,58 @@
     text-transform: uppercase;
     letter-spacing: 0.8px;
     display: inline-block;
-    padding: 3px 10px;
+    padding: 3px 12px;
     border-radius: 20px;
     margin-bottom: 8px;
 }
 .onboard-title {
-    font-size: 20px;
+    font-size: 19px;
     font-weight: 900;
-    color: var(--text-primary, #111827);
-    margin-bottom: 8px;
+    color: var(--text-primary, #0F172A);
+    margin-bottom: 6px;
     line-height: 1.3;
 }
 .onboard-desc {
-    font-size: 13.5px;
-    color: var(--text-secondary, #6B7280);
-    line-height: 1.55;
-    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--text-secondary, #475569);
+    line-height: 1.5;
+    margin-bottom: 14px;
 }
 .onboard-features-mini {
-    background: var(--bg, #F9FAFB);
-    border: 1px solid var(--border-color, #E5E7EB);
+    background: var(--bg, #F8FAFC);
+    border: 1.5px solid var(--border, #E2E8F0);
     border-radius: 16px;
     padding: 12px 14px;
     text-align: left;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    font-size: 12.5px;
-    color: var(--text-primary, #374151);
-    margin-bottom: 18px;
+    font-size: 12px;
+    color: var(--text-primary, #1E293B);
+    margin-bottom: 16px;
 }
 .onboard-features-mini div {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
+    line-height: 1.4;
 }
 .onboard-dots {
     display: flex;
     justify-content: center;
     gap: 6px;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
 }
 .onboard-dot {
     width: 8px;
     height: 8px;
     border-radius: 4px;
-    background: var(--border-color, #D1D5DB);
+    background: var(--border, #CBD5E1);
     transition: all 0.3s ease;
 }
 .onboard-dot.active {
     width: 24px;
-    background: #059669;
+    background: var(--primary, #059669);
 }
 .onboard-footer {
     display: flex;
@@ -135,27 +136,27 @@
 .onboard-btn-skip {
     background: transparent;
     border: none;
-    color: var(--text-muted, #9CA3AF);
+    color: var(--text-muted, #94A3B8);
     font-size: 13px;
     font-weight: 700;
     padding: 8px 12px;
     cursor: pointer;
 }
 .onboard-btn-next {
-    background: #059669;
+    background: var(--primary, #059669);
     color: #ffffff;
     border: none;
     border-radius: 30px;
-    font-size: 14px;
+    font-size: 13.5px;
     font-weight: 800;
-    padding: 10px 24px;
+    padding: 9px 22px;
     cursor: pointer;
     box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
     transition: all 0.2s ease;
 }
 .onboard-btn-next:hover {
-    background: #047857;
     transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(5, 150, 105, 0.4);
 }
 </style>
 
@@ -163,21 +164,19 @@
     <div class="onboard-card" id="onboardCard">
         
         <!-- Header Graphic Gradient -->
-        <div class="onboard-header-graphic" id="onboardGraphic" style="background: linear-gradient(135deg, #059669, #10B981);">
-            <div class="onboard-icon-bubble" id="onboardIcon">
-                ✨
-            </div>
+        <div class="onboard-header-graphic" id="onboardGraphic" style="background: linear-gradient(135deg, #064E3B, #059669);">
+            <div class="onboard-icon-bubble" id="onboardIcon">✨</div>
         </div>
 
         <!-- Content Body -->
         <div class="onboard-body">
             <span class="onboard-step-badge" id="onboardBadge" style="background:#ECFDF5;color:#059669;">Langkah 1 dari 5</span>
             <h4 class="onboard-title" id="onboardTitle">Selamat Datang di DuitKu</h4>
-            <p class="onboard-desc" id="onboardDesc">Aplikasi serbaguna untuk keuangan pribadi, bisnis UMKM, dan platform komunitas RT rukun warga.</p>
+            <p class="onboard-desc" id="onboardDesc">Platform terpadu keuangan pribadi, bisnis kasir POS, dan komunitas RT.</p>
             
             <div class="onboard-features-mini" id="onboardMiniList">
-                <div><span>💵</span> <strong>Catatan Keuangan:</strong> Pemasukan, pengeluaran &amp; scan nota OCR otomatis.</div>
-                <div><span>🏛️</span> <strong>Multi-Dompet:</strong> Rekening bank, e-wallet &amp; dompet bersama.</div>
+                <div><span>💵</span> <span><strong>Pencatatan Keuangan:</strong> Pemasukan, pengeluaran &amp; scan nota OCR otomatis.</span></div>
+                <div><span>💳</span> <span><strong>Multi-Dompet:</strong> Rekening bank, e-wallet &amp; target tabungan impian.</span></div>
             </div>
 
             <!-- Dots Indicator -->
@@ -192,8 +191,8 @@
             <!-- Footer Action Buttons -->
             <div class="onboard-footer">
                 <button type="button" class="onboard-btn-skip" onclick="closeOnboardingTour(true)">Lewati</button>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-sm btn-light rounded-pill px-3 fw-bold" id="onboardBtnPrev" onclick="prevOnboardSlide()" style="display:none;">Kembali</button>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="onboard-btn-skip" id="onboardBtnPrev" onclick="prevOnboardSlide()" style="display:none; color: var(--text-primary); font-weight: 700;">Kembali</button>
                     <button type="button" class="onboard-btn-next" id="onboardBtnNext" onclick="nextOnboardSlide()">Lanjut →</button>
                 </div>
             </div>
@@ -205,117 +204,114 @@
 (function() {
     const slides = [
         {
-            gradient: 'linear-gradient(135deg, #059669, #10B981)',
-            icon: '✨',
-            badge: 'Langkah 1 dari 5',
+            gradient: 'linear-gradient(135deg, #064E3B, #059669)',
+            icon: '💵',
+            badge: 'Langkah 1 dari 5 • Keuangan',
             badgeBg: '#ECFDF5',
             badgeColor: '#059669',
-            title: 'Selamat Datang di DuitKu',
-            desc: 'Platform terintegrasi pencatatan keuangan pribadi, usaha kasir POS, dan komunitas lingkungan rukun warga (RT).',
+            title: 'Keuangan & Scan Nota OCR',
+            desc: 'Kendalikan arus kas harian, dompet bank, dan hemat waktu dengan pemindai AI.',
             list: [
-                '<div><span>💵</span> <strong>Catatan Keuangan:</strong> Pemasukan, pengeluaran, tagihan & scan struk OCR otomatis.</div>',
-                '<div><span>💳</span> <strong>Multi-Dompet:</strong> Kelola rekening bank, e-wallet & tabungan impian.</div>'
+                '<div><span>📸</span> <span><strong>Scan OCR Struk:</strong> Foto nota belanja dan total harga terisi otomatis.</span></div>',
+                '<div><span>💳</span> <span><strong>Multi-Dompet:</strong> Pisahkan saldo rekening BCA, Mandiri, Cash, dan E-Wallet.</span></div>',
+                '<div><span>📊</span> <span><strong>Budgeting & Laporan:</strong> Monitor batas anggaran dan cetak laporan PDF/Excel.</span></div>'
             ]
         },
         {
-            gradient: 'linear-gradient(135deg, #065F46, #059669)',
-            icon: '🏘️',
-            badge: 'Langkah 2 dari 5',
-            badgeBg: '#ECFDF5',
-            badgeColor: '#059669',
-            title: 'Sistem Komunitas RT',
-            desc: 'Hubungkan akun Anda dengan lingkungan RT setempat untuk verifikasi warga asli, transparansi kas, dan silaturahmi.',
-            list: [
-                '<div><span>🔑</span> <strong>Kode Unik RT:</strong> Cukup masukkan kode unik atau scan QR dari Ketua RT.</div>',
-                '<div><span>🏠</span> <strong>Status Warga:</strong> Terbagi jelas antara Warga Tetap (KTP) dan Warga Domisili/Kontrak.</div>',
-                '<div><span>🤝</span> <strong>Sistem Vouching:</strong> Warga dapat diaktifkan otomatis lewat jaminan 2 tetangga.</div>'
-            ]
-        },
-        {
-            gradient: 'linear-gradient(135deg, #B45309, #F59E0B)',
-            icon: '🔨',
-            badge: 'Langkah 3 dari 5',
-            badgeBg: '#FFFBEB',
-            badgeColor: '#B45309',
-            title: 'Pinjam Alat Warga (Sharing)',
-            desc: 'Pinjam mesin rumput, bor listrik, tangga lipat, atau tenda RT secara praktis tanpa ribet.',
-            list: [
-                '<div><span>🔐</span> <strong>Validasi Token QR:</strong> Serah terima aman dengan kode token rahasia peminjam.</div>',
-                '<div><span>💰</span> <strong>Otomatisasi Deposit:</strong> Uang jaminan sewa otomatis dicatat di buku kas dan di-refund saat alat kembali utuh.</div>'
-            ]
-        },
-        {
-            gradient: 'linear-gradient(135deg, #1E40AF, #3B82F6)',
-            icon: '🛍️',
-            badge: 'Langkah 4 dari 5',
-            badgeBg: '#EFF6FF',
-            badgeColor: '#1E40AF',
-            title: 'Titip Belanja Antar-Tetangga',
-            desc: 'Mau ke pasar atau supermarket? Buka sesi belanja dan bantu tetangga yang membutuhkan kebutuhan harian.',
-            list: [
-                '<div><span>🛒</span> <strong>Jastip Mudah:</strong> Warga satu RT bisa menitip pesanan sebelum batas waktu (cutoff).</div>',
-                '<div><span>🧾</span> <strong>Struk & Keuangan:</strong> Biaya belanja riil + tip jasa otomatis dicatat ke buku keuangan kedua pihak.</div>'
-            ]
-        },
-        {
-            gradient: 'linear-gradient(135deg, #4338CA, #7C3AED)',
-            icon: '📦',
-            badge: 'Langkah 5 dari 5',
+            gradient: 'linear-gradient(135deg, #3730A3, #6366F1)',
+            icon: '🛒',
+            badge: 'Langkah 2 dari 5 • Bisnis',
             badgeBg: '#EEF2FF',
-            badgeColor: '#4338CA',
-            title: 'Pasar Jual Beli & Domain Toko',
-            desc: 'Jual barang bekas, tawarkan jasa, dan dapatkan domain tautan toko pribadi Anda secara gratis.',
+            badgeColor: '#4F46E5',
+            title: 'Mode Bisnis & Kasir POS',
+            desc: 'Ubah aplikasi menjadi mesin kasir digital untuk toko, warung, atau usaha UMKM Anda.',
             list: [
-                '<div><span>🌐</span> <strong>Domain Toko:</strong> Dapatkan link <code>domain/nama_anda</code> untuk etalase publik.</div>',
-                '<div><span>💬</span> <strong>Chat & WhatsApp:</strong> Hubungkan langsung dengan pembeli secara aman dan instan.</div>'
+                '<div><span>📦</span> <span><strong>Katalog Produk:</strong> Kelola harga modal, harga jual, dan stok barang.</span></div>',
+                '<div><span>🧾</span> <span><strong>Kasir Cepat:</strong> Transaksi kilat tunai/QRIS dan cetak struk nota belanja.</span></div>',
+                '<div><span>📈</span> <span><strong>Laporan Omzet:</strong> Pantau laba bersih terpisah dari kas pribadi Anda.</span></div>'
+            ]
+        },
+        {
+            gradient: 'linear-gradient(135deg, #065F46, #10B981)',
+            icon: '🏘️',
+            badge: 'Langkah 3 dari 5 • Komunitas',
+            badgeBg: '#ECFDF5',
+            badgeColor: '#059669',
+            title: 'Sistem RT, Pinjam Alat & Titip Belanja',
+            desc: 'Terhubung dengan tetangga sekitar untuk saling bantu dan manfaatkan fasilitas RT.',
+            list: [
+                '<div><span>🔑</span> <span><strong>Grup RT Warga:</strong> Masuk dengan Kode Unik RT atau pindai QR Ketua RT.</span></div>',
+                '<div><span>🔨</span> <span><strong>Pinjam Alat:</strong> Pinjam bor, mesin rumput, atau tenda dengan validasi token QR aman.</span></div>',
+                '<div><span>🛍️</span> <span><strong>Titip Belanja:</strong> Buka sesi belanja pasar dan bantu tetangga sekitar.</span></div>'
+            ]
+        },
+        {
+            gradient: 'linear-gradient(135deg, #6B21A8, #A855F7)',
+            icon: '🏷️',
+            badge: 'Langkah 4 dari 5 • Jual Beli',
+            badgeBg: '#FAF5FF',
+            badgeColor: '#9333EA',
+            title: 'Marketplace & Domain Toko Gratis',
+            desc: 'Jual barang bekas tak terpakai dan dapatkan website etalase toko pribadi gratis.',
+            list: [
+                '<div><span>🌐</span> <span><strong>Domain Toko:</strong> Dapatkan URL etalase toko publik gratis untuk jualan online.</span></div>',
+                '<div><span>💬</span> <span><strong>Chat Langsung:</strong> Komunikasi aman antar penjual dan pembeli via aplikasi / WA.</span></div>'
+            ]
+        },
+        {
+            gradient: 'linear-gradient(135deg, #9D174D, #F43F5E)',
+            icon: '⏰',
+            badge: 'Langkah 5 dari 5 • Lifestyle',
+            badgeBg: '#FFF1F2',
+            badgeColor: '#E11D48',
+            title: 'Tagihan, Tabungan, Traveling & TV',
+            desc: 'Fitur pendukung lengkap untuk memenuhi seluruh kebutuhan gaya hidup dan finansial Anda.',
+            list: [
+                '<div><span>⏰</span> <span><strong>Pengingat Tagihan:</strong> Reminder jatuh tempo listrik, cicilan & pajak kendaraan.</span></div>',
+                '<div><span>🎯</span> <span><strong>Target Menabung:</strong> Capai impian kurban, liburan, atau dana darurat.</span></div>',
+                '<div><span>✈️</span> <span><strong>Traveling & Valas:</strong> Trip budget organizer & konversi kurs mata uang asing.</span></div>',
+                '<div><span>🎬</span> <span><strong>TV & Game:</strong> Streaming TV digital nasional dan game hub santai.</span></div>'
             ]
         }
     ];
 
     let currentSlide = 0;
+    const overlay   = document.getElementById('onboardingOverlay');
+    const graphic   = document.getElementById('onboardGraphic');
+    const icon      = document.getElementById('onboardIcon');
+    const badge     = document.getElementById('onboardBadge');
+    const title     = document.getElementById('onboardTitle');
+    const desc      = document.getElementById('onboardDesc');
+    const miniList  = document.getElementById('onboardMiniList');
+    const dots      = document.querySelectorAll('#onboardDots .onboard-dot');
+    const btnPrev   = document.getElementById('onboardBtnPrev');
+    const btnNext   = document.getElementById('onboardBtnNext');
 
     function renderSlide(index) {
         const s = slides[index];
-        const graphic = document.getElementById('onboardGraphic');
-        const icon = document.getElementById('onboardIcon');
-        const badge = document.getElementById('onboardBadge');
-        const title = document.getElementById('onboardTitle');
-        const desc = document.getElementById('onboardDesc');
-        const list = document.getElementById('onboardMiniList');
-        const dots = document.querySelectorAll('.onboard-dot');
-        const btnPrev = document.getElementById('onboardBtnPrev');
-        const btnNext = document.getElementById('onboardBtnNext');
-
         graphic.style.background = s.gradient;
-        icon.innerText = s.icon;
-        badge.innerText = s.badge;
+        icon.textContent = s.icon;
+        badge.textContent = s.badge;
         badge.style.background = s.badgeBg;
         badge.style.color = s.badgeColor;
-        title.innerText = s.title;
-        desc.innerText = s.desc;
-        list.innerHTML = s.list.join('');
+        title.textContent = s.title;
+        desc.textContent = s.desc;
+        miniList.innerHTML = s.list.join('');
+        btnNext.style.background = s.badgeColor;
 
-        dots.forEach((dot, i) => {
-            if (i === index) dot.classList.add('active');
-            else dot.classList.remove('active');
+        dots.forEach((d, i) => {
+            if (i === index) {
+                d.classList.add('active');
+                d.style.background = s.badgeColor;
+            } else {
+                d.classList.remove('active');
+                d.style.background = 'var(--border, #CBD5E1)';
+            }
         });
 
-        btnPrev.style.display = index > 0 ? 'block' : 'none';
-        btnNext.innerText = index === slides.length - 1 ? 'Mulai Sekarang 🚀' : 'Lanjut →';
+        btnPrev.style.display = (index > 0) ? 'inline-block' : 'none';
+        btnNext.textContent = (index === slides.length - 1) ? 'Mulai Sekarang 🚀' : 'Lanjut →';
     }
-
-    window.openOnboardingTour = function() {
-        currentSlide = 0;
-        renderSlide(currentSlide);
-        document.getElementById('onboardingOverlay').classList.add('show');
-    };
-
-    window.closeOnboardingTour = function(markAsSeen = true) {
-        document.getElementById('onboardingOverlay').classList.remove('show');
-        if (markAsSeen) {
-            localStorage.setItem('duitku_onboard_v1', 'seen');
-        }
-    };
 
     window.nextOnboardSlide = function() {
         if (currentSlide < slides.length - 1) {
@@ -333,14 +329,29 @@
         }
     };
 
-    // Auto-trigger on first user visit
-    document.addEventListener('DOMContentLoaded', () => {
-        const hasSeen = localStorage.getItem('duitku_onboard_v1');
-        if (!hasSeen) {
-            setTimeout(() => {
+    window.openOnboardingTour = function() {
+        currentSlide = 0;
+        renderSlide(0);
+        overlay.classList.add('show');
+    };
+
+    window.closeOnboardingTour = function(markAsSeen) {
+        overlay.classList.remove('show');
+        if (markAsSeen) {
+            try {
+                localStorage.setItem('duitku_onboard_seen_v1', 'true');
+            } catch(e) {}
+        }
+    };
+
+    // Auto-trigger on first visit
+    try {
+        const seen = localStorage.getItem('duitku_onboard_seen_v1');
+        if (!seen) {
+            setTimeout(function() {
                 window.openOnboardingTour();
             }, 800);
         }
-    });
+    } catch(e) {}
 })();
 </script>

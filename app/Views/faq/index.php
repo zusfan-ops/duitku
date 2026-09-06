@@ -3,76 +3,177 @@
 <?= $this->section('styles') ?>
 <style>
 .faq-page {
-    max-width: 720px;
+    max-width: 680px;
     margin: 0 auto;
-    padding-bottom: 110px;
+    padding-bottom: 120px;
 }
+
+/* ── Hero FAQ Banner (Emerald Signature) ── */
 .faq-hero-card {
-    background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 50%, #3B82F6 100%);
-    border-radius: 24px;
+    background: linear-gradient(135deg, #064E3B 0%, #059669 60%, #10B981 100%);
+    border-radius: var(--radius-xl, 24px);
     padding: 24px 22px;
     color: #ffffff;
-    margin-bottom: 20px;
-    box-shadow: 0 12px 32px rgba(37, 99, 235, 0.25);
+    margin-bottom: 18px;
+    box-shadow: 0 12px 32px rgba(5, 150, 105, 0.28);
     position: relative;
     overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
+.faq-hero-card::after {
+    content: '';
+    position: absolute;
+    right: -25px;
+    bottom: -25px;
+    width: 140px;
+    height: 140px;
+    background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.faq-hero-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    padding: 4px 12px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    margin-bottom: 10px;
+    color: #ffffff;
+}
+.faq-hero-title {
+    font-size: 22px;
+    font-weight: 900;
+    margin-bottom: 6px;
+    letter-spacing: -0.4px;
+    line-height: 1.25;
+}
+.faq-hero-desc {
+    font-size: 13px;
+    line-height: 1.5;
+    opacity: 0.9;
+    margin-bottom: 16px;
+    max-width: 90%;
+}
+.faq-tour-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #ffffff;
+    color: #065F46;
+    font-size: 12.5px;
+    font-weight: 800;
+    padding: 8px 18px;
+    border-radius: 30px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none;
+}
+.faq-tour-btn:hover {
+    background: #F0FDF4;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+}
+
+/* ── Search Container ── */
 .faq-search-box {
     background: var(--bg-card, #ffffff);
-    border: 1px solid var(--border-color, #e5e7eb);
-    border-radius: 16px;
-    padding: 10px 14px;
+    border: 1.5px solid var(--border, #E2E8F0);
+    border-radius: var(--radius-lg, 18px);
+    padding: 10px 16px;
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.04));
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.faq-search-box:focus-within {
+    border-color: var(--primary, #059669);
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
 }
 .faq-search-input {
     border: none;
     outline: none;
     background: transparent;
     width: 100%;
-    font-size: 14px;
-    color: var(--text-primary, #111827);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-primary, #0F172A);
+    font-family: inherit;
 }
+.faq-search-input::placeholder {
+    color: var(--text-muted, #94A3B8);
+}
+.faq-search-clear {
+    background: none;
+    border: none;
+    color: var(--text-muted, #94A3B8);
+    font-size: 16px;
+    cursor: pointer;
+    display: none;
+    padding: 2px;
+}
+
+/* ── Category Filter Pills ── */
 .faq-filter-pills {
     display: flex;
     gap: 8px;
     overflow-x: auto;
-    padding-bottom: 8px;
-    margin-bottom: 16px;
+    padding: 2px 2px 12px;
+    margin-bottom: 12px;
     scrollbar-width: none;
 }
 .faq-filter-pills::-webkit-scrollbar { display: none; }
 .faq-pill {
-    padding: 6px 14px;
-    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 15px;
+    border-radius: 30px;
     font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
     cursor: pointer;
-    border: 1px solid var(--border-color, #e5e7eb);
+    border: 1.5px solid var(--border, #E2E8F0);
     background: var(--bg-card, #ffffff);
-    color: var(--text-secondary, #6B7280);
-    transition: all 0.2s ease;
+    color: var(--text-secondary, #475569);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
+}
+.faq-pill:hover {
+    border-color: var(--primary-light, #10B981);
+    color: var(--primary, #059669);
 }
 .faq-pill.active {
-    background: #2563EB;
+    background: var(--primary, #059669);
     color: #ffffff;
-    border-color: #2563EB;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    border-color: var(--primary, #059669);
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.28);
 }
+
+/* ── Accordion Card ── */
 .faq-accordion-item {
     background: var(--bg-card, #ffffff);
-    border: 1px solid var(--border-color, #e5e7eb);
-    border-radius: 18px;
+    border: 1.5px solid var(--border, #E2E8F0);
+    border-radius: var(--radius-lg, 18px);
     margin-bottom: 10px;
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: var(--shadow-sm);
 }
 .faq-accordion-item:hover {
-    border-color: #93C5FD;
+    border-color: #CBD5E1;
+}
+.faq-accordion-item.open {
+    border-color: var(--primary, #059669);
+    box-shadow: 0 4px 18px rgba(5, 150, 105, 0.08);
 }
 .faq-header-btn {
     width: 100%;
@@ -84,44 +185,78 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    font-size: 14.5px;
-    font-weight: 800;
-    color: var(--text-primary, #111827);
     cursor: pointer;
-    transition: background 0.15s ease;
+    font-family: inherit;
 }
 .faq-header-btn:focus { outline: none; }
-.faq-chevron {
+.faq-q-text {
     font-size: 14px;
-    color: #6B7280;
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    font-weight: 800;
+    color: var(--text-primary, #0F172A);
+    line-height: 1.38;
+}
+.faq-chevron {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg, #F8FAFC);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--text-secondary, #64748B);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, color 0.2s ease;
     flex-shrink: 0;
 }
 .faq-accordion-item.open .faq-chevron {
     transform: rotate(180deg);
-    color: #2563EB;
+    background: var(--primary-dim, rgba(5, 150, 105, 0.12));
+    color: var(--primary, #059669);
 }
+
+/* ── Content & Tag styling ── */
 .faq-body-content {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), padding 0.3s ease;
     padding: 0 18px;
     font-size: 13.5px;
-    line-height: 1.6;
-    color: var(--text-secondary, #4B5563);
+    line-height: 1.62;
+    color: var(--text-secondary, #334155);
     border-top: 1px solid transparent;
 }
 .faq-accordion-item.open .faq-body-content {
-    padding: 0 18px 16px 18px;
-    border-top-color: var(--border-color, #f3f4f6);
+    padding: 0 18px 18px 18px;
+    border-top-color: var(--border-light, #F1F5F9);
 }
 .faq-tag {
     font-size: 10px;
     font-weight: 800;
-    padding: 2px 7px;
+    padding: 2.5px 8px;
     border-radius: 6px;
     text-transform: uppercase;
-    margin-right: 6px;
+    letter-spacing: 0.4px;
+    display: inline-block;
+    margin-bottom: 6px;
+}
+.faq-tag.finance { background: rgba(5, 150, 105, 0.12); color: #059669; }
+.faq-tag.pos     { background: rgba(79, 70, 229, 0.12); color: #4F46E5; }
+.faq-tag.rt      { background: rgba(13, 148, 136, 0.12); color: #0D9488; }
+.faq-tag.tools   { background: rgba(217, 119, 6, 0.12);  color: #D97706; }
+.faq-tag.errands { background: rgba(2, 132, 199, 0.12);  color: #0284C7; }
+.faq-tag.market  { background: rgba(147, 51, 234, 0.12); color: #9333EA; }
+.faq-tag.debt    { background: rgba(225, 29, 72, 0.12);  color: #E11D48; }
+.faq-tag.travel  { background: rgba(8, 145, 178, 0.12);  color: #0891B2; }
+.faq-tag.media   { background: rgba(234, 88, 12, 0.12);  color: #EA580C; }
+.faq-tag.secure  { background: rgba(71, 85, 105, 0.12);  color: #475569; }
+
+.faq-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    background: var(--bg-card, #ffffff);
+    border: 1.5px dashed var(--border, #E2E8F0);
+    border-radius: 20px;
+    display: none;
 }
 </style>
 <?= $this->endSection() ?>
@@ -129,256 +264,418 @@
 <?= $this->section('content') ?>
 <div class="faq-page">
     
-    <!-- Hero FAQ Header -->
+    <!-- ── Hero FAQ Banner ── -->
     <div class="faq-hero-card">
-        <div class="d-flex align-items-center gap-2 mb-2">
-            <a href="/settings" class="btn btn-sm btn-light bg-opacity-25 text-white rounded-circle"><i class="bi bi-arrow-left"></i></a>
-            <span class="badge bg-white bg-opacity-25 text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 700;">
-                Pusat Bantuan &amp; Panduan
-            </span>
+        <div class="faq-hero-pill">
+            <span>✨</span> Pusat Bantuan &amp; Panduan Lengkap
         </div>
-        <h3 class="fw-bold mb-1" style="font-size: 22px;">Pertanyaan Sering Diajukan (FAQ)</h3>
-        <p class="mb-3 opacity-80 small">Temukan jawaban lengkap seputar Komunitas RT, Pinjam Alat, Titip Belanja, dan Pencatatan Keuangan.</p>
-        <button class="btn btn-sm btn-light rounded-pill px-3 fw-bold text-primary shadow-sm" onclick="if(window.openOnboardingTour) window.openOnboardingTour();">
-            <i class="bi bi-play-circle-fill me-1"></i> Mulai Tour / Panduan Aplikasi
+        <h1 class="faq-hero-title">Pertanyaan Sering Diajukan (FAQ)</h1>
+        <p class="faq-hero-desc">
+            Panduan lengkap semua fitur DuitKu: Pencatatan Keuangan, Scan OCR Struk, Kasir POS, Komunitas RT, Pinjam Alat, Titip Belanja, hingga Marketplace.
+        </p>
+        <button type="button" class="faq-tour-btn" onclick="if(window.openOnboardingTour) window.openOnboardingTour();">
+            <span>🚀</span> Mulai Tour Interaktif Aplikasi
         </button>
     </div>
 
-    <!-- Search Box -->
+    <!-- ── Search Box ── -->
     <div class="faq-search-box">
-        <i class="bi bi-search text-muted"></i>
-        <input type="text" id="faqSearchInput" class="faq-search-input" placeholder="Ketik kata kunci (misal: kode unik RT, sewa alat, deposit, struk)...">
-        <button type="button" class="btn-close btn-sm" id="faqSearchClear" style="display:none;" onclick="clearFaqSearch()"></button>
+        <span style="font-size: 16px;">🔍</span>
+        <input type="text" id="faqSearchInput" class="faq-search-input" placeholder="Cari bantuan (misal: scan nota, kasir POS, kode RT, pinjam alat, budget)...">
+        <button type="button" class="faq-search-clear" id="faqSearchClear" onclick="clearFaqSearch()">✕</button>
     </div>
 
-    <!-- Category Filter Pills -->
+    <!-- ── Category Filter Pills ── -->
     <div class="faq-filter-pills" id="faqFilterPills">
-        <button type="button" class="faq-pill active" data-category="all">Semua Topik</button>
-        <button type="button" class="faq-pill" data-category="rt">🏘️ Sistem RT</button>
+        <button type="button" class="faq-pill active" data-category="all">🌟 Semua Topik</button>
+        <button type="button" class="faq-pill" data-category="finance">💵 Keuangan &amp; Dompet</button>
+        <button type="button" class="faq-pill" data-category="pos">🛒 Kasir POS Bisnis</button>
+        <button type="button" class="faq-pill" data-category="rt">🏘️ Komunitas RT</button>
         <button type="button" class="faq-pill" data-category="tools">🔨 Pinjam Alat</button>
         <button type="button" class="faq-pill" data-category="errands">🛍️ Titip Belanja</button>
-        <button type="button" class="faq-pill" data-category="finance">💰 Keuangan &amp; Dompet</button>
-        <button type="button" class="faq-pill" data-category="marketplace">📦 Jual Beli &amp; Sewa</button>
+        <button type="button" class="faq-pill" data-category="market">🏷️ Jual Beli &amp; Toko</button>
+        <button type="button" class="faq-pill" data-category="debt">⏰ Tagihan &amp; Hutang</button>
+        <button type="button" class="faq-pill" data-category="travel">✈️ Traveling &amp; Valas</button>
+        <button type="button" class="faq-pill" data-category="media">🎬 TV &amp; Hiburan</button>
+        <button type="button" class="faq-pill" data-category="secure">🛡️ Cadangan &amp; Akun</button>
     </div>
 
-    <!-- FAQ Accordion Container (Auto Collapse Enabled) -->
+    <!-- ── Accordion List (Auto-Collapse Mode) ── -->
     <div id="faqAccordionContainer">
 
-        <!-- ── 1. SISTEM RT & KEANGGOTAAN ── -->
-        <div class="faq-accordion-item" data-cat="rt">
-            <button type="button" class="faq-header-btn">
-                <span><span class="faq-tag bg-success bg-opacity-10 text-success">Sistem RT</span> Bagaimana cara saya bergabung ke lingkungan RT saya?</span>
-                <i class="bi bi-chevron-down faq-chevron"></i>
-            </button>
-            <div class="faq-body-content">
-                <p class="mb-2">Ada 2 cara mudah untuk bergabung ke grup lingkungan RT:</p>
-                <ol class="mb-2 ps-3">
-                    <li><strong>Masukkan Kode Unik RT</strong>: Minta kode unik kepada Ketua RT Anda (contoh: <code>RT04-RW02-GRIYA-2026</code>), lalu masukkan di menu <strong>Komunitas RT &gt; Gabung RT</strong>.</li>
-                    <li><strong>Pindai QR Code RT</strong>: Pindai QR Code yang ditunjukkan Ketua RT saat pertemuan warga.</li>
-                </ol>
-                <p class="mb-0">Jika RT mengaktifkan <em>Auto-Approval</em>, akun Anda akan langsung aktif. Jika tidak, pengajuan Anda akan diverifikasi oleh Ketua RT.</p>
-            </div>
-        </div>
-
-        <div class="faq-accordion-item" data-cat="rt">
-            <button type="button" class="faq-header-btn">
-                <span><span class="faq-tag bg-success bg-opacity-10 text-success">Sistem RT</span> Apa bedanya status Warga Tetap dan Warga Domisili/Kontrak?</span>
-                <i class="bi bi-chevron-down faq-chevron"></i>
-            </button>
-            <div class="faq-body-content">
-                <ul class="mb-2 ps-3">
-                    <li><strong>Warga Tetap</strong>: Warga dengan KTP asli beralamat di RT tersebut atau pemilik rumah tetap.</li>
-                    <li><strong>Warga Domisili/Kontrak</strong>: Warga penyewa rumah, kontrakan, atau indekos di lingkungan RT.</li>
-                </ul>
-                <p class="mb-0">Keduanya memiliki akses penuh meminjam alat dan menitip belanja. Namun, Ketua RT dapat mengatur batasan nilai maksimal barang yang boleh dipinjam oleh warga domisili untuk menjaga aset bersama.</p>
-            </div>
-        </div>
-
-        <div class="faq-accordion-item" data-cat="rt">
-            <button type="button" class="faq-header-btn">
-                <span><span class="faq-tag bg-success bg-opacity-10 text-success">Sistem RT</span> Apa itu Sistem Penjamin (Vouching) Tetangga?</span>
-                <i class="bi bi-chevron-down faq-chevron"></i>
-            </button>
-            <div class="faq-body-content">
-                <p class="mb-0">Jika Ketua RT sedang berhalangan atau slow-response, warga baru yang mendaftar dapat diverifikasi otomatis apabila telah dijamin (*vouched*) oleh minimal <strong>2 orang tetangga</strong> di RT yang sama yang akunnya sudah terverifikasi sebelumnya.</p>
-            </div>
-        </div>
-
-        <div class="faq-accordion-item" data-cat="rt">
-            <button type="button" class="faq-header-btn">
-                <span><span class="faq-tag bg-success bg-opacity-10 text-success">Sistem RT</span> Bagaimana cara mendaftar sebagai Ketua RT / Admin Lingkungan?</span>
-                <i class="bi bi-chevron-down faq-chevron"></i>
-            </button>
-            <div class="faq-body-content">
-                <p class="mb-0">Pengurus RT dapat membuka menu <strong>Komunitas RT &gt; Daftarkan Lingkungan RT Baru</strong>. Masukkan nomor RT, RW, Kelurahan, Kecamatan, dan Kota. Akun Anda otomatis menjadi <code>Ketua RT (rt_admin)</code> yang memegang wewenang approval warga, pengelolaan inventaris alat, dan kas RT.</p>
-            </div>
-        </div>
-
-        <!-- ── 2. PINJAM ALAT BERSAMA ── -->
-        <div class="faq-accordion-item" data-cat="tools">
-            <button type="button" class="faq-header-btn">
-                <span><span class="faq-tag bg-warning bg-opacity-10 text-warning">Pinjam Alat</span> Bagaimana alur peminjaman alat pertukangan / kebersihan RT?</span>
-                <i class="bi bi-chevron-down faq-chevron"></i>
-            </button>
-            <div class="faq-body-content">
-                <ol class="mb-0 ps-3">
-                    <li>Pilih alat yang ingin dipinjam dari katalog (misal: Bor Listrik, Mesin Rumput, Tangga).</li>
-                    <li>Tentukan durasi pinjam (1-7 hari) dan klik <strong>Pinjam</strong>.</li>
-                    <li>Sistem memberikan <strong>Token Serah Terima (6 Digit)</strong>.</li>
-                    <li>Saat mengambil barang ke pos RT / pemilik alat, tunjukkan token tersebut untuk divalidasi.</li>
-                    <li>Saat alat dikembalikan, tunjukkan <strong>Token Pengembalian</strong> untuk menutup masa pinjam.</li>
-                </ol>
-            </div>
-        </div>
-
-        <div class="faq-accordion-item" data-cat="tools">
-            <button type="button" class="faq-header-btn">
-                <span><span class="faq-tag bg-warning bg-opacity-10 text-warning">Pinjam Alat</span> Bagaimana uang jaminan (deposit) & biaya sewa dicatat di keuangan?</span>
-                <i class="bi bi-chevron-down faq-chevron"></i>
-            </button>
-            <div class="faq-body-content">
-                <p class="mb-0">Ketika token serah terima divalidasi, sistem <strong>otomatis mencatat pengeluaran sewa &amp; deposit</strong> pada buku kas peminjam. Begitu alat dikembalikan dalam kondisi baik dan divalidasi dengan token pengembalian, <strong>uang deposit langsung otomatis dikembalikan (*refund*)</strong> sebagai pemasukan saldo kas peminjam tanpa perlu input manual.</p>
-            </div>
-        </div>
-
-        <!-- ── 3. TITIP BELANJA (ERRANDS) ── -->
-        <div class="faq-accordion-item" data-cat="errands">
-            <button type="button" class="faq-header-btn">
-                <span><span class="faq-tag bg-primary bg-opacity-10 text-primary">Titip Belanja</span> Bagaimana cara membuka sesi titip belanja untuk tetangga?</span>
-                <i class="bi bi-chevron-down faq-chevron"></i>
-            </button>
-            <div class="faq-body-content">
-                <p class="mb-0">Jika Anda hendak pergi ke pasar, minimarket, atau supermarket, buka menu <strong>Titip Belanja &gt; Buka Titipan</strong>. Masukkan nama toko tujuan dan batas waktu menitip (*cutoff time*). Tetangga satu RT akan menerima info dan bisa menitipkan belanjaan.</p>
-            </div>
-        </div>
-
-        <div class="faq-accordion-item" data-cat="errands">
-            <button type="button" class="faq-header-btn">
-                <span><span class="faq-tag bg-primary bg-opacity-10 text-primary">Titip Belanja</span> Bagaimana perhitungan harga riil belanjaan & tip jasa?</span>
-                <i class="bi bi-chevron-down faq-chevron"></i>
-            </button>
-            <div class="faq-body-content">
-                <p class="mb-0">Saat belanjaan diantar ke rumah pemesan, pembelanja memasukkan harga riil sesuai nota/struk belanja asli beserta foto struk, lalu memasukkan <strong>Token Serah Terima</strong> dari pemesan. Sistem langsung mencatat pengeluaran (*harga barang + tip jasa*) di pemesan dan mencatat pemasukan *reimbursement* di pembelanja.</p>
-            </div>
-        </div>
-
-        <!-- ── 4. INTEGRASI KEUANGAN & TRANSAKSI ── -->
+        <!-- 1. KEUANGAN & DOMPET -->
         <div class="faq-accordion-item" data-cat="finance">
             <button type="button" class="faq-header-btn">
-                <span><span class="faq-tag bg-info bg-opacity-10 text-info">Keuangan</span> Apakah transaksi RT merusak data catatan keuangan pribadi saya?</span>
-                <i class="bi bi-chevron-down faq-chevron"></i>
+                <div>
+                    <span class="faq-tag finance">Keuangan</span>
+                    <div class="faq-q-text">Bagaimana cara mencatat transaksi pemasukan atau pengeluaran?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
             </button>
             <div class="faq-body-content">
-                <p class="mb-0"><strong>Tidak sama sekali.</strong> Semua modul RT, sewa alat, dan titip belanja terintegrasi secara modular ke tabel transaksi utama (`transactions`) dengan format standar yang sama, sehingga laporan mutasi bulanan, grafik analitik, dan saldo dompet Anda tetap sinkron dan rapi.</p>
+                <p>Ketuk tombol bulat biru bertanda <strong>+</strong> di bagian bawah layar. Pilih jenis transaksi (Pengeluaran, Pemasukan, atau Transfer Antar-Dompet), masukkan nominal, pilih kategori, pilih sumber dompet, lalu simpan. Saldo dompet Anda akan otomatis diperbarui secara instan.</p>
             </div>
         </div>
 
-        <!-- ── 5. JUAL BELI & SEWA ── -->
-        <div class="faq-accordion-item" data-cat="marketplace">
+        <div class="faq-accordion-item" data-cat="finance">
             <button type="button" class="faq-header-btn">
-                <span><span class="faq-tag bg-purple bg-opacity-10 text-purple" style="color:#7C3AED;">Jual Beli</span> Bagaimana cara menjual barang bekas atau menyewakan properti?</span>
-                <i class="bi bi-chevron-down faq-chevron"></i>
+                <div>
+                    <span class="faq-tag finance">Scan OCR AI</span>
+                    <div class="faq-q-text">Bagaimana cara kerja fitur Scan Struk / Nota Otomatis (OCR)?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
             </button>
             <div class="faq-body-content">
-                <p class="mb-0">Buka menu <strong>Jual Beli &amp; Sewa &gt; Pasang Iklan</strong>. Masukkan judul, kategori, harga, foto produk, dan lokasi COD. Iklan akan tayang secara publik dan calon pembeli dapat langsung menghubungi Anda melalui chat aplikasi atau tombol WhatsApp.</p>
+                <p>Pada kartu Hero Dashboard atau menu transaksi, ketuk tombol <strong>Scan Struk (OCR)</strong>. Ambil foto nota belanja kasir atau upload dari galeri. Sistem AI DuitKu akan mendeteksi nominal total harga, tanggal pembelian, dan nama toko secara otomatis sehingga Anda tidak perlu mengetik manual.</p>
+            </div>
+        </div>
+
+        <div class="faq-accordion-item" data-cat="finance">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag finance">Multi-Dompet</span>
+                    <div class="faq-q-text">Bagaimana cara mengelola banyak dompet &amp; rekening bank?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Buka menu <strong>Dompet (Wallets)</strong> untuk menambahkan akun rekening (misal: BCA, Mandiri, Cash Tunai, GoPay, OVO). Anda juga dapat melakukan transfer antar-dompet serta membagikan dompet bersama anggota keluarga.</p>
+            </div>
+        </div>
+
+        <div class="faq-accordion-item" data-cat="finance">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag finance">Budgeting</span>
+                    <div class="faq-q-text">Bagaimana cara membatasi pengeluaran dengan Budget Bulanan?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Di menu <strong>Pengaturan &gt; Budget Bulan Ini</strong>, tentukan batas nominal maksimal pengeluaran bulanan Anda. Dashboard akan menampilkan progress bar persentase pemakaian budget dan memberikan peringatan jika anggaran sudah menipis.</p>
+            </div>
+        </div>
+
+        <!-- 2. KASIR POS BISNIS -->
+        <div class="faq-accordion-item" data-cat="pos">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag pos">Kasir POS</span>
+                    <div class="faq-q-text">Bagaimana cara mengaktifkan Mode Bisnis / Kasir Toko (POS)?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Di bagian atas Dashboard, Anda dapat beralih dari mode <strong>Personal</strong> ke mode <strong>Business (POS)</strong>. Pada mode ini, Anda dapat menginput katalog produk dagangan, memproses transaksi kasir cepat (tunai/QRIS), mencetak nota belanja, dan memantau laba bersih harian.</p>
+            </div>
+        </div>
+
+        <div class="faq-accordion-item" data-cat="pos">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag pos">Kasir POS</span>
+                    <div class="faq-q-text">Apakah laporan omzet kasir terpisah dari keuangan pribadi?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Ya. Sistem memisahkan mutasi kasir POS dengan pembukuan kas pribadi. Anda dapat menentukan dompet mana yang ditunjuk sebagai penampung pendapatan kasir bisnis Anda.</p>
+            </div>
+        </div>
+
+        <!-- 3. KOMUNITAS RT -->
+        <div class="faq-accordion-item" data-cat="rt">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag rt">Sistem RT</span>
+                    <div class="faq-q-text">Bagaimana cara bergabung ke lingkungan RT saya?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>1. Minta <strong>Kode Unik RT</strong> ke Ketua RT Anda (contoh: <code>RT04-RW02-GRIYA-2026</code>).<br>2. Buka menu <strong>Komunitas RT &gt; Gabung RT</strong>.<br>3. Masukkan kode unik dan nomor rumah Anda. Jika RT mengaktifkan auto-approval, akun langsung aktif. Jika tidak, pengajuan akan masuk ke antrean verifikasi Ketua RT.</p>
+            </div>
+        </div>
+
+        <div class="faq-accordion-item" data-cat="rt">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag rt">Sistem RT</span>
+                    <div class="faq-q-text">Apa bedanya status Warga Tetap dan Warga Domisili/Kontrak?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p><strong>Warga Tetap:</strong> Warga dengan KTP asli beralamat di RT setempat atau pemilik rumah tetap.<br><strong>Warga Domisili/Kontrak:</strong> Warga penyewa, pengontrak, atau indekos. Keduanya memiliki hak akses penuh, namun Ketua RT dapat menentukan limit batas nilai pinjam alat untuk warga non-permanen demi keamanan aset warga.</p>
+            </div>
+        </div>
+
+        <div class="faq-accordion-item" data-cat="rt">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag rt">Sistem RT</span>
+                    <div class="faq-q-text">Apa itu Sistem Penjamin (Vouching) Tetangga?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Jika Ketua RT sedang berhalangan memverifikasi pengajuan warga baru secara manual, akun warga baru dapat aktif otomatis jika sudah dijamin (<em>vouched</em>) oleh minimal 2 warga yang sudah terverifikasi di RT tersebut.</p>
+            </div>
+        </div>
+
+        <div class="faq-accordion-item" data-cat="rt">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag rt">Sistem RT</span>
+                    <div class="faq-q-text">Bagaimana cara mendaftarkan RT baru jika saya adalah Pengurus RT?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Pilih menu <strong>Daftarkan RT Baru</strong> (`/neighborhood/create`), masukkan data wilayah (Provinsi, Kota, Kecamatan, Kelurahan, RW, dan RT). Anda akan langsung ditetapkan sebagai Administrator RT tersebut dan mendapatkan Kode Unik RT untuk dibagikan kepada warga.</p>
+            </div>
+        </div>
+
+        <!-- 4. PINJAM ALAT WARGA -->
+        <div class="faq-accordion-item" data-cat="tools">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag tools">Pinjam Alat</span>
+                    <div class="faq-q-text">Bagaimana alur meminjam alat pertukangan / kebersihan warga?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <ol style="padding-left: 20px; margin: 0;">
+                    <li>Pilih alat dari katalog RT (misal: Bor Listrik, Mesin Rumput, Tenda, Tangga).</li>
+                    <li>Tentukan durasi pinjam dan ajukan peminjaman.</li>
+                    <li>Dapatkan <strong>Token Serah Terima (6 Digit)</strong>.</li>
+                    <li>Tunjukkan token kepada pemilik/petugas RT saat mengambil barang.</li>
+                    <li>Setelah selesai, serahkan kembali alat dan gunakan <strong>Token Pengembalian</strong> untuk menutup sesi pinjam.</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="faq-accordion-item" data-cat="tools">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag tools">Pinjam Alat</span>
+                    <div class="faq-q-text">Bagaimana uang deposit jaminan dan biaya sewa dicatat ke keuangan?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Sistem langsung mencatat otomatis biaya sewa dan uang deposit pada buku kas pengeluaran peminjam saat barang divalidasi serah terima. Ketika barang dikembalikan dalam kondisi baik, uang deposit langsung otomatis di-refund sebagai transaksi pemasukan ke dompet peminjam.</p>
+            </div>
+        </div>
+
+        <!-- 5. TITIP BELANJA -->
+        <div class="faq-accordion-item" data-cat="errands">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag errands">Titip Belanja</span>
+                    <div class="faq-q-text">Bagaimana cara membuka sesi titip belanja untuk tetangga?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Buka menu <strong>Titip Belanja &gt; Buka Sesi Belanja</strong>. Tentukan toko tujuan (misal: Pasar Tradisional, Supermarket, Apotek) dan batas waktu (cutoff). Tetangga satu RT dapat menitipkan daftar belanjaan mereka sebelum batas waktu tersebut berakhir.</p>
+            </div>
+        </div>
+
+        <div class="faq-accordion-item" data-cat="errands">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag errands">Titip Belanja</span>
+                    <div class="faq-q-text">Bagaimana perhitungan harga belanjaan riil dan tip jasa?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Setelah belanja selesai, pembelanja menginput harga nota belanja riil. Saat barang diserahkan kepada penitip, sistem akan otomatis mendebit buku kas penitip sebesar <code>Harga Barang + Biaya Jasa</code> dan mencatat pemasukan pada pembelanja.</p>
+            </div>
+        </div>
+
+        <!-- 6. MARKETPLACE & TOKO -->
+        <div class="faq-accordion-item" data-cat="market">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag market">Marketplace</span>
+                    <div class="faq-q-text">Bagaimana cara menjual barang bekas atau menyewakan properti?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Buka menu <strong>Pasar / Marketplace</strong> lalu ketuk <strong>Jual Barang</strong>. Masukkan foto, deskripsi, harga, dan lokasi. Iklan Anda akan tayang di katalog pasar dan dapat dilihat oleh pengguna di sekitar Anda.</p>
+            </div>
+        </div>
+
+        <div class="faq-accordion-item" data-cat="market">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag market">Domain Toko</span>
+                    <div class="faq-q-text">Apakah saya mendapatkan halaman website toko publik gratis?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Ya! Setiap akun DuitKu otomatis memiliki domain etalase toko publik (misal: <code>duitku.my.id/toko/namatoko</code>). Anda dapat membagikan link ini ke media sosial atau WhatsApp agar calon pembeli bisa melihat katalog produk Anda.</p>
+            </div>
+        </div>
+
+        <!-- 7. TAGIHAN & HUTANG -->
+        <div class="faq-accordion-item" data-cat="debt">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag debt">Tagihan &amp; Hutang</span>
+                    <div class="faq-q-text">Bagaimana cara mengaktifkan pengingat jatuh tempo tagihan &amp; hutang?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Masuk ke menu <strong>Tagihan (Bills)</strong> atau <strong>Hutang-Piutang</strong>. Masukkan tanggal jatuh tempo. Dashboard akan menampilkan banner pengingat darurat H-3, H-1, dan hari H, serta mengirimkan notifikasi agar Anda tidak telat bayar.</p>
+            </div>
+        </div>
+
+        <!-- 8. TRAVELING & VALAS -->
+        <div class="faq-accordion-item" data-cat="travel">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag travel">Traveling</span>
+                    <div class="faq-q-text">Bagaimana mencatat pengeluaran liburan &amp; kalkulator kurs valas?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Buka menu <strong>Travelling</strong> untuk mengelompokkan anggaran perjalanan per trip. Anda juga dapat menggunakan tombol <strong>Kurs Terkini</strong> di dashboard untuk menghitung konversi valuta asing (USD, SGD, MYR, JPY, EUR ke IDR) secara langsung.</p>
+            </div>
+        </div>
+
+        <!-- 9. TV & HIBURAN -->
+        <div class="faq-accordion-item" data-cat="media">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag media">Streaming &amp; Game</span>
+                    <div class="faq-q-text">Bagaimana cara menonton TV streaming dan bermain mini-game?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>DuitKu dilengkapi fitur multimedia terpadu: Anda dapat menonton siaran TV digital nasional langsung di kartu dashboard, streaming video server lokal, membaca berita terkini, serta memainkan aneka game ringan di menu <strong>Game Hub</strong>.</p>
+            </div>
+        </div>
+
+        <!-- 10. KEAMANAN & CADANGAN -->
+        <div class="faq-accordion-item" data-cat="secure">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag secure">Cadangan &amp; Keamanan</span>
+                    <div class="faq-q-text">Apakah data saya aman jika koneksi offline atau berganti HP?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Aplikasi DuitKu menggunakan arsitektur <em>Offline-First</em>: transaksi tetap tersimpan di perangkat saat offline dan otomatis sinkron saat terhubung internet. Anda juga dapat mengekspor cadangan penuh dalam format JSON di menu <strong>Pengaturan &gt; Cadangan &amp; Pemulihan</strong>.</p>
             </div>
         </div>
 
     </div>
 
-    <!-- Empty search notice -->
-    <div id="faqEmptyState" class="card border-0 bg-light rounded-4 p-4 text-center text-muted" style="display:none;">
-        <div style="font-size: 32px;" class="mb-2">🔍</div>
-        <div class="fw-bold">Pertanyaan tidak ditemukan</div>
-        <div class="small">Coba kata kunci lain atau hubungi pengurus RT Anda.</div>
+    <!-- Empty State for Search -->
+    <div id="faqEmptyState" class="faq-empty-state">
+        <div style="font-size: 36px; margin-bottom: 8px;">🔍</div>
+        <h5 style="font-weight: 800; margin-bottom: 4px; color: var(--text-primary);">Tidak ada jawaban ditemukan</h5>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Coba gunakan kata kunci lain atau pilih topik di atas.</p>
+        <button type="button" class="faq-pill active" onclick="clearFaqSearch()">Reset Pencarian</button>
     </div>
 
 </div>
 
 <script>
-(function() {
-    const items = document.querySelectorAll('.faq-accordion-item');
+document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('faqSearchInput');
     const searchClear = document.getElementById('faqSearchClear');
-    const filterPills = document.querySelectorAll('.faq-pill');
+    const filterPills = document.querySelectorAll('#faqFilterPills .faq-pill');
+    const items = document.querySelectorAll('#faqAccordionContainer .faq-accordion-item');
     const emptyState = document.getElementById('faqEmptyState');
+    let activeCategory = 'all';
 
     // Auto-Collapse Accordion Logic
-    items.forEach(item => {
+    items.forEach(function(item) {
         const btn = item.querySelector('.faq-header-btn');
-        const body = item.querySelector('.faq-body-content');
+        const content = item.querySelector('.faq-body-content');
 
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', function() {
             const isOpen = item.classList.contains('open');
 
-            // Auto-collapse all other open items
-            items.forEach(otherItem => {
+            // Close all other accordion items
+            items.forEach(function(otherItem) {
                 if (otherItem !== item && otherItem.classList.contains('open')) {
                     otherItem.classList.remove('open');
-                    otherItem.querySelector('.faq-body-content').style.maxHeight = null;
+                    otherItem.querySelector('.faq-body-content').style.maxHeight = '0px';
                 }
             });
 
+            // Toggle current item
             if (isOpen) {
                 item.classList.remove('open');
-                body.style.maxHeight = null;
+                content.style.maxHeight = '0px';
             } else {
                 item.classList.add('open');
-                body.style.maxHeight = (body.scrollHeight + 32) + 'px';
+                content.style.maxHeight = content.scrollHeight + 30 + 'px';
             }
         });
     });
 
     // Category Filter Pills
-    filterPills.forEach(pill => {
-        pill.addEventListener('click', () => {
+    filterPills.forEach(function(pill) {
+        pill.addEventListener('click', function() {
             filterPills.forEach(p => p.classList.remove('active'));
-            pill.classList.add('active');
-            applyFilter();
+            this.classList.add('active');
+            activeCategory = this.getAttribute('data-category');
+            filterFaqItems();
         });
     });
 
-    // Search Filter
-    searchInput.addEventListener('input', () => {
-        if (searchInput.value.trim().length > 0) {
-            searchClear.style.display = 'block';
-        } else {
-            searchClear.style.display = 'none';
-        }
-        applyFilter();
+    // Live Search
+    searchInput.addEventListener('input', function() {
+        searchClear.style.display = this.value.trim() ? 'block' : 'none';
+        filterFaqItems();
     });
 
     window.clearFaqSearch = function() {
         searchInput.value = '';
         searchClear.style.display = 'none';
-        applyFilter();
+        filterPills.forEach(p => {
+            if (p.getAttribute('data-category') === 'all') p.classList.add('active');
+            else p.classList.remove('active');
+        });
+        activeCategory = 'all';
+        filterFaqItems();
     };
 
-    function applyFilter() {
-        const query = searchInput.value.toLowerCase().trim();
-        const activeCategory = document.querySelector('.faq-pill.active').getAttribute('data-category');
+    function filterFaqItems() {
+        const query = (searchInput.value || '').toLowerCase().trim();
         let visibleCount = 0;
 
-        items.forEach(item => {
+        items.forEach(function(item) {
             const cat = item.getAttribute('data-cat');
-            const text = item.textContent.toLowerCase();
+            const text = item.innerText.toLowerCase();
             const matchesCat = (activeCategory === 'all' || cat === activeCategory);
-            const matchesQuery = (query === '' || text.includes(query));
+            const matchesQuery = (!query || text.includes(query));
 
             if (matchesCat && matchesQuery) {
                 item.style.display = 'block';
                 visibleCount++;
             } else {
                 item.style.display = 'none';
-                if (item.classList.contains('open')) {
-                    item.classList.remove('open');
-                    item.querySelector('.faq-body-content').style.maxHeight = null;
-                }
+                item.classList.remove('open');
+                item.querySelector('.faq-body-content').style.maxHeight = '0px';
             }
         });
 
-        emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+        emptyState.style.display = (visibleCount === 0) ? 'block' : 'none';
     }
-})();
+});
 </script>
 <?= $this->endSection() ?>

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/neighborhood.dart';
 import '../../services/api_service.dart';
+import '../../theme.dart';
 import 'tool_sharing_screen.dart';
 import 'errand_screen.dart';
 
@@ -66,6 +67,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
         'house_number': house,
       });
 
+      if (!mounted) return;
       if (res['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Berhasil bergabung.')));
         _loadData();
@@ -73,6 +75,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Gagal bergabung.')));
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
@@ -89,173 +92,365 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
     } catch (_) {}
   }
 
+  void _showCreateRtDialog() {
+    final nameCtrl = TextEditingController();
+    final rtCtrl = TextEditingController();
+    final rwCtrl = TextEditingController();
+    final subdistrictCtrl = TextEditingController();
+    final districtCtrl = TextEditingController();
+    final cityCtrl = TextEditingController();
+    final provinceCtrl = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 20, right: 20, top: 20),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text('Daftarkan RT Baru', textAlign: TextAlign.center, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 16),
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nama RT / Perumahan', hintText: 'Misal: RT 04 Griya Asri')),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: TextField(controller: rtCtrl, decoration: const InputDecoration(labelText: 'RT', hintText: '04'))),
+                  const SizedBox(width: 10),
+                  Expanded(child: TextField(controller: rwCtrl, decoration: const InputDecoration(labelText: 'RW', hintText: '02'))),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: TextField(controller: subdistrictCtrl, decoration: const InputDecoration(labelText: 'Kelurahan'))),
+                  const SizedBox(width: 10),
+                  Expanded(child: TextField(controller: districtCtrl, decoration: const InputDecoration(labelText: 'Kecamatan'))),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: TextField(controller: cityCtrl, decoration: const InputDecoration(labelText: 'Kota / Kab'))),
+                  const SizedBox(width: 10),
+                  Expanded(child: TextField(controller: provinceCtrl, decoration: const InputDecoration(labelText: 'Provinsi'))),
+                ],
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                ),
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  try {
+                    final res = await ApiService.instance.post('neighborhood/store', {
+                      'name': nameCtrl.text.trim(),
+                      'rt': rtCtrl.text.trim(),
+                      'rw': rwCtrl.text.trim(),
+                      'subdistrict': subdistrictCtrl.text.trim(),
+                      'district': districtCtrl.text.trim(),
+                      'city': cityCtrl.text.trim(),
+                      'province': provinceCtrl.text.trim(),
+                    });
+                    if (res['success'] == true) {
+                      _loadData();
+                    }
+                  } catch (_) {}
+                },
+                child: const Text('Daftarkan RT', style: TextStyle(fontWeight: FontWeight.w800)),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: const Text('Komunitas & Sistem RT', style: TextStyle(fontWeight: FontWeight.w800)),
-        centerTitle: false,
+        titleSpacing: 0,
+        title: const Text('Komunitas & Sistem RT', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadData,
-              child: _joined && _neighborhood != null ? _buildDashboard() : _buildJoinView(),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                children: [
+                  if (!_joined) ...[
+                    _buildJoinView(),
+                  ] else ...[
+                    _buildNeighborhoodView(),
+                  ],
+                ],
+              ),
             ),
     );
   }
 
   Widget _buildJoinView() {
-    return ListView(
-      padding: const EdgeInsets.all(20),
+    return Column(
       children: [
-        const SizedBox(height: 10),
-        Center(
-          child: Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: const Color(0xFFECFDF5),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: const Center(child: Text('🏘️', style: TextStyle(fontSize: 36))),
-          ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'Gabung Komunitas RT',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF111827)),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 6),
-        const Text(
-          'Hubungkan akun Anda dengan lingkungan RT setempat untuk meminjam alat warga dan menikmati titip belanja tetangga.',
-          style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 24),
-
-        // Input Kode RT
-        TextField(
-          controller: _codeCtrl,
-          textCapitalization: TextCapitalization.characters,
-          style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1),
-          decoration: InputDecoration(
-            labelText: 'Kode Unik RT',
-            hintText: 'Contoh: RT04-RW02-GRIYA-2026',
-            prefixIcon: const Icon(Icons.key),
-            filled: true,
-            fillColor: const Color(0xFFF9FAFB),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Status Tempat Tinggal
-        const Text('Status Tempat Tinggal', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => _residenceStatus = 'permanent'),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: _residenceStatus == 'permanent' ? const Color(0xFFECFDF5) : Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: _residenceStatus == 'permanent' ? const Color(0xFF059669) : const Color(0xFFE5E7EB),
-                      width: 1.5,
-                    ),
-                  ),
-                  child: const Column(
-                    children: [
-                      Text('🏠 Warga Tetap', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      SizedBox(height: 2),
-                      Text('KTP beralamat di RT ini', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => _residenceStatus = 'temporary'),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: _residenceStatus == 'temporary' ? const Color(0xFFECFDF5) : Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: _residenceStatus == 'temporary' ? const Color(0xFF059669) : const Color(0xFFE5E7EB),
-                      width: 1.5,
-                    ),
-                  ),
-                  child: const Column(
-                    children: [
-                      Text('🏢 Domisili', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      SizedBox(height: 2),
-                      Text('Kontrak / kost', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Nomor Rumah
-        TextField(
-          controller: _houseCtrl,
-          decoration: InputDecoration(
-            labelText: 'Nomor Rumah / Blok',
-            hintText: 'Contoh: Blok B No. 12',
-            prefixIcon: const Icon(Icons.home),
-            filled: true,
-            fillColor: const Color(0xFFF9FAFB),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF059669),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-          ),
-          onPressed: _joinRt,
-          child: const Text('Gabung Sekarang', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDashboard() {
-    final rt = _neighborhood!;
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Hero Card
+        // Hero Join Card
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF065F46), Color(0xFF059669), Color(0xFF10B981)],
+              colors: [Color(0xFF064E3B), Color(0xFF059669), Color(0xFF10B981)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF059669).withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+                color: const Color(0xFF059669).withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Center(child: Text('🏘️', style: TextStyle(fontSize: 32))),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Gabung Komunitas RT',
+                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Hubungkan akun Anda dengan lingkungan RT setempat untuk menikmati pinjam alat bersama dan layanan titip belanja tetangga.',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12.5, height: 1.45),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Join Form Card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.border, width: 1.5),
+            boxShadow: AppColors.cardShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('🔑 KODE UNIK RT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.textMuted, letterSpacing: 0.5)),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _codeCtrl,
+                textCapitalization: TextCapitalization.characters,
+                style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.2, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Misal: RT04-RW02-GRIYA-2026',
+                  prefixIcon: const Icon(Icons.tag_rounded, size: 20, color: AppColors.textMuted),
+                  filled: true,
+                  fillColor: AppColors.bg,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              const Text('🏠 STATUS TEMPAT TINGGAL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.textMuted, letterSpacing: 0.5)),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildRadioOption(
+                      title: 'Warga Tetap',
+                      subtitle: 'KTP di RT ini',
+                      icon: '🏠',
+                      value: 'permanent',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildRadioOption(
+                      title: 'Domisili',
+                      subtitle: 'Kontrak / Kost',
+                      icon: '🏢',
+                      value: 'temporary',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              const Text('📍 NOMOR RUMAH / BLOK', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.textMuted, letterSpacing: 0.5)),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _houseCtrl,
+                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+                decoration: InputDecoration(
+                  hintText: 'Misal: Blok B No. 12 / Jl. Mawar No. 4',
+                  prefixIcon: const Icon(Icons.home_outlined, size: 20, color: AppColors.textMuted),
+                  filled: true,
+                  fillColor: AppColors.bg,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  elevation: 0,
+                ),
+                onPressed: _joinRt,
+                child: const Text('Bergabung Sekarang →', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Secondary Create RT Button Card
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('👑', style: TextStyle(fontSize: 20)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text('Anda Pengurus / Ketua RT?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                    Text('Inisiasi lingkungan RT baru untuk warga Anda.', style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
+                  ],
+                ),
+              ),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                onPressed: _showCreateRtDialog,
+                child: const Text('Daftar RT', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRadioOption({required String title, required String subtitle, required String icon, required String value}) {
+    final isSelected = _residenceStatus == value;
+    return Material(
+      color: isSelected ? AppColors.primary.withValues(alpha: 0.08) : AppColors.bg,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => setState(() => _residenceStatus = value),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: isSelected ? AppColors.primary : AppColors.border, width: isSelected ? 1.5 : 1.0),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(icon, style: const TextStyle(fontSize: 16)),
+                  Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: isSelected ? AppColors.primary : AppColors.border, width: 1.5),
+                      color: isSelected ? AppColors.primary : Colors.transparent,
+                    ),
+                    child: isSelected ? const Icon(Icons.check, size: 10, color: Colors.white) : null,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5)),
+              Text(subtitle, style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNeighborhoodView() {
+    final rt = _neighborhood!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Hero Card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF064E3B), Color(0xFF059669), Color(0xFF10B981)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF059669).withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -268,7 +463,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -295,7 +490,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
               const SizedBox(height: 4),
               Text(
                 'RT ${rt.rt} / RW ${rt.rw} • Ketua: ${rt.adminName ?? "Pengurus RT"}',
-                style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.85)),
+                style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.85)),
               ),
               const SizedBox(height: 16),
               const Divider(color: Colors.white24),
@@ -310,7 +505,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -324,7 +519,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                   ),
                   Text(
                     '${rt.totalVerifiedResidents} Warga',
-                    style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -333,7 +528,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Quick Modules Grid (Tool Sharing & Errands)
+        // Quick Modules Grid
         Row(
           children: [
             Expanded(
@@ -342,12 +537,10 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.card,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
-                    ],
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: AppColors.cardShadow,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,7 +557,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                       const SizedBox(height: 12),
                       const Text('Pinjam Alat', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
                       const SizedBox(height: 2),
-                      const Text('Alat RT & sharing warga', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      const Text('Alat RT & sharing warga', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                     ],
                   ),
                 ),
@@ -377,12 +570,10 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.card,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
-                    ],
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: AppColors.cardShadow,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -399,7 +590,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                       const SizedBox(height: 12),
                       const Text('Titip Belanja', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
                       const SizedBox(height: 2),
-                      const Text('Jastip antar-tetangga', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      const Text('Belanja pasar bareng', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                     ],
                   ),
                 ),
@@ -407,104 +598,153 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
 
-        // Pending Approval Queue (If RT Admin)
+        // Approval Queue for Admin RT
         if (_isRtAdmin && _pendingResidents.isNotEmpty) ...[
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: const Color(0xFFFFFBEB),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFFDE68A)),
+              border: Border.all(color: const Color(0xFFFDE68A), width: 1.5),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.person_add, color: Colors.amber, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Antrean Verifikasi Warga (${_pendingResidents.length})',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    const Text('⏳ Antrean Approval Warga', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF92400E))),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(color: const Color(0xFFFDE68A), borderRadius: BorderRadius.circular(12)),
+                      child: Text('${_pendingResidents.length} Menunggu', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF92400E))),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                ..._pendingResidents.map((p) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                ..._pendingResidents.map((pr) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFFEF3C7)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          Text('Rumah No. ${p.houseNumber ?? "-"} • ${p.residenceStatus == "permanent" ? "KTP" : "Domisili"}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(pr.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                              Text('Rumah: ${pr.houseNumber ?? "-"} • ${pr.residenceStatus == "permanent" ? "Tetap" : "Domisili"}',
+                                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.close_rounded, color: AppColors.expense, size: 20),
+                                onPressed: () => _verifyResident(pr.id, 'reject'),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 22),
+                                onPressed: () => _verifyResident(pr.id, 'approve'),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.check_circle, color: Colors.green),
-                            onPressed: () => _verifyResident(p.id, 'approve'),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.cancel, color: Colors.red),
-                            onPressed: () => _verifyResident(p.id, 'reject'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                )),
+                    )),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
         ],
 
-        // Residents List
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Daftar Warga (${_residents.length})', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-          ],
-        ),
-        const SizedBox(height: 10),
-        ..._residents.map((r) => Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(12),
+        // Verified Residents List
+        Container(
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppColors.cardShadow,
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                backgroundColor: const Color(0xFF059669),
-                child: Text(r.name.isNotEmpty ? r.name.substring(0, 1).toUpperCase() : 'U', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('👥 Warga Terdaftar', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                  Text('${_residents.length} Total', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(r.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    Text('Rumah No. ${r.houseNumber ?? "-"} • ${r.residenceStatus == "permanent" ? "Warga Tetap" : "Warga Domisili"}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 12),
+              if (_residents.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text('Belum ada warga lain yang terdaftar.', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  ),
+                )
+              else
+                ..._residents.map((r) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.bg,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+                                child: Text(
+                                  r.name.isNotEmpty ? r.name[0].toUpperCase() : 'W',
+                                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(r.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                                  Text('Rumah: ${r.houseNumber ?? "-"}', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: r.residenceStatus == 'permanent'
+                                  ? AppColors.primary.withValues(alpha: 0.1)
+                                  : Colors.blue.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              r.residenceStatus == 'permanent' ? '🏠 Tetap' : '🏢 Domisili',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.bold,
+                                color: r.residenceStatus == 'permanent' ? AppColors.primary : Colors.blue,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
             ],
           ),
-        )),
+        ),
       ],
     );
   }
