@@ -303,12 +303,15 @@ class _SavingsScreenState extends State<SavingsScreen> {
       appBar: AppBar(
         title: const Text('Target Menabung'),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showGoalSheet(),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Target Baru', style: TextStyle(fontWeight: FontWeight.w700)),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 84),
+        child: FloatingActionButton.extended(
+          onPressed: () => _showGoalSheet(),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          icon: const Icon(Icons.add),
+          label: const Text('Target Baru', style: TextStyle(fontWeight: FontWeight.w700)),
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -338,7 +341,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                       ],
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 115),
                       itemCount: _goals.length,
                       itemBuilder: (context, index) {
                         final g = _goals[index] as Map<String, dynamic>;

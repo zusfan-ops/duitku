@@ -211,18 +211,21 @@ class _BillsScreenState extends State<BillsScreen> {
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(title: const Text('Tagihan Rutin')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAddEdit,
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Tambah', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 84),
+        child: FloatingActionButton.extended(
+          onPressed: _openAddEdit,
+          backgroundColor: AppColors.primary,
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text('Tambah', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 115),
                 children: [
                   const Text('Jadwal tagihan bulanan yang harus dibayar rutin.',
                       style: TextStyle(fontSize: 12, color: AppColors.textMuted)),

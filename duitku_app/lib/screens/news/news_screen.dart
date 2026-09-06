@@ -294,7 +294,7 @@ class _NewsScreenState extends State<NewsScreen> {
                               ),
                             )
                           : ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 115),
                               itemCount: _news.length + (_headlines.isNotEmpty && _selectedCategory == 'Semua' && _selectedSource.isEmpty && _searchQuery.isEmpty ? 1 : 0),
                               itemBuilder: (ctx, idx) {
                                 final hasHero = _headlines.isNotEmpty && _selectedCategory == 'Semua' && _selectedSource.isEmpty && _searchQuery.isEmpty;

@@ -259,12 +259,15 @@ class _RecurringScreenState extends State<RecurringScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddSheet,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah', style: TextStyle(fontWeight: FontWeight.w700)),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 84),
+        child: FloatingActionButton.extended(
+          onPressed: _showAddSheet,
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          icon: const Icon(Icons.add),
+          label: const Text('Tambah', style: TextStyle(fontWeight: FontWeight.w700)),
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -286,7 +289,7 @@ class _RecurringScreenState extends State<RecurringScreen> {
                       ])),
                     ])
                   : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 115),
                       itemCount: _recurring.length,
                       itemBuilder: (context, index) {
                         final r  = _recurring[index] as Map<String, dynamic>;

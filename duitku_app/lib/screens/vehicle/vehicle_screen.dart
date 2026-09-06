@@ -550,19 +550,22 @@ class _VehicleScreenState extends State<VehicleScreen> {
       appBar: AppBar(
         title: const Text('Kendaraan & Servis'),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddVehicleSheet(),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Kendaraan', style: TextStyle(fontWeight: FontWeight.w700)),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 84),
+        child: FloatingActionButton.extended(
+          onPressed: () => _showAddVehicleSheet(),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          icon: const Icon(Icons.add),
+          label: const Text('Kendaraan', style: TextStyle(fontWeight: FontWeight.w700)),
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 115),
                 children: [
                   if (taxAlerts.isNotEmpty) ...[
                     Container(
