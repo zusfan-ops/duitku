@@ -198,6 +198,10 @@
     background: linear-gradient(135deg, #334155 0%, #64748B 100%);
     box-shadow: 0 6px 18px rgba(100, 116, 139, 0.25);
 }
+.feat-rt {
+    background: linear-gradient(135deg, #065F46 0%, #059669 50%, #10B981 100%);
+    box-shadow: 0 6px 18px rgba(5, 150, 105, 0.28);
+}
 </style>
 <?= $this->endSection() ?>
 
@@ -337,6 +341,21 @@
     <!-- ── 2. HIBURAN & GAYA HIDUP ── -->
     <div class="features-section-title">PASAR KOMUNITAS & GAYA HIDUP</div>
     <div class="features-grid">
+
+        <!-- 0a. Komunitas RT & Pinjam Alat -->
+        <a href="/neighborhood" class="feature-card feat-rt" style="grid-column: span 2;">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <div class="feature-card-icon">
+                <span style="font-size: 16px;">🏘️</span>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Komunitas RT & Pinjam Alat</div>
+                <div class="feature-card-desc">Sistem RT, pinjam alat pertukangan & kebersihan, serta titip belanja tetangga</div>
+            </div>
+        </a>
 
         <!-- 0. Jual Beli & Sewa -->
         <a href="/marketplace" class="feature-card feat-marketplace" style="grid-column: span 2;">

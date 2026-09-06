@@ -38,6 +38,8 @@ class Filters extends BaseFilters
         'admin'         => \App\Filters\AdminFilter::class,
         'api_auth'      => \App\Filters\ApiAuthFilter::class,
         'throttle'      => \App\Filters\RateLimitFilter::class,
+        'rt_admin'      => \App\Filters\RtAdminFilter::class,
+        'resident'      => \App\Filters\ResidentFilter::class,
     ];
 
     /**

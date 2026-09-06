@@ -201,6 +201,31 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/notifications/read/(:num)', 'NotificationController::markAsRead/$1');
     $routes->get('/notifications/read-all',     'NotificationController::markAllAsRead');
     $routes->post('/notifications/read-all',    'NotificationController::markAllAsRead');
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // NEIGHBORHOOD COMMUNITY & SHARING (Sistem RT, Pinjam Alat, Titip Belanja)
+    // ─────────────────────────────────────────────────────────────────────────
+    $routes->get('/neighborhood',                     'NeighborhoodController::index');
+    $routes->get('/neighborhood/join',                'NeighborhoodController::join');
+    $routes->post('/neighborhood/join',               'NeighborhoodController::processJoin');
+    $routes->get('/neighborhood/create',              'NeighborhoodController::create');
+    $routes->post('/neighborhood/store',              'NeighborhoodController::store');
+    $routes->post('/neighborhood/resident/verify',    'NeighborhoodController::verifyResident', ['filter' => 'rt_admin']);
+    $routes->post('/neighborhood/resident/vouch',     'NeighborhoodController::vouchResident');
+
+    // Tool Sharing (Katalog & Peminjaman Alat)
+    $routes->get('/neighborhood/tools',               'CommunityToolController::index');
+    $routes->post('/neighborhood/tools/store',        'CommunityToolController::store');
+    $routes->post('/neighborhood/tools/rent',         'CommunityToolController::rent', ['filter' => 'resident']);
+    $routes->post('/neighborhood/tools/handover',     'CommunityToolController::handover');
+    $routes->post('/neighborhood/tools/return',       'CommunityToolController::returnTool');
+
+    // Titip Belanja Antar-Warga (Errands)
+    $routes->get('/neighborhood/errands',             'ErrandController::index');
+    $routes->get('/neighborhood/errands/(:num)',      'ErrandController::detail/$1');
+    $routes->post('/neighborhood/errands/store',      'ErrandController::store', ['filter' => 'resident']);
+    $routes->post('/neighborhood/errands/item',       'ErrandController::addItem', ['filter' => 'resident']);
+    $routes->post('/neighborhood/errands/deliver',    'ErrandController::deliverItem');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -515,6 +540,29 @@ $routes->group('api', function ($routes) {
         $routes->post('status/comment',                   'Api\StatusController::comment');
         $routes->get('status/(:num)/comments',            'Api\StatusController::comments/$1');
         $routes->post('status/delete/(:num)',             'Api\StatusController::delete/$1');
+
+        // Neighborhood Community & Sharing (Sistem RT, Pinjam Alat, Titip Belanja API)
+        $routes->get('neighborhood',                      'Api\NeighborhoodController::index');
+        $routes->post('neighborhood/register',            'Api\NeighborhoodController::registerRt');
+        $routes->post('neighborhood/join',                'Api\NeighborhoodController::join');
+        $routes->post('neighborhood/resident/verify',     'Api\NeighborhoodController::verifyResident', ['filter' => 'rt_admin']);
+        $routes->post('neighborhood/resident/vouch',      'Api\NeighborhoodController::vouchResident');
+
+        // Tool Sharing API
+        $routes->get('neighborhood/tools',                'Api\CommunityToolController::index');
+        $routes->post('neighborhood/tools/store',         'Api\CommunityToolController::store');
+        $routes->post('neighborhood/tools/rent',          'Api\CommunityToolController::rent', ['filter' => 'resident']);
+        $routes->post('neighborhood/tools/handover',      'Api\CommunityToolController::handover');
+        $routes->post('neighborhood/tools/return',        'Api\CommunityToolController::returnTool');
+        $routes->get('neighborhood/tools/my-rentals',     'Api\CommunityToolController::myRentals');
+
+        // Errands (Titip Belanja API)
+        $routes->get('neighborhood/errands',              'Api\ErrandController::index');
+        $routes->get('neighborhood/errands/(:num)',       'Api\ErrandController::show/$1');
+        $routes->post('neighborhood/errands/store',       'Api\ErrandController::store', ['filter' => 'resident']);
+        $routes->post('neighborhood/errands/item',        'Api\ErrandController::addItem', ['filter' => 'resident']);
+        $routes->post('neighborhood/errands/deliver',     'Api\ErrandController::deliverItem');
+        $routes->get('neighborhood/errands/my-requests',  'Api\ErrandController::myRequests');
     });
 });
 

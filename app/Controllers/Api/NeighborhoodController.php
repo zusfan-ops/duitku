@@ -1,0 +1,147 @@
+<?php
+
+namespace App\Controllers\Api;
+
+use App\Models\NeighborhoodModel;
+use App\Models\NeighborhoodVouchModel;
+use App\Models\UserModel;
+use App\Services\NeighborhoodService;
+
+class NeighborhoodController extends ApiController
+{
+    protected NeighborhoodModel      $neighborhoodModel;
+    protected NeighborhoodVouchModel $vouchModel;
+    protected UserModel              $userModel;
+    protected NeighborhoodService    $neighborhoodService;
+
+    public function __construct()
+    {
+        $this->neighborhoodModel   = new NeighborhoodModel();
+        $this->vouchModel          = new NeighborhoodVouchModel();
+        $this->userModel           = new UserModel();
+        $this->neighborhoodService = new NeighborhoodService();
+    }
+
+    /**
+     * Detail Komunitas RT User Saat Ini
+     * GET /api/neighborhood
+     */
+    public function index()
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+        if (!$neighborhoodId) {
+            return $this->ok([
+                'joined'        => false,
+                'neighborhood'  => null,
+                'message'       => 'Anda belum terhubung ke komunitas RT mana pun.',
+            ]);
+        }
+
+        $neighborhood = $this->neighborhoodModel->getWithDetails($neighborhoodId);
+        $residents    = $this->neighborhoodModel->getResidents($neighborhoodId, 'verified');
+        $isRtAdmin    = in_array(strtolower(trim((string)($user['role'] ?? ''))), ['rt_admin', 'admin', 'administrator'], true);
+        $pending      = $isRtAdmin ? $this->neighborhoodModel->getResidents($neighborhoodId, 'pending') : [];
+
+        return $this->ok([
+            'joined'            => true,
+            'neighborhood'      => $neighborhood,
+            'residents'         => $residents,
+            'pending_residents' => $pending,
+            'is_rt_admin'       => $isRtAdmin,
+            'verification_status' => $user['rt_verification_status'] ?? 'unregistered',
+        ]);
+    }
+
+    /**
+     * Daftarkan RT Baru
+     * POST /api/neighborhood/register
+     */
+    public function registerRt()
+    {
+        $userId = $this->uid();
+        $json   = $this->request->getJSON(true) ?? [];
+
+        if (empty($json['subdistrict']) || empty($json['rt']) || empty($json['rw'])) {
+            return $this->fail('Data wilayah tidak lengkap (RT, RW, Kelurahan/Desa wajib diisi).');
+        }
+
+        try {
+            $id = $this->neighborhoodService->registerNeighborhood($json, $userId);
+            return $this->ok([
+                'message'         => 'Lingkungan RT berhasil didaftarkan!',
+                'neighborhood_id' => $id,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->fail('Gagal mendaftarkan RT: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Gabung ke RT via Kode Unik
+     * POST /api/neighborhood/join
+     */
+    public function join()
+    {
+        $userId = $this->uid();
+        $json   = $this->request->getJSON(true) ?? [];
+
+        $code   = trim($json['unique_code'] ?? '');
+        $status = $json['residence_status'] ?? 'permanent';
+        $house  = $json['house_number'] ?? null;
+
+        if (empty($code)) {
+            return $this->fail('Kode unik RT wajib diisi.');
+        }
+
+        $result = $this->neighborhoodService->joinNeighborhood($userId, $code, $status, $house);
+        if (!$result['success']) {
+            return $this->fail($result['message']);
+        }
+
+        return $this->ok($result);
+    }
+
+    /**
+     * Verifikasi Warga (Approve/Reject) oleh Ketua RT
+     * POST /api/neighborhood/resident/verify
+     */
+    public function verifyResident()
+    {
+        $adminUserId = $this->uid();
+        $json        = $this->request->getJSON(true) ?? [];
+
+        $targetId = (int)($json['target_user_id'] ?? 0);
+        $action   = $json['action'] ?? 'approve';
+        $notes    = $json['notes'] ?? null;
+
+        $res = $this->neighborhoodService->verifyResident($adminUserId, $targetId, $action, $notes);
+        if (!$res['success']) {
+            return $this->fail($res['message']);
+        }
+
+        return $this->ok($res);
+    }
+
+    /**
+     * Penjamin (Vouch) untuk Tetangga
+     * POST /api/neighborhood/resident/vouch
+     */
+    public function vouchResident()
+    {
+        $voucherUserId = $this->uid();
+        $json          = $this->request->getJSON(true) ?? [];
+
+        $targetId = (int)($json['target_user_id'] ?? 0);
+        $notes    = $json['notes'] ?? null;
+
+        $res = $this->neighborhoodService->vouchForNeighbor($voucherUserId, $targetId, $notes);
+        if (!$res['success']) {
+            return $this->fail($res['message']);
+        }
+
+        return $this->ok($res);
+    }
+}

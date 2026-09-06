@@ -14,7 +14,8 @@ class UserModel extends Model
     protected $protectFields    = true;
 
     protected $allowedFields = [
-        'name', 'username', 'email', 'phone', 'password', 'avatar', 'role', 'fcm_token'
+        'name', 'username', 'email', 'phone', 'password', 'avatar', 'role', 'fcm_token',
+        'neighborhood_id', 'residence_status', 'rt_verification_status', 'house_number', 'rt_verified_at', 'rt_verified_by'
     ];
 
     public function __construct()
