@@ -16,6 +16,7 @@ import 'developer_screen.dart';
 import 'export/export_screen.dart';
 import 'recurring/recurring_screen.dart';
 import 'savings/savings_screen.dart';
+import 'notifications/notification_tone_sheet.dart';
 import '../services/widget_helper.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -609,6 +610,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: const Text('Panduan pasang widget saldo di Android', style: TextStyle(fontSize: 12)),
                       trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
                       onTap: _showWidgetGuide,
+                    ),
+                  ),
+                  _card(
+                    ListTile(
+                      leading: _icon(Icons.music_note_rounded, color: const Color(0xFF8B5CF6)),
+                      title: const Text('Nada Notifikasi', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: const Text('Ganti nada pesan, broadcast, & sistem', style: TextStyle(fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                      onTap: () => NotificationToneSheet.show(context),
                     ),
                   ),
                   const SizedBox(height: 16),

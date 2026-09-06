@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,6 +10,20 @@ import '../screens/chat/direct_chat_screen.dart';
 import '../screens/marketplace/market_chat_screen.dart';
 import 'update_checker_service.dart';
 
+class NotificationToneOption {
+  final String key;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  const NotificationToneOption({
+    required this.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+}
+
 class LocalNotificationService {
   LocalNotificationService._();
   static final LocalNotificationService instance = LocalNotificationService._();
@@ -16,13 +31,130 @@ class LocalNotificationService {
   final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   bool _isInitialized = false;
 
-  static const String _channelId = 'duitku_broadcast_channel';
-  static const String _channelName = 'Notifikasi & Pengumuman DuitKu';
+  static const String _toneChannelName = 'com.duitku.duitku_app/notification_settings';
+  static const MethodChannel _nativeChannel = MethodChannel(_toneChannelName);
+  static const String _tonePrefKey = 'duitku_notification_tone';
+
+  static const List<NotificationToneOption> toneOptions = [
+    NotificationToneOption(
+      key: 'default',
+      title: 'Bawaan Sistem (Default)',
+      subtitle: 'Nada dering notifikasi standar bawaan ponsel',
+      icon: Icons.phone_android_rounded,
+    ),
+    NotificationToneOption(
+      key: 'tone_kaching',
+      title: 'DuitKu Kasir (Kaching!)',
+      subtitle: 'Efek koin & kasir belanja yang renyah',
+      icon: Icons.paid_rounded,
+    ),
+    NotificationToneOption(
+      key: 'tone_chime',
+      title: 'Chime Modern',
+      subtitle: 'Dua nada lembut & berkelas (A5-E6)',
+      icon: Icons.music_note_rounded,
+    ),
+    NotificationToneOption(
+      key: 'tone_ding',
+      title: 'Kristal Ding',
+      subtitle: 'Lonceng satu ketukan jernih & elegan',
+      icon: Icons.notifications_active_rounded,
+    ),
+    NotificationToneOption(
+      key: 'tone_pop',
+      title: 'Bubble Pop',
+      subtitle: 'Gelembung ceria dan ringan',
+      icon: Icons.bubble_chart_rounded,
+    ),
+    NotificationToneOption(
+      key: 'tone_melody',
+      title: 'Harmoni Ceria',
+      subtitle: 'Tiga nada harmonis naik (C-E-G)',
+      icon: Icons.auto_awesome_rounded,
+    ),
+  ];
+
+  static const String _baseChannelId = 'duitku_broadcast_channel';
+  static const String _baseChannelName = 'Notifikasi & Pengumuman DuitKu';
   static const String _channelDesc = 'Menerima pemberitahuan pembaruan aplikasi dan pengumuman resmi';
 
-  static const String _chatChannelId = 'duitku_chat_channel';
-  static const String _chatChannelName = 'Pesan & Chat Marketplace';
+  static const String _baseChatChannelId = 'duitku_chat_channel';
+  static const String _baseChatChannelName = 'Pesan & Chat Marketplace';
   static const String _chatChannelDesc = 'Pemberitahuan pesan chat masuk langsung seperti WhatsApp';
+
+  Future<String> getSelectedToneKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_tonePrefKey) ?? 'default';
+  }
+
+  Future<void> setSelectedToneKey(String toneKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tonePrefKey, toneKey);
+    await _ensureChannelsForTone(toneKey);
+  }
+
+  Future<void> previewTone(String toneKey) async {
+    try {
+      await _nativeChannel.invokeMethod('previewTone', {'tone': toneKey});
+    } catch (_) {}
+  }
+
+  Future<void> stopTone() async {
+    try {
+      await _nativeChannel.invokeMethod('stopTone');
+    } catch (_) {}
+  }
+
+  Future<void> openSystemNotificationSettings({String? channelId}) async {
+    try {
+      final activeTone = await getSelectedToneKey();
+      final targetId = channelId ?? (activeTone == 'default' ? _baseChatChannelId : '${_baseChatChannelId}_$activeTone');
+      await _nativeChannel.invokeMethod('openNotificationSettings', {
+        'channelId': targetId,
+      });
+    } catch (_) {}
+  }
+
+  String _getBroadcastChannelId(String tone) {
+    return tone == 'default' ? _baseChannelId : '${_baseChannelId}_$tone';
+  }
+
+  String _getChatChannelId(String tone) {
+    return tone == 'default' ? _baseChatChannelId : '${_baseChatChannelId}_$tone';
+  }
+
+  Future<void> _ensureChannelsForTone(String tone) async {
+    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin == null) return;
+
+    final soundResource = tone == 'default' ? null : RawResourceAndroidNotificationSound(tone);
+    final opt = toneOptions.firstWhere((o) => o.key == tone, orElse: () => toneOptions.first);
+
+    await androidPlugin.createNotificationChannel(
+      AndroidNotificationChannel(
+        _getBroadcastChannelId(tone),
+        tone == 'default' ? _baseChannelName : '$_baseChannelName (${opt.title})',
+        description: _channelDesc,
+        importance: Importance.max,
+        enableVibration: true,
+        playSound: true,
+        sound: soundResource,
+      ),
+    );
+
+    await androidPlugin.createNotificationChannel(
+      AndroidNotificationChannel(
+        _getChatChannelId(tone),
+        tone == 'default' ? _baseChatChannelName : '$_baseChatChannelName (${opt.title})',
+        description: _chatChannelDesc,
+        importance: Importance.max,
+        enableVibration: true,
+        playSound: true,
+        showBadge: true,
+        sound: soundResource,
+      ),
+    );
+  }
 
   Future<void> init() async {
     if (_isInitialized) return;
@@ -56,33 +188,9 @@ class LocalNotificationService {
     // Request runtime permission for Android 13+ (POST_NOTIFICATIONS)
     await requestPermission();
 
-    // Create Notification Channels for Android
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    if (androidPlugin != null) {
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          _channelId,
-          _channelName,
-          description: _channelDesc,
-          importance: Importance.max,
-          enableVibration: true,
-          playSound: true,
-        ),
-      );
-
-      // Channel khusus chat berprioritas maksimal (Heads-up pop-up + Suara + Getar layaknya WhatsApp)
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          _chatChannelId,
-          _chatChannelName,
-          description: _chatChannelDesc,
-          importance: Importance.max,
-          enableVibration: true,
-          playSound: true,
-          showBadge: true,
-        ),
-      );
-    }
+    // Pastikan channel untuk nada yang sedang aktif terdaftar
+    final activeTone = await getSelectedToneKey();
+    await _ensureChannelsForTone(activeTone);
 
     _isInitialized = true;
   }
@@ -105,13 +213,19 @@ class LocalNotificationService {
   }) async {
     await init();
 
+    final tone = await getSelectedToneKey();
+    await _ensureChannelsForTone(tone);
+    final targetChannelId = _getBroadcastChannelId(tone);
+    final sound = tone == 'default' ? null : RawResourceAndroidNotificationSound(tone);
+
     final androidDetails = AndroidNotificationDetails(
-      _channelId,
-      _channelName,
+      targetChannelId,
+      _baseChannelName,
       channelDescription: _channelDesc,
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
+      sound: sound,
       enableVibration: true,
       subText: subText,
       styleInformation: BigTextStyleInformation(
@@ -142,13 +256,19 @@ class LocalNotificationService {
   }) async {
     await init();
 
+    final tone = await getSelectedToneKey();
+    await _ensureChannelsForTone(tone);
+    final targetChannelId = _getChatChannelId(tone);
+    final sound = tone == 'default' ? null : RawResourceAndroidNotificationSound(tone);
+
     final androidDetails = AndroidNotificationDetails(
-      _chatChannelId,
-      _chatChannelName,
+      targetChannelId,
+      _baseChatChannelName,
       channelDescription: _chatChannelDesc,
       importance: Importance.max,
       priority: Priority.max,
       playSound: true,
+      sound: sound,
       enableVibration: true,
       category: AndroidNotificationCategory.message,
       subText: subText ?? 'Chat Masuk',
@@ -407,12 +527,17 @@ class LocalNotificationService {
   }
 
   /// Notifikasi uji coba (test push notification)
-  Future<void> showTestNotification() async {
+  Future<void> showTestNotification({String? tone}) async {
+    if (tone != null) {
+      await setSelectedToneKey(tone);
+    }
+    final activeTone = tone ?? await getSelectedToneKey();
+    final opt = toneOptions.firstWhere((o) => o.key == activeTone, orElse: () => toneOptions.first);
     await showNotification(
       id: 99999,
-      title: '🔔 Uji Coba Push Notifikasi',
-      body: 'Push notifikasi sistem DuitKu telah aktif dan bekerja dengan normal!',
-      subText: 'DuitKu System',
+      title: '🔔 Uji Coba Nada Notifikasi',
+      body: 'Nada "${opt.title}" berhasil diatur dan siap berbunyi!',
+      subText: 'DuitKu Tone Test',
     );
   }
 }

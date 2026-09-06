@@ -6,6 +6,7 @@ import '../../services/api_service.dart';
 import '../../services/local_notification_service.dart';
 import '../../services/update_checker_service.dart';
 import '../../theme.dart';
+import 'notification_tone_sheet.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -115,6 +116,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         title: const Text('Pemberitahuan & Pesan'),
         centerTitle: false,
         actions: [
+          IconButton(
+            tooltip: 'Atur Nada Notifikasi',
+            icon: const Icon(Icons.music_note_rounded, size: 20),
+            onPressed: () => NotificationToneSheet.show(context),
+          ),
           IconButton(
             tooltip: 'Uji Push Notifikasi HP',
             icon: const Icon(Icons.notifications_active_outlined, size: 20),
