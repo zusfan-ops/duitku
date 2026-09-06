@@ -226,6 +226,9 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/neighborhood/errands/store',      'ErrandController::store', ['filter' => 'resident']);
     $routes->post('/neighborhood/errands/item',       'ErrandController::addItem', ['filter' => 'resident']);
     $routes->post('/neighborhood/errands/deliver',    'ErrandController::deliverItem');
+
+    // Pusat Bantuan & FAQ
+    $routes->get('/faq',                              'FaqController::index');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

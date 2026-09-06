@@ -330,6 +330,45 @@
 
     </div>
 
+    <!-- BANTUAN & PANDUAN PENGGUNAAN -->
+    <div class="settings-section">
+        <div class="settings-section-label">BANTUAN &amp; PANDUAN PENGGUNAAN</div>
+        <div class="settings-list">
+            <!-- Pusat Bantuan & FAQ -->
+            <a href="/faq" class="settings-item" style="text-decoration:none;cursor:pointer">
+                <div class="settings-item-left">
+                    <div class="settings-item-icon" style="background:#EFF6FF;color:#2563EB">
+                        ❓
+                    </div>
+                    <div>
+                        <div class="settings-item-label">Pusat Bantuan &amp; FAQ Lengkap</div>
+                        <div style="font-size:11px;color:var(--text-muted)">Panduan Sistem RT, Pinjam Alat, Titip Belanja &amp; Keuangan</div>
+                    </div>
+                </div>
+                <div class="settings-item-right">
+                    <span style="font-size:12px;color:var(--primary);font-weight:700">Buka FAQ</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+            </a>
+
+            <!-- Tour & Onboarding Ulang -->
+            <div class="settings-item" onclick="if(window.openOnboardingTour) window.openOnboardingTour();" style="cursor:pointer">
+                <div class="settings-item-left">
+                    <div class="settings-item-icon" style="background:#ECFDF5;color:#059669">
+                        ✨
+                    </div>
+                    <div>
+                        <div class="settings-item-label">Mulai Tour &amp; Panduan Interaktif</div>
+                        <div style="font-size:11px;color:var(--text-muted)">Lihat ringkasan pengenalan fitur utama aplikasi</div>
+                    </div>
+                </div>
+                <div class="settings-item-right">
+                    <span style="font-size:12px;color:var(--primary);font-weight:700">Mulai Tour</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- App Info -->
     <div class="settings-section">
         <div class="settings-section-label">TENTANG APLIKASI</div>
