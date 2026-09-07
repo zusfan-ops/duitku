@@ -2338,28 +2338,20 @@ class _FeatureStrip extends StatelessWidget {
           child: Text('FITUR UNGGULAN',
               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .5, color: AppColors.textMuted)),
         ),
-        SizedBox(
-          height: 150,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.zero,
-            itemCount: 5,
-            separatorBuilder: (context, index) => const SizedBox(width: 10),
-            itemBuilder: (context, i) {
-              switch (i) {
-                case 0:
-                  return const _BelanjaHomeCard();
-                case 1:
-                  return const _TodoHomeCard();
-                case 2:
-                  return const _NeighborhoodHomeCard();
-                case 3:
-                  return _ArisanHomeCard(data: data);
-                default:
-                  return _SubscriptionHomeCard(data: data);
-              }
-            },
-          ),
+        GridView.count(
+          crossAxisCount: 3,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 1,
+          children: [
+            const _BelanjaHomeCard(),
+            const _TodoHomeCard(),
+            const _NeighborhoodHomeCard(),
+            _ArisanHomeCard(data: data),
+            _SubscriptionHomeCard(data: data),
+          ],
         ),
       ],
     );
@@ -2388,33 +2380,38 @@ class _FeatureTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 150,
-        height: 150,
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [BoxShadow(color: shadowColor.withValues(alpha: .30), blurRadius: 14, offset: const Offset(0, 6))],
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: shadowColor.withValues(alpha: .28), blurRadius: 12, offset: const Offset(0, 5))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: .22), borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: Colors.white, size: 20),
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: .22), borderRadius: BorderRadius.circular(9)),
+              child: Icon(icon, color: Colors.white, size: 15),
             ),
-            const Spacer(),
-            Text(title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.2, height: 1.15)),
-            const SizedBox(height: 4),
-            Text(subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.white.withValues(alpha: .85), height: 1.3)),
+            const SizedBox(height: 2),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.2, height: 1.15)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white.withValues(alpha: .85), height: 1.25)),
+                ],
+              ),
+            ),
           ],
         ),
       ),

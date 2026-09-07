@@ -354,21 +354,20 @@
     font-size: 11px; font-weight: 700; text-transform: uppercase;
     letter-spacing: .5px; color: var(--text-muted);
 }
-.fw-strip {
-    display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px;
-    scrollbar-width: none; -ms-overflow-style: none;
+.fw-grid {
+    display: grid; gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(104px, 116px));
 }
-.fw-strip::-webkit-scrollbar { display: none; }
 .fw-card {
-    flex-shrink: 0; width: 150px; height: 150px; border-radius: 18px;
-    padding: 14px; text-decoration: none; color: #fff;
+    aspect-ratio: 1 / 1; border-radius: 16px;
+    padding: 12px; text-decoration: none; color: #fff;
     display: flex; flex-direction: column; box-sizing: border-box;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, .16);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, .14);
     transition: transform .14s ease; position: relative; overflow: hidden;
 }
 .fw-card::before {
     content: ''; position: absolute; top: -20px; right: -20px;
-    width: 70px; height: 70px; border-radius: 50%;
+    width: 60px; height: 60px; border-radius: 50%;
     background: rgba(255, 255, 255, .08); pointer-events: none;
 }
 .fw-card:active { transform: scale(.96); }
@@ -378,18 +377,18 @@
 .fw-cyan    { background: linear-gradient(135deg, #155E75 0%, #0E7490 50%, #06B6D4 100%); }
 .fw-amber   { background: linear-gradient(135deg, #B45309 0%, #D97706 50%, #F59E0B 100%); }
 .fw-icon {
-    width: 36px; height: 36px; border-radius: 10px;
+    width: 30px; height: 30px; border-radius: 9px;
     background: rgba(255, 255, 255, .22);
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px; line-height: 1;
+    font-size: 15px; line-height: 1;
 }
 .fw-title {
-    font-size: 14px; font-weight: 800; letter-spacing: -.2px;
+    font-size: 12px; font-weight: 800; letter-spacing: -.2px;
     line-height: 1.15; color: #fff; margin-top: auto;
 }
 .fw-sub {
-    font-size: 10.5px; font-weight: 600; color: rgba(255, 255, 255, .85);
-    line-height: 1.3; margin-top: 4px;
+    font-size: 10px; font-weight: 600; color: rgba(255, 255, 255, .85);
+    line-height: 1.25; margin-top: 3px;
 }
 
 /* ── Wallet Strip ─────────────────────────────────────────────── */
@@ -2311,7 +2310,7 @@
         <div class="fw-hdr">
             <span class="fw-lbl">Fitur Unggulan</span>
         </div>
-        <div class="fw-strip">
+        <div class="fw-grid">
             <a href="/belanja" class="fw-card fw-rose">
                 <div class="fw-icon">🛒</div>
                 <div class="fw-title">Daftar Rencana Belanja</div>
