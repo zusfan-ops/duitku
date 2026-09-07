@@ -59,6 +59,11 @@ class NeighborhoodController extends ApiController
         $announcements  = $this->neighborhoodService->getAnnouncementsData($neighborhoodId, 15);
         $discussions    = $this->neighborhoodService->getDiscussionsData($neighborhoodId, 30);
 
+        // Data Alat RT (parity with web NeighborhoodController::index())
+        $toolsCount     = $this->toolModel->where('neighborhood_id', $neighborhoodId)->where('status !=', 'retired')->countAllResults();
+        $toolsAvailable = $this->toolModel->where('neighborhood_id', $neighborhoodId)->where('status', 'available')->countAllResults();
+        $toolsRented    = $this->toolModel->where('neighborhood_id', $neighborhoodId)->where('status', 'rented')->countAllResults();
+
         return $this->ok([
             'joined'              => true,
             'neighborhood'        => $neighborhood,
@@ -76,6 +81,7 @@ class NeighborhoodController extends ApiController
             'discussions'         => $discussions,
             'tools_count'         => $toolsCount,
             'tools_available'     => $toolsAvailable,
+            'tools_rented'        => $toolsRented,
         ]);
     }
 
