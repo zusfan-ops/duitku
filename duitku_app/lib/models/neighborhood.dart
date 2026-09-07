@@ -80,6 +80,9 @@ class Resident {
     this.houseNumber,
   });
 
+  bool get isRtAdmin => role.toLowerCase() == 'rt_admin' || role.toLowerCase() == 'admin' || role.toLowerCase() == 'administrator';
+  bool get isTreasurer => role.toLowerCase() == 'rt_treasurer' || role.toLowerCase() == 'bendahara';
+
   factory Resident.fromJson(Map<String, dynamic> json) {
     return Resident(
       id: int.tryParse(json['id'].toString()) ?? 0,
@@ -95,10 +98,114 @@ class Resident {
   }
 }
 
+class NeighborhoodKasItem {
+  final int id;
+  final int neighborhoodId;
+  final int createdBy;
+  final String type; // 'in' or 'out'
+  final String category;
+  final double amount;
+  final String date;
+  final String? description;
+  final String? recordedByName;
+
+  NeighborhoodKasItem({
+    required this.id,
+    required this.neighborhoodId,
+    required this.createdBy,
+    required this.type,
+    required this.category,
+    required this.amount,
+    required this.date,
+    this.description,
+    this.recordedByName,
+  });
+
+  factory NeighborhoodKasItem.fromJson(Map<String, dynamic> json) {
+    return NeighborhoodKasItem(
+      id: int.tryParse(json['id'].toString()) ?? 0,
+      neighborhoodId: int.tryParse(json['neighborhood_id'].toString()) ?? 0,
+      createdBy: int.tryParse(json['created_by'].toString()) ?? 0,
+      type: json['type']?.toString() ?? 'in',
+      category: json['category']?.toString() ?? 'Iuran Warga',
+      amount: double.tryParse(json['amount'].toString()) ?? 0.0,
+      date: json['date']?.toString() ?? '',
+      description: json['description']?.toString(),
+      recordedByName: json['recorded_by_name']?.toString(),
+    );
+  }
+}
+
+class NeighborhoodKasSummary {
+  final double totalIn;
+  final double totalOut;
+  final double balance;
+  final int countIn;
+  final int countOut;
+
+  NeighborhoodKasSummary({
+    this.totalIn = 0.0,
+    this.totalOut = 0.0,
+    this.balance = 0.0,
+    this.countIn = 0,
+    this.countOut = 0,
+  });
+
+  factory NeighborhoodKasSummary.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return NeighborhoodKasSummary();
+    return NeighborhoodKasSummary(
+      totalIn: double.tryParse(json['total_in']?.toString() ?? '0') ?? 0.0,
+      totalOut: double.tryParse(json['total_out']?.toString() ?? '0') ?? 0.0,
+      balance: double.tryParse(json['balance']?.toString() ?? '0') ?? 0.0,
+      countIn: int.tryParse(json['count_in']?.toString() ?? '0') ?? 0,
+      countOut: int.tryParse(json['count_out']?.toString() ?? '0') ?? 0,
+    );
+  }
+}
+
+class NeighborhoodActivity {
+  final int id;
+  final int neighborhoodId;
+  final String title;
+  final String category;
+  final String eventDate;
+  final String eventTime;
+  final String location;
+  final String? description;
+  final String? creatorName;
+
+  NeighborhoodActivity({
+    required this.id,
+    required this.neighborhoodId,
+    required this.title,
+    required this.category,
+    required this.eventDate,
+    required this.eventTime,
+    required this.location,
+    this.description,
+    this.creatorName,
+  });
+
+  factory NeighborhoodActivity.fromJson(Map<String, dynamic> json) {
+    return NeighborhoodActivity(
+      id: int.tryParse(json['id'].toString()) ?? 0,
+      neighborhoodId: int.tryParse(json['neighborhood_id'].toString()) ?? 0,
+      title: json['title']?.toString() ?? '',
+      category: json['category']?.toString() ?? 'Kerja Bakti',
+      eventDate: json['event_date']?.toString() ?? '',
+      eventTime: json['event_time']?.toString() ?? '08:00',
+      location: json['location']?.toString() ?? 'Lingkungan RT',
+      description: json['description']?.toString(),
+      creatorName: json['creator_name']?.toString(),
+    );
+  }
+}
+
 class CommunityTool {
   final int id;
   final int neighborhoodId;
   final int? ownerUserId;
+  final String? ownerName;
   final String name;
   final String category;
   final String? description;
@@ -113,6 +220,7 @@ class CommunityTool {
     required this.id,
     required this.neighborhoodId,
     this.ownerUserId,
+    this.ownerName,
     required this.name,
     required this.category,
     this.description,
@@ -120,7 +228,7 @@ class CommunityTool {
     required this.status,
     required this.rentalFee,
     required this.depositAmount,
-    this.maxRentDays = 3,
+    required this.maxRentDays,
     required this.conditionNote,
   });
 
@@ -129,6 +237,7 @@ class CommunityTool {
       id: int.tryParse(json['id'].toString()) ?? 0,
       neighborhoodId: int.tryParse(json['neighborhood_id'].toString()) ?? 0,
       ownerUserId: json['owner_user_id'] != null ? int.tryParse(json['owner_user_id'].toString()) : null,
+      ownerName: json['owner_name']?.toString(),
       name: json['name']?.toString() ?? '',
       category: json['category']?.toString() ?? 'Pertukangan',
       description: json['description']?.toString(),
@@ -144,50 +253,53 @@ class CommunityTool {
 
 class ToolRental {
   final int id;
+  final int neighborhoodId;
   final int toolId;
   final String toolName;
-  final String? toolPhoto;
   final int borrowerUserId;
+  final String borrowerName;
   final String status;
   final double rentalFee;
   final double depositAmount;
-  final double rtFeeAmount;
   final String startDate;
   final String dueDate;
-  final String handoverToken;
-  final String returnToken;
+  final String? actualReturnDate;
+  final String? handoverToken;
+  final String? returnToken;
 
   ToolRental({
     required this.id,
+    required this.neighborhoodId,
     required this.toolId,
     required this.toolName,
-    this.toolPhoto,
     required this.borrowerUserId,
+    required this.borrowerName,
     required this.status,
     required this.rentalFee,
     required this.depositAmount,
-    this.rtFeeAmount = 2000.0,
     required this.startDate,
     required this.dueDate,
-    required this.handoverToken,
-    required this.returnToken,
+    this.actualReturnDate,
+    this.handoverToken,
+    this.returnToken,
   });
 
   factory ToolRental.fromJson(Map<String, dynamic> json) {
     return ToolRental(
       id: int.tryParse(json['id'].toString()) ?? 0,
+      neighborhoodId: int.tryParse(json['neighborhood_id'].toString()) ?? 0,
       toolId: int.tryParse(json['tool_id'].toString()) ?? 0,
       toolName: json['tool_name']?.toString() ?? 'Alat',
-      toolPhoto: json['tool_photo']?.toString(),
       borrowerUserId: int.tryParse(json['borrower_user_id'].toString()) ?? 0,
+      borrowerName: json['borrower_name']?.toString() ?? 'Warga',
       status: json['status']?.toString() ?? 'requested',
       rentalFee: double.tryParse(json['rental_fee']?.toString() ?? '0') ?? 0.0,
       depositAmount: double.tryParse(json['deposit_amount']?.toString() ?? '0') ?? 0.0,
-      rtFeeAmount: double.tryParse(json['rt_fee_amount']?.toString() ?? '2000') ?? 2000.0,
       startDate: json['start_date']?.toString() ?? '',
       dueDate: json['due_date']?.toString() ?? '',
-      handoverToken: json['handover_token']?.toString() ?? '',
-      returnToken: json['return_token']?.toString() ?? '',
+      actualReturnDate: json['actual_return_date']?.toString(),
+      handoverToken: json['handover_token']?.toString(),
+      returnToken: json['return_token']?.toString(),
     );
   }
 }
@@ -208,7 +320,7 @@ class Errand {
     required this.organizerUserId,
     required this.organizerName,
     this.organizerHouse,
-    required this.destinationStore,
+    this.destinationStore,
     this.description,
     required this.cutoffTime,
     required this.status,

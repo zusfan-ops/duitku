@@ -7,15 +7,19 @@ use App\Models\NeighborhoodVouchModel;
 use App\Models\UserModel;
 use App\Models\WalletModel;
 use App\Models\NotificationModel;
+use App\Models\NeighborhoodKasModel;
+use App\Models\NeighborhoodActivityModel;
 
 class NeighborhoodService
 {
-    protected NeighborhoodModel      $neighborhoodModel;
-    protected NeighborhoodVouchModel $vouchModel;
-    protected UserModel              $userModel;
-    protected WalletModel            $walletModel;
-    protected NotificationModel      $notificationModel;
-    protected FcmService             $fcmService;
+    protected NeighborhoodModel         $neighborhoodModel;
+    protected NeighborhoodVouchModel    $vouchModel;
+    protected UserModel                 $userModel;
+    protected WalletModel               $walletModel;
+    protected NotificationModel         $notificationModel;
+    protected NeighborhoodKasModel      $kasModel;
+    protected NeighborhoodActivityModel $activityModel;
+    protected FcmService                $fcmService;
 
     public function __construct()
     {
@@ -24,6 +28,8 @@ class NeighborhoodService
         $this->userModel         = new UserModel();
         $this->walletModel       = new WalletModel();
         $this->notificationModel = new NotificationModel();
+        $this->kasModel          = new NeighborhoodKasModel();
+        $this->activityModel     = new NeighborhoodActivityModel();
         $this->fcmService        = new FcmService();
     }
 
@@ -378,6 +384,184 @@ class NeighborhoodService
         return [
             'success' => true,
             'message' => "Jaminan berhasil dicatat ({$vouchCount}/2 penjamin). Butuh " . max(0, 2 - $vouchCount) . " penjamin lagi untuk aktivasi otomatis.",
+        ];
+    }
+
+    /**
+     * Cek apakah user berwenang mencatat kas RT / membuat agenda (Ketua RT atau Bendahara)
+     */
+    public function canManageKasOrAgenda(int $neighborhoodId, int $userId): bool
+    {
+        $user = $this->userModel->find($userId);
+        if (!$user || (int)($user['neighborhood_id'] ?? 0) !== $neighborhoodId) {
+            return false;
+        }
+
+        $role = strtolower(trim((string)($user['role'] ?? '')));
+        if (in_array($role, ['rt_admin', 'admin', 'administrator', 'rt_treasurer', 'bendahara'], true)) {
+            return true;
+        }
+
+        $rt = $this->neighborhoodModel->find($neighborhoodId);
+        return $rt && (int)($rt['admin_user_id'] ?? 0) === $userId;
+    }
+
+    /**
+     * Catat Transaksi Kas RT (Pemasukan / Pengeluaran)
+     */
+    public function recordKas(int $neighborhoodId, int $userId, array $data, ?string $receiptPhoto = null): array
+    {
+        if (!$this->canManageKasOrAgenda($neighborhoodId, $userId)) {
+            return ['success' => false, 'message' => 'Hanya Ketua RT atau Bendahara yang berwenang mencatat Kas RT.'];
+        }
+
+        $type   = in_array($data['type'] ?? '', ['in', 'out'], true) ? $data['type'] : 'in';
+        $amount = (float)str_replace(['.', ','], ['', '.'], (string)($data['amount'] ?? '0'));
+        $category = trim($data['category'] ?? ($type === 'in' ? 'Iuran Warga' : 'Lainnya'));
+        $date     = !empty($data['date']) ? $data['date'] : date('Y-m-d');
+        $desc     = trim($data['description'] ?? '');
+
+        if ($amount <= 0) {
+            return ['success' => false, 'message' => 'Nominal transaksi kas harus lebih dari Rp 0.'];
+        }
+
+        $id = $this->kasModel->insert([
+            'neighborhood_id' => $neighborhoodId,
+            'created_by'      => $userId,
+            'type'            => $type,
+            'category'        => $category,
+            'amount'          => $amount,
+            'date'            => $date,
+            'description'     => $desc,
+            'receipt_photo'   => $receiptPhoto,
+            'reference_type'  => $data['reference_type'] ?? 'manual',
+            'reference_id'    => !empty($data['reference_id']) ? (int)$data['reference_id'] : null,
+        ]);
+
+        return [
+            'success' => true,
+            'message' => ($type === 'in' ? 'Pemasukan' : 'Pengeluaran') . ' kas RT berhasil dicatat.',
+            'kas_id'  => $id,
+        ];
+    }
+
+    /**
+     * Hapus Catatan Kas RT
+     */
+    public function deleteKas(int $neighborhoodId, int $userId, int $kasId): array
+    {
+        if (!$this->canManageKasOrAgenda($neighborhoodId, $userId)) {
+            return ['success' => false, 'message' => 'Akses ditolak.'];
+        }
+
+        $row = $this->kasModel->where('neighborhood_id', $neighborhoodId)->find($kasId);
+        if (!$row) {
+            return ['success' => false, 'message' => 'Data kas tidak ditemukan.'];
+        }
+
+        $this->kasModel->delete($kasId);
+        return ['success' => true, 'message' => 'Catatan kas RT berhasil dihapus.'];
+    }
+
+    /**
+     * Ambil Ringkasan & Riwayat Kas RT
+     */
+    public function getKasData(int $neighborhoodId, int $limit = 50): array
+    {
+        return [
+            'summary' => $this->kasModel->getSummary($neighborhoodId),
+            'ledger'  => $this->kasModel->getLedger($neighborhoodId, $limit),
+        ];
+    }
+
+    /**
+     * Buat Agenda Kegiatan RT
+     */
+    public function createActivity(int $neighborhoodId, int $userId, array $data): array
+    {
+        if (!$this->canManageKasOrAgenda($neighborhoodId, $userId)) {
+            return ['success' => false, 'message' => 'Hanya Ketua RT atau Bendahara yang dapat membuat agenda kegiatan.'];
+        }
+
+        $title = trim($data['title'] ?? '');
+        if (empty($title)) {
+            return ['success' => false, 'message' => 'Judul kegiatan wajib diisi.'];
+        }
+
+        $id = $this->activityModel->insert([
+            'neighborhood_id' => $neighborhoodId,
+            'created_by'      => $userId,
+            'title'           => $title,
+            'category'        => $data['category'] ?? 'Kerja Bakti',
+            'event_date'      => !empty($data['event_date']) ? $data['event_date'] : date('Y-m-d'),
+            'event_time'      => !empty($data['event_time']) ? $data['event_time'] : '08:00',
+            'location'        => trim($data['location'] ?? 'Lingkungan RT'),
+            'description'     => trim($data['description'] ?? ''),
+            'status'          => 'upcoming',
+        ]);
+
+        return [
+            'success'     => true,
+            'message'     => 'Agenda kegiatan berhasil ditambahkan ke jadwal RT.',
+            'activity_id' => $id,
+        ];
+    }
+
+    /**
+     * Hapus Agenda Kegiatan RT
+     */
+    public function deleteActivity(int $neighborhoodId, int $userId, int $activityId): array
+    {
+        if (!$this->canManageKasOrAgenda($neighborhoodId, $userId)) {
+            return ['success' => false, 'message' => 'Akses ditolak.'];
+        }
+
+        $row = $this->activityModel->where('neighborhood_id', $neighborhoodId)->find($activityId);
+        if (!$row) {
+            return ['success' => false, 'message' => 'Agenda kegiatan tidak ditemukan.'];
+        }
+
+        $this->activityModel->delete($activityId);
+        return ['success' => true, 'message' => 'Agenda kegiatan berhasil dihapus.'];
+    }
+
+    /**
+     * Ambil Agenda Kegiatan RT
+     */
+    public function getActivitiesData(int $neighborhoodId): array
+    {
+        return [
+            'upcoming' => $this->activityModel->getUpcomingActivities($neighborhoodId, 10),
+            'all'      => $this->activityModel->getAllActivities($neighborhoodId, 30),
+        ];
+    }
+
+    /**
+     * Ubah Jabatan Warga (Jadikan Bendahara / Warga Biasa)
+     */
+    public function setResidentRole(int $neighborhoodId, int $adminUserId, int $targetUserId, string $role): array
+    {
+        $admin = $this->userModel->find($adminUserId);
+        $isRtAdmin = in_array(strtolower(trim((string)($admin['role'] ?? ''))), ['rt_admin', 'admin', 'administrator'], true);
+        $rt = $this->neighborhoodModel->find($neighborhoodId);
+        if (!$isRtAdmin && (!isset($rt['admin_user_id']) || (int)$rt['admin_user_id'] !== $adminUserId)) {
+            return ['success' => false, 'message' => 'Hanya Ketua RT yang berwenang menetapkan pengurus & bendahara.'];
+        }
+
+        $target = $this->userModel->find($targetUserId);
+        if (!$target || (int)($target['neighborhood_id'] ?? 0) !== $neighborhoodId) {
+            return ['success' => false, 'message' => 'Warga tidak ditemukan di RT ini.'];
+        }
+
+        $newRole = ($role === 'rt_treasurer' || $role === 'bendahara') ? 'rt_treasurer' : 'user';
+        $this->neighborhoodModel->updateResidentRole($neighborhoodId, $targetUserId, $newRole);
+
+        $roleLabel = $newRole === 'rt_treasurer' ? 'Bendahara RT' : 'Warga';
+
+        return [
+            'success' => true,
+            'message' => "Jabatan {$target['name']} berhasil diubah menjadi {$roleLabel}.",
+            'role'    => $newRole,
         ];
     }
 }

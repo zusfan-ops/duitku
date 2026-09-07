@@ -31,6 +31,39 @@ class CommunityToolModel extends Model
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureTable();
+    }
+
+    public function ensureTable(): void
+    {
+        $db = \Config\Database::connect();
+        if (!$db->tableExists($this->table)) {
+            $sql = "CREATE TABLE IF NOT EXISTS `{$this->table}` (
+                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `neighborhood_id` INT UNSIGNED NOT NULL,
+                `owner_user_id` INT UNSIGNED NULL DEFAULT NULL,
+                `name` VARCHAR(150) NOT NULL,
+                `category` VARCHAR(100) NOT NULL DEFAULT 'Pertukangan',
+                `description` TEXT NULL,
+                `photo` VARCHAR(255) NULL,
+                `status` ENUM('available', 'rented', 'maintenance', 'retired') NOT NULL DEFAULT 'available',
+                `rental_fee` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                `deposit_amount` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                `max_rent_days` INT NOT NULL DEFAULT 3,
+                `condition_note` VARCHAR(255) NULL DEFAULT 'Baik & Siap Pakai',
+                `created_at` DATETIME NULL,
+                `updated_at` DATETIME NULL,
+                INDEX `idx_neighborhood_status` (`neighborhood_id`, `status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+            try {
+                $db->query($sql);
+            } catch (\Throwable $e) {}
+        }
+    }
+
     public static function getCategories(): array
     {
         return [

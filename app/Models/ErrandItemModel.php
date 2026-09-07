@@ -35,6 +35,43 @@ class ErrandItemModel extends Model
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureTable();
+    }
+
+    public function ensureTable(): void
+    {
+        $db = \Config\Database::connect();
+        if (!$db->tableExists($this->table)) {
+            $sql = "CREATE TABLE IF NOT EXISTS `{$this->table}` (
+                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `errand_id` INT UNSIGNED NOT NULL,
+                `requester_user_id` INT UNSIGNED NOT NULL,
+                `item_name` VARCHAR(150) NOT NULL,
+                `quantity` INT NOT NULL DEFAULT 1,
+                `unit` VARCHAR(50) NOT NULL DEFAULT 'pcs',
+                `estimated_price` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                `actual_price` DECIMAL(12,2) NULL,
+                `service_fee` DECIMAL(12,2) NOT NULL DEFAULT 2000.00,
+                `status` ENUM('requested', 'accepted', 'purchased', 'delivering', 'delivered', 'cancelled') NOT NULL DEFAULT 'requested',
+                `handover_token` VARCHAR(32) NULL,
+                `notes` TEXT NULL,
+                `receipt_photo` VARCHAR(255) NULL,
+                `transaction_id` INT UNSIGNED NULL,
+                `organizer_tx_id` INT UNSIGNED NULL,
+                `delivered_at` DATETIME NULL,
+                `created_at` DATETIME NULL,
+                `updated_at` DATETIME NULL,
+                INDEX `idx_errand_status` (`errand_id`, `status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+            try {
+                $db->query($sql);
+            } catch (\Throwable $e) {}
+        }
+    }
+
     /**
      * Dapatkan daftar barang titipan untuk suatu sesi errand
      */

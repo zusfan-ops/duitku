@@ -41,10 +41,48 @@ class ToolRentalModel extends Model
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureTable();
+    }
+
     public function ensureTable(): void
     {
         $db = \Config\Database::connect();
-        if ($db->tableExists($this->table)) {
+        if (!$db->tableExists($this->table)) {
+            $sql = "CREATE TABLE IF NOT EXISTS `{$this->table}` (
+                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `neighborhood_id` INT UNSIGNED NOT NULL,
+                `tool_id` INT UNSIGNED NOT NULL,
+                `borrower_user_id` INT UNSIGNED NOT NULL,
+                `status` ENUM('requested', 'approved', 'active', 'returned', 'overdue', 'disputed', 'cancelled') NOT NULL DEFAULT 'requested',
+                `rental_fee` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                `deposit_amount` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                `rt_fee_amount` DECIMAL(12,2) NOT NULL DEFAULT 2000.00,
+                `rt_fee_transaction_id` INT UNSIGNED NULL DEFAULT NULL,
+                `start_date` DATE NOT NULL,
+                `due_date` DATE NOT NULL,
+                `actual_return_date` DATE NULL DEFAULT NULL,
+                `handover_token` VARCHAR(32) NULL,
+                `return_token` VARCHAR(32) NULL,
+                `handover_confirmed_by` INT UNSIGNED NULL DEFAULT NULL,
+                `return_confirmed_by` INT UNSIGNED NULL DEFAULT NULL,
+                `borrower_note` TEXT NULL,
+                `admin_note` TEXT NULL,
+                `dispute_reason` TEXT NULL,
+                `fee_transaction_id` INT UNSIGNED NULL DEFAULT NULL,
+                `deposit_transaction_id` INT UNSIGNED NULL DEFAULT NULL,
+                `refund_transaction_id` INT UNSIGNED NULL DEFAULT NULL,
+                `created_at` DATETIME NULL,
+                `updated_at` DATETIME NULL,
+                INDEX `idx_neighborhood_borrower` (`neighborhood_id`, `borrower_user_id`),
+                INDEX `idx_status` (`status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+            try {
+                $db->query($sql);
+            } catch (\Throwable $e) {}
+        } else {
             $cols = [
                 'rt_fee_amount'         => "DECIMAL(12,2) NOT NULL DEFAULT 2000.00",
                 'rt_fee_transaction_id' => "INT UNSIGNED NULL DEFAULT NULL",

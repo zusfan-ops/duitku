@@ -5,6 +5,7 @@ namespace App\Controllers\Api;
 use App\Models\NeighborhoodModel;
 use App\Models\NeighborhoodVouchModel;
 use App\Models\UserModel;
+use App\Models\CommunityToolModel;
 use App\Services\NeighborhoodService;
 
 class NeighborhoodController extends ApiController
@@ -12,6 +13,7 @@ class NeighborhoodController extends ApiController
     protected NeighborhoodModel      $neighborhoodModel;
     protected NeighborhoodVouchModel $vouchModel;
     protected UserModel              $userModel;
+    protected CommunityToolModel     $toolModel;
     protected NeighborhoodService    $neighborhoodService;
 
     public function __construct()
@@ -19,6 +21,7 @@ class NeighborhoodController extends ApiController
         $this->neighborhoodModel   = new NeighborhoodModel();
         $this->vouchModel          = new NeighborhoodVouchModel();
         $this->userModel           = new UserModel();
+        $this->toolModel           = new CommunityToolModel();
         $this->neighborhoodService = new NeighborhoodService();
     }
 
@@ -42,16 +45,35 @@ class NeighborhoodController extends ApiController
 
         $neighborhood = $this->neighborhoodModel->getWithDetails($neighborhoodId);
         $residents    = $this->neighborhoodModel->getResidents($neighborhoodId, 'verified');
-        $isRtAdmin    = in_array(strtolower(trim((string)($user['role'] ?? ''))), ['rt_admin', 'admin', 'administrator'], true);
+        $userRole     = strtolower(trim((string)($user['role'] ?? '')));
+        $isRtAdmin    = in_array($userRole, ['rt_admin', 'admin', 'administrator'], true);
+        $isTreasurer  = in_array($userRole, ['rt_treasurer', 'bendahara'], true);
+        $canManageKas = $this->neighborhoodService->canManageKasOrAgenda($neighborhoodId, $userId);
         $pending      = $isRtAdmin ? $this->neighborhoodModel->getResidents($neighborhoodId, 'pending') : [];
 
+        // Kas RT & Agenda Kegiatan
+        $kasData        = $this->neighborhoodService->getKasData($neighborhoodId);
+        $activitiesData = $this->neighborhoodService->getActivitiesData($neighborhoodId);
+
+        // Alat RT
+        $toolsCount     = $this->toolModel->where('neighborhood_id', $neighborhoodId)->where('status !=', 'retired')->countAllResults();
+        $toolsAvailable = $this->toolModel->where('neighborhood_id', $neighborhoodId)->where('status', 'available')->countAllResults();
+
         return $this->ok([
-            'joined'            => true,
-            'neighborhood'      => $neighborhood,
-            'residents'         => $residents,
-            'pending_residents' => $pending,
-            'is_rt_admin'       => $isRtAdmin,
+            'joined'              => true,
+            'neighborhood'        => $neighborhood,
+            'residents'           => $residents,
+            'pending_residents'   => $pending,
+            'is_rt_admin'         => $isRtAdmin,
+            'is_treasurer'        => $isTreasurer,
+            'can_manage_kas'      => $canManageKas,
             'verification_status' => $user['rt_verification_status'] ?? 'unregistered',
+            'kas_summary'         => $kasData['summary'],
+            'kas_ledger'          => $kasData['ledger'],
+            'upcoming_activities' => $activitiesData['upcoming'],
+            'all_activities'      => $activitiesData['all'],
+            'tools_count'         => $toolsCount,
+            'tools_available'     => $toolsAvailable,
         ]);
     }
 
@@ -137,6 +159,134 @@ class NeighborhoodController extends ApiController
         }
 
         return $this->ok($result);
+    }
+
+    /**
+     * Catat Kas RT (Pemasukan / Pengeluaran)
+     * POST /api/neighborhood/kas/store
+     */
+    public function storeKas()
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        if (!$neighborhoodId) {
+            return $this->fail('Anda belum terhubung ke komunitas RT mana pun.');
+        }
+
+        $post = $this->request->getPost();
+        if (empty($post)) {
+            $post = $this->request->getJSON(true) ?? [];
+        }
+
+        $receiptPath = null;
+        if (!empty($post['receipt_photo_base64'])) {
+            $rawB64 = $post['receipt_photo_base64'];
+            $ext = 'jpg';
+            if (preg_match('/^data:image\/(\w+);base64,/', $rawB64, $type)) {
+                $rawB64 = substr($rawB64, strpos($rawB64, ',') + 1);
+                $ext = strtolower($type[1]);
+                if ($ext === 'jpeg') $ext = 'jpg';
+            }
+            $decoded = base64_decode($rawB64);
+            if ($decoded !== false) {
+                $uploadDir = FCPATH . 'uploads/kas_rt/';
+                if (!is_dir($uploadDir)) @mkdir($uploadDir, 0755, true);
+                $filename = 'kas_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+                file_put_contents($uploadDir . $filename, $decoded);
+                $receiptPath = '/uploads/kas_rt/' . $filename;
+            }
+        }
+
+        $res = $this->neighborhoodService->recordKas($neighborhoodId, $userId, $post, $receiptPath);
+        if (!$res['success']) {
+            return $this->fail($res['message']);
+        }
+
+        return $this->ok($res);
+    }
+
+    /**
+     * Hapus Catatan Kas RT
+     * POST /api/neighborhood/kas/delete/(:num)
+     */
+    public function deleteKas(int $kasId)
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        $res = $this->neighborhoodService->deleteKas($neighborhoodId, $userId, $kasId);
+        if (!$res['success']) {
+            return $this->fail($res['message']);
+        }
+
+        return $this->ok($res);
+    }
+
+    /**
+     * Tambah Agenda Kegiatan RT
+     * POST /api/neighborhood/activity/store
+     */
+    public function storeActivity()
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        if (!$neighborhoodId) {
+            return $this->fail('Anda belum terhubung ke komunitas RT mana pun.');
+        }
+
+        $json = $this->request->getJSON(true) ?? $this->request->getPost();
+        $res  = $this->neighborhoodService->createActivity($neighborhoodId, $userId, $json);
+
+        if (!$res['success']) {
+            return $this->fail($res['message']);
+        }
+
+        return $this->ok($res);
+    }
+
+    /**
+     * Hapus Agenda Kegiatan RT
+     * POST /api/neighborhood/activity/delete/(:num)
+     */
+    public function deleteActivity(int $activityId)
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        $res = $this->neighborhoodService->deleteActivity($neighborhoodId, $userId, $activityId);
+        if (!$res['success']) {
+            return $this->fail($res['message']);
+        }
+
+        return $this->ok($res);
+    }
+
+    /**
+     * Ubah Jabatan Warga (Jadikan Bendahara / Warga)
+     * POST /api/neighborhood/member/role
+     */
+    public function changeMemberRole()
+    {
+        $adminUserId = $this->uid();
+        $user        = $this->userModel->find($adminUserId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        $json         = $this->request->getJSON(true) ?? $this->request->getPost();
+        $targetUserId = (int)($json['target_user_id'] ?? 0);
+        $role         = trim($json['role'] ?? 'user');
+
+        $res = $this->neighborhoodService->setResidentRole($neighborhoodId, $adminUserId, $targetUserId, $role);
+        if (!$res['success']) {
+            return $this->fail($res['message']);
+        }
+
+        return $this->ok($res);
     }
 
     /**

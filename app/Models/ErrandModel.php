@@ -28,6 +28,36 @@ class ErrandModel extends Model
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureTable();
+    }
+
+    public function ensureTable(): void
+    {
+        $db = \Config\Database::connect();
+        if (!$db->tableExists($this->table)) {
+            $sql = "CREATE TABLE IF NOT EXISTS `{$this->table}` (
+                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `neighborhood_id` INT UNSIGNED NOT NULL,
+                `organizer_user_id` INT UNSIGNED NOT NULL,
+                `destination_store` VARCHAR(150) NOT NULL,
+                `description` TEXT NULL,
+                `cutoff_time` DATETIME NOT NULL,
+                `est_delivery_time` DATETIME NULL,
+                `max_requesters` INT NOT NULL DEFAULT 5,
+                `status` ENUM('open', 'shopping', 'delivering', 'completed', 'cancelled') NOT NULL DEFAULT 'open',
+                `created_at` DATETIME NULL,
+                `updated_at` DATETIME NULL,
+                INDEX `idx_neighborhood_status` (`neighborhood_id`, `status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+            try {
+                $db->query($sql);
+            } catch (\Throwable $e) {}
+        }
+    }
+
     /**
      * Dapatkan daftar sesi titip belanja di RT
      */

@@ -212,6 +212,11 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/neighborhood/store',              'NeighborhoodController::store');
     $routes->post('/neighborhood/resident/verify',    'NeighborhoodController::verifyResident', ['filter' => 'rt_admin']);
     $routes->post('/neighborhood/resident/vouch',     'NeighborhoodController::vouchResident');
+    $routes->post('/neighborhood/kas/store',          'NeighborhoodController::storeKas');
+    $routes->post('/neighborhood/kas/delete/(:num)',  'NeighborhoodController::deleteKas/$1');
+    $routes->post('/neighborhood/activity/store',     'NeighborhoodController::storeActivity');
+    $routes->post('/neighborhood/activity/delete/(:num)', 'NeighborhoodController::deleteActivity/$1');
+    $routes->post('/neighborhood/member/role',        'NeighborhoodController::changeMemberRole');
 
     // Tool Sharing (Katalog & Peminjaman Alat)
     $routes->get('/neighborhood/tools',               'CommunityToolController::index');
@@ -556,6 +561,11 @@ $routes->group('api', function ($routes) {
         $routes->post('neighborhood/join',                'Api\NeighborhoodController::join');
         $routes->post('neighborhood/resident/verify',     'Api\NeighborhoodController::verifyResident', ['filter' => 'rt_admin']);
         $routes->post('neighborhood/resident/vouch',      'Api\NeighborhoodController::vouchResident');
+        $routes->post('neighborhood/kas/store',           'Api\NeighborhoodController::storeKas');
+        $routes->post('neighborhood/kas/delete/(:num)',   'Api\NeighborhoodController::deleteKas/$1');
+        $routes->post('neighborhood/activity/store',      'Api\NeighborhoodController::storeActivity');
+        $routes->post('neighborhood/activity/delete/(:num)', 'Api\NeighborhoodController::deleteActivity/$1');
+        $routes->post('neighborhood/member/role',         'Api\NeighborhoodController::changeMemberRole');
 
         // Tool Sharing API
         $routes->get('neighborhood/tools',                'Api\CommunityToolController::index');

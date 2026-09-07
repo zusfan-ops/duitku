@@ -163,4 +163,18 @@ class NeighborhoodModel extends Model
 
         return $builder->get()->getResultArray();
     }
+
+    /**
+     * Ubah jabatan/peran warga di RT (misal: Ketua RT mengangkat Bendahara RT)
+     */
+    public function updateResidentRole(int $neighborhoodId, int $targetUserId, string $newRole): bool
+    {
+        $validRoles = ['rt_admin', 'rt_treasurer', 'bendahara', 'resident', 'user', 'member'];
+        $roleToSet  = in_array($newRole, ['rt_treasurer', 'bendahara'], true) ? 'rt_treasurer' : 'user';
+
+        return (bool) $this->db->table('users')
+            ->where('id', $targetUserId)
+            ->where('neighborhood_id', $neighborhoodId)
+            ->update(['role' => $roleToSet]);
+    }
 }

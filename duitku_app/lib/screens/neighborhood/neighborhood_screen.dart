@@ -22,6 +22,16 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
   List<Resident> _residents = [];
   List<Resident> _pendingResidents = [];
   bool _isRtAdmin = false;
+  bool _isTreasurer = false;
+  bool _canManageKas = false;
+
+  // Kas & Activity & Tools summary data
+  NeighborhoodKasSummary _kasSummary = NeighborhoodKasSummary();
+  List<NeighborhoodKasItem> _kasLedger = [];
+  List<NeighborhoodActivity> _activities = [];
+  int _toolsCount = 0;
+  int _toolsAvailable = 0;
+  int _toolsRented = 0;
 
   final TextEditingController _codeCtrl = TextEditingController();
   final TextEditingController _houseCtrl = TextEditingController();
@@ -31,6 +41,15 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  String _formatRupiah(num value) {
+    final isNegative = value < 0;
+    final absVal = value.abs().toInt();
+    final str = absVal.toString();
+    final reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    final formatted = str.replaceAllMapped(reg, (Match m) => '${m[1]}.');
+    return '${isNegative ? "-Rp " : "Rp "}$formatted';
   }
 
   Future<void> _loadData() async {
@@ -48,6 +67,25 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
               .map((r) => Resident.fromJson(r as Map<String, dynamic>))
               .toList();
           _isRtAdmin = res['is_rt_admin'] == true;
+          _isTreasurer = res['is_treasurer'] == true;
+          _canManageKas = res['can_manage_kas'] == true;
+          _toolsCount = int.tryParse(res['tools_count']?.toString() ?? '0') ?? 0;
+          _toolsAvailable = int.tryParse(res['tools_available']?.toString() ?? '0') ?? 0;
+          _toolsRented = int.tryParse(res['tools_rented']?.toString() ?? '0') ?? 0;
+
+          if (res['kas_summary'] != null) {
+            _kasSummary = NeighborhoodKasSummary.fromJson(res['kas_summary'] as Map<String, dynamic>);
+          } else {
+            _kasSummary = NeighborhoodKasSummary();
+          }
+
+          _kasLedger = (res['kas_ledger'] as List? ?? [])
+              .map((k) => NeighborhoodKasItem.fromJson(k as Map<String, dynamic>))
+              .toList();
+
+          _activities = (res['activities'] as List? ?? [])
+              .map((a) => NeighborhoodActivity.fromJson(a as Map<String, dynamic>))
+              .toList();
         }
       }
     } catch (_) {}
@@ -126,6 +164,584 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
       );
       if (res['success'] == true) {
         _loadData();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
+  Future<void> _changeMemberRole(int targetUserId, String newRole, String memberName) async {
+    final isTreasurer = newRole == 'rt_treasurer';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(isTreasurer ? 'Tunjuk Bendahara RT?' : 'Hapus Status Bendahara?', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+        content: Text(
+          isTreasurer
+              ? 'Apakah Anda yakin ingin menunjuk $memberName sebagai Bendahara RT? Bendahara memiliki akses untuk mencatat pemasukan dan pengeluaran kas RT.'
+              : 'Kembalikan peran $memberName menjadi Warga biasa?',
+          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isTreasurer ? const Color(0xFF4F46E5) : const Color(0xFF64748B),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(isTreasurer ? 'Tunjuk Bendahara' : 'Ubah ke Warga'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final res = await ApiService.instance.post('neighborhood/resident/role', {
+        'target_user_id': targetUserId,
+        'role': newRole,
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res['message']?.toString() ?? 'Peran anggota berhasil diperbarui.'),
+          backgroundColor: const Color(0xFF059669),
+        ),
+      );
+      if (res['success'] == true) {
+        _loadData();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
+  void _showRecordKasDialog() {
+    String type = 'in';
+    String category = 'Iuran Warga';
+    final amountCtrl = TextEditingController();
+    final dateCtrl = TextEditingController(text: DateTime.now().toIso8601String().substring(0, 10));
+    final descCtrl = TextEditingController();
+    bool isSubmitting = false;
+
+    final inCategories = ['Iuran Warga', 'Biaya Pinjam Alat', 'Donasi Warga', 'Bantuan Sosial', 'Lainnya'];
+    final outCategories = ['Sampah & Kebersihan', 'Keamanan & Ronda', 'Perbaikan Sarana/Lampu', 'Konsumsi & Acara', 'Bantuan Warga Sakit', 'Lainnya'];
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) {
+          final activeCategories = type == 'in' ? inCategories : outCategories;
+          if (!activeCategories.contains(category)) {
+            category = activeCategories.first;
+          }
+
+          return SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                left: 20,
+                right: 20,
+                top: 20,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.88,
+                ),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 28),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      const Text('Catat Transaksi Kas RT', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                      const SizedBox(height: 4),
+                      const Text('Catatan kas ini akan transparan dan dapat dipantau oleh seluruh warga RT.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                      const SizedBox(height: 18),
+
+                      // Toggle Type
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setDlgState(() {
+                                type = 'in';
+                                category = inCategories.first;
+                              }),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: type == 'in' ? const Color(0xFFECFDF5) : AppColors.bg,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: type == 'in' ? const Color(0xFF059669) : AppColors.border, width: type == 'in' ? 1.5 : 1.0),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.arrow_downward_rounded, size: 18, color: type == 'in' ? const Color(0xFF059669) : AppColors.textMuted),
+                                    const SizedBox(width: 6),
+                                    Text('Pemasukan (+)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: type == 'in' ? const Color(0xFF065F46) : AppColors.textMuted)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setDlgState(() {
+                                type = 'out';
+                                category = outCategories.first;
+                              }),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: type == 'out' ? const Color(0xFFFEF2F2) : AppColors.bg,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: type == 'out' ? const Color(0xFFEF4444) : AppColors.border, width: type == 'out' ? 1.5 : 1.0),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.arrow_upward_rounded, size: 18, color: type == 'out' ? const Color(0xFFEF4444) : AppColors.textMuted),
+                                    const SizedBox(width: 6),
+                                    Text('Pengeluaran (-)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: type == 'out' ? const Color(0xFF991B1B) : AppColors.textMuted)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Nominal
+                      TextField(
+                        controller: amountCtrl,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                        decoration: InputDecoration(
+                          labelText: 'Jumlah Nominal (Rp)',
+                          hintText: 'Contoh: 50000',
+                          prefixIcon: const Icon(Icons.payments_outlined, size: 20),
+                          filled: true,
+                          fillColor: AppColors.bg,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Category Dropdown
+                      DropdownButtonFormField<String>(
+                        value: category,
+                        decoration: InputDecoration(
+                          labelText: 'Kategori Kas',
+                          filled: true,
+                          fillColor: AppColors.bg,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                        ),
+                        items: activeCategories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)))).toList(),
+                        onChanged: (v) {
+                          if (v != null) setDlgState(() => category = v);
+                        },
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Date
+                      TextField(
+                        controller: dateCtrl,
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          labelText: 'Tanggal Transaksi',
+                          prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20),
+                          filled: true,
+                          fillColor: AppColors.bg,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                        ),
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2035),
+                          );
+                          if (picked != null) {
+                            dateCtrl.text = picked.toIso8601String().substring(0, 10);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Description
+                      TextField(
+                        controller: descCtrl,
+                        maxLines: 2,
+                        decoration: InputDecoration(
+                          labelText: 'Keterangan (Opsional)',
+                          hintText: 'Misal: Iuran Agustusan warga Blok A',
+                          filled: true,
+                          fillColor: AppColors.bg,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: type == 'in' ? const Color(0xFF059669) : const Color(0xFFEF4444),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                          elevation: 0,
+                        ),
+                        onPressed: isSubmitting
+                            ? null
+                            : () async {
+                                final amt = double.tryParse(amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0.0;
+                                if (amt <= 0) {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nominal harus lebih besar dari 0.')));
+                                  return;
+                                }
+
+                                setDlgState(() => isSubmitting = true);
+                                try {
+                                  final res = await ApiService.instance.post('neighborhood/kas', {
+                                    'type': type,
+                                    'category': category,
+                                    'amount': amt,
+                                    'date': dateCtrl.text.trim(),
+                                    'description': descCtrl.text.trim(),
+                                  });
+                                  if (!mounted) return;
+                                  if (ctx.mounted) Navigator.pop(ctx);
+                                  if (res['success'] == true) {
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Transaksi kas berhasil dicatat!'), backgroundColor: const Color(0xFF059669)));
+                                    _loadData();
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Gagal mencatat kas.')));
+                                  }
+                                } catch (e) {
+                                  if (!mounted) return;
+                                  setDlgState(() => isSubmitting = false);
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                                }
+                              },
+                        child: isSubmitting
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white))
+                            : const Text('Simpan Catatan Kas RT', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _deleteKas(int id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Hapus Catatan Kas?', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+        content: const Text('Apakah Anda yakin ingin menghapus catatan kas ini? Tindakan ini tidak dapat dibatalkan.', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final res = await ApiService.instance.post('neighborhood/kas/delete', {'id': id});
+      if (!mounted) return;
+      if (res['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Catatan kas berhasil dihapus.')));
+        _loadData();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Gagal menghapus.')));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
+  void _showAddActivityDialog() {
+    final titleCtrl = TextEditingController();
+    String category = 'Kerja Bakti';
+    final dateCtrl = TextEditingController(text: DateTime.now().add(const Duration(days: 1)).toIso8601String().substring(0, 10));
+    final timeCtrl = TextEditingController(text: '08:00');
+    final locCtrl = TextEditingController(text: 'Lingkungan RT');
+    final descCtrl = TextEditingController();
+    bool isSubmitting = false;
+
+    final categories = ['Kerja Bakti', 'Rapat Warga', 'Posyandu', 'Perayaan / 17-an', 'Keamanan / Ronda', 'Pengajian / Ibadah', 'Lainnya'];
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              left: 20,
+              right: 20,
+              top: 20,
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.88,
+              ),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text('Tambah Agenda Kegiatan RT', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 4),
+                    const Text('Jadwal kegiatan akan diumumkan secara langsung ke seluruh warga RT.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                    const SizedBox(height: 18),
+
+                    TextField(
+                      controller: titleCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Nama Kegiatan',
+                        hintText: 'Misal: Kerja Bakti Saluran Air Bersih',
+                        filled: true,
+                        fillColor: AppColors.bg,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    DropdownButtonFormField<String>(
+                      value: category,
+                      decoration: InputDecoration(
+                        labelText: 'Kategori Kegiatan',
+                        filled: true,
+                        fillColor: AppColors.bg,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                      ),
+                      items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)))).toList(),
+                      onChanged: (v) {
+                        if (v != null) setDlgState(() => category = v);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: dateCtrl,
+                            readOnly: true,
+                            decoration: InputDecoration(
+                              labelText: 'Tanggal',
+                              prefixIcon: const Icon(Icons.calendar_today_outlined, size: 18),
+                              filled: true,
+                              fillColor: AppColors.bg,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                            ),
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: DateTime.now().add(const Duration(days: 1)),
+                                firstDate: DateTime.now(),
+                                lastDate: DateTime(2035),
+                              );
+                              if (picked != null) {
+                                dateCtrl.text = picked.toIso8601String().substring(0, 10);
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: timeCtrl,
+                            decoration: InputDecoration(
+                              labelText: 'Jam (WIB)',
+                              hintText: '08:00',
+                              prefixIcon: const Icon(Icons.access_time, size: 18),
+                              filled: true,
+                              fillColor: AppColors.bg,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: locCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Lokasi Kegiatan',
+                        hintText: 'Misal: Balai Warga / Lapangan Depan',
+                        prefixIcon: const Icon(Icons.location_on_outlined, size: 18),
+                        filled: true,
+                        fillColor: AppColors.bg,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: descCtrl,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: 'Deskripsi / Catatan Tambahan',
+                        hintText: 'Misal: Harap membawa sapu lidi dan cangkul masing-masing.',
+                        filled: true,
+                        fillColor: AppColors.bg,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        elevation: 0,
+                      ),
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              if (titleCtrl.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nama kegiatan wajib diisi.')));
+                                return;
+                              }
+
+                              setDlgState(() => isSubmitting = true);
+                              try {
+                                final res = await ApiService.instance.post('neighborhood/activity', {
+                                  'title': titleCtrl.text.trim(),
+                                  'category': category,
+                                  'event_date': dateCtrl.text.trim(),
+                                  'event_time': timeCtrl.text.trim(),
+                                  'location': locCtrl.text.trim(),
+                                  'description': descCtrl.text.trim(),
+                                });
+                                if (!mounted) return;
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                if (res['success'] == true) {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Agenda berhasil ditambahkan!'), backgroundColor: const Color(0xFF059669)));
+                                  _loadData();
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Gagal menambahkan agenda.')));
+                                }
+                              } catch (e) {
+                                if (!mounted) return;
+                                setDlgState(() => isSubmitting = false);
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                              }
+                            },
+                      child: isSubmitting
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white))
+                          : const Text('Terbitkan Jadwal Kegiatan', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteActivity(int id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Hapus Agenda Kegiatan?', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+        content: const Text('Apakah Anda yakin ingin menghapus agenda kegiatan ini?', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final res = await ApiService.instance.post('neighborhood/activity/delete', {'id': id});
+      if (!mounted) return;
+      if (res['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Agenda kegiatan berhasil dihapus.')));
+        _loadData();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Gagal menghapus.')));
       }
     } catch (e) {
       if (!mounted) return;
@@ -495,7 +1111,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Hubungkan akun Anda dengan lingkungan RT setempat untuk menikmati pinjam alat bersama dan layanan titip belanja tetangga.',
+                'Hubungkan akun Anda dengan lingkungan RT setempat untuk menikmati pinjam alat bersama, pencatatan kas RT transparan, dan titip belanja tetangga.',
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12.5, height: 1.45),
                 textAlign: TextAlign.center,
               ),
@@ -683,7 +1299,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Hero Card
+        // ── 1. Hero RT Card ──
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -718,15 +1334,28 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                       style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
-                  if (_isRtAdmin)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.amber,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text('👑 Ketua RT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black)),
-                    ),
+                  Row(
+                    children: [
+                      if (_isRtAdmin)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.amber,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text('👑 Ketua RT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black)),
+                        )
+                      else if (_isTreasurer)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF818CF8),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text('💼 Bendahara RT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white)),
+                        ),
+                    ],
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -775,79 +1404,582 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Quick Modules Grid
-        Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolSharingScreen())),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.card,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.border),
-                    boxShadow: AppColors.cardShadow,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        // ── 2. CARD INFORMATIF 1: LAPORAN KEUANGAN KAS RT ──
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppColors.cardShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
                     children: [
                       Container(
-                        width: 42,
-                        height: 42,
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFECFDF5),
-                          borderRadius: BorderRadius.circular(14),
+                          color: const Color(0xFF059669).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Center(child: Text('🔨', style: TextStyle(fontSize: 22))),
+                        child: const Text('🏛️', style: TextStyle(fontSize: 16)),
                       ),
-                      const SizedBox(height: 12),
-                      const Text('Pinjam Alat', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
-                      const SizedBox(height: 2),
-                      const Text('Alat RT & sharing warga', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Buku Kas RT', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                          Text('Transparansi keuangan warga', style: TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                        ],
+                      ),
                     ],
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ErrandScreen())),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.card,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.border),
-                    boxShadow: AppColors.cardShadow,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEFF6FF),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Center(child: Text('🛍️', style: TextStyle(fontSize: 22))),
+                  if (_canManageKas)
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF059669),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
                       ),
-                      const SizedBox(height: 12),
-                      const Text('Titip Belanja', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
-                      const SizedBox(height: 2),
-                      const Text('Belanja pasar bareng', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                      icon: const Icon(Icons.add, size: 14),
+                      label: const Text('Catat Kas', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                      onPressed: _showRecordKasDialog,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Saldo Box
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF064E3B).withValues(alpha: 0.06),
+                      const Color(0xFF059669).withValues(alpha: 0.1),
                     ],
                   ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFA7F3D0)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('TOTAL SALDO KAS RT', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF065F46), letterSpacing: 0.5)),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatRupiah(_kasSummary.balance),
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF065F46)),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
+
+              // Masuk vs Keluar Summary Grid
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.arrow_downward_rounded, size: 13, color: Color(0xFF059669)),
+                              SizedBox(width: 4),
+                              Text('Total Masuk', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF065F46))),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _formatRupiah(_kasSummary.totalIn),
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF047857)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFFECACA)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.arrow_upward_rounded, size: 13, color: Color(0xFFEF4444)),
+                              SizedBox(width: 4),
+                              Text('Total Keluar', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF991B1B))),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _formatRupiah(_kasSummary.totalOut),
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFFDC2626)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Recent Kas Entries
+              const Text('Catatan Kas Terakhir', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.textPrimary)),
+              const SizedBox(height: 8),
+              if (_kasLedger.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  width: double.infinity,
+                  decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(12)),
+                  child: const Center(
+                    child: Text('Belum ada transaksi kas yang dicatat.', style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
+                  ),
+                )
+              else
+                ..._kasLedger.take(5).map((kas) => Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.bg,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: kas.type == 'in' ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    kas.type == 'in' ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                                    size: 14,
+                                    color: kas.type == 'in' ? const Color(0xFF059669) : const Color(0xFFEF4444),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        kas.category,
+                                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                                      ),
+                                      if (kas.description != null && kas.description!.isNotEmpty)
+                                        Text(
+                                          kas.description!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                                        ),
+                                      Text(
+                                        '${kas.date}${kas.recordedByName != null ? " • oleh ${kas.recordedByName}" : ""}',
+                                        style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                '${kas.type == "in" ? "+" : "-"}${_formatRupiah(kas.amount)}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 12.5,
+                                  color: kas.type == 'in' ? const Color(0xFF059669) : const Color(0xFFEF4444),
+                                ),
+                              ),
+                              if (_canManageKas) ...[
+                                const SizedBox(width: 4),
+                                InkWell(
+                                  onTap: () => _deleteKas(kas.id),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(4),
+                                    child: Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    )),
+            ],
+          ),
         ),
         const SizedBox(height: 16),
 
-        // Approval Queue for Admin RT
+        // ── 3. CARD INFORMATIF 2: DATA ALAT YANG BISA DIPINJAM ──
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppColors.cardShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text('🪚', style: TextStyle(fontSize: 16)),
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Fasilitas & Pinjam Alat RT', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                          Text('Alat inventaris RT & sharing warga', style: TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolSharingScreen())),
+                    child: const Text('Buka Alat →', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Tool Stats Grid
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.bg,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Total Inventaris', style: TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                          const SizedBox(height: 2),
+                          Text('$_toolsCount Alat', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Siap Dipinjam', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF065F46))),
+                          const SizedBox(height: 2),
+                          Text('$_toolsAvailable Tersedia', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF047857))),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Sedang Dipinjam', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF))),
+                          const SizedBox(height: 2),
+                          Text('$_toolsRented Dipinjam', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF2563EB))),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF92400E)),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Setiap sewa alat menyumbang kas RT untuk dana pemeliharaan dan perawatan bersama.',
+                        style: TextStyle(fontSize: 10.5, color: Color(0xFF92400E), fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // ── 4. CARD INFORMATIF 3: AGENDA KEGIATAN RT ──
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppColors.cardShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3B82F6).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text('📅', style: TextStyle(fontSize: 16)),
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Agenda & Kegiatan RT', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                          Text('Jadwal kerja bakti, rapat, & posyandu', style: TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  if (_canManageKas)
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3B82F6),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.add, size: 14),
+                      label: const Text('Agenda', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                      onPressed: _showAddActivityDialog,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              if (_activities.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  width: double.infinity,
+                  decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(12)),
+                  child: const Center(
+                    child: Text('Belum ada agenda kegiatan RT mendatang.', style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
+                  ),
+                )
+              else
+                ..._activities.map((act) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.bg,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFBFDBFE)),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  act.eventDate.length >= 10 ? act.eventDate.substring(8, 10) : '📅',
+                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF1D4ED8)),
+                                ),
+                                Text(
+                                  act.eventTime.length >= 5 ? act.eventTime.substring(0, 5) : act.eventTime,
+                                  style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFDBEAFE),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        act.category,
+                                        style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    if (_canManageKas)
+                                      InkWell(
+                                        onTap: () => _deleteActivity(act.id),
+                                        borderRadius: BorderRadius.circular(6),
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(2),
+                                          child: Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(act.title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.location_on_outlined, size: 13, color: AppColors.textMuted),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        act.location,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (act.description != null && act.description!.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    act.description!,
+                                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // ── 5. Quick Shortcut Titip Belanja ──
+        GestureDetector(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ErrandScreen())),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.border),
+              boxShadow: AppColors.cardShadow,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Center(child: Text('🛍️', style: TextStyle(fontSize: 22))),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text('Titip Belanja Warga', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                      Text('Saling bantu belanja pasar & toko sekitar', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // ── 6. Approval Queue for Admin RT ──
         if (_isRtAdmin && _pendingResidents.isNotEmpty) ...[
           Container(
             padding: const EdgeInsets.all(16),
@@ -929,7 +2061,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
           const SizedBox(height: 16),
         ],
 
-        // Verified Residents List
+        // ── 7. Verified Residents & Officers List ──
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -944,7 +2076,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('👥 Warga Terdaftar', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                  const Text('👥 Warga & Pengurus RT', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
                   Text('${_residents.length} Total', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
                 ],
               ),
@@ -967,43 +2099,115 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 16,
-                                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-                                child: Text(
-                                  r.name.isNotEmpty ? r.name[0].toUpperCase() : 'W',
-                                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: r.isRtAdmin
+                                      ? Colors.amber.withValues(alpha: 0.2)
+                                      : (r.isTreasurer ? const Color(0xFF4F46E5).withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.12)),
+                                  child: Text(
+                                    r.name.isNotEmpty ? r.name[0].toUpperCase() : 'W',
+                                    style: TextStyle(
+                                      color: r.isRtAdmin ? Colors.orange[800] : (r.isTreasurer ? const Color(0xFF4F46E5) : AppColors.primary),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              r.name,
+                                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          if (r.isRtAdmin) ...[
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                              decoration: BoxDecoration(color: Colors.amber, borderRadius: BorderRadius.circular(6)),
+                                              child: const Text('👑 Ketua RT', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.black)),
+                                            ),
+                                          ] else if (r.isTreasurer) ...[
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                              decoration: BoxDecoration(color: const Color(0xFF4F46E5), borderRadius: BorderRadius.circular(6)),
+                                              child: const Text('💼 Bendahara', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                      Text('Rumah: ${r.houseNumber ?? "-"} • ${r.residenceStatus == "permanent" ? "Tetap" : "Domisili"}', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // RT Admin action to promote/demote Bendahara
+                          if (_isRtAdmin && !r.isRtAdmin)
+                            PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert_rounded, size: 18, color: AppColors.textMuted),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              onSelected: (val) {
+                                if (val == 'make_treasurer') {
+                                  _changeMemberRole(r.id, 'rt_treasurer', r.name);
+                                } else if (val == 'remove_treasurer') {
+                                  _changeMemberRole(r.id, 'user', r.name);
+                                }
+                              },
+                              itemBuilder: (ctx) => [
+                                if (!r.isTreasurer)
+                                  const PopupMenuItem(
+                                    value: 'make_treasurer',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.badge_outlined, size: 16, color: Color(0xFF4F46E5)),
+                                        SizedBox(width: 8),
+                                        Text('Jadikan Bendahara RT', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
+                                      ],
+                                    ),
+                                  )
+                                else
+                                  const PopupMenuItem(
+                                    value: 'remove_treasurer',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.person_remove_outlined, size: 16, color: Colors.redAccent),
+                                        SizedBox(width: 8),
+                                        Text('Hapus Jabatan Bendahara', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.redAccent)),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            )
+                          else
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: r.residenceStatus == 'permanent' ? AppColors.primary.withValues(alpha: 0.1) : Colors.blue.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                r.residenceStatus == 'permanent' ? '🏠 Tetap' : '🏢 Domisili',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: r.residenceStatus == 'permanent' ? AppColors.primary : Colors.blue,
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(r.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                                  Text('Rumah: ${r.houseNumber ?? "-"}', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                                ],
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: r.residenceStatus == 'permanent'
-                                  ? AppColors.primary.withValues(alpha: 0.1)
-                                  : Colors.blue.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Text(
-                              r.residenceStatus == 'permanent' ? '🏠 Tetap' : '🏢 Domisili',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.bold,
-                                color: r.residenceStatus == 'permanent' ? AppColors.primary : Colors.blue,
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                     )),
