@@ -62,4 +62,5 @@ else
 fi
 
 run_sudo -u "$OWNER" env HOME=/tmp git config --global --add safe.directory "$PROJECT_DIR" 2>/dev/null || true
-exec run_sudo -u "$OWNER" env HOME=/tmp bash "$PROJECT_DIR/deploy.sh"
+run_sudo -u "$OWNER" env HOME=/tmp bash "$PROJECT_DIR/deploy.sh"
+exit $?
