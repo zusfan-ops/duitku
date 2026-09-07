@@ -281,6 +281,22 @@ class HomeController extends BaseController
             'unreadCount'        => count($notifications),
             'business'           => $businessSummary,
             'todoSummary'        => (new \App\Models\TodoModel())->getSummary($userId),
+            'arisanSummary'      => (function () use ($userId) {
+                try {
+                    $groups = (new \App\Models\ArisanGroupModel())->getForUser((int)$userId);
+                    $active = array_filter($groups, fn($g) => ($g['status'] ?? 'active') === 'active');
+                    return ['count' => count($active), 'total' => count($groups)];
+                } catch (\Throwable $e) {
+                    return ['count' => 0, 'total' => 0];
+                }
+            })(),
+            'subscriptionSummary' => (function () use ($userId) {
+                try {
+                    return (new \App\Models\SubscriptionModel())->getSummary((int)$userId);
+                } catch (\Throwable $e) {
+                    return ['total_monthly' => 0.0, 'total_yearly' => 0.0, 'active_count' => 0, 'total_count' => 0];
+                }
+            })(),
             'tvChannels'         => (new \App\Models\TvChannelModel())->getActiveChannels(),
             'latestNews'         => \App\Services\NewsService::getHeadlines(8),
             'myHomeSummary'      => \App\Controllers\BarangController::getSummaryForUser($userId),

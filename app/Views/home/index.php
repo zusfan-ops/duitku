@@ -344,208 +344,52 @@
 [data-theme="dark"] .native-emergency-sub { color: #F87171; }
 [data-theme="dark"] .native-emergency-arrow { background: rgba(239, 68, 68, 0.2); color: #FCA5A5; }
 
-/* ── Belanja Home Card ────────────────────────────────────────── */
-.native-belanja-card {
-    background: linear-gradient(135deg, #9D174D 0%, #BE185D 50%, #F43F5E 100%);
-    border-radius: 20px;
-    padding: 14px 16px;
-    margin-bottom: 14px;
-    color: #fff;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 6px 20px rgba(244, 63, 94, 0.28);
-    transition: transform 0.15s ease;
+/* ── Fitur Unggulan (square cards, aligned with Rekening strip) ── */
+.fw-wrap { margin-bottom: 16px; }
+.fw-hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
 }
-.native-belanja-card:active {
-    transform: scale(0.98);
+.fw-lbl {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .5px; color: var(--text-muted);
 }
-.native-belanja-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.fw-strip {
+    display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px;
+    scrollbar-width: none; -ms-overflow-style: none;
 }
-.native-belanja-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
+.fw-strip::-webkit-scrollbar { display: none; }
+.fw-card {
+    flex-shrink: 0; width: 150px; height: 150px; border-radius: 18px;
+    padding: 14px; text-decoration: none; color: #fff;
+    display: flex; flex-direction: column; box-sizing: border-box;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .16);
+    transition: transform .14s ease; position: relative; overflow: hidden;
 }
-.native-belanja-title {
-    font-size: 13.5px;
-    font-weight: 800;
-    color: #fff;
+.fw-card::before {
+    content: ''; position: absolute; top: -20px; right: -20px;
+    width: 70px; height: 70px; border-radius: 50%;
+    background: rgba(255, 255, 255, .08); pointer-events: none;
 }
-.native-belanja-sub {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.8);
-    font-weight: 600;
-    margin-top: 2px;
+.fw-card:active { transform: scale(.96); }
+.fw-rose    { background: linear-gradient(135deg, #9D174D 0%, #BE185D 50%, #F43F5E 100%); }
+.fw-indigo  { background: linear-gradient(135deg, #4338CA 0%, #6366F1 50%, #8B5CF6 100%); }
+.fw-emerald { background: linear-gradient(135deg, #065F46 0%, #059669 50%, #10B981 100%); }
+.fw-cyan    { background: linear-gradient(135deg, #155E75 0%, #0E7490 50%, #06B6D4 100%); }
+.fw-amber   { background: linear-gradient(135deg, #B45309 0%, #D97706 50%, #F59E0B 100%); }
+.fw-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: rgba(255, 255, 255, .22);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; line-height: 1;
 }
-.native-belanja-arrow {
-    font-size: 12px;
-    font-weight: 800;
-    background: rgba(255, 255, 255, 0.2);
-    padding: 5px 10px;
-    border-radius: 10px;
+.fw-title {
+    font-size: 14px; font-weight: 800; letter-spacing: -.2px;
+    line-height: 1.15; color: #fff; margin-top: auto;
 }
-
-/* ── Todo Home Card ───────────────────────────────────────────── */
-.native-todo-card {
-    background: linear-gradient(135deg, #4338CA 0%, #6366F1 50%, #8B5CF6 100%);
-    border-radius: 20px;
-    padding: 14px 16px;
-    margin-bottom: 14px;
-    color: #ffffff;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    box-shadow: 0 6px 22px rgba(99, 102, 241, 0.28);
-    transition: transform 0.15s ease;
-}
-.native-todo-card:active {
-    transform: scale(0.98);
-}
-.native-todo-hdr {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.native-todo-title-wrap {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-.native-todo-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-}
-.native-todo-title {
-    font-size: 13.5px;
-    font-weight: 800;
-    color: #ffffff;
-}
-.native-todo-sub {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.8);
-    font-weight: 600;
-    margin-top: 2px;
-}
-.native-todo-arrow {
-    font-size: 12px;
-    font-weight: 800;
-    background: rgba(255, 255, 255, 0.2);
-    padding: 5px 10px;
-    border-radius: 10px;
-}
-.native-todo-tasks-preview {
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: 12px;
-    padding: 8px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-.native-todo-task-item {
-    font-size: 12px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.native-todo-task-item.done {
-    opacity: 0.6;
-    text-decoration: line-through;
-}
-.native-todo-check-btn {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    border: 1.5px solid rgba(255, 255, 255, 0.8);
-    background: transparent;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: transparent;
-    flex-shrink: 0;
-    font-size: 11px;
-    font-weight: 800;
-    transition: all 0.15s ease;
-}
-.native-todo-check-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
-}
-.native-todo-task-item.done .native-todo-check-btn {
-    background: #10B981;
-    border-color: #10B981;
-    color: #ffffff;
-}
-
-/* ── RT Community & Tool Sharing Home Card ────────────────────── */
-.native-rt-card {
-    background: linear-gradient(135deg, #065F46 0%, #059669 50%, #10B981 100%);
-    border-radius: 20px;
-    padding: 14px 16px;
-    margin-bottom: 14px;
-    color: #ffffff;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 6px 22px rgba(16, 185, 129, 0.28);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.native-rt-card:active {
-    transform: scale(0.98);
-}
-.native-rt-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-.native-rt-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-}
-.native-rt-title {
-    font-size: 13.5px;
-    font-weight: 800;
-    color: #ffffff;
-}
-.native-rt-sub {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.85);
-    font-weight: 600;
-    margin-top: 2px;
-}
-.native-rt-arrow {
-    font-size: 12px;
-    font-weight: 800;
-    background: rgba(255, 255, 255, 0.2);
-    padding: 5px 10px;
-    border-radius: 10px;
-    white-space: nowrap;
+.fw-sub {
+    font-size: 10.5px; font-weight: 600; color: rgba(255, 255, 255, .85);
+    line-height: 1.3; margin-top: 4px;
 }
 
 /* ── Wallet Strip ─────────────────────────────────────────────── */
@@ -2462,57 +2306,43 @@
         </div>
     </div>
 
-    <!-- ── BELANJA QUICK CARD (Aligned 1:1 with Native _BelanjaHomeCard) ── -->
-    <a href="/belanja" class="native-belanja-card">
-        <div class="native-belanja-left">
-            <div class="native-belanja-icon">🛒</div>
-            <div>
-                <div class="native-belanja-title">Daftar Rencana Belanja</div>
-                <div class="native-belanja-sub">Kelola catatan kebutuhan &amp; checklist belanja</div>
-            </div>
+    <!-- ── FITUR UNGGULAN (square cards, aligned with Rekening strip) ── -->
+    <div class="fw-wrap">
+        <div class="fw-hdr">
+            <span class="fw-lbl">Fitur Unggulan</span>
         </div>
-        <div class="native-belanja-arrow">Buka →</div>
-    </a>
-
-    <!-- ── TODO-LIST QUICK HOME CARD (Aligned 1:1 with Native _TodoHomeCard) ── -->
-    <div class="native-todo-card">
-        <div class="native-todo-hdr">
-            <a href="/todo" class="native-todo-title-wrap" style="color:inherit;text-decoration:none">
-                <div class="native-todo-icon">🎯</div>
-                <div>
-                    <div class="native-todo-title">Rencana &amp; Target Tugas (Todo)</div>
-                    <div class="native-todo-sub">
-                        <?= (int)($todoSummary['completed_all'] ?? 0) ?>/<?= (int)($todoSummary['total_all'] ?? 0) ?> Selesai · <?= (int)($todoSummary['pending_all'] ?? 0) ?> Aktif
-                    </div>
+        <div class="fw-strip">
+            <a href="/belanja" class="fw-card fw-rose">
+                <div class="fw-icon">🛒</div>
+                <div class="fw-title">Daftar Rencana Belanja</div>
+                <div class="fw-sub">Kelola kebutuhan &amp; checklist belanja</div>
+            </a>
+            <a href="/todo" class="fw-card fw-indigo">
+                <div class="fw-icon">🎯</div>
+                <div class="fw-title">Target &amp; Tugas</div>
+                <div class="fw-sub"><?= (int)($todoSummary['completed_all'] ?? 0) ?>/<?= (int)($todoSummary['total_all'] ?? 0) ?> Selesai · <?= (int)($todoSummary['pending_all'] ?? 0) ?> Aktif</div>
+            </a>
+            <a href="/neighborhood" class="fw-card fw-emerald">
+                <div class="fw-icon">🏘️</div>
+                <div class="fw-title">Komunitas RT &amp; Pinjam Alat</div>
+                <div class="fw-sub">Pinjam alat, titip belanja &amp; info RT</div>
+            </a>
+            <a href="/arisan" class="fw-card fw-cyan">
+                <div class="fw-icon">🤝</div>
+                <div class="fw-title">Arisan Komunitas</div>
+                <div class="fw-sub"><?php $arisanCount = (int)($arisanSummary['count'] ?? 0); ?>
+                    <?= $arisanCount > 0 ? $arisanCount . ' grup aktif' : 'Mulai arisan &amp; catat setoran' ?>
                 </div>
             </a>
-            <a href="/todo" class="native-todo-arrow" style="color:inherit;text-decoration:none">Buka →</a>
+            <a href="/subscriptions" class="fw-card fw-amber">
+                <div class="fw-icon">🔁</div>
+                <div class="fw-title">Langganan</div>
+                <div class="fw-sub"><?php $subActive = (int)($subscriptionSummary['active_count'] ?? 0); ?>
+                    <?= $subActive > 0 ? $subActive . ' aktif · ' . esc($symbol) . ' ' . number_format((float)($subscriptionSummary['total_monthly'] ?? 0), 0, ',', '.') : 'Pantau tagihan berulang' ?>
+                </div>
+            </a>
         </div>
-
-        <?php if (!empty($todoSummary['previews'])): ?>
-        <div class="native-todo-tasks-preview">
-            <?php foreach ($todoSummary['previews'] as $pTask): ?>
-            <div class="native-todo-task-item" id="homeTodo-<?= $pTask['id'] ?>">
-                <button type="button" class="native-todo-check-btn" onclick="toggleHomeTask(event, <?= $pTask['id'] ?>)" title="Tandai selesai">✓</button>
-                <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><?= esc($pTask['title']) ?></span>
-                <span style="font-size:10px;opacity:0.8;background:rgba(255,255,255,0.15);padding:1px 6px;border-radius:6px"><?= esc($pTask['category']) ?></span>
-            </div>
-            <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
     </div>
-
-    <!-- ── RT COMMUNITY & TOOL SHARING QUICK CARD ── -->
-    <a href="/neighborhood" class="native-rt-card">
-        <div class="native-rt-left">
-            <div class="native-rt-icon">🏘️</div>
-            <div>
-                <div class="native-rt-title">Komunitas RT &amp; Pinjam Alat</div>
-                <div class="native-rt-sub">Pinjam alat warga, titip belanja tetangga &amp; info RT</div>
-            </div>
-        </div>
-        <div class="native-rt-arrow">Buka RT →</div>
-    </a>
 
     <!-- ── WALLET STRIP ─────────────────────────────────────── -->
     <?php if (!empty($wallets)): ?>

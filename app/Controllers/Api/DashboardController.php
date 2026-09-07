@@ -300,6 +300,22 @@ class DashboardController extends ApiController
             'unread_notifications_count' => $unreadBroadcastCount,
             'business'           => $businessSummary,
             'unreadCount'        => count($notifications),
+            'arisan_summary'     => (function () use ($userId) {
+                try {
+                    $groups = (new \App\Models\ArisanGroupModel())->getForUser((int)$userId);
+                    $active = array_filter($groups, fn($g) => ($g['status'] ?? 'active') === 'active');
+                    return ['count' => count($active), 'total' => count($groups)];
+                } catch (\Throwable $e) {
+                    return ['count' => 0, 'total' => 0];
+                }
+            })(),
+            'subscription_summary' => (function () use ($userId) {
+                try {
+                    return (new \App\Models\SubscriptionModel())->getSummary((int)$userId);
+                } catch (\Throwable $e) {
+                    return ['total_monthly' => 0.0, 'total_yearly' => 0.0, 'active_count' => 0, 'total_count' => 0];
+                }
+            })(),
             'tv_channels'        => (new \App\Models\TvChannelModel())->getActiveChannels(),
             'latest_news'        => \App\Services\NewsService::getHeadlines(8),
             'my_home_summary'    => \App\Controllers\BarangController::getSummaryForUser($userId),

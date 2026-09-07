@@ -37,6 +37,8 @@ import 'vehicle/vehicle_screen.dart';
 import 'wallet_screen.dart';
 import 'zakat_pajak/zakat_pajak_screen.dart';
 import 'emergency/emergency_screen.dart';
+import 'arisan/arisan_screen.dart';
+import 'subscription/subscription_screen.dart';
 import '../services/local_notification_service.dart';
 import '../services/offline_cache_service.dart';
 import '../services/sync_service.dart';
@@ -52,8 +54,6 @@ import 'traveling/traveling_screen.dart';
 import 'traveling/currency_converter_sheet.dart';
 import 'games/game_hub_screen.dart';
 import 'neighborhood/neighborhood_screen.dart';
-import 'neighborhood/tool_sharing_screen.dart';
-import 'neighborhood/errand_screen.dart';
 import '../widgets/onboarding_dialog.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -407,9 +407,7 @@ class DashboardScreenState extends State<DashboardScreen> {
             },
           ),
           _ThreeColumnStatsCard(data: data, recentCount: recent.length),
-          const _BelanjaHomeCard(),
-          const _TodoHomeCard(),
-          const _NeighborhoodHomeCard(),
+          _FeatureStrip(data: data),
           if ((data.wallets as List).isNotEmpty) _WalletStrip(wallets: data.wallets as List<Wallet>),
           if ((data.dailyBalance as List).length > 1)
             _DailyChart(data: data),
@@ -2325,7 +2323,106 @@ void _openNote(BuildContext context) {
   );
 }
 
-// ── Belanja Home Card ──────────────────────────────────────────
+// -- Fitur Unggulan strip (square cards, aligned with Rekening strip) --
+class _FeatureStrip extends StatelessWidget {
+  final dynamic data;
+  const _FeatureStrip({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 14, bottom: 8),
+          child: Text('FITUR UNGGULAN',
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .5, color: AppColors.textMuted)),
+        ),
+        SizedBox(
+          height: 150,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.zero,
+            itemCount: 5,
+            separatorBuilder: (context, index) => const SizedBox(width: 10),
+            itemBuilder: (context, i) {
+              switch (i) {
+                case 0:
+                  return const _BelanjaHomeCard();
+                case 1:
+                  return const _TodoHomeCard();
+                case 2:
+                  return const _NeighborhoodHomeCard();
+                case 3:
+                  return _ArisanHomeCard(data: data);
+                default:
+                  return _SubscriptionHomeCard(data: data);
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FeatureTile extends StatelessWidget {
+  final List<Color> gradient;
+  final IconData icon;
+  final Color shadowColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _FeatureTile({
+    required this.gradient,
+    required this.icon,
+    required this.shadowColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 150,
+        height: 150,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [BoxShadow(color: shadowColor.withValues(alpha: .30), blurRadius: 14, offset: const Offset(0, 6))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: .22), borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            const Spacer(),
+            Text(title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.2, height: 1.15)),
+            const SizedBox(height: 4),
+            Text(subtitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.white.withValues(alpha: .85), height: 1.3)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// -- Belanja Home Card (square tile) --
 class _BelanjaHomeCard extends StatefulWidget {
   const _BelanjaHomeCard();
 
@@ -2368,197 +2465,18 @@ class _BelanjaHomeCardState extends State<_BelanjaHomeCard> {
     if (_loading) return const SizedBox.shrink();
 
     final unbought = _items.where((e) => (e['bought']?.toString() ?? 'false') != 'true').toList();
-    final boughtCount = _items.length - unbought.length;
-    final progress = _items.isEmpty ? 0.0 : (boughtCount / _items.length);
-
-    return Container(
-      margin: const EdgeInsets.only(top: 14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF9D174D), Color(0xFFBE185D), Color(0xFFF43F5E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFF43F5E).withValues(alpha: 0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: _openBelanja,
-            child: Stack(
-              children: [
-                // Watermark Vector Icon
-                Positioned(
-                  right: -10,
-                  bottom: -15,
-                  child: Transform.rotate(
-                    angle: -0.15,
-                    child: Icon(
-                      Icons.shopping_bag_rounded,
-                      size: 90,
-                      color: Colors.white.withValues(alpha: 0.12),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.22),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 20),
-                              ),
-                              const SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Daftar Belanja',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
-                                      letterSpacing: -0.2,
-                                    ),
-                                  ),
-                                  Text(
-                                    _items.isEmpty
-                                        ? 'Belum ada catatan belanja'
-                                        : '${unbought.length} item perlu dibeli',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white.withValues(alpha: 0.85),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.22),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Buka',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(width: 3),
-                                Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Colors.white),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_items.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            minHeight: 5,
-                            backgroundColor: Colors.black.withValues(alpha: 0.2),
-                            valueColor: const AlwaysStoppedAnimation(Colors.white),
-                          ),
-                        ),
-                        if (unbought.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Column(
-                            children: unbought.take(2).map((item) {
-                              final name = item['name']?.toString() ?? '';
-                              final qty = item['qty']?.toString() ?? '';
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 3),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 14,
-                                      height: 14,
-                                      margin: const EdgeInsets.only(right: 8),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.white70, width: 1.5),
-                                        borderRadius: BorderRadius.circular(4),
-                                        color: Colors.white.withValues(alpha: 0.1),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
-                                      ),
-                                    ),
-                                    if (qty.isNotEmpty)
-                                      Text(
-                                        qty,
-                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white.withValues(alpha: 0.8)),
-                                      ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                      ] else ...[
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Icon(Icons.add_circle_outline_rounded, size: 15, color: Colors.white.withValues(alpha: 0.9)),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Ketuk untuk membuat daftar belanjaan baru',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return _FeatureTile(
+      gradient: const [Color(0xFF9D174D), Color(0xFFBE185D), Color(0xFFF43F5E)],
+      icon: Icons.shopping_bag_rounded,
+      shadowColor: const Color(0xFFF43F5E),
+      title: 'Daftar Belanja',
+      subtitle: _items.isEmpty ? 'Rencana kebutuhan & checklist belanja' : '${unbought.length} item perlu dibeli',
+      onTap: _openBelanja,
     );
   }
 }
 
-// ── Todo Home Card ─────────────────────────────────────────────
+// -- Todo Home Card (square tile) --
 class _TodoHomeCard extends StatefulWidget {
   const _TodoHomeCard();
 
@@ -2595,22 +2513,6 @@ class _TodoHomeCardState extends State<_TodoHomeCard> {
     }
   }
 
-  Future<void> _toggleTask(TodoItem task) async {
-    final oldState = task.isCompleted;
-    setState(() => task.isCompleted = !oldState);
-
-    try {
-      final res = await _api.toggleTodo(task.id);
-      if (res['success'] != true) {
-        setState(() => task.isCompleted = oldState);
-      } else {
-        _load();
-      }
-    } catch (_) {
-      setState(() => task.isCompleted = oldState);
-    }
-  }
-
   Future<void> _openTodo() async {
     await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(builder: (_) => const TodoListScreen()),
@@ -2622,400 +2524,78 @@ class _TodoHomeCardState extends State<_TodoHomeCard> {
   Widget build(BuildContext context) {
     if (_loading) return const SizedBox.shrink();
 
-    final progress = _summary.totalAll > 0 ? (_summary.completedAll / _summary.totalAll) : 0.0;
-
-    return Container(
-      margin: const EdgeInsets.only(top: 14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4338CA), Color(0xFF6366F1), Color(0xFF8B5CF6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF6366F1).withValues(alpha: 0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: _openTodo,
-            child: Stack(
-              children: [
-                Positioned(
-                  right: -10,
-                  bottom: -15,
-                  child: Transform.rotate(
-                    angle: -0.15,
-                    child: Icon(
-                      Icons.task_alt_rounded,
-                      size: 90,
-                      color: Colors.white.withValues(alpha: 0.12),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.22),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(Icons.checklist_rounded, color: Colors.white, size: 20),
-                              ),
-                              const SizedBox(width: 10),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Rencana & Todo-List',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
-                                      letterSpacing: -0.2,
-                                    ),
-                                  ),
-                                  Text(
-                                    _summary.totalAll == 0
-                                        ? 'Belum ada tugas target'
-                                        : '${_summary.completedAll}/${_summary.totalAll} Selesai · ${_summary.pendingAll} Aktif',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white.withValues(alpha: 0.85),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.22),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Buka',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(width: 3),
-                                Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Colors.white),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_summary.totalAll > 0) ...[
-                        const SizedBox(height: 12),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            minHeight: 5,
-                            backgroundColor: Colors.black.withValues(alpha: 0.2),
-                            valueColor: const AlwaysStoppedAnimation(Colors.white),
-                          ),
-                        ),
-                        if (_summary.previews.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Column(
-                            children: _summary.previews.map((task) {
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 3),
-                                child: Row(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () => _toggleTask(task),
-                                      child: Container(
-                                        width: 16,
-                                        height: 16,
-                                        margin: const EdgeInsets.only(right: 8),
-                                        decoration: BoxDecoration(
-                                          color: task.isCompleted ? Colors.white : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: Colors.white.withValues(alpha: 0.8), width: 1.5),
-                                        ),
-                                        child: task.isCompleted
-                                            ? const Icon(Icons.check, size: 10, color: Color(0xFF6366F1))
-                                            : null,
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        task.title,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white,
-                                          decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        task.category,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white.withValues(alpha: 0.9),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                      ] else ...[
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Icon(Icons.add_task_rounded, size: 15, color: Colors.white.withValues(alpha: 0.9)),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Ketuk untuk membuat target tugas baru',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return _FeatureTile(
+      gradient: const [Color(0xFF4338CA), Color(0xFF6366F1), Color(0xFF8B5CF6)],
+      icon: Icons.checklist_rounded,
+      shadowColor: const Color(0xFF6366F1),
+      title: 'Target & Tugas',
+      subtitle: _summary.totalAll == 0
+          ? 'Rencanakan target & checklist tugas'
+          : '${_summary.completedAll}/${_summary.totalAll} Selesai · ${_summary.pendingAll} Aktif',
+      onTap: _openTodo,
     );
   }
 }
 
-// ── Neighborhood Community & Sharing Home Card ─────────────────
+// -- Neighborhood Community & Sharing Home Card (square tile) --
 class _NeighborhoodHomeCard extends StatelessWidget {
   const _NeighborhoodHomeCard();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(top: 14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF047857), Color(0xFF059669), Color(0xFF10B981)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF10B981).withValues(alpha: 0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              Navigator.of(context, rootNavigator: true).push(
-                MaterialPageRoute(builder: (_) => const NeighborhoodScreen()),
-              );
-            },
-            child: Stack(
-              children: [
-                Positioned(
-                  right: -10,
-                  bottom: -15,
-                  child: Transform.rotate(
-                    angle: -0.15,
-                    child: Icon(
-                      Icons.holiday_village_rounded,
-                      size: 130,
-                      color: Colors.white.withValues(alpha: 0.12),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(Icons.people_alt_rounded, color: Colors.white, size: 20),
-                              ),
-                              const SizedBox(width: 10),
-                              const Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Komunitas RT & Pinjam Alat',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.white,
-                                      letterSpacing: -0.3,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Saling bantu, pinjam alat & titip belanja',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.22),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Masuk',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(width: 3),
-                                Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Colors.white),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildPillAction(
-                              context,
-                              icon: Icons.build_circle_rounded,
-                              label: 'Pinjam Alat',
-                              onTap: () => Navigator.of(context, rootNavigator: true).push(
-                                MaterialPageRoute(builder: (_) => const ToolSharingScreen()),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildPillAction(
-                              context,
-                              icon: Icons.delivery_dining_rounded,
-                              label: 'Titip Belanja',
-                              onTap: () => Navigator.of(context, rootNavigator: true).push(
-                                MaterialPageRoute(builder: (_) => const ErrandScreen()),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildPillAction(
-                              context,
-                              icon: Icons.home_work_rounded,
-                              label: 'Warga RT',
-                              onTap: () => Navigator.of(context, rootNavigator: true).push(
-                                MaterialPageRoute(builder: (_) => const NeighborhoodScreen()),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    return _FeatureTile(
+      gradient: const [Color(0xFF047857), Color(0xFF059669), Color(0xFF10B981)],
+      icon: Icons.people_alt_rounded,
+      shadowColor: const Color(0xFF10B981),
+      title: 'Komunitas RT & Pinjam Alat',
+      subtitle: 'Pinjam alat, titip belanja & info RT',
+      onTap: () => Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(builder: (_) => const NeighborhoodScreen()),
       ),
     );
   }
+}
 
-  Widget _buildPillAction(BuildContext context, {required IconData icon, required String label, required VoidCallback onTap}) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.18),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 14, color: Colors.white),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-        ),
+// -- Arisan Komunitas Home Card (square tile) --
+class _ArisanHomeCard extends StatelessWidget {
+  final dynamic data;
+  const _ArisanHomeCard({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final sum = data.arisanSummary as Map<String, dynamic>? ?? const {};
+    final count = int.tryParse('${sum['count']}') ?? 0;
+    return _FeatureTile(
+      gradient: const [Color(0xFF155E75), Color(0xFF0E7490), Color(0xFF06B6D4)],
+      icon: Icons.group_rounded,
+      shadowColor: const Color(0xFF06B6D4),
+      title: 'Arisan Komunitas',
+      subtitle: count > 0 ? '$count grup arisan aktif' : 'Mulai arisan & catat setoran',
+      onTap: () => Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(builder: (_) => const ArisanScreen()),
+      ),
+    );
+  }
+}
+
+// -- Langganan Home Card (square tile) --
+class _SubscriptionHomeCard extends StatelessWidget {
+  final dynamic data;
+  const _SubscriptionHomeCard({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final sum = data.subscriptionSummary as Map<String, dynamic>? ?? const {};
+    final active = int.tryParse('${sum['active_count']}') ?? 0;
+    final monthly = double.tryParse('${sum['total_monthly']}') ?? 0;
+    return _FeatureTile(
+      gradient: const [Color(0xFFB45309), Color(0xFFD97706), Color(0xFFF59E0B)],
+      icon: Icons.restore_rounded,
+      shadowColor: const Color(0xFFF59E0B),
+      title: 'Langganan',
+      subtitle: active > 0 ? '$active aktif · ${data.symbol}${Fmt.money0(monthly)}/bln' : 'Pantau tagihan berulang bulanan',
+      onTap: () => Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
       ),
     );
   }

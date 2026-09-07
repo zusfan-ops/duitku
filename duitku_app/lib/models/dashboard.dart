@@ -41,6 +41,8 @@ class DashboardData {
   final List<JellyfinMovie> jellyfinMovies;
   final List<dynamic> marketplaceFeatured;
   final List<NewsItem> latestNews;
+  final Map<String, dynamic> arisanSummary;
+  final Map<String, dynamic> subscriptionSummary;
 
   DashboardData({
     this.balance = 0,
@@ -77,6 +79,8 @@ class DashboardData {
     this.jellyfinMovies = const [],
     this.marketplaceFeatured = const [],
     this.latestNews = const [],
+    this.arisanSummary = const {},
+    this.subscriptionSummary = const {},
   });
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
@@ -138,6 +142,12 @@ class DashboardData {
               [])
           .map((e) => NewsItem.fromJson(e as Map<String, dynamic>))
           .toList(),
+      arisanSummary: json['arisan_summary'] as Map<String, dynamic>? ??
+          json['arisanSummary'] as Map<String, dynamic>? ??
+          const {},
+      subscriptionSummary: json['subscription_summary'] as Map<String, dynamic>? ??
+          json['subscriptionSummary'] as Map<String, dynamic>? ??
+          const {},
     );
   }
 }
