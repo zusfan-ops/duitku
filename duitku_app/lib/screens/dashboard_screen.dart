@@ -38,6 +38,7 @@ import 'wallet_screen.dart';
 import 'zakat_pajak/zakat_pajak_screen.dart';
 import 'emergency/emergency_screen.dart';
 import 'arisan/arisan_screen.dart';
+import 'savings/savings_screen.dart';
 import 'subscription/subscription_screen.dart';
 import '../services/local_notification_service.dart';
 import '../services/offline_cache_service.dart';
@@ -2351,6 +2352,7 @@ class _FeatureStrip extends StatelessWidget {
             const _NeighborhoodHomeCard(),
             _ArisanHomeCard(data: data),
             _SubscriptionHomeCard(data: data),
+            _SavingsHomeCard(data: data),
           ],
         ),
       ],
@@ -2593,6 +2595,28 @@ class _SubscriptionHomeCard extends StatelessWidget {
       subtitle: active > 0 ? '$active aktif · ${data.symbol}${Fmt.money0(monthly)}/bln' : 'Pantau tagihan berulang bulanan',
       onTap: () => Navigator.of(context, rootNavigator: true).push(
         MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
+      ),
+    );
+  }
+}
+
+// -- Tabungan Home Card (square tile) --
+class _SavingsHomeCard extends StatelessWidget {
+  final dynamic data;
+  const _SavingsHomeCard({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final sum = data.savingsSummary as Map<String, dynamic>? ?? const {};
+    final count = int.tryParse('${sum['count']}') ?? 0;
+    return _FeatureTile(
+      gradient: const [Color(0xFF4C1D95), Color(0xFF7C3AED), Color(0xFFA78BFA)],
+      icon: Icons.savings_rounded,
+      shadowColor: const Color(0xFF7C3AED),
+      title: 'Tabungan',
+      subtitle: count > 0 ? '$count target menabung' : 'Atur target & sisihkan dana',
+      onTap: () => Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(builder: (_) => const SavingsScreen()),
       ),
     );
   }

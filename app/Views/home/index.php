@@ -356,7 +356,7 @@
 }
 .fw-grid {
     display: grid; gap: 10px;
-    grid-template-columns: repeat(auto-fill, minmax(104px, 116px));
+    grid-template-columns: repeat(3, 1fr);
 }
 .fw-card {
     aspect-ratio: 1 / 1; border-radius: 16px;
@@ -376,6 +376,7 @@
 .fw-emerald { background: linear-gradient(135deg, #065F46 0%, #059669 50%, #10B981 100%); }
 .fw-cyan    { background: linear-gradient(135deg, #155E75 0%, #0E7490 50%, #06B6D4 100%); }
 .fw-amber   { background: linear-gradient(135deg, #B45309 0%, #D97706 50%, #F59E0B 100%); }
+.fw-violet  { background: linear-gradient(135deg, #4C1D95 0%, #7C3AED 50%, #A78BFA 100%); }
 .fw-icon {
     width: 30px; height: 30px; border-radius: 9px;
     background: rgba(255, 255, 255, .22);
@@ -2338,6 +2339,13 @@
                 <div class="fw-title">Langganan</div>
                 <div class="fw-sub"><?php $subActive = (int)($subscriptionSummary['active_count'] ?? 0); ?>
                     <?= $subActive > 0 ? $subActive . ' aktif · ' . esc($symbol) . ' ' . number_format((float)($subscriptionSummary['total_monthly'] ?? 0), 0, ',', '.') : 'Pantau tagihan berulang' ?>
+                </div>
+            </a>
+            <a href="/savings" class="fw-card fw-violet">
+                <div class="fw-icon">💰</div>
+                <div class="fw-title">Tabungan</div>
+                <div class="fw-sub"><?php $svCount = (int)($savingsSummary['count'] ?? 0); ?>
+                    <?= $svCount > 0 ? $svCount . ' target menabung' : 'Atur target &amp; sisihkan dana' ?>
                 </div>
             </a>
         </div>

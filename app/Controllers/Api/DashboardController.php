@@ -316,6 +316,13 @@ class DashboardController extends ApiController
                     return ['total_monthly' => 0.0, 'total_yearly' => 0.0, 'active_count' => 0, 'total_count' => 0];
                 }
             })(),
+            'savings_summary' => (function () use ($userId) {
+                try {
+                    return ['count' => count((new \App\Models\SavingsGoalModel())->getForUser((int)$userId))];
+                } catch (\Throwable $e) {
+                    return ['count' => 0];
+                }
+            })(),
             'tv_channels'        => (new \App\Models\TvChannelModel())->getActiveChannels(),
             'latest_news'        => \App\Services\NewsService::getHeadlines(8),
             'my_home_summary'    => \App\Controllers\BarangController::getSummaryForUser($userId),

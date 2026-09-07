@@ -297,6 +297,13 @@ class HomeController extends BaseController
                     return ['total_monthly' => 0.0, 'total_yearly' => 0.0, 'active_count' => 0, 'total_count' => 0];
                 }
             })(),
+            'savingsSummary' => (function () use ($userId) {
+                try {
+                    return ['count' => count((new \App\Models\SavingsGoalModel())->getForUser((int)$userId))];
+                } catch (\Throwable $e) {
+                    return ['count' => 0];
+                }
+            })(),
             'tvChannels'         => (new \App\Models\TvChannelModel())->getActiveChannels(),
             'latestNews'         => \App\Services\NewsService::getHeadlines(8),
             'myHomeSummary'      => \App\Controllers\BarangController::getSummaryForUser($userId),

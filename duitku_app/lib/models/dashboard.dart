@@ -43,6 +43,7 @@ class DashboardData {
   final List<NewsItem> latestNews;
   final Map<String, dynamic> arisanSummary;
   final Map<String, dynamic> subscriptionSummary;
+  final Map<String, dynamic> savingsSummary;
 
   DashboardData({
     this.balance = 0,
@@ -81,6 +82,7 @@ class DashboardData {
     this.latestNews = const [],
     this.arisanSummary = const {},
     this.subscriptionSummary = const {},
+    this.savingsSummary = const {},
   });
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
@@ -147,6 +149,9 @@ class DashboardData {
           const {},
       subscriptionSummary: json['subscription_summary'] as Map<String, dynamic>? ??
           json['subscriptionSummary'] as Map<String, dynamic>? ??
+          const {},
+      savingsSummary: json['savings_summary'] as Map<String, dynamic>? ??
+          json['savingsSummary'] as Map<String, dynamic>? ??
           const {},
     );
   }
