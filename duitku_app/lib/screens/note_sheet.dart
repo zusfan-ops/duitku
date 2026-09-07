@@ -98,11 +98,13 @@ class _NoteSheetState extends State<NoteSheet> {
                 ),
               ),
             const SizedBox(height: 8),
-            FilledButton(
-              onPressed: _saving || _loading ? null : _save,
-              child: _saving
-                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Simpan Catatan'),
+            SafeArea(
+              child: FilledButton(
+                onPressed: _saving || _loading ? null : _save,
+                child: _saving
+                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Simpan Catatan'),
+              ),
             ),
           ],
         ),

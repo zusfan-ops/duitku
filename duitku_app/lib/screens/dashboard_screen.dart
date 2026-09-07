@@ -200,6 +200,7 @@ class DashboardScreenState extends State<DashboardScreen> {
     final appData = context.read<AppDataProvider>();
     await showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => TransactionSheet(
@@ -250,8 +251,7 @@ class DashboardScreenState extends State<DashboardScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 2),
             child: InkWell(
-              onTap: () => Navigator.push(
-                context,
+              onTap: () => Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(builder: (_) => const EmergencyScreen()),
               ),
               borderRadius: BorderRadius.circular(8),
@@ -292,8 +292,7 @@ class DashboardScreenState extends State<DashboardScreen> {
             tooltip: 'Cari Data (Universal)',
             onPressed: () {
               final sym = (_data?['dashboard'] as dynamic)?.symbol?.toString() ?? 'Rp';
-              Navigator.push(
-                context,
+              Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(builder: (_) => UniversalSearchScreen(symbol: sym)),
               );
             },
@@ -402,8 +401,7 @@ class DashboardScreenState extends State<DashboardScreen> {
             data: data,
             onScanOcr: _handleOcrScan,
             onOpenStats: () {
-              Navigator.push(
-                context,
+              Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(builder: (_) => const StatsScreen()),
               );
             },
@@ -602,6 +600,7 @@ class DashboardScreenState extends State<DashboardScreen> {
     final appData = context.read<AppDataProvider>();
     final saved = await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: AppColors.card,
@@ -1131,7 +1130,7 @@ class _WalletStrip extends StatelessWidget {
             const Text('REKENING',
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .5, color: AppColors.textMuted)),
             GestureDetector(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletScreen())),
+              onTap: () => Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const WalletScreen())),
               child: const Text('Kelola →',
                   style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
             ),
@@ -1147,7 +1146,7 @@ class _WalletStrip extends StatelessWidget {
             itemBuilder: (context, i) {
               if (i == wallets.length) {
                 return GestureDetector(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletScreen())),
+                  onTap: () => Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const WalletScreen())),
                   child: Container(
                     width: 110,
                     decoration: BoxDecoration(
@@ -1321,6 +1320,7 @@ class _ReminderCard extends StatelessWidget {
 
     final res = await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
@@ -1386,21 +1386,21 @@ class _ReminderCard extends StatelessWidget {
                 title: '${d['person']}',
                 subtitle: '${d['type']}' == 'hutang' ? 'Bayar hutang' : 'Tagih piutang',
                 daysLeft: (d['daysLeft'] as num?)?.toInt() ?? 0,
-                onPay: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DebtScreen())).then((_) => onRefresh()),
+                onPay: () => Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const DebtScreen())).then((_) => onRefresh()),
               )),
           ...taxes.map((t) => _ReminderRow(
                 icon: '🚗',
                 title: '${t['vehicle_name']}',
                 subtitle: '${t['type']}',
                 daysLeft: (t['days_left'] as num?)?.toInt() ?? 0,
-                onPay: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VehicleScreen())).then((_) => onRefresh()),
+                onPay: () => Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const VehicleScreen())).then((_) => onRefresh()),
               )),
           ...recurring.map((r) => _ReminderRow(
                 icon: '🔁',
                 title: '${r['category_name'] ?? 'Transaksi Berulang'}',
                 subtitle: r['note']?.toString() ?? 'Transaksi Rutin',
                 daysLeft: (r['daysLeft'] as num?)?.toInt() ?? 0,
-                onPay: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RecurringScreen())).then((_) => onRefresh()),
+                onPay: () => Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const RecurringScreen())).then((_) => onRefresh()),
               )),
         ],
       ),
@@ -1571,7 +1571,7 @@ class _TopCategoriesCard extends StatelessWidget {
               const Text('🏆 Top Kategori Pengeluaran',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
               GestureDetector(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StatsScreen())),
+                onTap: () => Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const StatsScreen())),
                 child: const Text('Detail →',
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
               ),
@@ -1664,8 +1664,7 @@ class _EmergencyQuickBanner extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => Navigator.push(
-            context,
+          onTap: () => Navigator.of(context, rootNavigator: true).push(
             MaterialPageRoute(builder: (_) => const EmergencyScreen()),
           ),
           borderRadius: BorderRadius.circular(16),
@@ -1796,8 +1795,7 @@ class _QuickActions extends StatelessWidget {
                   const Color(0xFF10B981).withValues(alpha: 0.08),
                 ],
                 borderColor: const Color(0xFF059669).withValues(alpha: 0.25),
-                onTap: () => Navigator.push(
-                  context,
+                onTap: () => Navigator.of(context, rootNavigator: true).push(
                   MaterialPageRoute(
                     builder: (_) => ZakatPajakScreen(
                       initialBalance: Fmt.toDouble(data.balance),
@@ -1833,8 +1831,7 @@ class _QuickActions extends StatelessWidget {
                 ],
                 borderColor: const Color(0xFFD97706).withValues(alpha: 0.25),
                 badge: activeDebtCount > 0 ? '$activeDebtCount' : null,
-                onTap: () => Navigator.push(
-                  context,
+                onTap: () => Navigator.of(context, rootNavigator: true).push(
                   MaterialPageRoute(builder: (_) => const DebtScreen()),
                 ),
               ),
@@ -1849,8 +1846,7 @@ class _QuickActions extends StatelessWidget {
                   const Color(0xFFA78BFA).withValues(alpha: 0.08),
                 ],
                 borderColor: const Color(0xFF7C3AED).withValues(alpha: 0.25),
-                onTap: () => Navigator.push(
-                  context,
+                onTap: () => Navigator.of(context, rootNavigator: true).push(
                   MaterialPageRoute(builder: (_) => const MarketScreen()),
                 ),
               ),
@@ -1892,8 +1888,7 @@ class _QuickActions extends StatelessWidget {
                   const Color(0xFF38BDF8).withValues(alpha: 0.08),
                 ],
                 borderColor: const Color(0xFF0284C7).withValues(alpha: 0.25),
-                onTap: () => Navigator.push(
-                  context,
+                onTap: () => Navigator.of(context, rootNavigator: true).push(
                   MaterialPageRoute(builder: (_) => const TravelingScreen()),
                 ),
               ),
@@ -1908,8 +1903,7 @@ class _QuickActions extends StatelessWidget {
                   const Color(0xFFFB7185).withValues(alpha: 0.08),
                 ],
                 borderColor: const Color(0xFFE11D48).withValues(alpha: 0.25),
-                onTap: () => Navigator.push(
-                  context,
+                onTap: () => Navigator.of(context, rootNavigator: true).push(
                   MaterialPageRoute(builder: (_) => const GameHubScreen()),
                 ),
               ),
@@ -1924,8 +1918,7 @@ class _QuickActions extends StatelessWidget {
                   const Color(0xFF818CF8).withValues(alpha: 0.08),
                 ],
                 borderColor: const Color(0xFF4F46E5).withValues(alpha: 0.25),
-                onTap: () => Navigator.push(
-                  context,
+                onTap: () => Navigator.of(context, rootNavigator: true).push(
                   MaterialPageRoute(builder: (_) => const PosCashierScreen()),
                 ),
               ),
@@ -2167,7 +2160,7 @@ class _DebtSummaryCard extends StatelessWidget {
         boxShadow: AppColors.cardShadow,
       ),
       child: InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DebtScreen())),
+        onTap: () => Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const DebtScreen())),
         borderRadius: BorderRadius.circular(10),
         child: Row(
           children: [
@@ -2316,12 +2309,13 @@ class _Avatar extends StatelessWidget {
 
 // ── Quick action helpers ───────────────────────────────────────
 void _openBills(BuildContext context, String symbol) {
-  Navigator.push(context, MaterialPageRoute(builder: (_) => BillsScreen(symbol: symbol)));
+  Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => BillsScreen(symbol: symbol)));
 }
 
 void _openNote(BuildContext context) {
   showModalBottomSheet(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: AppColors.card,
     shape: const RoundedRectangleBorder(
@@ -2363,8 +2357,7 @@ class _BelanjaHomeCardState extends State<_BelanjaHomeCard> {
   }
 
   Future<void> _openBelanja() async {
-    await Navigator.push(
-      context,
+    await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(builder: (_) => const BelanjaScreen()),
     );
     _load();
@@ -2619,8 +2612,7 @@ class _TodoHomeCardState extends State<_TodoHomeCard> {
   }
 
   Future<void> _openTodo() async {
-    await Navigator.push(
-      context,
+    await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(builder: (_) => const TodoListScreen()),
     );
     _load();
@@ -2866,8 +2858,7 @@ class _NeighborhoodHomeCard extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: () {
-              Navigator.push(
-                context,
+              Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(builder: (_) => const NeighborhoodScreen()),
               );
             },
@@ -2960,8 +2951,7 @@ class _NeighborhoodHomeCard extends StatelessWidget {
                               context,
                               icon: Icons.build_circle_rounded,
                               label: 'Pinjam Alat',
-                              onTap: () => Navigator.push(
-                                context,
+                              onTap: () => Navigator.of(context, rootNavigator: true).push(
                                 MaterialPageRoute(builder: (_) => const ToolSharingScreen()),
                               ),
                             ),
@@ -2972,8 +2962,7 @@ class _NeighborhoodHomeCard extends StatelessWidget {
                               context,
                               icon: Icons.delivery_dining_rounded,
                               label: 'Titip Belanja',
-                              onTap: () => Navigator.push(
-                                context,
+                              onTap: () => Navigator.of(context, rootNavigator: true).push(
                                 MaterialPageRoute(builder: (_) => const ErrandScreen()),
                               ),
                             ),
@@ -2984,8 +2973,7 @@ class _NeighborhoodHomeCard extends StatelessWidget {
                               context,
                               icon: Icons.home_work_rounded,
                               label: 'Warga RT',
-                              onTap: () => Navigator.push(
-                                context,
+                              onTap: () => Navigator.of(context, rootNavigator: true).push(
                                 MaterialPageRoute(builder: (_) => const NeighborhoodScreen()),
                               ),
                             ),
@@ -3239,8 +3227,7 @@ class _PinnedAnnouncementBannerState extends State<_PinnedAnnouncementBanner> {
                 ],
                 OutlinedButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
+Navigator.of(context, rootNavigator: true).push(
                       MaterialPageRoute(builder: (_) => const NotificationsScreen()),
                     ).then((_) => widget.onRefresh());
                   },
@@ -3369,6 +3356,7 @@ void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback on
 
   showModalBottomSheet(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: AppColors.card,
     shape: const RoundedRectangleBorder(
@@ -3472,8 +3460,7 @@ void _showNotificationsSheet(BuildContext context, dynamic data, VoidCallback on
                           tooltip: 'Pesan & Pengumuman',
                           onPressed: () {
                             Navigator.pop(ctx);
-                            Navigator.push(
-                              context,
+Navigator.of(context, rootNavigator: true).push(
                               MaterialPageRoute(builder: (_) => const NotificationsScreen()),
                             );
                           },
@@ -3961,7 +3948,7 @@ class _BusinessWorkspace extends StatelessWidget {
                 title: 'Kasir POS',
                 icon: '☕',
                 gradient: const [Color(0xFFEA580C), Color(0xFFFB923C)],
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosCashierScreen())).then((_) => onRefresh()),
+                onTap: () => Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const PosCashierScreen())).then((_) => onRefresh()),
               ),
             ),
             const SizedBox(width: 8),
@@ -3971,7 +3958,7 @@ class _BusinessWorkspace extends StatelessWidget {
                 title: 'Stok Produk',
                 icon: '📦',
                 gradient: const [Color(0xFF059669), Color(0xFF34D399)],
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosProductsScreen())).then((_) => onRefresh()),
+                onTap: () => Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const PosProductsScreen())).then((_) => onRefresh()),
               ),
             ),
             const SizedBox(width: 8),
@@ -3981,7 +3968,7 @@ class _BusinessWorkspace extends StatelessWidget {
                 title: 'Laba Rugi',
                 icon: '📊',
                 gradient: const [Color(0xFF4F46E5), Color(0xFF818CF8)],
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosReportsScreen())).then((_) => onRefresh()),
+                onTap: () => Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const PosReportsScreen())).then((_) => onRefresh()),
               ),
             ),
           ],
@@ -4018,7 +4005,7 @@ class _BusinessWorkspace extends StatelessWidget {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosProductsScreen())).then((_) => onRefresh()),
+                  onPressed: () => Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const PosProductsScreen())).then((_) => onRefresh()),
                   style: TextButton.styleFrom(
                     backgroundColor: const Color(0xFFDC2626),
                     foregroundColor: Colors.white,
@@ -4062,7 +4049,7 @@ class _BusinessWorkspace extends StatelessWidget {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DebtScreen())).then((_) => onRefresh()),
+                  onPressed: () => Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const DebtScreen())).then((_) => onRefresh()),
                   style: TextButton.styleFrom(
                     backgroundColor: const Color(0xFFD97706),
                     foregroundColor: Colors.white,
@@ -4093,7 +4080,7 @@ class _BusinessWorkspace extends StatelessWidget {
                 children: [
                   const Text('🏆 4 Menu Terlaris Bulan Ini', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800)),
                   GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosReportsScreen())),
+                    onTap: () => Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const PosReportsScreen())),
                     child: const Text('Laporan →', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.primary)),
                   ),
                 ],
@@ -4177,7 +4164,7 @@ class _BusinessWorkspace extends StatelessWidget {
                   children: [
                     const Text('📋 Transaksi Kasir Terakhir', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800)),
                     GestureDetector(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosReportsScreen())),
+                      onTap: () => Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const PosReportsScreen())),
                       child: const Text('Semua →', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.primary)),
                     ),
                   ],

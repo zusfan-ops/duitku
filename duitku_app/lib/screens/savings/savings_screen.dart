@@ -47,6 +47,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
 
     final ok = await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
@@ -154,6 +155,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
 
     final saved = await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(

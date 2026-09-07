@@ -85,6 +85,7 @@ class _ZakatPajakScreenState extends State<ZakatPajakScreen> with SingleTickerPr
     final appData = context.read<AppDataProvider>();
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => TransactionSheet(

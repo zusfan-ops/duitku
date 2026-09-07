@@ -161,8 +161,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
           );
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              Navigator.push(
-                context,
+              Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(
                   builder: (_) => DirectChatScreen(
                     friendId: friend.friendId,
@@ -359,8 +358,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                           actionBtn = ElevatedButton(
                             onPressed: () {
                               Navigator.pop(ctx);
-                              Navigator.push(
-                                context,
+                              Navigator.of(context, rootNavigator: true).push(
                                 MaterialPageRoute(
                                   builder: (_) => DirectChatScreen(
                                     friendId: u.id,
@@ -891,8 +889,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
                     onTap: () async {
-                      await Navigator.push(
-                        context,
+                      await Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(
                           builder: (_) => DirectChatScreen(
                             friendId: partnerId,
@@ -1038,8 +1035,7 @@ class _MarketConversationsScreenState extends State<MarketConversationsScreen> {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
                     onTap: () async {
-                      await Navigator.push(
-                        context,
+                      await Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(
                           builder: (_) => MarketChatScreen(
                             listingId: listingId,

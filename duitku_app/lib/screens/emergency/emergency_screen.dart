@@ -92,6 +92,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   void _shareSos() {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(20),

@@ -433,6 +433,7 @@ class _BelanjaScreenState extends State<BelanjaScreen> {
   Future<void> _openListMenu() async {
     await showModalBottomSheet<String>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -485,6 +486,7 @@ class _BelanjaScreenState extends State<BelanjaScreen> {
 
     final saved = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(

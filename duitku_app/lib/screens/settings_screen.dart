@@ -578,7 +578,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: const Text('Multi-goal · Setor tabungan berkala', style: TextStyle(fontSize: 12)),
                       trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
                       onTap: () async {
-                        await Navigator.push(context, MaterialPageRoute(builder: (_) => const SavingsScreen()));
+                        await Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const SavingsScreen()));
                         _load();
                       },
                     ),
@@ -595,7 +595,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
                       onTap: () async {
-                        await Navigator.push(context, MaterialPageRoute(builder: (_) => const RecurringScreen()));
+                        await Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const RecurringScreen()));
                         _load();
                       },
                     ),
@@ -607,7 +607,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: const Text('Cetak PDF & unduh CSV Excel', style: TextStyle(fontSize: 12)),
                       trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
                       onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ExportScreen()));
+                        Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const ExportScreen()));
                       },
                     ),
                   ),
@@ -689,7 +689,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: const Text('Panduan lengkap Sistem RT, Pinjam Alat, dll.', style: TextStyle(fontSize: 12)),
                       trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
                       onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const FaqScreen()));
+                        Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const FaqScreen()));
                       },
                     ),
                   ),
@@ -714,7 +714,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: const Text('Ekspor & impor data cadangan', style: TextStyle(fontSize: 12)),
                       trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
                       onTap: () async {
-                        final ok = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const BackupRestoreScreen()));
+                        final ok = await Navigator.of(context, rootNavigator: true).push<bool>( MaterialPageRoute(builder: (_) => const BackupRestoreScreen()));
                         if (ok == true) _load();
                       },
                     ),
@@ -735,7 +735,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: const Text('Zusfan Mashuri · Profil & Kontak', style: TextStyle(fontSize: 12)),
                       trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
                       onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperScreen()));
+                        Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const DeveloperScreen()));
                       },
                     ),
                   ),
@@ -751,7 +751,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: const Text('Bagaimana data kamu dilindungi', style: TextStyle(fontSize: 12)),
                       trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
                       onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
+                        Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
                       },
                     ),
                   ),
@@ -762,7 +762,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: const Text('Standar komunitas & cara melapor', style: TextStyle(fontSize: 12)),
                       trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
                       onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ModerationScreen()));
+                        Navigator.of(context, rootNavigator: true).push( MaterialPageRoute(builder: (_) => const ModerationScreen()));
                       },
                     ),
                   ),

@@ -107,6 +107,7 @@ class _NotificationDetectorScreenState extends State<NotificationDetectorScreen>
     final appData = context.read<AppDataProvider>();
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => TransactionSheet(

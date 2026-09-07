@@ -50,6 +50,7 @@ class _BillsScreenState extends State<BillsScreen> {
 
     final saved = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
@@ -185,6 +186,7 @@ class _BillsScreenState extends State<BillsScreen> {
 
     final res = await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(

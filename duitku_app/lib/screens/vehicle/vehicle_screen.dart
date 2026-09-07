@@ -84,6 +84,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
 
     final saved = await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
@@ -247,6 +248,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
 
     final saved = await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
@@ -365,6 +367,7 @@ class _VehicleScreenState extends State<VehicleScreen> {
   Future<void> _viewVehicleDetail(Vehicle v) async {
     await showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(

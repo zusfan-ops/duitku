@@ -518,13 +518,15 @@ class _TransactionSheetState extends State<TransactionSheet> {
               ),
 
             const SizedBox(height: 10),
-            FilledButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text(widget.transaction == null
-                      ? (_type == 'expense' ? 'Simpan Pengeluaran' : 'Simpan Pemasukan')
-                      : 'Simpan Perubahan'),
+            SafeArea(
+              child: FilledButton(
+                onPressed: _saving ? null : _save,
+                child: _saving
+                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : Text(widget.transaction == null
+                        ? (_type == 'expense' ? 'Simpan Pengeluaran' : 'Simpan Pemasukan')
+                        : 'Simpan Perubahan'),
+              ),
             ),
           ],
         ),

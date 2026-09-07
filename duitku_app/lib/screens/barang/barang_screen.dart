@@ -138,6 +138,7 @@ class _BarangScreenState extends State<BarangScreen> {
   void _openAddForm({Barang? barang}) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _AssetFormSheet(
@@ -161,6 +162,7 @@ class _BarangScreenState extends State<BarangScreen> {
   void _openDetailSheet(Barang barang) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _AssetDetailSheet(

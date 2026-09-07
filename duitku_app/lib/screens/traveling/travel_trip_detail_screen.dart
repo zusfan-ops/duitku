@@ -105,6 +105,7 @@ class _TravelTripDetailScreenState extends State<TravelTripDetailScreen>
   Future<void> _editTrip(TravelTrip trip) async {
     await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
@@ -225,12 +226,15 @@ class _ChecklistTab extends StatelessWidget {
                   },
                 ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: FilledButton.icon(
-            onPressed: () => _addItem(context),
-            icon: const Icon(Icons.add),
-            label: const Text('Tambah Barang'),
+        SafeArea(
+          minimum: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: FilledButton.icon(
+              onPressed: () => _addItem(context),
+              icon: const Icon(Icons.add),
+              label: const Text('Tambah Barang'),
+            ),
           ),
         ),
       ],
@@ -255,6 +259,7 @@ class _ChecklistTab extends StatelessWidget {
   Future<void> _addItem(BuildContext context) async {
     await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -265,6 +270,7 @@ class _ChecklistTab extends StatelessWidget {
   Future<void> _editItem(BuildContext context, TravelItem item) async {
     await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -292,8 +298,7 @@ class _TicketsTab extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final ticket = tickets[index];
                     return GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
+                      onTap: () => Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(builder: (_) => TravelTicketDetailScreen(ticket: ticket)),
                       ),
                       child: Container(
@@ -344,23 +349,26 @@ class _TicketsTab extends StatelessWidget {
                   },
                 ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              FilledButton.icon(
-                onPressed: () => _scanTicket(context),
-                icon: const Icon(Icons.qr_code_scanner),
-                label: const Text('Scan Tiket'),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () => _addTicket(context),
-                icon: const Icon(Icons.edit_note),
-                label: const Text('Tambah Manual'),
-              ),
-            ],
+        SafeArea(
+          minimum: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                FilledButton.icon(
+                  onPressed: () => _scanTicket(context),
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: const Text('Scan Tiket'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => _addTicket(context),
+                  icon: const Icon(Icons.edit_note),
+                  label: const Text('Tambah Manual'),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -383,13 +391,13 @@ class _TicketsTab extends StatelessWidget {
   }
 
   Future<void> _scanTicket(BuildContext context) async {
-    final qrData = await Navigator.push<String>(
-      context,
+    final qrData = await Navigator.of(context, rootNavigator: true).push<String>(
       MaterialPageRoute(builder: (_) => const TravelQrScannerScreen()),
     );
     if (qrData != null && context.mounted) {
       await showModalBottomSheet<bool>(
         context: context,
+        useRootNavigator: true,
         isScrollControlled: true,
         backgroundColor: AppColors.card,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -401,6 +409,7 @@ class _TicketsTab extends StatelessWidget {
   Future<void> _addTicket(BuildContext context) async {
     await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -519,12 +528,15 @@ class _CostTab extends StatelessWidget {
                   },
                 ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: FilledButton.icon(
-            onPressed: () => _addTransaction(context),
-            icon: const Icon(Icons.add),
-            label: const Text('Catat Transaksi'),
+        SafeArea(
+          minimum: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: FilledButton.icon(
+              onPressed: () => _addTransaction(context),
+              icon: const Icon(Icons.add),
+              label: const Text('Catat Transaksi'),
+            ),
           ),
         ),
       ],
@@ -572,6 +584,7 @@ class _CostTab extends StatelessWidget {
     if (!context.mounted) return;
     await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),

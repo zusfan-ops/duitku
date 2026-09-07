@@ -11,6 +11,7 @@ class TvChatSheet extends StatefulWidget {
   static Future<void> show(BuildContext context) {
     return showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const TvChatSheet(),

@@ -116,6 +116,7 @@ class _PosCashierScreenState extends State<PosCashierScreen> {
   void _openCartSheet() {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -284,6 +285,7 @@ class _PosCashierScreenState extends State<PosCashierScreen> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -484,8 +486,9 @@ class _PosCashierScreenState extends State<PosCashierScreen> {
                           if (orderJson != null && mounted) {
                             final order = PosOrder.fromJson(orderJson);
                             showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
+                                context: context,
+                                useRootNavigator: true,
+                                isScrollControlled: true,
                               backgroundColor: AppColors.card,
                               shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
                               builder: (_) => PosReceiptSheet(

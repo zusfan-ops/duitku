@@ -56,6 +56,7 @@ class _DebtScreenState extends State<DebtScreen> {
 
     final saved = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
@@ -263,6 +264,7 @@ class _DebtScreenState extends State<DebtScreen> {
 
     final ok = await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
