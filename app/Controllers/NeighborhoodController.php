@@ -7,6 +7,8 @@ use App\Models\NeighborhoodVouchModel;
 use App\Models\UserModel;
 use App\Models\SettingModel;
 use App\Models\CommunityToolModel;
+use App\Models\IuranConfigModel;
+use App\Models\IuranPaymentModel;
 use App\Services\NeighborhoodService;
 
 class NeighborhoodController extends BaseController
@@ -17,6 +19,8 @@ class NeighborhoodController extends BaseController
     protected SettingModel           $settingModel;
     protected CommunityToolModel     $toolModel;
     protected NeighborhoodService    $neighborhoodService;
+    protected IuranConfigModel       $iuranConfigModel;
+    protected IuranPaymentModel      $iuranPaymentModel;
 
     public function __construct()
     {
@@ -26,6 +30,8 @@ class NeighborhoodController extends BaseController
         $this->settingModel        = new SettingModel();
         $this->toolModel           = new CommunityToolModel();
         $this->neighborhoodService = new NeighborhoodService();
+        $this->iuranConfigModel    = new IuranConfigModel();
+        $this->iuranPaymentModel   = new IuranPaymentModel();
     }
 
     /**
@@ -431,6 +437,123 @@ class NeighborhoodController extends BaseController
         $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
 
         $res = $this->neighborhoodService->deleteDiscussionComment($neighborhoodId, $userId, $id);
+        return $this->response->setJSON($res);
+    }
+
+    /**
+     * Halaman Iuran & Kas RT Web
+     * GET /neighborhood/iuran
+     */
+    public function iuran()
+    {
+        $userId = session()->get('user_id');
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        if (!$neighborhoodId) {
+            return redirect()->to('/neighborhood/join');
+        }
+
+        $neighborhood = $this->neighborhoodModel->getWithDetails($neighborhoodId);
+        $canManage    = $this->neighborhoodService->canManageKasOrAgenda($neighborhoodId, $userId);
+        $config       = $this->iuranConfigModel->getActiveConfig($neighborhoodId);
+
+        $residents   = $this->neighborhoodModel->getResidents($neighborhoodId, 'verified');
+        $residentIds = array_map(fn($r) => (int)$r['id'], $residents);
+
+        $periodMonth = date('Y-m');
+        $payments    = [];
+        $summary     = null;
+
+        if ($config) {
+            if ($canManage && $residentIds) {
+                $this->iuranPaymentModel->ensurePeriodRows(
+                    $neighborhoodId, $periodMonth, $residentIds,
+                    (int)$config['id'], (float)$config['amount']
+                );
+            }
+            $summary  = $this->iuranPaymentModel->getSummary($neighborhoodId, $periodMonth, (int)$config['id']);
+            $payments = $this->iuranPaymentModel->getForPeriod($neighborhoodId, $periodMonth, (int)$config['id']);
+        }
+
+        $history = $this->iuranConfigModel->getHistory($neighborhoodId);
+
+        return view('neighborhood/iuran', [
+            'pageTitle'    => 'Iuran & Kas RT — ' . esc($neighborhood['name']),
+            'user'         => $user,
+            'neighborhood' => $neighborhood,
+            'config'       => $config,
+            'canManage'    => $canManage,
+            'periodMonth'  => $periodMonth,
+            'summary'      => $summary,
+            'payments'     => $payments,
+            'residents'    => $residents,
+            'history'      => $history,
+            'symbol'       => 'Rp',
+        ]);
+    }
+
+    /**
+     * Simpan Konfigurasi Iuran Web
+     * POST /neighborhood/iuran/config
+     */
+    public function iuranConfig()
+    {
+        $userId = session()->get('user_id');
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        if (!$neighborhoodId) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Anda belum terdaftar di RT mana pun.']);
+        }
+        if (!$this->neighborhoodService->canManageKasOrAgenda($neighborhoodId, $userId)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Hanya Ketua RT atau Bendahara yang dapat mengatur iuran.']);
+        }
+
+        $post       = $this->request->getPost();
+        $periodType = in_array($post['period_type'] ?? '', ['monthly', 'weekly', 'yearly'], true)
+            ? $post['period_type'] : 'monthly';
+        $amount = $this->parseAmount($post['amount'] ?? '0');
+
+        if ($amount <= 0) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Nominal iuran harus lebih dari Rp 0.']);
+        }
+
+        $id = $this->iuranConfigModel->setActive($neighborhoodId, [
+            'period_type' => $periodType,
+            'amount'      => $amount,
+            'description' => trim($post['description'] ?? 'Iuran Warga Bulanan'),
+        ]);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => 'Konfigurasi iuran berhasil diperbarui.',
+            'config_id' => $id,
+        ]);
+    }
+
+    /**
+     * Catat Pembayaran Iuran Web
+     * POST /neighborhood/iuran/pay
+     */
+    public function iuranPay()
+    {
+        $userId = session()->get('user_id');
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        if (!$neighborhoodId) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Anda belum terdaftar di RT mana pun.']);
+        }
+
+        $post      = $this->request->getPost();
+        $paymentId = (int)($post['payment_id'] ?? 0);
+
+        if (!$paymentId) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Catatan iuran tidak valid.']);
+        }
+
+        $res = $this->iuranPaymentModel->markPaid($paymentId, $userId, $post);
         return $this->response->setJSON($res);
     }
 }

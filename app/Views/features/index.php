@@ -202,6 +202,18 @@
     background: linear-gradient(135deg, #065F46 0%, #059669 50%, #10B981 100%);
     box-shadow: 0 6px 18px rgba(5, 150, 105, 0.28);
 }
+.feat-arisan {
+    background: linear-gradient(135deg, #6D28D9 0%, #8B5CF6 50%, #A78BFA 100%);
+    box-shadow: 0 6px 18px rgba(139, 92, 246, 0.28);
+}
+.feat-subscription {
+    background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 50%, #60A5FA 100%);
+    box-shadow: 0 6px 18px rgba(59, 130, 246, 0.28);
+}
+.feat-documents {
+    background: linear-gradient(135deg, #475569 0%, #64748B 50%, #94A3B8 100%);
+    box-shadow: 0 6px 18px rgba(100, 116, 139, 0.28);
+}
 </style>
 <?= $this->endSection() ?>
 
@@ -354,6 +366,70 @@
             <div class="feature-card-info">
                 <div class="feature-card-title">Komunitas RT & Pinjam Alat</div>
                 <div class="feature-card-desc">Sistem RT, pinjam alat pertukangan & kebersihan, serta titip belanja tetangga</div>
+            </div>
+        </a>
+
+        <!-- 0b. Iuran & Kas RT -->
+        <a href="/neighborhood/iuran" class="feature-card feat-rt">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                <line x1="2" y1="10" x2="22" y2="10"></line>
+            </svg>
+            <div class="feature-card-icon">
+                <span style="font-size: 16px;">💰</span>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Iuran & Kas RT</div>
+                <div class="feature-card-desc">Tagihan iuran warga & otomatis ke kas</div>
+            </div>
+        </a>
+
+        <!-- 0c. Arisan Komunitas -->
+        <a href="/arisan" class="feature-card feat-arisan">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M1 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"></path>
+                <circle cx="17.5" cy="7.5" r="2.5"></circle>
+                <path d="M14 14.5a4 4 0 0 1 4 0"></path>
+            </svg>
+            <div class="feature-card-icon">
+                <span style="font-size: 16px;">🤝</span>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Arisan Komunitas</div>
+                <div class="feature-card-desc">Kelola arisan, anggota & giliran</div>
+            </div>
+        </a>
+
+        <!-- 0d. Langganan & Subscription -->
+        <a href="/subscriptions" class="feature-card feat-subscription">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                <polyline points="17 6 23 6 23 12"></polyline>
+            </svg>
+            <div class="feature-card-icon">
+                <span style="font-size: 16px;">🔁</span>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Langganan</div>
+                <div class="feature-card-desc">Tracker subscription & tagihan rutin</div>
+            </div>
+        </a>
+
+        <!-- 0e. Dokumen Digital -->
+        <a href="/documents" class="feature-card feat-documents">
+            <svg class="feature-card-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            <div class="feature-card-icon">
+                <span style="font-size: 16px;">📁</span>
+            </div>
+            <div class="feature-card-info">
+                <div class="feature-card-title">Dokumen Digital</div>
+                <div class="feature-card-desc">Simpan foto dokumen + pengingat</div>
             </div>
         </a>
 

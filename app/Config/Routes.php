@@ -244,6 +244,34 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/neighborhood/errands/item',       'ErrandController::addItem', ['filter' => 'resident']);
     $routes->post('/neighborhood/errands/deliver',    'ErrandController::deliverItem');
 
+    // Iuran & Kas RT Web
+    $routes->get('/neighborhood/iuran',               'NeighborhoodController::iuran');
+    $routes->post('/neighborhood/iuran/pay',          'NeighborhoodController::iuranPay');
+    $routes->post('/neighborhood/iuran/config',       'NeighborhoodController::iuranConfig');
+
+    // Arisan Komunitas Web
+    $routes->get('/arisan',                           'ArisanController::index');
+    $routes->get('/arisan/(:num)',                    'ArisanController::show/$1');
+    $routes->post('/arisan/store',                    'ArisanController::store');
+    $routes->post('/arisan/(:num)/member',            'ArisanController::addMember/$1');
+    $routes->post('/arisan/payment/pay',              'ArisanController::payPayment');
+    $routes->post('/arisan/(:num)/advance',           'ArisanController::advanceRound/$1');
+
+    // Subscription & Langganan Web
+    $routes->get('/subscriptions',                    'SubscriptionController::index');
+    $routes->post('/subscriptions/store',             'SubscriptionController::store');
+    $routes->post('/subscriptions/update/(:num)',     'SubscriptionController::update/$1');
+    $routes->post('/subscriptions/pay/(:num)',        'SubscriptionController::pay/$1');
+    $routes->post('/subscriptions/delete/(:num)',     'SubscriptionController::delete/$1');
+
+    // Dokumen Digital & Catatan Penting Web
+    $routes->get('/documents',                        'DocumentController::index');
+    $routes->get('/documents/(:num)',                 'DocumentController::show/$1');
+    $routes->post('/documents/store',                 'DocumentController::store');
+    $routes->post('/documents/update/(:num)',         'DocumentController::update/$1');
+    $routes->post('/documents/favorite/(:num)',       'DocumentController::toggleFavorite/$1');
+    $routes->post('/documents/delete/(:num)',         'DocumentController::delete/$1');
+
     // Pusat Bantuan & FAQ
     $routes->get('/faq',                              'FaqController::index');
 });
@@ -619,6 +647,35 @@ $routes->group('api', function ($routes) {
         $routes->post('neighborhood/errands/item',        'Api\ErrandController::addItem', ['filter' => 'resident']);
         $routes->post('neighborhood/errands/deliver',     'Api\ErrandController::deliverItem');
         $routes->get('neighborhood/errands/my-requests',  'Api\ErrandController::myRequests');
+
+        // Iuran Kas RT API
+        $routes->get('iuran',                         'Api\IuranController::index');
+        $routes->post('iuran/config',                 'Api\IuranController::storeConfig');
+        $routes->post('iuran/pay',                    'Api\IuranController::pay');
+        $routes->get('iuran/history',                 'Api\IuranController::history');
+
+        // Arisan Komunitas API
+        $routes->get('arisan',                        'Api\ArisanController::index');
+        $routes->get('arisan/(:num)',                 'Api\ArisanController::show/$1');
+        $routes->post('arisan/store',                 'Api\ArisanController::store');
+        $routes->post('arisan/(:num)/member',         'Api\ArisanController::addMember/$1');
+        $routes->post('arisan/payment/pay',           'Api\ArisanController::payPayment');
+        $routes->post('arisan/(:num)/advance',        'Api\ArisanController::advanceRound/$1');
+
+        // Subscription & Langganan API
+        $routes->get('subscriptions',                 'Api\SubscriptionController::index');
+        $routes->post('subscriptions/store',          'Api\SubscriptionController::store');
+        $routes->post('subscriptions/update/(:num)',  'Api\SubscriptionController::update/$1');
+        $routes->post('subscriptions/pay/(:num)',     'Api\SubscriptionController::pay/$1');
+        $routes->post('subscriptions/delete/(:num)',  'Api\SubscriptionController::delete/$1');
+
+        // Dokumen Digital & Catatan Penting API
+        $routes->get('documents',                     'Api\DocumentController::index');
+        $routes->get('documents/(:num)',              'Api\DocumentController::show/$1');
+        $routes->post('documents/store',              'Api\DocumentController::store');
+        $routes->post('documents/update/(:num)',      'Api\DocumentController::update/$1');
+        $routes->post('documents/favorite/(:num)',    'Api\DocumentController::toggleFavorite/$1');
+        $routes->post('documents/delete/(:num)',      'Api\DocumentController::delete/$1');
     });
 });
 

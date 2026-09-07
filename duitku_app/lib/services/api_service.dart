@@ -4,9 +4,13 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../config/api_config.dart';
+import '../models/arisan.dart';
 import '../models/bill.dart';
 import '../models/category.dart';
 import '../models/dashboard.dart';
+import '../models/digital_document.dart';
+import '../models/iuran.dart';
+import '../models/subscription.dart';
 import '../models/transaction.dart';
 import '../models/user.dart';
 
@@ -1130,6 +1134,201 @@ class ApiService {
 
   Future<Map<String, dynamic>> getMyReports() async {
     return get('report/my-reports');
+  }
+
+  // ── Iuran & Kas RT ──────────────────────────────────────────
+  Future<IuranData> iuran() async {
+    final json = await get('iuran');
+    return IuranData.fromJson(json);
+  }
+
+  Future<Map<String, dynamic>> storeIuranConfig({
+    required String periodType,
+    required double amount,
+    String description = 'Iuran Warga Bulanan',
+  }) async {
+    return post('iuran/config', {
+      'period_type': periodType,
+      'amount': amount,
+      'description': description,
+    });
+  }
+
+  Future<Map<String, dynamic>> payIuran({
+    required int paymentId,
+    required double amount,
+    String paidVia = 'cash',
+    String? notes,
+  }) async {
+    return post('iuran/pay', {
+      'payment_id': paymentId,
+      'amount': amount,
+      'paid_via': paidVia,
+      if (notes != null && notes.isNotEmpty) 'notes': notes,
+    });
+  }
+
+  Future<Map<String, dynamic>> iuranHistory() async {
+    return get('iuran/history');
+  }
+
+  // ── Arisan Komunitas ────────────────────────────────────────
+  Future<List<ArisanGroup>> arisan() async {
+    final json = await get('arisan');
+    return (json['groups'] as List? ?? [])
+        .map((e) => ArisanGroup.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<ArisanGroup> arisanDetail(int id) async {
+    final json = await get('arisan/$id');
+    return ArisanGroup.fromJson(json['group'] as Map<String, dynamic>);
+  }
+
+  Future<Map<String, dynamic>> storeArisan({
+    required String name,
+    required double amount,
+    String frequency = 'monthly',
+    String? startDate,
+    String? ownerName,
+    String? description,
+    int? neighborhoodId,
+    String? ownerPhone,
+  }) async {
+    return post('arisan/store', {
+      'name': name,
+      'amount': amount,
+      'frequency': frequency,
+      if (startDate != null && startDate.isNotEmpty) 'start_date': startDate,
+      if (ownerName != null && ownerName.isNotEmpty) 'owner_name': ownerName,
+      if (description != null && description.isNotEmpty) 'description': description,
+      if (neighborhoodId != null && neighborhoodId > 0) 'neighborhood_id': neighborhoodId,
+      if (ownerPhone != null && ownerPhone.isNotEmpty) 'owner_phone': ownerPhone,
+    });
+  }
+
+  Future<Map<String, dynamic>> arisanAddMember(
+    int id, {
+    required String memberName,
+    String? phone,
+    int? userId,
+  }) async {
+    return post('arisan/$id/member', {
+      'member_name': memberName,
+      if (phone != null && phone.isNotEmpty) 'phone': phone,
+      if (userId != null && userId > 0) 'user_id': userId,
+    });
+  }
+
+  Future<Map<String, dynamic>> arisanPayPayment({
+    required int paymentId,
+    required int groupId,
+  }) async {
+    return post('arisan/payment/pay', {
+      'payment_id': paymentId,
+      'group_id': groupId,
+    });
+  }
+
+  Future<Map<String, dynamic>> arisanAdvance(int id) async {
+    return post('arisan/$id/advance');
+  }
+
+  // ── Subscriptions / Langganan ───────────────────────────────
+  Future<SubscriptionData> subscriptions({String status = ''}) async {
+    final json = await get('subscriptions', query: status.isEmpty ? null : {'status': status});
+    return SubscriptionData.fromJson(json);
+  }
+
+  Future<Map<String, dynamic>> storeSubscription({
+    required String name,
+    String icon = '🔁',
+    String category = 'Hiburan',
+    required double amount,
+    String billingCycle = 'monthly',
+    String? nextBillingDate,
+    String? notes,
+    String? status,
+    bool isWaste = false,
+  }) async {
+    return post('subscriptions/store', {
+      'name': name,
+      'icon': icon,
+      'category': category,
+      'amount': amount,
+      'billing_cycle': billingCycle,
+      if (nextBillingDate != null && nextBillingDate.isNotEmpty) 'next_billing_date': nextBillingDate,
+      if (notes != null && notes.isNotEmpty) 'notes': notes,
+      if (status != null && status.isNotEmpty) 'status': status,
+      if (isWaste) 'is_waste': 1,
+    });
+  }
+
+  Future<Map<String, dynamic>> updateSubscription(int id, Map<String, dynamic> data) async {
+    return post('subscriptions/update/$id', data);
+  }
+
+  Future<Map<String, dynamic>> paySubscription(int id) async {
+    return post('subscriptions/pay/$id');
+  }
+
+  Future<void> deleteSubscription(int id) async {
+    await post('subscriptions/delete/$id');
+  }
+
+  // ── Dokumen Digital ─────────────────────────────────────────
+  Future<DocumentData> documents({String category = ''}) async {
+    final json = await get('documents', query: category.isEmpty ? null : {'category': category});
+    return DocumentData.fromJson(json);
+  }
+
+  Future<DigitalDocument> documentDetail(int id) async {
+    final json = await get('documents/$id');
+    return DigitalDocument.fromJson(json['document'] as Map<String, dynamic>);
+  }
+
+  Future<Map<String, dynamic>> storeDocument({
+    required String name,
+    String documentType = 'Lainnya',
+    String category = 'Identitas',
+    String? documentNumber,
+    String? issuedDate,
+    String? expiryDate,
+    String? issuingAuthority,
+    String? ownerName,
+    String? notes,
+    String? photoBase64,
+    String? photoBackBase64,
+    String? storageLocation,
+    bool isFavorite = false,
+  }) async {
+    return post('documents/store', {
+      'name': name,
+      'document_type': documentType,
+      'category': category,
+      if (documentNumber != null && documentNumber.isNotEmpty) 'document_number': documentNumber,
+      if (issuedDate != null && issuedDate.isNotEmpty) 'issued_date': issuedDate,
+      if (expiryDate != null && expiryDate.isNotEmpty) 'expiry_date': expiryDate,
+      if (issuingAuthority != null && issuingAuthority.isNotEmpty) 'issuing_authority': issuingAuthority,
+      if (ownerName != null && ownerName.isNotEmpty) 'owner_name': ownerName,
+      if (notes != null && notes.isNotEmpty) 'notes': notes,
+      if (photoBase64 != null && photoBase64.isNotEmpty) 'photo_base64': photoBase64,
+      if (photoBackBase64 != null && photoBackBase64.isNotEmpty) 'photo_back_base64': photoBackBase64,
+      if (storageLocation != null && storageLocation.isNotEmpty) 'storage_location': storageLocation,
+      if (isFavorite) 'is_favorite': 1,
+    });
+  }
+
+  Future<Map<String, dynamic>> updateDocument(int id, Map<String, dynamic> data) async {
+    return post('documents/update/$id', data);
+  }
+
+  Future<Map<String, dynamic>> toggleDocumentFavorite(int id) async {
+    return post('documents/favorite/$id');
+  }
+
+  Future<void> deleteDocument(int id) async {
+    await post('documents/delete/$id');
   }
 }
 

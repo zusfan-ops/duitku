@@ -37,6 +37,10 @@ import 'zakat_pajak/zakat_pajak_screen.dart';
 import 'marketplace/market_screen.dart';
 import 'neighborhood/neighborhood_screen.dart';
 import 'faq/faq_screen.dart';
+import 'neighborhood/iuran_screen.dart';
+import 'arisan/arisan_screen.dart';
+import 'subscription/subscription_screen.dart';
+import 'document/document_screen.dart';
 
 class FeaturesScreen extends StatelessWidget {
   const FeaturesScreen({super.key});
@@ -306,6 +310,54 @@ class FeaturesScreen extends StatelessWidget {
               shadowColor: const Color(0xFF10B981),
               onTap: () => Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(builder: (_) => const NearbyPlacesScreen()),
+              ),
+            ),
+          ]),
+
+          const SizedBox(height: 18),
+
+          // Section: Komunitas & Arsip
+          _buildSectionHeader('KOMUNITAS & ARSIP'),
+          const SizedBox(height: 8),
+          _buildFeatureGrid(context, [
+            _FeatureItem(
+              title: 'Iuran & Kas RT',
+              subtitle: 'Iuran warga, kas & tunggakan',
+              icon: Icons.payments_rounded,
+              gradient: const [Color(0xFF0F766E), Color(0xFF14B8A6)],
+              shadowColor: const Color(0xFF14B8A6),
+              onTap: () => Navigator.of(context, rootNavigator: true).push(
+                MaterialPageRoute(builder: (_) => const IuranScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Arisan Komunitas',
+              subtitle: 'Grup patungan & giliran dana',
+              icon: Icons.groups_2_rounded,
+              gradient: const [Color(0xFF7C3AED), Color(0xFFA78BFA)],
+              shadowColor: const Color(0xFFA78BFA),
+              onTap: () => Navigator.of(context, rootNavigator: true).push(
+                MaterialPageRoute(builder: (_) => const ArisanScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Langganan',
+              subtitle: 'Tagihan rutin & aman dari lupa',
+              icon: Icons.repeat_rounded,
+              gradient: const [Color(0xFF2563EB), Color(0xFF60A5FA)],
+              shadowColor: const Color(0xFF60A5FA),
+              onTap: () => Navigator.of(context, rootNavigator: true).push(
+                MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Dokumen Digital',
+              subtitle: 'Arsip KTP, SIM & pengingat',
+              icon: Icons.folder_shared_rounded,
+              gradient: const [Color(0xFF475569), Color(0xFF94A3B8)],
+              shadowColor: const Color(0xFF94A3B8),
+              onTap: () => Navigator.of(context, rootNavigator: true).push(
+                MaterialPageRoute(builder: (_) => const DocumentScreen()),
               ),
             ),
           ]),
