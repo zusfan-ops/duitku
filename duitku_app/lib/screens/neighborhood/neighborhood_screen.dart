@@ -353,7 +353,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
 
                       // Category Dropdown
                       DropdownButtonFormField<String>(
-                        value: category,
+                        initialValue: category,
                         decoration: InputDecoration(
                           labelText: 'Kategori Kas',
                           filled: true,
@@ -567,7 +567,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                     const SizedBox(height: 12),
 
                     DropdownButtonFormField<String>(
-                      value: category,
+                      initialValue: category,
                       decoration: InputDecoration(
                         labelText: 'Kategori Kegiatan',
                         filled: true,

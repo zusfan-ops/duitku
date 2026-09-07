@@ -260,6 +260,7 @@ class ToolRental {
   final String borrowerName;
   final String status;
   final double rentalFee;
+  final double rtFeeAmount;
   final double depositAmount;
   final String startDate;
   final String dueDate;
@@ -276,6 +277,7 @@ class ToolRental {
     required this.borrowerName,
     required this.status,
     required this.rentalFee,
+    this.rtFeeAmount = 0.0,
     required this.depositAmount,
     required this.startDate,
     required this.dueDate,
@@ -294,6 +296,7 @@ class ToolRental {
       borrowerName: json['borrower_name']?.toString() ?? 'Warga',
       status: json['status']?.toString() ?? 'requested',
       rentalFee: double.tryParse(json['rental_fee']?.toString() ?? '0') ?? 0.0,
+      rtFeeAmount: double.tryParse(json['rt_fee_amount']?.toString() ?? '0') ?? 0.0,
       depositAmount: double.tryParse(json['deposit_amount']?.toString() ?? '0') ?? 0.0,
       startDate: json['start_date']?.toString() ?? '',
       dueDate: json['due_date']?.toString() ?? '',
@@ -320,7 +323,7 @@ class Errand {
     required this.organizerUserId,
     required this.organizerName,
     this.organizerHouse,
-    this.destinationStore,
+    required this.destinationStore,
     this.description,
     required this.cutoffTime,
     required this.status,
