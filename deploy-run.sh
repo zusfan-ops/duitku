@@ -53,5 +53,13 @@ if ! id "$OWNER" >/dev/null 2>&1; then
 fi
 
 echo "    Elevate ke '$OWNER' via sudo untuk menjalankan deploy.sh..."
-sudo -u "$OWNER" env HOME=/tmp git config --global --add safe.directory "$PROJECT_DIR" 2>/dev/null || true
-exec sudo -u "$OWNER" env HOME=/tmp bash "$PROJECT_DIR/deploy.sh"
+
+# Sudo helper: dukung SUDO_PASSWORD untuk mode non-interaktif (cron/SSH satu baris).
+if [ -n "${SUDO_PASSWORD:-}" ]; then
+    run_sudo() { echo "$SUDO_PASSWORD" | sudo -S "$@"; }
+else
+    run_sudo() { sudo "$@"; }
+fi
+
+run_sudo -u "$OWNER" env HOME=/tmp git config --global --add safe.directory "$PROJECT_DIR" 2>/dev/null || true
+exec run_sudo -u "$OWNER" env HOME=/tmp bash "$PROJECT_DIR/deploy.sh"
