@@ -35,7 +35,7 @@ chmod 775 "$BACKUP_DIR" 2>/dev/null || true
 
 # Backup permanen file Database.php server
 if [ -f "$PROJECT_DIR/$DB_CONFIG_FILE" ]; then
-    if cp -p "$PROJECT_DIR/$DB_CONFIG_FILE" "$BACKUP_DIR/Database.php.server" 2>/dev/null; then
+    if cp -f "$PROJECT_DIR/$DB_CONFIG_FILE" "$BACKUP_DIR/Database.php.server" 2>/dev/null; then
         echo "    ✓ Konfigurasi database server ($DB_CONFIG_FILE) berhasil diamankan."
     else
         echo "    ⚠️  PERINGATAN: Gagal menulis backup di '$BACKUP_DIR' (permission denied)."
@@ -43,16 +43,16 @@ if [ -f "$PROJECT_DIR/$DB_CONFIG_FILE" ]; then
     fi
     # Simpan juga master copy produksi di folder writable
     if [ ! -f "$PROJECT_DIR/writable/Database.php.production" ]; then
-        cp -p "$PROJECT_DIR/$DB_CONFIG_FILE" "$PROJECT_DIR/writable/Database.php.production" 2>/dev/null || true
+        cp -f "$PROJECT_DIR/$DB_CONFIG_FILE" "$PROJECT_DIR/writable/Database.php.production" 2>/dev/null || true
     fi
 fi
 
 # Backup .env dan db_config.php jika ada
 if [ -f "$PROJECT_DIR/.env" ]; then
-    cp -p "$PROJECT_DIR/.env" "$BACKUP_DIR/.env.last" 2>/dev/null || true
+    cp -f "$PROJECT_DIR/.env" "$BACKUP_DIR/.env.last" 2>/dev/null || true
 fi
 if [ -f "$PROJECT_DIR/app/Config/db_config.php" ]; then
-    cp -p "$PROJECT_DIR/app/Config/db_config.php" "$BACKUP_DIR/db_config.php.last" 2>/dev/null || true
+    cp -f "$PROJECT_DIR/app/Config/db_config.php" "$BACKUP_DIR/db_config.php.last" 2>/dev/null || true
 fi
 
 # ------------------------------------------------------------------------------
@@ -146,10 +146,10 @@ echo "    ✓ $DB_CONFIG_FILE berhasil di-ignore oleh git."
 
 # Pulihkan .env atau db_config.php jika ada backupnya
 if [ ! -f "$PROJECT_DIR/.env" ] && [ -f "$BACKUP_DIR/.env.last" ]; then
-    cp -p "$BACKUP_DIR/.env.last" "$PROJECT_DIR/.env" 2>/dev/null || true
+    cp -f "$BACKUP_DIR/.env.last" "$PROJECT_DIR/.env" 2>/dev/null || true
 fi
 if [ ! -f "$PROJECT_DIR/app/Config/db_config.php" ] && [ -f "$BACKUP_DIR/db_config.php.last" ]; then
-    cp -p "$BACKUP_DIR/db_config.php.last" "$PROJECT_DIR/app/Config/db_config.php" 2>/dev/null || true
+    cp -f "$BACKUP_DIR/db_config.php.last" "$PROJECT_DIR/app/Config/db_config.php" 2>/dev/null || true
 fi
 
 # ------------------------------------------------------------------------------
