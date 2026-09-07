@@ -115,20 +115,20 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 64.0,
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
+              color: const Color(0xFF1E2B1A),
               borderRadius: BorderRadius.circular(36),
               border: Border.all(
-                color: const Color(0xFF059669).withValues(alpha: 0.12),
+                color: const Color(0xFF283A23),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.10),
+                  color: const Color(0xFF000000).withValues(alpha: 0.35),
                   blurRadius: 24,
                   offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                  color: const Color(0xFF000000).withValues(alpha: 0.18),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
@@ -153,9 +153,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildNavItem(int index, IconData icon, String label, {int badge = 0}) {
     final active = _index == index;
     const limeColor = Color(0xFF10B981);
-    const darkCapsuleBg = Color(0xFFD1FAE5);
-    const inactiveIconBg = Color(0xFFFFFFFF);
-    const inactiveIconColor = Color(0xFF64748B);
+    const darkCapsuleBg = Color(0xFF283A23);
+    const inactiveIconBg = Color(0xFF24351F);
+    const inactiveIconColor = Color(0xFF94A3B8);
 
     return GestureDetector(
       onTap: () => _onTabSelected(index),
@@ -174,12 +174,12 @@ class _HomeScreenState extends State<HomeScreen> {
           color: active ? darkCapsuleBg : Colors.transparent,
           borderRadius: BorderRadius.circular(24),
           border: active
-              ? Border.all(color: Color(0xFF059669).withValues(alpha: 0.12), width: 1)
+              ? Border.all(color: Color(0xFF3A4F32), width: 1)
               : null,
           boxShadow: active
               ? [
                   BoxShadow(
-                    color: const Color(0xFF059669).withValues(alpha: 0.12),
+                    color: const Color(0xFF000000).withValues(alpha: 0.25),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -227,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: const Color(0xFFEF4444),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: const Color(0xFFF0FDF4),
+                            color: const Color(0xFF1E2B1A),
                             width: 1.5,
                           ),
                         ),
@@ -258,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         label,
                         maxLines: 1,
                         style: const TextStyle(
-                          color: Color(0xFF0F172A),
+                          color: Colors.white,
                           fontSize: 12.5,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.2,
