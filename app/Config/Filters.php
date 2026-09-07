@@ -77,6 +77,9 @@ class Filters extends BaseFilters
                     'friends/*',
                     'chat/*',
                     'neighborhood/*',
+                    'documents/*',
+                    'arisan/*',
+                    'subscriptions/*',
                 ]
             ],
             'invalidchars',

@@ -150,7 +150,7 @@
 </div>
 
 <!-- Modal: Set Konfigurasi Iuran -->
-<div class="modal-overlay" id="configModal" style="display:none;">
+<div class="modal-overlay" id="configModal">
     <div class="modal-card">
         <div class="modal-header"><h3>⚙️ Atur Iuran Warga</h3><button type="button" class="modal-close" onclick="closeModal('configModal')">×</button></div>
         <div class="modal-body">
@@ -173,7 +173,7 @@
 </div>
 
 <!-- Modal: Catat Pembayaran Iuran -->
-<div class="modal-overlay" id="payModal" style="display:none;">
+<div class="modal-overlay" id="payModal">
     <div class="modal-card">
         <div class="modal-header"><h3>💸 Catat Pembayaran</h3><button type="button" class="modal-close" onclick="closeModal('payModal')">×</button></div>
         <div class="modal-body">
@@ -200,8 +200,8 @@
 
 <?= $this->section('scripts') ?>
 <script>
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function openModal(id) { const el = document.getElementById(id); if (el) el.classList.add('open'); }
+function closeModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('open'); }
 
 function openConfigModal() {
     document.getElementById('cfg-period').value = '<?= $config ? esc($config['period_type']) : 'monthly' ?>';

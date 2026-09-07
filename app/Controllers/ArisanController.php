@@ -76,7 +76,7 @@ class ArisanController extends BaseController
      */
     public function store()
     {
-        $userId = session()->get('user_id');
+        $userId = (int) session()->get('user_id');
         $post   = $this->request->getPost();
 
         $name = trim($post['name'] ?? '');
@@ -135,7 +135,7 @@ class ArisanController extends BaseController
      */
     public function addMember(int $id)
     {
-        $userId = session()->get('user_id');
+        $userId = (int) session()->get('user_id');
         $group  = $this->groupModel->find($id);
 
         if (!$group || (int)$group['user_id'] !== $userId) {
@@ -185,7 +185,7 @@ class ArisanController extends BaseController
      */
     public function payPayment()
     {
-        $userId = session()->get('user_id');
+        $userId = (int) session()->get('user_id');
         $post   = $this->request->getPost();
 
         $paymentId = (int)($post['payment_id'] ?? 0);
@@ -211,7 +211,7 @@ class ArisanController extends BaseController
      */
     public function advanceRound(int $id)
     {
-        $userId = session()->get('user_id');
+        $userId = (int) session()->get('user_id');
         $group  = $this->groupModel->find($id);
 
         if (!$group || (int)$group['user_id'] !== $userId) {

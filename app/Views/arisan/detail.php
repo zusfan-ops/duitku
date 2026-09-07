@@ -145,7 +145,7 @@
 </div>
 
 <!-- Modal: Tambah Anggota -->
-<div class="modal-overlay" id="memberModal" style="display:none;">
+<div class="modal-overlay" id="memberModal">
     <div class="modal-card">
         <div class="modal-header"><h3>➕ Tambah Anggota</h3><button type="button" class="modal-close" onclick="closeModal('memberModal')">×</button></div>
         <div class="modal-body">
@@ -166,8 +166,8 @@
 <script>
 const GROUP_ID = <?= (int)$group['id'] ?>;
 
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function openModal(id) { const el = document.getElementById(id); if (el) el.classList.add('open'); }
+function closeModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('open'); }
 function openMemberModal() {
     document.getElementById('m-name').value = '';
     openModal('memberModal');

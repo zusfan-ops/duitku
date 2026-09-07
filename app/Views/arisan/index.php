@@ -87,7 +87,7 @@
 </div>
 
 <!-- Modal: Buat Kelompok Arisan -->
-<div class="modal-overlay" id="createModal" style="display:none;">
+<div class="modal-overlay" id="createModal">
     <div class="modal-card">
         <div class="modal-header"><h3>➕ Buat Kelompok Arisan</h3><button type="button" class="modal-close" onclick="closeModal('createModal')">×</button></div>
         <div class="modal-body">
@@ -118,8 +118,8 @@
 
 <?= $this->section('scripts') ?>
 <script>
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function openModal(id) { const el = document.getElementById(id); if (el) el.classList.add('open'); }
+function closeModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('open'); }
 
 function openCreateModal() {
     document.getElementById('g-start').value = '<?= date('Y-m-d') ?>';

@@ -129,7 +129,7 @@
 </div>
 
 <!-- Modal: Tambah Langganan -->
-<div class="modal-overlay" id="addModal" style="display:none;">
+<div class="modal-overlay" id="addModal">
     <div class="modal-card">
         <div class="modal-header"><h3>➕ Tambah Langganan</h3><button type="button" class="modal-close" onclick="closeModal('addModal')">×</button></div>
         <div class="modal-body">
@@ -179,8 +179,8 @@
 
 <?= $this->section('scripts') ?>
 <script>
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function openModal(id) { const el = document.getElementById(id); if (el) el.classList.add('open'); }
+function closeModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('open'); }
 
 function openAddModal() {
     document.getElementById('s-name').value = '';
