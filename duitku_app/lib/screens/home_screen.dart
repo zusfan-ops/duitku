@@ -115,21 +115,21 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 64.0,
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF0B0E14),
+              color: const Color(0xFF1E293B),
               borderRadius: BorderRadius.circular(36),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: Colors.white.withValues(alpha: 0.12),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.45),
-                  blurRadius: 28,
-                  offset: const Offset(0, 10),
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.28),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.20),
-                  blurRadius: 8,
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.12),
+                  blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -152,10 +152,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildNavItem(int index, IconData icon, String label, {int badge = 0}) {
     final active = _index == index;
-    const limeColor = Color(0xFF6FF776);
-    const darkCapsuleBg = Color(0xFF161A22);
-    const inactiveIconBg = Color(0xFF14171F);
-    const inactiveIconColor = Color(0xFF8B949E);
+    const limeColor = Color(0xFF10B981);
+    const darkCapsuleBg = Color(0xFF0F172A);
+    const inactiveIconBg = Color(0xFF334155);
+    const inactiveIconColor = Color(0xFF94A3B8);
 
     return GestureDetector(
       onTap: () => _onTabSelected(index),
@@ -174,12 +174,12 @@ class _HomeScreenState extends State<HomeScreen> {
           color: active ? darkCapsuleBg : Colors.transparent,
           borderRadius: BorderRadius.circular(24),
           border: active
-              ? Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1)
+              ? Border.all(color: Colors.white.withValues(alpha: 0.10), width: 1)
               : null,
           boxShadow: active
               ? [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -215,7 +215,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(
                     icon,
                     size: 19,
-                    color: active ? const Color(0xFF0A0D12) : inactiveIconColor,
+                    color: active ? const Color(0xFF0F172A) : inactiveIconColor,
                   ),
                   if (badge > 0)
                     Positioned(
@@ -227,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: const Color(0xFFEF4444),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: const Color(0xFF0B0E14),
+                            color: const Color(0xFF1E293B),
                             width: 1.5,
                           ),
                         ),

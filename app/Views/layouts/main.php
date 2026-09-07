@@ -343,7 +343,22 @@
                     <small><?= esc(session()->get('user_email')) ?></small>
                 </div>
                 <hr>
-                <?php if (in_array(strtolower((string)session()->get('user_role')), ['administrator', 'admin'])): ?>
+                <?php
+                    // Pastikan role admin selalu terdeteksi, bahkan jika session lama belum menyimpan user_role
+                    $currentUserRole = session()->get('user_role');
+                    if (empty($currentUserRole) && session()->get('user_id')) {
+                        try {
+                            $um = new \App\Models\UserModel();
+                            $u = $um->find(session()->get('user_id'));
+                            $currentUserRole = $u['role'] ?? 'user';
+                            session()->set('user_role', $currentUserRole);
+                        } catch (\Throwable $e) {
+                            $currentUserRole = 'user';
+                        }
+                    }
+                    $isAdminUser = in_array(strtolower((string)$currentUserRole), ['administrator', 'admin']);
+                ?>
+                <?php if ($isAdminUser): ?>
                     <a href="/admin" class="user-menu-item" style="color: #10B981; font-weight: 700;">🛡️ Admin Panel</a>
                 <?php endif; ?>
                 <a href="/notifications" class="user-menu-item">📢 Pemberitahuan</a>

@@ -496,7 +496,20 @@
             </p>
         </div>
         <div style="display: flex; gap: 8px;">
-            <?php if (in_array(strtolower((string)session()->get('user_role')), ['administrator', 'admin'])): ?>
+            <?php
+                $tvUserRole = session()->get('user_role');
+                if (empty($tvUserRole) && session()->get('user_id')) {
+                    try {
+                        $tvUm = new \App\Models\UserModel();
+                        $tvU = $tvUm->find(session()->get('user_id'));
+                        $tvUserRole = $tvU['role'] ?? 'user';
+                        session()->set('user_role', $tvUserRole);
+                    } catch (\Throwable $e) {
+                        $tvUserRole = 'user';
+                    }
+                }
+            ?>
+            <?php if (in_array(strtolower((string)$tvUserRole), ['administrator', 'admin'])): ?>
                 <a href="/admin/tv" class="btn btn-outline" style="font-size: 12.5px;">⚙️ Kelola Saluran (Admin)</a>
             <?php endif; ?>
         </div>

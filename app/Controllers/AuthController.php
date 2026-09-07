@@ -52,12 +52,13 @@ class AuthController extends BaseController
         // Prevent Session Fixation
         session()->regenerate(true);
 
+        $userRole = strtolower(trim((string)($user['role'] ?? 'user')));
         session()->set([
             'user_id'    => $user['id'],
             'user_name'  => $user['name'],
             'user_email' => $user['email'],
             'user_avatar'=> $user['avatar'],
-            'user_role'  => $user['role'] ?? 'user',
+            'user_role'  => $userRole,
             'logged_in'  => true,
         ]);
 
