@@ -344,16 +344,17 @@
                 </div>
                 <hr>
                 <?php
-                    // Pastikan role admin selalu terdeteksi, bahkan jika session lama belum menyimpan user_role
+                    // Pastikan role admin selalu terdeteksi dari database, agar perubahan role
+                    // di DB langsung terlihat walau session lama masih menyimpan role lama (mis. rt_admin).
                     $currentUserRole = session()->get('user_role');
-                    if (empty($currentUserRole) && session()->get('user_id')) {
+                    if (session()->get('user_id')) {
                         try {
                             $um = new \App\Models\UserModel();
                             $u = $um->find(session()->get('user_id'));
-                            $currentUserRole = $u['role'] ?? 'user';
+                            $currentUserRole = $u['role'] ?? $currentUserRole;
                             session()->set('user_role', $currentUserRole);
                         } catch (\Throwable $e) {
-                            $currentUserRole = 'user';
+                            $currentUserRole = $currentUserRole ?: 'user';
                         }
                     }
                     $isAdminUser = in_array(strtolower((string)$currentUserRole), ['administrator', 'admin']);

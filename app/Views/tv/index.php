@@ -497,15 +497,17 @@
         </div>
         <div style="display: flex; gap: 8px;">
             <?php
+                // Sinkronkan role dari DB setiap kali render agar perubahan role di DB
+                // langsung terlihat walau session lama masih menyimpan role usang (mis. rt_admin).
                 $tvUserRole = session()->get('user_role');
-                if (empty($tvUserRole) && session()->get('user_id')) {
+                if (session()->get('user_id')) {
                     try {
                         $tvUm = new \App\Models\UserModel();
                         $tvU = $tvUm->find(session()->get('user_id'));
-                        $tvUserRole = $tvU['role'] ?? 'user';
+                        $tvUserRole = $tvU['role'] ?? $tvUserRole;
                         session()->set('user_role', $tvUserRole);
                     } catch (\Throwable $e) {
-                        $tvUserRole = 'user';
+                        $tvUserRole = $tvUserRole ?: 'user';
                     }
                 }
             ?>
