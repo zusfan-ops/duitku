@@ -439,6 +439,11 @@
       <span class="font-bold text-ink">DuitKu</span>
     </div>
     <p>© <?= date('Y') ?> · Dibuat untuk keluarga Indonesia. Data kamu adalah milik kamu sepenuhnya.</p>
+    <div class="flex items-center gap-3 mt-2" style="font-size:11px;">
+      <a href="/privacy" class="text-ink/40 hover:text-emerald-600 transition-colors" style="text-decoration:none;">Kebijakan Privasi</a>
+      <span>·</span>
+      <a href="/moderation" class="text-ink/40 hover:text-violet-600 transition-colors" style="text-decoration:none;">Moderasi Konten</a>
+    </div>
   </div>
 </footer>
 

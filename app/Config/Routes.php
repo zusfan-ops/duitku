@@ -12,6 +12,10 @@ $routes->get('/login',    'AuthController::loginPage');
 $routes->post('/login',   'AuthController::login');
 $routes->get('/register', 'AuthController::registerPage');
 $routes->post('/register','AuthController::register');
+$routes->get('/privacy',           'PolicyController::privacy');
+$routes->get('/kebijakan-privasi', 'PolicyController::privacy');
+$routes->get('/moderation',         'PolicyController::moderation');
+$routes->get('/moderasi',           'PolicyController::moderation');
 $routes->get('/logout',   'AuthController::logout');
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -281,6 +285,11 @@ $routes->group('admin', ['filter' => 'admin'], function ($routes) {
     $routes->get('neighborhoods',                       'Admin\NeighborhoodAdminController::index');
     $routes->post('neighborhoods/approve/(:num)',       'Admin\NeighborhoodAdminController::approve/$1');
     $routes->post('neighborhoods/reject/(:num)',        'Admin\NeighborhoodAdminController::reject/$1');
+
+    // Moderation & Reports
+    $routes->get('reports',                             'Admin\ModerationController::index');
+    $routes->post('reports/update/(:num)',              'Admin\ModerationController::updateStatus/$1');
+    $routes->post('reports/ban-user/(:num)',            'Admin\ModerationController::banUser/$1');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -554,6 +563,13 @@ $routes->group('api', function ($routes) {
         $routes->post('chat/conversation/delete',         'Api\ChatController::deleteConversation');
         $routes->post('chat/upload',                      'Api\ChatController::uploadAttachment');
         $routes->post('user/fcm-token',                   'Api\ChatController::registerFcmToken');
+
+        // Report & Block (Moderation)
+        $routes->post('report',                 'Api\ModerationController::report');
+        $routes->get('report/my-reports',       'Api\ModerationController::myReports');
+        $routes->post('user/block',             'Api\ModerationController::blockUser');
+        $routes->post('user/unblock',           'Api\ModerationController::unblockUser');
+        $routes->get('user/blocked-list',       'Api\ModerationController::blockedList');
 
         // Friend-Only Status / Stories API
         $routes->get('status/feed',                       'Api\StatusController::feed');

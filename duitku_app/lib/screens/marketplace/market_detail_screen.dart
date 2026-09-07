@@ -205,6 +205,106 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
     );
   }
 
+  Future<void> _showReportDialog() async {
+    final reasonCtrl = TextEditingController();
+    String selectedReason = 'scam';
+    const reasons = [
+      ('scam', 'Penipuan / Iklan Palsu', Icons.gpp_bad_outlined),
+      ('fake', 'Foto/Barang Tidak Sesuai', Icons.image_not_supported_outlined),
+      ('illegal', 'Barang Ilegal', Icons.gavel_rounded),
+      ('inappropriate', 'Konten Tidak Pantas', Icons.visibility_off_outlined),
+      ('spam', 'Spam', Icons.campaign_outlined),
+      ('other', 'Lainnya', Icons.more_horiz),
+    ];
+
+    final submitted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            'Laporkan Iklan',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Laporkan iklan "${_listing?['title']}" kepada tim moderasi DuitKu.',
+                  style: const TextStyle(fontSize: 12.5, color: Colors.grey),
+                ),
+                const SizedBox(height: 14),
+                const Text('ALASAN PELAPORAN', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.grey)),
+                const SizedBox(height: 8),
+                ...reasons.map((r) => RadioListTile<String>(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  contentPadding: EdgeInsets.zero,
+                  title: Row(
+                    children: [
+                      Icon(r.$3, size: 18, color: const Color(0xFFDC2626)),
+                      const SizedBox(width: 8),
+                      Text(r.$2, style: const TextStyle(fontSize: 13)),
+                    ],
+                  ),
+                  value: r.$1,
+                  groupValue: selectedReason,
+                  onChanged: (v) => setDialogState(() => selectedReason = v ?? 'scam'),
+                )),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: reasonCtrl,
+                  maxLines: 3,
+                  maxLength: 300,
+                  decoration: const InputDecoration(
+                    labelText: 'DETAIL TAMBAHAN (OPSIONAL)',
+                    hintText: 'Jelaskan kronologi atau bukti pendukung...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Kirim Laporan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (submitted != true) return;
+
+    try {
+      await ApiService.instance.reportContent(
+        targetType: 'listing',
+        targetId: widget.listingId,
+        reason: selectedReason,
+        description: reasonCtrl.text.trim(),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Laporan terkirim. Tim moderasi akan meninjaunya dalam 1×24 jam. Terima kasih!')),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -247,6 +347,12 @@ class _MarketDetailScreenState extends State<MarketDetailScreen> {
       appBar: AppBar(
         title: Text(item['title']?.toString() ?? 'Detail Iklan'),
         actions: [
+          if (!_isOwner)
+            IconButton(
+              icon: const Icon(Icons.flag_outlined),
+              tooltip: 'Laporkan Iklan',
+              onPressed: _showReportDialog,
+            ),
           IconButton(
             icon: const Icon(Icons.share_rounded),
             tooltip: 'Bagikan Link',

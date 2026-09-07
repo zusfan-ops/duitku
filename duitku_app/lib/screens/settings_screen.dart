@@ -20,6 +20,8 @@ import 'notifications/notification_tone_sheet.dart';
 import '../services/widget_helper.dart';
 import 'faq/faq_screen.dart';
 import '../widgets/onboarding_dialog.dart';
+import 'policies/privacy_policy_screen.dart';
+import 'policies/moderation_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -734,6 +736,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
                       onTap: () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperScreen()));
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+                  const Text('KEBIJAKAN & LEGAL',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .5, color: AppColors.textMuted)),
+                  const SizedBox(height: 8),
+                  _card(
+                    ListTile(
+                      leading: _icon(Icons.privacy_tip_rounded, color: const Color(0xFF059669)),
+                      title: const Text('Kebijakan Privasi', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: const Text('Bagaimana data kamu dilindungi', style: TextStyle(fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
+                      },
+                    ),
+                  ),
+                  _card(
+                    ListTile(
+                      leading: _icon(Icons.shield_rounded, color: const Color(0xFF6D28D9)),
+                      title: const Text('Moderasi Konten', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: const Text('Standar komunitas & cara melapor', style: TextStyle(fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ModerationScreen()));
                       },
                     ),
                   ),

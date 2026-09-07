@@ -274,6 +274,144 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     }
   }
 
+  Future<void> _blockUser() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Blokir Pengguna?'),
+        content: Text('"${widget.friendName}" tidak akan bisa mengirim pesan kepada kamu lagi. Pemblokiran ini bersifat dua arah.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Blokir', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final res = await ApiService.instance.blockUser(widget.friendId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? 'Pengguna berhasil diblokir')),
+        );
+        Navigator.pop(context, true);
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    }
+  }
+
+  Future<void> _showReportDialog() async {
+    final reasonCtrl = TextEditingController();
+    String selectedReason = 'spam';
+    const reasons = [
+      ('spam', 'Spam / Pesan Massal', Icons.campaign_outlined),
+      ('scam', 'Penipuan / Scam', Icons.gpp_bad_outlined),
+      ('inappropriate', 'Konten Tidak Pantas', Icons.visibility_off_outlined),
+      ('harassment', 'Pelecehan / Ancaman', Icons.report_gmailerrorred_rounded),
+      ('fake', 'Akun Palsu', Icons.person_off_outlined),
+      ('illegal', 'Barang/Konten Ilegal', Icons.gavel_rounded),
+      ('other', 'Lainnya', Icons.more_horiz),
+    ];
+
+    final submitted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            'Laporkan Pengguna',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Laporkan "${widget.friendName}" kepada tim moderasi DuitKu.',
+                  style: const TextStyle(fontSize: 12.5, color: Colors.grey),
+                ),
+                const SizedBox(height: 14),
+                const Text('ALASAN PELAPORAN', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.grey)),
+                const SizedBox(height: 8),
+                ...reasons.map((r) => RadioListTile<String>(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  contentPadding: EdgeInsets.zero,
+                  title: Row(
+                    children: [
+                      Icon(r.$3, size: 18, color: const Color(0xFFDC2626)),
+                      const SizedBox(width: 8),
+                      Text(r.$2, style: const TextStyle(fontSize: 13)),
+                    ],
+                  ),
+                  value: r.$1,
+                  groupValue: selectedReason,
+                  onChanged: (v) => setDialogState(() => selectedReason = v ?? 'spam'),
+                )),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: reasonCtrl,
+                  maxLines: 3,
+                  maxLength: 300,
+                  decoration: const InputDecoration(
+                    labelText: 'DETAIL TAMBAHAN (OPSIONAL)',
+                    hintText: 'Jelaskan kronologi atau bukti pendukung...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Kirim Laporan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (submitted != true) return;
+
+    try {
+      await ApiService.instance.reportContent(
+        targetType: 'user',
+        targetId: widget.friendId,
+        reason: selectedReason,
+        description: reasonCtrl.text.trim(),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Laporan terkirim. Tim moderasi akan meninjaunya dalam 1×24 jam. Terima kasih!')),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    }
+  }
+
   String _formatTime(String? dateStr) {
     if (dateStr == null || dateStr.length < 16) return '';
     try {
@@ -371,6 +509,12 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                 case 'archive':
                   _toggleArchive();
                   break;
+                case 'block':
+                  _blockUser();
+                  break;
+                case 'report':
+                  _showReportDialog();
+                  break;
                 case 'delete':
                   _deleteChat();
                   break;
@@ -402,6 +546,27 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(_isArchived ? 'Buka dari Arsip' : 'Arsipkan Obrolan'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'report',
+                child: Row(
+                  children: [
+                    Icon(Icons.flag_outlined, size: 20, color: Colors.orange),
+                    SizedBox(width: 12),
+                    Text('Laporkan Pengguna', style: TextStyle(color: Colors.orange)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'block',
+                child: Row(
+                  children: [
+                    const Icon(Icons.block, size: 20, color: Colors.red),
+                    const SizedBox(width: 12),
+                    Text('Blokir ${widget.friendName}', style: const TextStyle(color: Colors.red)),
                   ],
                 ),
               ),

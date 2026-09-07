@@ -694,6 +694,10 @@
                 <span class="rail-icon">🏛️</span>
                 <span class="rail-label">Komunitas</span>
             </button>
+            <button type="button" class="rail-btn <?= ($activeMenu ?? '') === 'reports' ? 'active' : '' ?>" data-group="moderasi" data-tip="Moderasi &amp; Laporan" onclick="openRailFlyout('moderasi')">
+                <span class="rail-icon">🛡️</span>
+                <span class="rail-label">Moderasi</span>
+            </button>
             <button type="button" class="rail-btn" data-group="pintasan" data-tip="Aplikasi & Pintasan" onclick="openRailFlyout('pintasan')">
                 <span class="rail-icon">⚡</span>
                 <span class="rail-label">Pintasan</span>
@@ -802,6 +806,20 @@
             </div>
         </div>
 
+        <!-- Panel: Moderasi & Laporan -->
+        <div class="rail-flyout-panel" data-group="moderasi">
+            <div class="rail-flyout-head">
+                <h2>Moderasi Konten</h2>
+                <div class="rail-flyout-rule"></div>
+            </div>
+            <div class="rail-flyout-grid cols-1">
+                <a href="/admin/reports" class="nav-item <?= ($activeMenu ?? '') === 'reports' ? 'active' : '' ?>" onclick="handleMenuClick(event, 'reports', '/admin/reports'); closeRailFlyout();">
+                    <span class="nav-icon">🛡️</span>
+                    <span class="nav-label">Laporan Pengguna</span>
+                </a>
+            </div>
+        </div>
+
         <!-- Panel: Pintasan -->
         <div class="rail-flyout-panel" data-group="pintasan">
             <div class="rail-flyout-head">
@@ -869,7 +887,8 @@
         'dashboard':     { icon: '📊', title: 'Dashboard', url: '/admin' },
         'notifications': { icon: '📢', title: 'Kirim Notifikasi', url: '/admin/notifications' },
         'tv':            { icon: '📺', title: 'TV & M3U Channels', url: '/admin/tv' },
-        'users':         { icon: '👥', title: 'Kelola Pengguna', url: '/admin/users' }
+        'users':         { icon: '👥', title: 'Kelola Pengguna', url: '/admin/users' },
+        'reports':       { icon: '🛡️', title: 'Moderasi & Laporan', url: '/admin/reports' }
     };
 
     const currentTabId = '<?= esc($activeMenu ?? 'dashboard') ?>';
@@ -986,7 +1005,8 @@
             'dashboard': 'utama',
             'notifications': 'notifikasi',
             'tv': 'media',
-            'users': 'pengguna'
+            'users': 'pengguna',
+            'reports': 'moderasi'
         };
         const activeGroup = groupMapping[currentTabId] || 'utama';
         document.querySelectorAll('.rail-btn').forEach(b => {

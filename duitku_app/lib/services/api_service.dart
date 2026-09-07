@@ -1100,6 +1100,37 @@ class ApiService {
   Future<Map<String, dynamic>> deleteStatus(int statusId) async {
     return post('status/delete/$statusId', {});
   }
+
+  // ── Report & Block (Moderation) ─────────────────────────────
+  Future<Map<String, dynamic>> blockUser(int userId) async {
+    return post('user/block', {'user_id': userId});
+  }
+
+  Future<Map<String, dynamic>> unblockUser(int userId) async {
+    return post('user/unblock', {'user_id': userId});
+  }
+
+  Future<Map<String, dynamic>> getBlockedList() async {
+    return get('user/blocked-list');
+  }
+
+  Future<Map<String, dynamic>> reportContent({
+    required String targetType,
+    required int targetId,
+    required String reason,
+    String? description,
+  }) async {
+    return post('report', {
+      'target_type': targetType,
+      'target_id': targetId,
+      'reason': reason,
+      if (description != null && description.isNotEmpty) 'description': description,
+    });
+  }
+
+  Future<Map<String, dynamic>> getMyReports() async {
+    return get('report/my-reports');
+  }
 }
 
 
