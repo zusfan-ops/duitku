@@ -1828,4 +1828,180 @@ class MarketplaceController extends BaseController
             'message' => 'Status berhasil dihapus',
         ]);
     }
+
+    /**
+     * Laporkan konten / pengguna (PWA, session-based)
+     * POST /marketplace/report
+     * Body (JSON or POST): target_type, target_id, reason, description
+     */
+    public function reportContent()
+    {
+        $userId = session()->get('user_id');
+        if (!$userId) {
+            return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Unauthorized']);
+        }
+
+        $json = $this->request->getJSON(true);
+        $targetType  = (string)($json['target_type'] ?? $this->request->getPost('target_type') ?? '');
+        $targetId    = (int)($json['target_id'] ?? $this->request->getPost('target_id') ?? 0);
+        $reason      = (string)($json['reason'] ?? $this->request->getPost('reason') ?? 'other');
+        $description = trim((string)($json['description'] ?? $this->request->getPost('description') ?? ''));
+
+        $validTypes   = ['user', 'listing', 'comment', 'message'];
+        $validReasons = ['spam', 'scam', 'inappropriate', 'harassment', 'fake', 'illegal', 'other'];
+
+        if (!in_array($targetType, $validTypes, true)) {
+            return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Tipe target tidak valid.']);
+        }
+        if ($targetId <= 0) {
+            return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Target ID tidak valid.']);
+        }
+        if (!in_array($reason, $validReasons, true)) {
+            $reason = 'other';
+        }
+        if ($targetType === 'user' && $targetId === (int)$userId) {
+            return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Anda tidak dapat melaporkan diri sendiri.']);
+        }
+
+        $db = \Config\Database::connect();
+        try {
+            $db->query("
+                CREATE TABLE IF NOT EXISTS `user_reports` (
+                    `id`            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `reporter_id`   INT UNSIGNED NOT NULL,
+                    `reported_user_id` INT UNSIGNED NULL,
+                    `target_type`   ENUM('user','listing','comment','message') NOT NULL DEFAULT 'user',
+                    `target_id`     INT UNSIGNED NULL,
+                    `reason`        ENUM('spam','scam','inappropriate','harassment','fake','illegal','other') NOT NULL DEFAULT 'other',
+                    `description`   TEXT NULL,
+                    `status`        ENUM('pending','reviewed','resolved','dismissed') NOT NULL DEFAULT 'pending',
+                    `admin_note`    TEXT NULL,
+                    `created_at`    DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at`    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    KEY `idx_ur_reporter` (`reporter_id`),
+                    KEY `idx_ur_reported_user` (`reported_user_id`),
+                    KEY `idx_ur_target` (`target_type`,`target_id`),
+                    KEY `idx_ur_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+        } catch (\Throwable $e) {
+            log_message('error', '[Moderation] ensure table failed: ' . $e->getMessage());
+        }
+
+        // Duplicate check within 24h by same reporter
+        $existing = $db->table('user_reports')
+            ->where('reporter_id', $userId)
+            ->where('target_type', $targetType)
+            ->where('target_id', $targetId)
+            ->where('status', 'pending')
+            ->where('created_at >=', date('Y-m-d H:i:s', strtotime('-24 hours')))
+            ->get()
+            ->getRowArray();
+
+        if ($existing) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'success' => false,
+                'message' => 'Anda sudah melaporkan konten ini baru-baru ini. Laporan sedang ditinjau.',
+            ]);
+        }
+
+        $reportedUserId = ($targetType === 'user') ? $targetId : null;
+
+        $db->table('user_reports')->insert([
+            'reporter_id'      => $userId,
+            'reported_user_id' => $reportedUserId,
+            'target_type'      => $targetType,
+            'target_id'        => $targetId,
+            'reason'           => $reason,
+            'description'      => $description,
+            'status'           => 'pending',
+        ]);
+
+        return $this->response->setJSON([
+            'status'  => 'success',
+            'success' => true,
+            'message' => 'Terima kasih atas laporan Anda. Tim DuitKu akan meninjau laporan ini.',
+        ]);
+    }
+
+    /**
+     * Blokir pengguna (PWA, session-based)
+     * POST /marketplace/block
+     * Body: user_id
+     */
+    public function blockUserPwa()
+    {
+        $userId = session()->get('user_id');
+        if (!$userId) {
+            return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Unauthorized']);
+        }
+
+        $targetId = (int)($this->request->getJSON(true)['user_id'] ?? $this->request->getPost('user_id') ?? 0);
+        if ($targetId <= 0 || $targetId === (int)$userId) {
+            return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'User ID tidak valid.']);
+        }
+
+        if (!$this->userModel->find($targetId)) {
+            return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Pengguna tidak ditemukan.']);
+        }
+
+        $existing = $this->friendModel
+            ->where('user_id', $userId)
+            ->where('friend_id', $targetId)
+            ->first();
+
+        if ($existing) {
+            $this->friendModel->update($existing['id'], ['status' => 'blocked']);
+        } else {
+            $this->friendModel->insert([
+                'user_id'   => $userId,
+                'friend_id' => $targetId,
+                'status'    => 'blocked',
+            ]);
+        }
+
+        return $this->response->setJSON([
+            'status'  => 'success',
+            'success' => true,
+            'message' => 'Pengguna berhasil diblokir.',
+        ]);
+    }
+
+    /**
+     * Daftar pengguna yang diblokir (PWA)
+     * GET /marketplace/blocked-list
+     */
+    public function blockedListPwa()
+    {
+        $userId = session()->get('user_id');
+        if (!$userId) {
+            return $this->response->setJSON(['status' => 'error', 'success' => false, 'message' => 'Unauthorized']);
+        }
+
+        $blocked = $this->friendModel
+            ->where('user_id', $userId)
+            ->where('status', 'blocked')
+            ->get()
+            ->getResultArray();
+
+        $users = [];
+        foreach ($blocked as $b) {
+            $u = $this->userModel->find($b['friend_id']);
+            if ($u) {
+                $users[] = [
+                    'id'       => (int)$b['friend_id'],
+                    'name'     => $u['name'] ?? '',
+                    'username' => $u['username'] ?? '',
+                    'email'    => $u['email'] ?? '',
+                ];
+            }
+        }
+
+        return $this->response->setJSON([
+            'status'  => 'success',
+            'success' => true,
+            'blocked' => $users,
+        ]);
+    }
 }

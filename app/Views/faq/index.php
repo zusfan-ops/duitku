@@ -249,6 +249,7 @@
 .faq-tag.travel  { background: rgba(8, 145, 178, 0.12);  color: #0891B2; }
 .faq-tag.media   { background: rgba(234, 88, 12, 0.12);  color: #EA580C; }
 .faq-tag.secure  { background: rgba(71, 85, 105, 0.12);  color: #475569; }
+.faq-tag.privacy { background: rgba(13, 148, 136, 0.12);  color: #0D9488; }
 
 .faq-empty-state {
     text-align: center;
@@ -298,6 +299,7 @@
         <button type="button" class="faq-pill" data-category="travel">✈️ Traveling &amp; Valas</button>
         <button type="button" class="faq-pill" data-category="media">🎬 TV &amp; Hiburan</button>
         <button type="button" class="faq-pill" data-category="secure">🛡️ Cadangan &amp; Akun</button>
+        <button type="button" class="faq-pill" data-category="privacy">🔒 Privasi &amp; Moderasi</button>
     </div>
 
     <!-- ── Accordion List (Auto-Collapse Mode) ── -->
@@ -576,6 +578,58 @@
             </button>
             <div class="faq-body-content">
                 <p>Aplikasi DuitKu menggunakan arsitektur <em>Offline-First</em>: transaksi tetap tersimpan di perangkat saat offline dan otomatis sinkron saat terhubung internet. Anda juga dapat mengekspor cadangan penuh dalam format JSON di menu <strong>Pengaturan &gt; Cadangan &amp; Pemulihan</strong>.</p>
+            </div>
+        </div>
+
+        <div class="faq-accordion-item" data-cat="privacy">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag privacy">Privasi</span>
+                    <div class="faq-q-text">Apa saja data pribadi yang DuitKu kumpulkan dan untuk apa?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>DuitKu mengumpulkan data yang Anda berikan secara sukarela untuk menjalankan layanan, seperti nama, nomor HP/wilayah untuk akun, riwayat transaksi keuangan untuk pencatatan &amp; laporan, serta unggahan konten (foto iklan, avatar). Data digunakan untuk keperluan fungsional aplikasi, keamanan, dan peningkatan layanan. Detail lengkap tersedia di halaman <a href="/privacy" style="font-weight:700;">Kebijakan Privasi</a>.</p>
+            </div>
+        </div>
+
+        <div class="faq-accordion-item" data-cat="privacy">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag privacy">Keamanan</span>
+                    <div class="faq-q-text">Apakah data keuangan saya dienkripsi dan dibagikan ke pihak lain?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Transaksi keuangan Anda bersifat pribadi dan tidak dibagikan ke pengguna lain atau pihak ketiga tanpa persetujuan. DuitKu menerapkan enkripsi untuk melindungi data saat dikirim. Kami tidak menjual data pribadi Anda. Informasi lengkap mengenai pemrosesan data tersedia di <a href="/privacy" style="font-weight:700;">Kebijakan Privasi</a>.</p>
+            </div>
+        </div>
+
+        <div class="faq-accordion-item" data-cat="privacy">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag privacy">Moderasi</span>
+                    <div class="faq-q-text">Bagaimana cara melaporkan iklan, pesan, atau pengguna yang mencurigakan?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Anda dapat menekan tombol <strong>🚩 Laporkan</strong> pada halaman detail iklan, profil toko penjual, atau menu opsi percakapan chat. Pilih alasan (penipuan, spam, konten tidak pantas, dan lainnya), lalu kirim. Tim moderasi DuitKu akan meninjau laporan Anda secara rahasia dan mengambil tindakan sesuai <a href="/moderation" style="font-weight:700;">Kebijakan Konten</a>.</p>
+            </div>
+        </div>
+
+        <div class="faq-accordion-item" data-cat="privacy">
+            <button type="button" class="faq-header-btn">
+                <div>
+                    <span class="faq-tag privacy">Moderasi</span>
+                    <div class="faq-q-text">Apa saja konten yang dilarang dan bagaimana sanksinya?</div>
+                </div>
+                <div class="faq-chevron">▼</div>
+            </button>
+            <div class="faq-body-content">
+                <p>Konten yang dilarang meliputi barang/jasa ilegal, penipuan, spam, pelecehan, ujaran kebencian, konten dewasa, serta pelanggaran hak kekayaan intelektual. Pelanggaran dapat dikenai sanksi berupa penghapusan iklan, pembatasan akun, hingga pemblokiran permanen. Selengkapnya baca <a href="/moderation" style="font-weight:700;">Kebijakan Moderasi &amp; Konten</a>.</p>
             </div>
         </div>
 

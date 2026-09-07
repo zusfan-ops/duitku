@@ -358,6 +358,10 @@ $routes->post('/chat/status/delete/(:num)',          'MarketplaceController::del
 $routes->post('/marketplace/status/(:num)',          'MarketplaceController::updateStatus/$1', ['filter' => 'auth']);
 $routes->post('/marketplace/delete/(:num)',          'MarketplaceController::delete/$1', ['filter' => 'auth']);
 $routes->get('/u/(:segment)',                        'MarketplaceController::userStore/$1');
+// Moderation (PWA, session-based)
+$routes->post('/marketplace/report',                 'MarketplaceController::reportContent', ['filter' => 'auth']);
+$routes->post('/marketplace/block',                  'MarketplaceController::blockUserPwa', ['filter' => 'auth']);
+$routes->get('/marketplace/blocked-list',            'MarketplaceController::blockedListPwa', ['filter' => 'auth']);
 
 // Unduh APK & Panduan Instalasi
 $routes->get('/download',                            'MarketplaceController::downloadPage');

@@ -385,6 +385,37 @@
         </div>
     </div>
 
+    <!-- Legal & Policies -->
+    <div class="settings-section">
+        <div class="settings-section-label">KEBIJAKAN & LEGAL</div>
+        <div class="settings-list">
+            <a href="/privacy" class="settings-item" style="text-decoration:none;cursor:pointer">
+                <div class="settings-item-left">
+                    <div class="settings-item-icon" style="background:#ECFDF5;color:#059669">🔒</div>
+                    <div>
+                        <div class="settings-item-label">Kebijakan Privasi</div>
+                        <div style="font-size:11px;color:var(--text-muted)">Bagaimana DuitKu mengelola & melindungi data pribadi Anda</div>
+                    </div>
+                </div>
+                <div class="settings-item-right">
+                    <span style="font-size:12px;color:var(--primary);font-weight:700">Buka</span>
+                </div>
+            </a>
+            <a href="/moderation" class="settings-item" style="text-decoration:none;cursor:pointer">
+                <div class="settings-item-left">
+                    <div class="settings-item-icon" style="background:#F5F3FF;color:#7C3AED">🛡️</div>
+                    <div>
+                        <div class="settings-item-label">Moderasi Konten</div>
+                        <div style="font-size:11px;color:var(--text-muted)">Pedoman konten & cara melaporkan pelanggaran</div>
+                    </div>
+                </div>
+                <div class="settings-item-right">
+                    <span style="font-size:12px;color:var(--primary);font-weight:700">Buka</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
     <!-- Backup & Restore -->
     <div class="settings-section">
         <div class="settings-section-label">CADANGAN & PEMULIHAN DATA</div>

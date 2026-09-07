@@ -355,6 +355,7 @@
                          data-type="direct" 
                          data-target-id="<?= (int)$conv['target_id'] ?>" 
                          data-target-sub-id="0" 
+                         data-partner-id="<?= (int)$conv['partner_id'] ?>" 
                          data-pinned="<?= !empty($conv['is_pinned']) ? '1' : '0' ?>" 
                          data-archived="<?= !empty($conv['is_archived']) ? '1' : '0' ?>" 
                          id="convCard_direct_<?= (int)$conv['target_id'] ?>_0"
@@ -379,7 +380,7 @@
                                         <span class="conv-pin-badge" title="Disematkan ke atas">📌</span>
                                     <?php endif; ?>
                                     <span class="conv-time <?= $unread > 0 ? 'unread' : '' ?>"><?= esc($timeStr) ?></span>
-                                    <button type="button" class="conv-menu-btn" onclick="openConvOptions(event, 'direct', <?= (int)$conv['target_id'] ?>, 0, <?= !empty($conv['is_pinned']) ? '1' : '0' ?>, <?= !empty($conv['is_archived']) ? '1' : '0' ?>, '<?= esc(addslashes($partnerName)) ?>')" title="Opsi Obrolan">⋮</button>
+                                    <button type="button" class="conv-menu-btn" onclick="openConvOptions(event, 'direct', <?= (int)$conv['target_id'] ?>, 0, <?= !empty($conv['is_pinned']) ? '1' : '0' ?>, <?= !empty($conv['is_archived']) ? '1' : '0' ?>, '<?= esc(addslashes($partnerName)) ?>', <?= (int)$conv['partner_id'] ?>)" title="Opsi Obrolan">⋮</button>
                                 </div>
                             </div>
 
@@ -409,6 +410,7 @@
                          data-type="marketplace" 
                          data-target-id="<?= (int)$conv['target_id'] ?>" 
                          data-target-sub-id="<?= (int)($conv['target_sub_id'] ?? 0) ?>" 
+                         data-partner-id="<?= $isSeller ? (int)$conv['buyer_id'] : (int)$conv['seller_id'] ?>"
                          data-pinned="<?= !empty($conv['is_pinned']) ? '1' : '0' ?>" 
                          data-archived="<?= !empty($conv['is_archived']) ? '1' : '0' ?>" 
                          id="convCard_marketplace_<?= (int)$conv['target_id'] ?>_<?= (int)($conv['target_sub_id'] ?? 0) ?>"
@@ -428,7 +430,7 @@
                                         <span class="conv-pin-badge" title="Disematkan ke atas">📌</span>
                                     <?php endif; ?>
                                     <span class="conv-time <?= $unread > 0 ? 'unread' : '' ?>"><?= esc($timeStr) ?></span>
-                                    <button type="button" class="conv-menu-btn" onclick="openConvOptions(event, 'marketplace', <?= (int)$conv['target_id'] ?>, <?= (int)($conv['target_sub_id'] ?? 0) ?>, <?= !empty($conv['is_pinned']) ? '1' : '0' ?>, <?= !empty($conv['is_archived']) ? '1' : '0' ?>, '<?= esc(addslashes($partnerName)) ?>')" title="Opsi Obrolan">⋮</button>
+                                    <button type="button" class="conv-menu-btn" onclick="openConvOptions(event, 'marketplace', <?= (int)$conv['target_id'] ?>, <?= (int)($conv['target_sub_id'] ?? 0) ?>, <?= !empty($conv['is_pinned']) ? '1' : '0' ?>, <?= !empty($conv['is_archived']) ? '1' : '0' ?>, '<?= esc(addslashes($partnerName)) ?>', <?= $isSeller ? (int)$conv['buyer_id'] : (int)$conv['seller_id'] ?>)" title="Opsi Obrolan">⋮</button>
                                 </div>
                             </div>
 
@@ -679,6 +681,10 @@
             <button type="button" id="btnActionDelete" onclick="executeConvAction('delete')" class="conv-sheet-action-btn danger">
                 <span class="conv-action-icon">🗑️</span>
                 <span class="conv-action-text">Hapus Obrolan</span>
+            </button>
+            <button type="button" id="btnActionReport" onclick="reportActivePartner()" class="conv-sheet-action-btn" style="color:#DC2626;">
+                <span class="conv-action-icon">🚩</span>
+                <span class="conv-action-text">Laporkan Pengguna</span>
             </button>
         </div>
     </div>
@@ -2061,7 +2067,7 @@ function filterConversations(type, btn) {
 
 let activeActionConv = null;
 
-function openConvOptions(e, type, targetId, targetSubId, isPinned, isArchived, partnerName) {
+function openConvOptions(e, type, targetId, targetSubId, isPinned, isArchived, partnerName, partnerUserId) {
     if (e) e.stopPropagation();
     activeActionConv = {
         type: type,
@@ -2069,9 +2075,9 @@ function openConvOptions(e, type, targetId, targetSubId, isPinned, isArchived, p
         targetSubId: targetSubId,
         isPinned: (isPinned == 1 || isPinned === true),
         isArchived: (isArchived == 1 || isArchived === true),
-        name: partnerName
+        name: partnerName,
+        partnerUserId: partnerUserId || 0
     };
-
     document.getElementById('convActionName').textContent = partnerName;
     document.getElementById('convActionSub').textContent = (type === 'direct' ? 'Teman (Direct)' : 'Marketplace');
     document.getElementById('convActionAvatar').querySelector('span').textContent = partnerName.charAt(0).toUpperCase();
@@ -2081,7 +2087,23 @@ function openConvOptions(e, type, targetId, targetSubId, isPinned, isArchived, p
     document.getElementById('textActionArchive').textContent = activeActionConv.isArchived ? 'Buka dari Arsip' : 'Arsipkan Obrolan';
     document.getElementById('iconActionArchive').textContent = activeActionConv.isArchived ? '📂' : '📦';
 
+    // Hide report button if no partner user id
+    const reportBtn = document.getElementById('btnActionReport');
+    if (reportBtn) reportBtn.style.display = activeActionConv.partnerUserId ? 'flex' : 'none';
+
     document.getElementById('convActionModalOverlay').classList.add('open');
+}
+
+function reportActivePartner() {
+    if (!activeActionConv || !activeActionConv.partnerUserId) return;
+    const conv = activeActionConv;
+    const name = conv.name;
+    closeConvActionModal();
+    if (typeof openReportModal === 'function') {
+        openReportModal('user', conv.partnerUserId, name, 'Laporkan pengguna ini', '#DC2626');
+    } else {
+        alert('Fitur laporan tidak tersedia di halaman ini.');
+    }
 }
 
 function closeConvActionModal() {
@@ -2138,14 +2160,16 @@ function openActiveChatOptions(type) {
         const card = document.getElementById(`convCard_direct_${currentDirectFriendId}`);
         const isPinned = card ? (card.getAttribute('data-pinned') === '1') : 0;
         const isArchived = card ? (card.getAttribute('data-archived') === '1') : 0;
-        openConvOptions(null, 'direct', currentDirectFriendId, 0, isPinned, isArchived, name);
+        const partnerUserId = card ? parseInt(card.getAttribute('data-partner-id') || '0', 10) : 0;
+        openConvOptions(null, 'direct', currentDirectFriendId, 0, isPinned, isArchived, name, partnerUserId);
     } else if (type === 'marketplace') {
         if (!currentChatListingId) return;
         const name = document.getElementById('chatModalPartnerName')?.textContent || 'Obrolan Marketplace';
         const card = document.getElementById(`convCard_marketplace_${currentChatListingId}_${currentChatBuyerId || 0}`);
         const isPinned = card ? (card.getAttribute('data-pinned') === '1') : 0;
         const isArchived = card ? (card.getAttribute('data-archived') === '1') : 0;
-        openConvOptions(null, 'marketplace', currentChatListingId, currentChatBuyerId || 0, isPinned, isArchived, name);
+        const partnerUserId = card ? parseInt(card.getAttribute('data-partner-id') || '0', 10) : 0;
+        openConvOptions(null, 'marketplace', currentChatListingId, currentChatBuyerId || 0, isPinned, isArchived, name, partnerUserId);
     }
 }
 
@@ -3632,7 +3656,7 @@ document.addEventListener('DOMContentLoaded', function() {
     enableDragScroll(document.querySelector('.status-tray-scroll'));
 
     // Pindahkan semua overlay modal ke document.body agar terbebas dari stacking context #app
-    ['statusViewerModalOverlay', 'directChatModal', 'marketChatModal', 'createStatusModalOverlay', 'pwaChatLightbox', 'convActionModalOverlay', 'addFriendModalOverlay', 'friendsListModalOverlay'].forEach(id => {
+    ['statusViewerModalOverlay', 'directChatModal', 'marketChatModal', 'createStatusModalOverlay', 'pwaChatLightbox', 'convActionModalOverlay', 'addFriendModalOverlay', 'friendsListModalOverlay', 'reportModalOverlay'].forEach(id => {
         const el = document.getElementById(id);
         if (el && el.parentNode !== document.body) {
             document.body.appendChild(el);
@@ -3640,4 +3664,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+<?= $this->include('partials/report_modal') ?>
 <?= $this->endSection() ?>

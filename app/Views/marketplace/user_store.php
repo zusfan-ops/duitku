@@ -105,6 +105,24 @@
     align-items: center;
     gap: 6px;
 }
+.btn-report-user {
+    background: rgba(220, 38, 38, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #FCA5A5;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .2s;
+}
+.btn-report-user:hover {
+    background: rgba(220, 38, 38, 0.3);
+    color: #fff;
+}
 
 .store-listings-title {
     font-size: 16px;
@@ -359,6 +377,16 @@
                 </a>
             <?php endif; ?>
 
+            <?php
+                $viewerId = (int)(session()->get('user_id') ?? 0);
+                $isOwnerPage = ($viewerId > 0 && (int)$seller['id'] === $viewerId);
+            ?>
+            <?php if (!$isOwnerPage): ?>
+                <button type="button" class="btn-report-user" onclick="openReportModal('user', <?= (int)$seller['id'] ?>, '<?= esc(addslashes($seller['name'])) ?>', 'Laporkan pengguna ini', '#DC2626')">
+                    <span>🚩</span> <span>Laporkan</span>
+                </button>
+            <?php endif; ?>
+
             <button onclick="copyStoreLink()" class="btn-share-store">
                 <span>🔗 Bagikan Toko</span>
             </button>
@@ -454,6 +482,7 @@
         </div>
     </div>
 </div>
+<?= $this->include('partials/report_modal') ?>
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>

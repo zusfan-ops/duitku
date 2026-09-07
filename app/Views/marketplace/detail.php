@@ -403,6 +403,26 @@
     align-items: center;
     gap: 6px;
 }
+.report-trigger-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px dashed var(--border, #CBD5E1);
+    color: #DC2626;
+    padding: 10px;
+    border-radius: 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+.report-trigger-btn:hover {
+    background: #FEF2F2;
+    border-color: #DC2626;
+}
 
 /* Comments Section */
 .comments-section {
@@ -996,6 +1016,15 @@
         <?php endif; ?>
     </div>
 
+    <?php if (!$isOwner): ?>
+    <!-- Report This Listing -->
+    <div style="margin:14px 0 4px;">
+        <button type="button" onclick="openReportModal('listing', <?= (int)$listing['id'] ?>)" class="report-trigger-btn" title="Laporkan iklan ini">
+            🚩 Laporkan Iklan Ini
+        </button>
+    </div>
+    <?php endif; ?>
+
     <!-- 6. SHARE TO WHATSAPP & PLATFORMS (REQUIREMENT 5) -->
     <div class="share-section">
         <div style="font-size:13px;font-weight:700;color:var(--text);">
@@ -1164,6 +1193,8 @@
         </div>
     </div>
 </div>
+
+<?= $this->include('partials/report_modal') ?>
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
