@@ -122,11 +122,14 @@ class NeighborhoodController extends BaseController
     {
         $userId = session()->get('user_id');
         $post   = $this->request->getPost();
+        $isAjax = $this->request->isAJAX() 
+               || $this->request->getHeaderLine('X-Requested-With') === 'XMLHttpRequest' 
+               || str_contains($this->request->getHeaderLine('Accept'), 'application/json');
 
         $rtName = trim($post['name'] ?? '');
         if (empty($rtName) || empty($post['subdistrict']) || empty($post['rt']) || empty($post['rw'])) {
             $msg = 'Harap lengkapi semua data wilayah (RT, RW, Kelurahan, Kota, Provinsi).';
-            if ($this->request->isAJAX()) {
+            if ($isAjax) {
                 return $this->response->setJSON(['success' => false, 'message' => $msg]);
             }
             return redirect()->back()->withInput()->with('error', $msg);
@@ -149,7 +152,7 @@ class NeighborhoodController extends BaseController
             $id = $this->neighborhoodService->registerNeighborhood($post, $userId, $skDocumentPath);
             $msg = 'Pengajuan RT berhasil dikirim! Menunggu verifikasi dokumen SK oleh Admin Master.';
             
-            if ($this->request->isAJAX()) {
+            if ($isAjax) {
                 return $this->response->setJSON([
                     'success'         => true,
                     'message'         => $msg,
@@ -161,7 +164,7 @@ class NeighborhoodController extends BaseController
             return redirect()->to('/neighborhood/join')->with('success', $msg);
         } catch (\Throwable $e) {
             $err = 'Gagal mendaftarkan RT: ' . $e->getMessage();
-            if ($this->request->isAJAX()) {
+            if ($isAjax) {
                 return $this->response->setJSON(['success' => false, 'message' => $err]);
             }
             return redirect()->back()->withInput()->with('error', $err);

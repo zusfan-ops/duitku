@@ -264,6 +264,7 @@
 
     <div class="create-card">
         <form id="createRtForm" enctype="multipart/form-data">
+            <?= csrf_field() ?>
             
             <div class="create-section-title">
                 <span>📍</span> Informasi Wilayah &amp; Nama Lingkungan
@@ -480,10 +481,15 @@ document.getElementById('createRtForm').addEventListener('submit', function(e) {
 
     fetch('/neighborhood/store', {
         method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        },
         body: formData
     })
-    .then(res => res.json())
-    .then(data => {
+    .then(async res => {
+        const isJson = (res.headers.get('content-type') || '').includes('application/json');
+        const data = isJson ? await res.json() : { success: false, message: 'Respon server tidak valid (' + res.status + ')' };
         if (data.success) {
             alert(data.message || 'Pengajuan RT berhasil dikirim! Menunggu verifikasi SK.');
             window.location.href = data.redirect || '/neighborhood/join';
@@ -494,7 +500,7 @@ document.getElementById('createRtForm').addEventListener('submit', function(e) {
         }
     })
     .catch(err => {
-        alert('Terjadi kesalahan jaringan.');
+        alert('Terjadi kesalahan: ' + (err.message || 'Gagal terhubung ke server.'));
         btn.disabled = false;
         btn.innerHTML = '<span>Daftarkan RT &amp; Ajukan Verifikasi</span> <span>👑</span>';
     });

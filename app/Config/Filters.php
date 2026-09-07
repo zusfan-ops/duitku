@@ -76,6 +76,7 @@ class Filters extends BaseFilters
                     'marketplace/*',
                     'friends/*',
                     'chat/*',
+                    'neighborhood/*',
                 ]
             ],
             'invalidchars',
