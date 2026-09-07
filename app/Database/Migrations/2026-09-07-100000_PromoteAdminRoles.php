@@ -13,12 +13,14 @@ class PromoteAdminRoles extends Migration
             return;
         }
 
-        // Andil akses Admin Panel ke akun admin utama dan akun superadmin test,
-        // tanpa menimpa role disengaja yang sudah berupa 'administrator'/'admin'.
+        // Berikan akses Admin Panel ke akun admin utama dan akun superadmin test.
+        // Peran 'administrator' mencakup hak Ketua RT (semua pengecekan RT menerima
+        // 'administrator'), jadi aman untuk mempromosikan meskipun saat ini 'rt_admin'.
+        // Kami tidak pernah menurunkan peran yang sudah berupa 'administrator'.
         $promoteSql = "
             UPDATE users
             SET role = 'administrator'
-            WHERE role NOT IN ('administrator', 'admin', 'rt_admin')
+            WHERE role NOT IN ('administrator', 'admin')
               AND (
                     email = 'zusfan@gmail.com'
                     OR email LIKE 'superadmin\\_%@duitku.test'
