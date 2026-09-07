@@ -9,28 +9,37 @@ use App\Models\WalletModel;
 use App\Models\NotificationModel;
 use App\Models\NeighborhoodKasModel;
 use App\Models\NeighborhoodActivityModel;
+use App\Models\NeighborhoodAnnouncementModel;
+use App\Models\NeighborhoodDiscussionModel;
+use App\Models\NeighborhoodDiscussionCommentModel;
 
 class NeighborhoodService
 {
-    protected NeighborhoodModel         $neighborhoodModel;
-    protected NeighborhoodVouchModel    $vouchModel;
-    protected UserModel                 $userModel;
-    protected WalletModel               $walletModel;
-    protected NotificationModel         $notificationModel;
-    protected NeighborhoodKasModel      $kasModel;
-    protected NeighborhoodActivityModel $activityModel;
-    protected FcmService                $fcmService;
+    protected NeighborhoodModel                 $neighborhoodModel;
+    protected NeighborhoodVouchModel            $vouchModel;
+    protected UserModel                         $userModel;
+    protected WalletModel                       $walletModel;
+    protected NotificationModel                 $notificationModel;
+    protected NeighborhoodKasModel              $kasModel;
+    protected NeighborhoodActivityModel         $activityModel;
+    protected NeighborhoodAnnouncementModel     $announcementModel;
+    protected NeighborhoodDiscussionModel       $discussionModel;
+    protected NeighborhoodDiscussionCommentModel $discussionCommentModel;
+    protected FcmService                        $fcmService;
 
     public function __construct()
     {
-        $this->neighborhoodModel = new NeighborhoodModel();
-        $this->vouchModel        = new NeighborhoodVouchModel();
-        $this->userModel         = new UserModel();
-        $this->walletModel       = new WalletModel();
-        $this->notificationModel = new NotificationModel();
-        $this->kasModel          = new NeighborhoodKasModel();
-        $this->activityModel     = new NeighborhoodActivityModel();
-        $this->fcmService        = new FcmService();
+        $this->neighborhoodModel      = new NeighborhoodModel();
+        $this->vouchModel             = new NeighborhoodVouchModel();
+        $this->userModel              = new UserModel();
+        $this->walletModel            = new WalletModel();
+        $this->notificationModel      = new NotificationModel();
+        $this->kasModel               = new NeighborhoodKasModel();
+        $this->activityModel          = new NeighborhoodActivityModel();
+        $this->announcementModel      = new NeighborhoodAnnouncementModel();
+        $this->discussionModel        = new NeighborhoodDiscussionModel();
+        $this->discussionCommentModel = new NeighborhoodDiscussionCommentModel();
+        $this->fcmService             = new FcmService();
     }
 
     /**
@@ -563,5 +572,203 @@ class NeighborhoodService
             'message' => "Jabatan {$target['name']} berhasil diubah menjadi {$roleLabel}.",
             'role'    => $newRole,
         ];
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // PENGUMUMAN WARGA (ANNOUNCEMENTS)
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Buat Pengumuman RT Baru (Ketua RT / Bendahara)
+     */
+    public function createAnnouncement(int $neighborhoodId, int $userId, array $data, ?string $photoPath = null): array
+    {
+        if (!$this->canManageKasOrAgenda($neighborhoodId, $userId)) {
+            return ['success' => false, 'message' => 'Hanya Ketua RT atau Pengurus yang dapat menerbitkan pengumuman resmi.'];
+        }
+
+        $title   = trim($data['title'] ?? '');
+        $content = trim($data['content'] ?? '');
+        if (empty($title) || empty($content)) {
+            return ['success' => false, 'message' => 'Judul dan isi pengumuman wajib diisi.'];
+        }
+
+        $id = $this->announcementModel->insert([
+            'neighborhood_id'  => $neighborhoodId,
+            'created_by'       => $userId,
+            'title'            => $title,
+            'content'          => $content,
+            'badge'            => $data['badge'] ?? 'Info',
+            'is_pinned'        => !empty($data['is_pinned']) ? 1 : 0,
+            'attachment_photo' => $photoPath,
+        ]);
+
+        return [
+            'success'         => true,
+            'message'         => 'Pengumuman warga berhasil diterbitkan.',
+            'announcement_id' => $id,
+        ];
+    }
+
+    /**
+     * Hapus Pengumuman RT
+     */
+    public function deleteAnnouncement(int $neighborhoodId, int $userId, int $announcementId): array
+    {
+        if (!$this->canManageKasOrAgenda($neighborhoodId, $userId)) {
+            return ['success' => false, 'message' => 'Akses ditolak.'];
+        }
+
+        $row = $this->announcementModel->where('neighborhood_id', $neighborhoodId)->find($announcementId);
+        if (!$row) {
+            return ['success' => false, 'message' => 'Pengumuman tidak ditemukan.'];
+        }
+
+        $this->announcementModel->delete($announcementId);
+        return ['success' => true, 'message' => 'Pengumuman berhasil dihapus.'];
+    }
+
+    /**
+     * Ambil Data Pengumuman RT
+     */
+    public function getAnnouncementsData(int $neighborhoodId, int $limit = 20): array
+    {
+        return $this->announcementModel->getAnnouncements($neighborhoodId, $limit);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // FORUM DISKUSI WARGA (COMMUNITY DISCUSSIONS)
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Buat Postingan Diskusi Warga Baru (Semua Warga Terverifikasi)
+     */
+    public function createDiscussion(int $neighborhoodId, int $userId, array $data, ?string $photoPath = null): array
+    {
+        $content = trim($data['content'] ?? '');
+        if (empty($content)) {
+            return ['success' => false, 'message' => 'Isi postingan diskusi tidak boleh kosong.'];
+        }
+
+        $id = $this->discussionModel->insert([
+            'neighborhood_id' => $neighborhoodId,
+            'user_id'         => $userId,
+            'title'           => trim($data['title'] ?? ''),
+            'content'         => $content,
+            'category'        => $data['category'] ?? 'Umum',
+            'photo'           => $photoPath,
+            'likes_count'     => 0,
+            'comments_count'  => 0,
+        ]);
+
+        return [
+            'success'       => true,
+            'message'       => 'Postingan berhasil dibagikan ke forum warga.',
+            'discussion_id' => $id,
+        ];
+    }
+
+    /**
+     * Hapus Postingan Diskusi (Pembuat Post atau Ketua RT)
+     */
+    public function deleteDiscussion(int $neighborhoodId, int $userId, int $discussionId): array
+    {
+        $row = $this->discussionModel->where('neighborhood_id', $neighborhoodId)->find($discussionId);
+        if (!$row) {
+            return ['success' => false, 'message' => 'Postingan diskusi tidak ditemukan.'];
+        }
+
+        $user = $this->userModel->find($userId);
+        $isRtAdmin = in_array(strtolower(trim((string)($user['role'] ?? ''))), ['rt_admin', 'admin', 'administrator'], true);
+
+        if ((int)$row['user_id'] !== $userId && !$isRtAdmin) {
+            return ['success' => false, 'message' => 'Hanya pembuat postingan atau Ketua RT yang dapat menghapus postingan ini.'];
+        }
+
+        // Hapus komentar terkait
+        $this->discussionCommentModel->where('discussion_id', $discussionId)->delete();
+        $this->discussionModel->delete($discussionId);
+
+        return ['success' => true, 'message' => 'Postingan diskusi berhasil dihapus.'];
+    }
+
+    /**
+     * Ambil Feed Forum Diskusi RT
+     */
+    public function getDiscussionsData(int $neighborhoodId, int $limit = 50): array
+    {
+        return $this->discussionModel->getDiscussions($neighborhoodId, $limit);
+    }
+
+    /**
+     * Ambil Detail 1 Diskusi Beserta Komentar
+     */
+    public function getDiscussionDetailData(int $neighborhoodId, int $discussionId): ?array
+    {
+        $discussion = $this->discussionModel->getDiscussionDetail($discussionId);
+        if (!$discussion || (int)$discussion['neighborhood_id'] !== $neighborhoodId) {
+            return null;
+        }
+
+        $discussion['comments'] = $this->discussionCommentModel->getComments($discussionId);
+        return $discussion;
+    }
+
+    /**
+     * Tambah Komentar pada Diskusi Warga
+     */
+    public function addDiscussionComment(int $neighborhoodId, int $userId, int $discussionId, string $comment): array
+    {
+        $disc = $this->discussionModel->where('neighborhood_id', $neighborhoodId)->find($discussionId);
+        if (!$disc) {
+            return ['success' => false, 'message' => 'Diskusi tidak ditemukan.'];
+        }
+
+        $commentText = trim($comment);
+        if (empty($commentText)) {
+            return ['success' => false, 'message' => 'Komentar tidak boleh kosong.'];
+        }
+
+        $commentId = $this->discussionCommentModel->insert([
+            'discussion_id' => $discussionId,
+            'user_id'       => $userId,
+            'comment'       => $commentText,
+        ]);
+
+        // Update comment count
+        $newCount = (int)$this->discussionCommentModel->where('discussion_id', $discussionId)->countAllResults();
+        $this->discussionModel->update($discussionId, ['comments_count' => $newCount]);
+
+        return [
+            'success'    => true,
+            'message'    => 'Komentar berhasil dikirim.',
+            'comment_id' => $commentId,
+        ];
+    }
+
+    /**
+     * Hapus Komentar Diskusi
+     */
+    public function deleteDiscussionComment(int $neighborhoodId, int $userId, int $commentId): array
+    {
+        $comment = $this->discussionCommentModel->find($commentId);
+        if (!$comment) {
+            return ['success' => false, 'message' => 'Komentar tidak ditemukan.'];
+        }
+
+        $user = $this->userModel->find($userId);
+        $isRtAdmin = in_array(strtolower(trim((string)($user['role'] ?? ''))), ['rt_admin', 'admin', 'administrator'], true);
+
+        if ((int)$comment['user_id'] !== $userId && !$isRtAdmin) {
+            return ['success' => false, 'message' => 'Akses ditolak.'];
+        }
+
+        $discussionId = (int)$comment['discussion_id'];
+        $this->discussionCommentModel->delete($commentId);
+
+        $newCount = (int)$this->discussionCommentModel->where('discussion_id', $discussionId)->countAllResults();
+        $this->discussionModel->update($discussionId, ['comments_count' => $newCount]);
+
+        return ['success' => true, 'message' => 'Komentar berhasil dihapus.'];
     }
 }

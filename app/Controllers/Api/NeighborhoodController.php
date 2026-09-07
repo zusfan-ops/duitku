@@ -55,9 +55,9 @@ class NeighborhoodController extends ApiController
         $kasData        = $this->neighborhoodService->getKasData($neighborhoodId);
         $activitiesData = $this->neighborhoodService->getActivitiesData($neighborhoodId);
 
-        // Alat RT
-        $toolsCount     = $this->toolModel->where('neighborhood_id', $neighborhoodId)->where('status !=', 'retired')->countAllResults();
-        $toolsAvailable = $this->toolModel->where('neighborhood_id', $neighborhoodId)->where('status', 'available')->countAllResults();
+        // Pengumuman & Forum Diskusi
+        $announcements  = $this->neighborhoodService->getAnnouncementsData($neighborhoodId, 15);
+        $discussions    = $this->neighborhoodService->getDiscussionsData($neighborhoodId, 30);
 
         return $this->ok([
             'joined'              => true,
@@ -72,6 +72,8 @@ class NeighborhoodController extends ApiController
             'kas_ledger'          => $kasData['ledger'],
             'upcoming_activities' => $activitiesData['upcoming'],
             'all_activities'      => $activitiesData['all'],
+            'announcements'       => $announcements,
+            'discussions'         => $discussions,
             'tools_count'         => $toolsCount,
             'tools_available'     => $toolsAvailable,
         ]);
@@ -323,6 +325,165 @@ class NeighborhoodController extends ApiController
         $notes    = $json['notes'] ?? null;
 
         $res = $this->neighborhoodService->vouchForNeighbor($voucherUserId, $targetId, $notes);
+        if (!$res['success']) {
+            return $this->fail($res['message']);
+        }
+
+        return $this->ok($res);
+    }
+
+    /**
+     * Buat Pengumuman RT
+     * POST /api/neighborhood/announcement/store
+     */
+    public function storeAnnouncement()
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        if (!$neighborhoodId) {
+            return $this->fail('Anda belum terhubung ke komunitas RT.');
+        }
+
+        $json = $this->request->getJSON(true) ?? $this->request->getPost();
+        $res  = $this->neighborhoodService->createAnnouncement($neighborhoodId, $userId, $json);
+
+        if (!$res['success']) {
+            return $this->fail($res['message']);
+        }
+
+        return $this->ok($res);
+    }
+
+    /**
+     * Hapus Pengumuman RT
+     * POST /api/neighborhood/announcement/delete/(:num)
+     */
+    public function deleteAnnouncement(int $id)
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        $res = $this->neighborhoodService->deleteAnnouncement($neighborhoodId, $userId, $id);
+        if (!$res['success']) {
+            return $this->fail($res['message']);
+        }
+
+        return $this->ok($res);
+    }
+
+    /**
+     * Daftar Postingan Forum Diskusi RT
+     * GET /api/neighborhood/discussions
+     */
+    public function discussions()
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        if (!$neighborhoodId) {
+            return $this->fail('Anda belum terhubung ke komunitas RT.');
+        }
+
+        $discussions = $this->neighborhoodService->getDiscussionsData($neighborhoodId, 50);
+        return $this->ok(['discussions' => $discussions]);
+    }
+
+    /**
+     * Buat Postingan Forum Diskusi RT
+     * POST /api/neighborhood/discussion/store
+     */
+    public function storeDiscussion()
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        if (!$neighborhoodId) {
+            return $this->fail('Anda belum terhubung ke komunitas RT.');
+        }
+
+        $json = $this->request->getJSON(true) ?? $this->request->getPost();
+        $res  = $this->neighborhoodService->createDiscussion($neighborhoodId, $userId, $json);
+
+        if (!$res['success']) {
+            return $this->fail($res['message']);
+        }
+
+        return $this->ok($res);
+    }
+
+    /**
+     * Hapus Postingan Forum Diskusi RT
+     * POST /api/neighborhood/discussion/delete/(:num)
+     */
+    public function deleteDiscussion(int $id)
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        $res = $this->neighborhoodService->deleteDiscussion($neighborhoodId, $userId, $id);
+        if (!$res['success']) {
+            return $this->fail($res['message']);
+        }
+
+        return $this->ok($res);
+    }
+
+    /**
+     * Detail Postingan Forum Diskusi RT & Komentar
+     * GET /api/neighborhood/discussion/(:num)
+     */
+    public function showDiscussion(int $id)
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        $disc = $this->neighborhoodService->getDiscussionDetailData($neighborhoodId, $id);
+        if (!$disc) {
+            return $this->fail('Diskusi tidak ditemukan.');
+        }
+
+        return $this->ok(['discussion' => $disc]);
+    }
+
+    /**
+     * Kirim Komentar pada Postingan Diskusi
+     * POST /api/neighborhood/discussion/(:num)/comment
+     */
+    public function storeDiscussionComment(int $id)
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        $json    = $this->request->getJSON(true) ?? $this->request->getPost();
+        $comment = trim($json['comment'] ?? '');
+
+        $res = $this->neighborhoodService->addDiscussionComment($neighborhoodId, $userId, $id, $comment);
+        if (!$res['success']) {
+            return $this->fail($res['message']);
+        }
+
+        return $this->ok($res);
+    }
+
+    /**
+     * Hapus Komentar pada Postingan Diskusi
+     * POST /api/neighborhood/discussion/comment/delete/(:num)
+     */
+    public function deleteDiscussionComment(int $id)
+    {
+        $userId = $this->uid();
+        $user   = $this->userModel->find($userId);
+        $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
+
+        $res = $this->neighborhoodService->deleteDiscussionComment($neighborhoodId, $userId, $id);
         if (!$res['success']) {
             return $this->fail($res['message']);
         }

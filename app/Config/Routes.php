@@ -217,6 +217,13 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/neighborhood/activity/store',     'NeighborhoodController::storeActivity');
     $routes->post('/neighborhood/activity/delete/(:num)', 'NeighborhoodController::deleteActivity/$1');
     $routes->post('/neighborhood/member/role',        'NeighborhoodController::changeMemberRole');
+    $routes->post('/neighborhood/announcement/store', 'NeighborhoodController::storeAnnouncement');
+    $routes->post('/neighborhood/announcement/delete/(:num)', 'NeighborhoodController::deleteAnnouncement/$1');
+    $routes->post('/neighborhood/discussion/store',   'NeighborhoodController::storeDiscussion');
+    $routes->post('/neighborhood/discussion/delete/(:num)', 'NeighborhoodController::deleteDiscussion/$1');
+    $routes->get('/neighborhood/discussion/(:num)',   'NeighborhoodController::showDiscussion/$1');
+    $routes->post('/neighborhood/discussion/(:num)/comment', 'NeighborhoodController::storeDiscussionComment/$1');
+    $routes->post('/neighborhood/discussion/comment/delete/(:num)', 'NeighborhoodController::deleteDiscussionComment/$1');
 
     // Tool Sharing (Katalog & Peminjaman Alat)
     $routes->get('/neighborhood/tools',               'CommunityToolController::index');
@@ -566,6 +573,14 @@ $routes->group('api', function ($routes) {
         $routes->post('neighborhood/activity/store',      'Api\NeighborhoodController::storeActivity');
         $routes->post('neighborhood/activity/delete/(:num)', 'Api\NeighborhoodController::deleteActivity/$1');
         $routes->post('neighborhood/member/role',         'Api\NeighborhoodController::changeMemberRole');
+        $routes->post('neighborhood/announcement/store',  'Api\NeighborhoodController::storeAnnouncement');
+        $routes->post('neighborhood/announcement/delete/(:num)', 'Api\NeighborhoodController::deleteAnnouncement/$1');
+        $routes->get('neighborhood/discussions',          'Api\NeighborhoodController::discussions');
+        $routes->post('neighborhood/discussion/store',    'Api\NeighborhoodController::storeDiscussion');
+        $routes->post('neighborhood/discussion/delete/(:num)', 'Api\NeighborhoodController::deleteDiscussion/$1');
+        $routes->get('neighborhood/discussion/(:num)',    'Api\NeighborhoodController::showDiscussion/$1');
+        $routes->post('neighborhood/discussion/(:num)/comment', 'Api\NeighborhoodController::storeDiscussionComment/$1');
+        $routes->post('neighborhood/discussion/comment/delete/(:num)', 'Api\NeighborhoodController::deleteDiscussionComment/$1');
 
         // Tool Sharing API
         $routes->get('neighborhood/tools',                'Api\CommunityToolController::index');

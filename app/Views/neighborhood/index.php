@@ -139,7 +139,7 @@
 .kas-stat-val.primary { color: #059669; }
 .kas-stat-val.danger { color: #EF4444; }
 
-/* ── Kas & Activity List Rows ── */
+/* ── Compact List Rows ── */
 .compact-list {
     display: flex;
     flex-direction: column;
@@ -149,20 +149,22 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 12px;
+    padding: 12px 14px;
     background: var(--bg, #F8FAFC);
     border: 1px solid var(--border, #E2E8F0);
-    border-radius: 12px;
+    border-radius: 14px;
+    gap: 12px;
 }
 .compact-item-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    flex: 1;
     min-width: 0;
 }
 .compact-item-icon {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 10px;
     display: flex;
     align-items: center;
@@ -173,10 +175,8 @@
 .compact-item-icon.in { background: #ECFDF5; color: #059669; }
 .compact-item-icon.out { background: #FEF2F2; color: #EF4444; }
 .compact-item-icon.event { background: #EFF6FF; color: #2563EB; }
-.compact-item-icon.tool { background: #F0FDF4; color: #16A34A; }
-
 .compact-title {
-    font-size: 12.5px;
+    font-size: 13px;
     font-weight: 800;
     color: var(--text-primary, #0F172A);
     white-space: nowrap;
@@ -184,63 +184,121 @@
     text-overflow: ellipsis;
 }
 .compact-sub {
-    font-size: 10.5px;
+    font-size: 11px;
     color: var(--text-secondary, #64748B);
 }
 .compact-amount {
     font-size: 13px;
     font-weight: 900;
-    white-space: nowrap;
+    flex-shrink: 0;
 }
 .compact-amount.in { color: #059669; }
 .compact-amount.out { color: #EF4444; }
 
-/* ── Action Buttons ── */
-.btn-primary-sm {
-    padding: 8px 14px;
+/* ── Announcement Cards ── */
+.announcement-card {
+    background: var(--bg, #F8FAFC);
+    border: 1.5px solid var(--border, #E2E8F0);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+}
+.announcement-card.pinned {
+    border-color: #FDE68A;
+    background: #FFFDF5;
+}
+.announcement-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+.announcement-badge.Penting { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+.announcement-badge.Info { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
+.announcement-badge.Darurat { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+.announcement-badge.Kegiatan { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
+
+/* ── Discussion Feed Cards ── */
+.discussion-card {
+    background: var(--bg, #F8FAFC);
+    border: 1.5px solid var(--border, #E2E8F0);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+.discussion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.discussion-author-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.discussion-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
     background: #059669;
     color: #ffffff;
-    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+}
+.discussion-category-pill {
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 800;
+    background: #E2E8F0;
+    color: #334155;
+}
+
+/* ── Buttons ── */
+.btn-primary-sm {
+    background: var(--primary, #059669);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 6px 14px;
     font-size: 12px;
     font-weight: 800;
-    border: none;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
 }
-.btn-primary-sm:hover {
-    background: #047857;
-    transform: translateY(-1px);
-}
+.btn-primary-sm:hover { opacity: 0.9; }
 
 .btn-secondary-sm {
-    padding: 8px 14px;
     background: var(--bg, #F8FAFC);
     color: var(--text-primary, #0F172A);
-    border: 1.5px solid var(--border, #E2E8F0);
-    border-radius: 20px;
+    border: 1px solid var(--border, #E2E8F0);
+    border-radius: 12px;
+    padding: 6px 14px;
     font-size: 12px;
     font-weight: 800;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.2s ease;
-}
-.btn-secondary-sm:hover {
-    border-color: var(--primary, #059669);
-    color: var(--primary, #059669);
 }
 
-/* ── Residents Avatar & Role Badge ── */
 .resident-avatar {
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: var(--primary-light, #ECFDF5);
-    color: var(--primary, #059669);
+    background: rgba(5, 150, 105, 0.12);
+    color: #059669;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -326,7 +384,7 @@
                 </span>
             <?php elseif ($isTreasurer): ?>
                 <span class="role-badge treasurer" style="color: #ffffff; background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.4);">
-                    💰 Bendahara RT
+                    💼 Bendahara RT
                 </span>
             <?php else: ?>
                 <span class="role-badge resident" style="color: #ffffff; background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.3);">
@@ -336,7 +394,55 @@
         </div>
     </div>
 
-    <!-- ── 2. CARD KAS RT (LAPORAN KEUANGAN) ── -->
+    <!-- ── 2. CARD PENGUMUMAN RESMI RT ── -->
+    <div class="info-card">
+        <div class="info-card-header">
+            <div class="info-card-title">
+                <span>📢</span> Papan Pengumuman RT
+            </div>
+            <?php if ($canManageKas): ?>
+                <button type="button" class="btn-primary-sm" onclick="openAnnouncementModal()">
+                    <span>➕</span> Buat Pengumuman
+                </button>
+            <?php endif; ?>
+        </div>
+
+        <?php if (empty($announcements)): ?>
+            <div style="text-align: center; padding: 18px; color: var(--text-secondary); font-size: 12px;">
+                Belum ada pengumuman resmi dari pengurus RT.
+            </div>
+        <?php else: ?>
+            <div>
+                <?php foreach ($announcements as $ann): ?>
+                    <div class="announcement-card <?= !empty($ann['is_pinned']) ? 'pinned' : '' ?>">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <span class="announcement-badge <?= esc($ann['badge'] ?? 'Info') ?>">
+                                    <?= !empty($ann['is_pinned']) ? '📌 ' : '' ?><?= esc($ann['badge'] ?? 'Info') ?>
+                                </span>
+                                <h4 style="font-size: 14px; font-weight: 900; margin: 0 0 4px; color: var(--text-primary);">
+                                    <?= esc($ann['title']) ?>
+                                </h4>
+                                <div style="font-size: 10.5px; color: var(--text-secondary); margin-bottom: 8px;">
+                                    Oleh: <?= esc($ann['author_name'] ?? 'Pengurus RT') ?> • <?= date('d M Y, H:i', strtotime($ann['created_at'])) ?> WIB
+                                </div>
+                            </div>
+                            <?php if ($canManageKas): ?>
+                                <button type="button" onclick="deleteAnnouncement(<?= $ann['id'] ?>)" style="background:none; border:none; color:#EF4444; cursor:pointer; font-size:14px;" title="Hapus Pengumuman">
+                                    🗑️
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                        <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0; line-height: 1.5; white-space: pre-line;">
+                            <?= esc($ann['content']) ?>
+                        </p>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- ── 3. CARD KAS RT (LAPORAN KEUANGAN) ── -->
     <div class="info-card">
         <div class="info-card-header">
             <div class="info-card-title">
@@ -394,7 +500,7 @@
         <?php endif; ?>
     </div>
 
-    <!-- ── 3. CARD ALAT BERSAMA (TOOL SHARING) ── -->
+    <!-- ── 4. CARD ALAT BERSAMA (TOOL SHARING) ── -->
     <div class="info-card">
         <div class="info-card-header">
             <div class="info-card-title">
@@ -427,7 +533,7 @@
         </a>
     </div>
 
-    <!-- ── 4. CARD AGENDA KEGIATAN WARGA ── -->
+    <!-- ── 5. CARD AGENDA KEGIATAN WARGA ── -->
     <div class="info-card">
         <div class="info-card-header">
             <div class="info-card-title">
@@ -470,7 +576,78 @@
         <?php endif; ?>
     </div>
 
-    <!-- ── 5. CARD TITIP BELANJA ANTAR-WARGA ── -->
+    <!-- ── 6. CARD FORUM DISKUSI WARGA ── -->
+    <div class="info-card">
+        <div class="info-card-header">
+            <div class="info-card-title">
+                <span>💬</span> Forum Diskusi Warga
+            </div>
+            <button type="button" class="btn-primary-sm" onclick="openDiscussionModal()">
+                <span>✏️</span> Tulis Topik
+            </button>
+        </div>
+
+        <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 12px 0;">
+            Ruang diskusi terbuka untuk menyampaikan usul, info keamanan, kehilangan, atau saran lingkungan.
+        </p>
+
+        <?php if (empty($discussions)): ?>
+            <div style="text-align: center; padding: 20px; color: var(--text-secondary); font-size: 12px;">
+                Belum ada postingan di forum diskusi warga. Yuk mulai diskusi pertama!
+            </div>
+        <?php else: ?>
+            <div>
+                <?php foreach ($discussions as $disc): ?>
+                    <div class="discussion-card">
+                        <div class="discussion-header">
+                            <div class="discussion-author-box">
+                                <div class="discussion-avatar">
+                                    <?= strtoupper(substr($disc['author_name'] ?? 'W', 0, 1)) ?>
+                                </div>
+                                <div>
+                                    <div style="font-size: 13px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                                        <span><?= esc($disc['author_name'] ?? 'Warga') ?></span>
+                                        <?php if (in_array(strtolower($disc['author_role'] ?? ''), ['rt_admin', 'admin'])): ?>
+                                            <span class="role-badge rt-admin" style="font-size: 9px;">Ketua RT</span>
+                                        <?php elseif (in_array(strtolower($disc['author_role'] ?? ''), ['rt_treasurer', 'bendahara'])): ?>
+                                            <span class="role-badge treasurer" style="font-size: 9px;">Bendahara</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div style="font-size: 10.5px; color: var(--text-secondary);">
+                                        Rumah: <?= esc($disc['house_number'] ?? '-') ?> • <?= date('d M Y, H:i', strtotime($disc['created_at'])) ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="discussion-category-pill"><?= esc($disc['category'] ?? 'Umum') ?></span>
+                        </div>
+
+                        <?php if (!empty($disc['title'])): ?>
+                            <h4 style="font-size: 14px; font-weight: 900; margin: 0 0 6px; color: var(--text-primary);">
+                                <?= esc($disc['title']) ?>
+                            </h4>
+                        <?php endif; ?>
+
+                        <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0 0 12px; line-height: 1.5; white-space: pre-line;">
+                            <?= esc($disc['content']) ?>
+                        </p>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 10px;">
+                            <button type="button" class="btn-secondary-sm" style="padding: 4px 10px; font-size: 11px;" onclick="openDiscussionDetail(<?= $disc['id'] ?>)">
+                                💬 <?= (int)($disc['comments_count'] ?? 0) ?> Komentar
+                            </button>
+                            <?php if ($isRtAdmin || $disc['user_id'] == session()->get('user_id')): ?>
+                                <button type="button" onclick="deleteDiscussion(<?= $disc['id'] ?>)" style="background:none; border:none; color:#EF4444; cursor:pointer; font-size:12px;" title="Hapus Postingan">
+                                    🗑️ Hapus
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- ── 7. CARD TITIP BELANJA ANTAR-WARGA ── -->
     <div class="info-card">
         <div class="info-card-header">
             <div class="info-card-title">
@@ -490,7 +667,7 @@
         </a>
     </div>
 
-    <!-- ── 6. CARD DAFTAR WARGA & PENGURUS ── -->
+    <!-- ── 8. CARD DAFTAR WARGA & PENGURUS ── -->
     <div class="info-card">
         <div class="info-card-header">
             <div class="info-card-title">
@@ -571,6 +748,103 @@
         </div>
     </div>
 
+</div>
+
+<!-- ── MODAL BUAT PENGUMUMAN RT ── -->
+<div id="modalAnnouncement" class="modal-overlay" onclick="if(event.target===this)closeAnnouncementModal()">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <h3 style="font-size: 17px; font-weight: 900; margin: 0 0 6px; text-align: center;">📢 Terbitkan Pengumuman Resmi RT</h3>
+        <p style="font-size: 12px; color: var(--text-secondary); text-align: center; margin: 0 0 16px;">
+            Pengumuman akan disiarkan langsung di papan pengumuman RT seluruh warga
+        </p>
+
+        <form id="formAnnouncement">
+            <?= csrf_field() ?>
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 800; display: block; margin-bottom: 4px;">Judul Pengumuman</label>
+                <input type="text" name="title" class="create-input-text" placeholder="Contoh: Pemadaman Listrik Sementara dari PLN" required style="width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg);">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 800; display: block; margin-bottom: 4px;">Kategori Badge</label>
+                    <select name="badge" class="create-input-text" style="width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg);">
+                        <option value="Info">ℹ️ Info Biasa</option>
+                        <option value="Penting">⚠️ Penting</option>
+                        <option value="Darurat">🚨 Darurat</option>
+                        <option value="Kegiatan">📅 Kegiatan</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 800; display: block; margin-bottom: 4px;">Sematkan (Pin)</label>
+                    <select name="is_pinned" class="create-input-text" style="width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg);">
+                        <option value="1">📌 Sematkan di Paling Atas</option>
+                        <option value="0">Tidak Disematkan</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 12px; font-weight: 800; display: block; margin-bottom: 4px;">Isi Lengkap Pengumuman</label>
+                <textarea name="content" rows="4" class="create-input-text" placeholder="Tuliskan isi pengumuman secara rinci untuk warga..." required style="width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg);"></textarea>
+            </div>
+
+            <button type="submit" id="btnSubmitAnnouncement" class="btn-create-submit" style="border-radius: 20px;">
+                <span>Siarkan Pengumuman Sekarang</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ── MODAL BUAT TOPIK DISKUSI WARGA ── -->
+<div id="modalDiscussion" class="modal-overlay" onclick="if(event.target===this)closeDiscussionModal()">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <h3 style="font-size: 17px; font-weight: 900; margin: 0 0 6px; text-align: center;">💬 Buat Postingan Diskusi Warga</h3>
+        <p style="font-size: 12px; color: var(--text-secondary); text-align: center; margin: 0 0 16px;">
+            Sampaikan usul, informasi keamanan, atau saran untuk kemajuan RT
+        </p>
+
+        <form id="formDiscussion">
+            <?= csrf_field() ?>
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 800; display: block; margin-bottom: 4px;">Kategori</label>
+                <select name="category" class="create-input-text" style="width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg);">
+                    <option value="Umum">💬 Diskusi Umum</option>
+                    <option value="Usul & Saran">💡 Usul &amp; Saran</option>
+                    <option value="Keamanan">👮 Keamanan &amp; Ronda</option>
+                    <option value="Kebersihan">🧹 Kebersihan Lingkungan</option>
+                    <option value="Info Warga">📢 Info Warga</option>
+                    <option value="Kehilangan">❓ Kehilangan / Ditemukan</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 800; display: block; margin-bottom: 4px;">Judul Topik (Opsional)</label>
+                <input type="text" name="title" class="create-input-text" placeholder="Contoh: Usul penambahan lampu penerangan jalan Blok C" style="width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg);">
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 12px; font-weight: 800; display: block; margin-bottom: 4px;">Isi Diskusi</label>
+                <textarea name="content" rows="4" class="create-input-text" placeholder="Tulis pendapat atau hal yang ingin didiskusikan..." required style="width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg);"></textarea>
+            </div>
+
+            <button type="submit" id="btnSubmitDiscussion" class="btn-create-submit" style="border-radius: 20px;">
+                <span>Kirim Postingan ke Forum Warga</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ── MODAL DETAIL DISKUSI & KOMENTAR ── -->
+<div id="modalDiscussionDetail" class="modal-overlay" onclick="if(event.target===this)closeDiscussionDetailModal()">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div id="discDetailContent">
+            <div style="text-align: center; padding: 30px;">Memuat diskusi...</div>
+        </div>
+    </div>
 </div>
 
 <!-- ── MODAL CATAT KAS RT ── -->
@@ -694,6 +968,20 @@ function copyRtCode(code) {
     }
 }
 
+function openAnnouncementModal() {
+    document.getElementById('modalAnnouncement').classList.add('open');
+}
+function closeAnnouncementModal() {
+    document.getElementById('modalAnnouncement').classList.remove('open');
+}
+
+function openDiscussionModal() {
+    document.getElementById('modalDiscussion').classList.add('open');
+}
+function closeDiscussionModal() {
+    document.getElementById('modalDiscussion').classList.remove('open');
+}
+
 function openKasModal() {
     document.getElementById('modalKas').classList.add('open');
 }
@@ -706,6 +994,10 @@ function openActivityModal() {
 }
 function closeActivityModal() {
     document.getElementById('modalActivity').classList.remove('open');
+}
+
+function closeDiscussionDetailModal() {
+    document.getElementById('modalDiscussionDetail').classList.remove('open');
 }
 
 function updateKasCategory(type) {
@@ -727,6 +1019,183 @@ function updateKasCategory(type) {
             <option value="Lainnya">Pengeluaran Lainnya</option>
         `;
     }
+}
+
+// Submit Announcement Form
+document.getElementById('formAnnouncement')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmitAnnouncement');
+    btn.disabled = true;
+    btn.innerHTML = '<span>Menyiarkan...</span>';
+
+    const formData = new FormData(this);
+
+    fetch('/neighborhood/announcement/store', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Pengumuman berhasil disiarkan!');
+            location.reload();
+        } else {
+            alert(data.message || 'Gagal menerbitkan pengumuman.');
+            btn.disabled = false;
+            btn.innerHTML = '<span>Siarkan Pengumuman Sekarang</span>';
+        }
+    })
+    .catch(() => {
+        alert('Terjadi kesalahan jaringan.');
+        btn.disabled = false;
+        btn.innerHTML = '<span>Siarkan Pengumuman Sekarang</span>';
+    });
+});
+
+function deleteAnnouncement(id) {
+    if (!confirm('Hapus pengumuman ini?')) return;
+    const fd = new FormData();
+    fetch('/neighborhood/announcement/delete/' + id, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+        body: fd
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) location.reload();
+        else alert(data.message || 'Gagal menghapus pengumuman.');
+    });
+}
+
+// Submit Discussion Form
+document.getElementById('formDiscussion')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmitDiscussion');
+    btn.disabled = true;
+    btn.innerHTML = '<span>Mengirim...</span>';
+
+    const formData = new FormData(this);
+
+    fetch('/neighborhood/discussion/store', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Postingan berhasil dikirim!');
+            location.reload();
+        } else {
+            alert(data.message || 'Gagal mengirim postingan.');
+            btn.disabled = false;
+            btn.innerHTML = '<span>Kirim Postingan ke Forum Warga</span>';
+        }
+    })
+    .catch(() => {
+        alert('Terjadi kesalahan jaringan.');
+        btn.disabled = false;
+        btn.innerHTML = '<span>Kirim Postingan ke Forum Warga</span>';
+    });
+});
+
+function deleteDiscussion(id) {
+    if (!confirm('Hapus postingan diskusi ini?')) return;
+    const fd = new FormData();
+    fetch('/neighborhood/discussion/delete/' + id, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+        body: fd
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) location.reload();
+        else alert(data.message || 'Gagal menghapus diskusi.');
+    });
+}
+
+// Open Discussion Detail with Comments
+function openDiscussionDetail(id) {
+    const modal = document.getElementById('modalDiscussionDetail');
+    const container = document.getElementById('discDetailContent');
+    modal.classList.add('open');
+    container.innerHTML = '<div style="text-align:center; padding:30px;">Memuat komentar...</div>';
+
+    fetch('/neighborhood/discussion/' + id, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success || !data.discussion) {
+            container.innerHTML = '<div style="color:red; text-align:center;">Gagal memuat diskusi.</div>';
+            return;
+        }
+
+        const d = data.discussion;
+        const comments = d.comments || [];
+
+        let commentsHtml = comments.length === 0 
+            ? '<div style="text-align:center; padding:16px; color:var(--text-secondary); font-size:12px;">Belum ada komentar. Jadilah yang pertama berkomentar!</div>'
+            : comments.map(c => `
+                <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <strong style="font-size:12px; color:var(--text-primary);">${c.author_name} (Rumah ${c.house_number || '-'})</strong>
+                        <span style="font-size:10px; color:var(--text-secondary);">${c.created_at}</span>
+                    </div>
+                    <p style="font-size:12px; color:var(--text-secondary); margin:0; line-height:1.4;">${c.comment}</p>
+                </div>
+            `).join('');
+
+        container.innerHTML = `
+            <div style="margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--border);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span class="discussion-category-pill">${d.category}</span>
+                    <span style="font-size:11px; color:var(--text-secondary);">${d.created_at}</span>
+                </div>
+                ${d.title ? `<h3 style="font-size:15px; font-weight:900; margin:0 0 6px;">${d.title}</h3>` : ''}
+                <p style="font-size:13px; color:var(--text-primary); margin:0 0 8px; line-height:1.5;">${d.content}</p>
+                <div style="font-size:11px; color:var(--text-secondary);">Oleh: <strong>${d.author_name}</strong> (Rumah ${d.house_number || '-'})</div>
+            </div>
+
+            <h4 style="font-size:13px; font-weight:800; margin:0 0 10px;">Komentar Warga (${comments.length})</h4>
+            <div style="max-height:240px; overflow-y:auto; margin-bottom:16px;">
+                ${commentsHtml}
+            </div>
+
+            <form onsubmit="submitComment(event, ${d.id})" style="display:flex; gap:8px;">
+                <input type="text" id="inputCommentText" placeholder="Tulis komentar..." required style="flex:1; padding:10px 14px; border-radius:14px; border:1.5px solid var(--border); background:var(--bg); font-size:12.5px;">
+                <button type="submit" class="btn-primary-sm" style="padding:10px 16px; border-radius:14px;">Kirim</button>
+            </form>
+        `;
+    })
+    .catch(() => {
+        container.innerHTML = '<div style="color:red; text-align:center;">Terjadi kesalahan jaringan.</div>';
+    });
+}
+
+function submitComment(e, discussionId) {
+    e.preventDefault();
+    const input = document.getElementById('inputCommentText');
+    const comment = input.value.trim();
+    if (!comment) return;
+
+    const fd = new FormData();
+    fd.append('comment', comment);
+
+    fetch('/neighborhood/discussion/' + discussionId + '/comment', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+        body: fd
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            openDiscussionDetail(discussionId); // Refresh discussion thread
+        } else {
+            alert(data.message || 'Gagal mengirim komentar.');
+        }
+    });
 }
 
 // Submit Kas RT Form
@@ -754,7 +1223,7 @@ document.getElementById('formKas')?.addEventListener('submit', function(e) {
             btn.innerHTML = '<span>Simpan Transaksi Kas RT</span>';
         }
     })
-    .catch(err => {
+    .catch(() => {
         alert('Terjadi kesalahan jaringan.');
         btn.disabled = false;
         btn.innerHTML = '<span>Simpan Transaksi Kas RT</span>';
@@ -786,7 +1255,7 @@ document.getElementById('formActivity')?.addEventListener('submit', function(e) 
             btn.innerHTML = '<span>Simpan Agenda RT</span>';
         }
     })
-    .catch(err => {
+    .catch(() => {
         alert('Terjadi kesalahan jaringan.');
         btn.disabled = false;
         btn.innerHTML = '<span>Simpan Agenda RT</span>';

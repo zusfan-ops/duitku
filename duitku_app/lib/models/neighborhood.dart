@@ -394,3 +394,139 @@ class ErrandItem {
     );
   }
 }
+
+class NeighborhoodAnnouncement {
+  final int id;
+  final int neighborhoodId;
+  final int createdBy;
+  final String title;
+  final String content;
+  final String badge;
+  final bool isPinned;
+  final String? attachmentPhoto;
+  final String? authorName;
+  final String? authorRole;
+  final String createdAt;
+
+  NeighborhoodAnnouncement({
+    required this.id,
+    required this.neighborhoodId,
+    required this.createdBy,
+    required this.title,
+    required this.content,
+    required this.badge,
+    required this.isPinned,
+    this.attachmentPhoto,
+    this.authorName,
+    this.authorRole,
+    required this.createdAt,
+  });
+
+  factory NeighborhoodAnnouncement.fromJson(Map<String, dynamic> json) {
+    return NeighborhoodAnnouncement(
+      id: int.tryParse(json['id'].toString()) ?? 0,
+      neighborhoodId: int.tryParse(json['neighborhood_id'].toString()) ?? 0,
+      createdBy: int.tryParse(json['created_by'].toString()) ?? 0,
+      title: json['title']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
+      badge: json['badge']?.toString() ?? 'Info',
+      isPinned: json['is_pinned'] == 1 || json['is_pinned'] == '1' || json['is_pinned'] == true,
+      attachmentPhoto: json['attachment_photo']?.toString(),
+      authorName: json['author_name']?.toString(),
+      authorRole: json['author_role']?.toString(),
+      createdAt: json['created_at']?.toString() ?? '',
+    );
+  }
+}
+
+class NeighborhoodDiscussionComment {
+  final int id;
+  final int discussionId;
+  final int userId;
+  final String comment;
+  final String? authorName;
+  final String? authorRole;
+  final String? houseNumber;
+  final String createdAt;
+
+  NeighborhoodDiscussionComment({
+    required this.id,
+    required this.discussionId,
+    required this.userId,
+    required this.comment,
+    this.authorName,
+    this.authorRole,
+    this.houseNumber,
+    required this.createdAt,
+  });
+
+  factory NeighborhoodDiscussionComment.fromJson(Map<String, dynamic> json) {
+    return NeighborhoodDiscussionComment(
+      id: int.tryParse(json['id'].toString()) ?? 0,
+      discussionId: int.tryParse(json['discussion_id'].toString()) ?? 0,
+      userId: int.tryParse(json['user_id'].toString()) ?? 0,
+      comment: json['comment']?.toString() ?? '',
+      authorName: json['author_name']?.toString() ?? 'Warga',
+      authorRole: json['author_role']?.toString(),
+      houseNumber: json['house_number']?.toString(),
+      createdAt: json['created_at']?.toString() ?? '',
+    );
+  }
+}
+
+class NeighborhoodDiscussion {
+  final int id;
+  final int neighborhoodId;
+  final int userId;
+  final String? title;
+  final String content;
+  final String category;
+  final String? photo;
+  final int likesCount;
+  final int commentsCount;
+  final String? authorName;
+  final String? authorRole;
+  final String? houseNumber;
+  final String? residenceStatus;
+  final String createdAt;
+  final List<NeighborhoodDiscussionComment> comments;
+
+  NeighborhoodDiscussion({
+    required this.id,
+    required this.neighborhoodId,
+    required this.userId,
+    this.title,
+    required this.content,
+    required this.category,
+    this.photo,
+    required this.likesCount,
+    required this.commentsCount,
+    this.authorName,
+    this.authorRole,
+    this.houseNumber,
+    this.residenceStatus,
+    required this.createdAt,
+    this.comments = const [],
+  });
+
+  factory NeighborhoodDiscussion.fromJson(Map<String, dynamic> json) {
+    final rawComments = json['comments'] as List? ?? [];
+    return NeighborhoodDiscussion(
+      id: int.tryParse(json['id'].toString()) ?? 0,
+      neighborhoodId: int.tryParse(json['neighborhood_id'].toString()) ?? 0,
+      userId: int.tryParse(json['user_id'].toString()) ?? 0,
+      title: json['title']?.toString(),
+      content: json['content']?.toString() ?? '',
+      category: json['category']?.toString() ?? 'Umum',
+      photo: json['photo']?.toString(),
+      likesCount: int.tryParse(json['likes_count']?.toString() ?? '0') ?? 0,
+      commentsCount: int.tryParse(json['comments_count']?.toString() ?? '0') ?? 0,
+      authorName: json['author_name']?.toString() ?? 'Warga',
+      authorRole: json['author_role']?.toString(),
+      houseNumber: json['house_number']?.toString(),
+      residenceStatus: json['residence_status']?.toString(),
+      createdAt: json['created_at']?.toString() ?? '',
+      comments: rawComments.map((c) => NeighborhoodDiscussionComment.fromJson(c as Map<String, dynamic>)).toList(),
+    );
+  }
+}

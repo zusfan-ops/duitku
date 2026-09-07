@@ -24,11 +24,14 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
   bool _isRtAdmin = false;
   bool _isTreasurer = false;
   bool _canManageKas = false;
+  int _currentUserId = 0;
 
   // Kas & Activity & Tools summary data
   NeighborhoodKasSummary _kasSummary = NeighborhoodKasSummary();
   List<NeighborhoodKasItem> _kasLedger = [];
   List<NeighborhoodActivity> _activities = [];
+  List<NeighborhoodAnnouncement> _announcements = [];
+  List<NeighborhoodDiscussion> _discussions = [];
   int _toolsCount = 0;
   int _toolsAvailable = 0;
   int _toolsRented = 0;
@@ -55,6 +58,11 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
   Future<void> _loadData() async {
     setState(() => _loading = true);
     try {
+      final prof = await ApiService.instance.get('profile');
+      if (prof['success'] == true && prof['user'] != null) {
+        _currentUserId = int.tryParse(prof['user']['id']?.toString() ?? '0') ?? 0;
+      }
+
       final res = await ApiService.instance.get('neighborhood');
       if (res['success'] == true) {
         _joined = res['joined'] == true;
@@ -83,8 +91,16 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
               .map((k) => NeighborhoodKasItem.fromJson(k as Map<String, dynamic>))
               .toList();
 
-          _activities = (res['activities'] as List? ?? [])
+          _activities = (res['upcoming_activities'] as List? ?? [])
               .map((a) => NeighborhoodActivity.fromJson(a as Map<String, dynamic>))
+              .toList();
+
+          _announcements = (res['announcements'] as List? ?? [])
+              .map((an) => NeighborhoodAnnouncement.fromJson(an as Map<String, dynamic>))
+              .toList();
+
+          _discussions = (res['discussions'] as List? ?? [])
+              .map((d) => NeighborhoodDiscussion.fromJson(d as Map<String, dynamic>))
               .toList();
         }
       }
@@ -202,7 +218,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
     if (confirmed != true) return;
 
     try {
-      final res = await ApiService.instance.post('neighborhood/resident/role', {
+      final res = await ApiService.instance.post('neighborhood/member/role', {
         'target_user_id': targetUserId,
         'role': newRole,
       });
@@ -222,6 +238,584 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
     }
   }
 
+  // ── 1. DIALOG PENGUMUMAN RT ──
+  void _showAddAnnouncementDialog() {
+    final titleCtrl = TextEditingController();
+    final contentCtrl = TextEditingController();
+    String badge = 'Info';
+    bool isPinned = false;
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              left: 20,
+              right: 20,
+              top: 20,
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.88),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text('Terbitkan Pengumuman Resmi RT', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 4),
+                    const Text('Pengumuman akan disiarkan di papan pengumuman RT seluruh warga.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                    const SizedBox(height: 18),
+
+                    TextField(
+                      controller: titleCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Judul Pengumuman',
+                        hintText: 'Misal: Pemadaman Air PDAM Sementara',
+                        filled: true,
+                        fillColor: AppColors.bg,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            initialValue: badge,
+                            decoration: InputDecoration(
+                              labelText: 'Kategori Badge',
+                              filled: true,
+                              fillColor: AppColors.bg,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 'Info', child: Text('ℹ️ Info')),
+                              DropdownMenuItem(value: 'Penting', child: Text('⚠️ Penting')),
+                              DropdownMenuItem(value: 'Darurat', child: Text('🚨 Darurat')),
+                              DropdownMenuItem(value: 'Kegiatan', child: Text('📅 Kegiatan')),
+                            ],
+                            onChanged: (v) {
+                              if (v != null) setDlgState(() => badge = v);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Sematkan (Pin)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            value: isPinned,
+                            activeThumbColor: const Color(0xFF059669),
+                            onChanged: (val) => setDlgState(() => isPinned = val),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: contentCtrl,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        labelText: 'Isi Lengkap Pengumuman',
+                        hintText: 'Tuliskan rincian pengumuman yang jelas...',
+                        filled: true,
+                        fillColor: AppColors.bg,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF059669),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        elevation: 0,
+                      ),
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              if (titleCtrl.text.trim().isEmpty || contentCtrl.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Judul dan isi pengumuman wajib diisi.')));
+                                return;
+                              }
+
+                              setDlgState(() => isSubmitting = true);
+                              try {
+                                final res = await ApiService.instance.post('neighborhood/announcement/store', {
+                                  'title': titleCtrl.text.trim(),
+                                  'content': contentCtrl.text.trim(),
+                                  'badge': badge,
+                                  'is_pinned': isPinned ? 1 : 0,
+                                });
+                                if (!mounted) return;
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                if (res['success'] == true) {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: Text(res['message']?.toString() ?? 'Pengumuman berhasil disiarkan!'),
+                                    backgroundColor: const Color(0xFF059669),
+                                  ));
+                                  _loadData();
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Gagal menyiarkan pengumuman.')));
+                                }
+                              } catch (e) {
+                                if (!mounted) return;
+                                setDlgState(() => isSubmitting = false);
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                              }
+                            },
+                      child: isSubmitting
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white))
+                          : const Text('Siarkan Pengumuman Sekarang', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteAnnouncement(int id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Hapus Pengumuman?', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+        content: const Text('Apakah Anda yakin ingin menghapus pengumuman ini?', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final res = await ApiService.instance.post('neighborhood/announcement/delete/$id', {});
+      if (!mounted) return;
+      if (res['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pengumuman berhasil dihapus.')));
+        _loadData();
+      }
+    } catch (_) {}
+  }
+
+  // ── 2. DIALOG FORUM DISKUSI WARGA ──
+  void _showAddDiscussionDialog() {
+    final titleCtrl = TextEditingController();
+    final contentCtrl = TextEditingController();
+    String category = 'Umum';
+    bool isSubmitting = false;
+
+    final categories = ['Umum', 'Usul & Saran', 'Keamanan', 'Kebersihan', 'Info Warga', 'Kehilangan'];
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              left: 20,
+              right: 20,
+              top: 20,
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.88),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text('Buat Postingan Diskusi Warga', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 4),
+                    const Text('Sampaikan saran, ide, atau info lingkungan secara terbuka.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                    const SizedBox(height: 18),
+
+                    DropdownButtonFormField<String>(
+                      initialValue: category,
+                      decoration: InputDecoration(
+                        labelText: 'Kategori Topik',
+                        filled: true,
+                        fillColor: AppColors.bg,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                      ),
+                      items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)))).toList(),
+                      onChanged: (v) {
+                        if (v != null) setDlgState(() => category = v);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: titleCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Judul Topik (Opsional)',
+                        hintText: 'Misal: Usul jadwal pos ronda malam diperbarui',
+                        filled: true,
+                        fillColor: AppColors.bg,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: contentCtrl,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        labelText: 'Isi Diskusi',
+                        hintText: 'Tuliskan hal yang ingin didiskusikan bersama warga...',
+                        filled: true,
+                        fillColor: AppColors.bg,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF059669),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                        elevation: 0,
+                      ),
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              if (contentCtrl.text.trim().isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Isi diskusi tidak boleh kosong.')));
+                                return;
+                              }
+
+                              setDlgState(() => isSubmitting = true);
+                              try {
+                                final res = await ApiService.instance.post('neighborhood/discussion/store', {
+                                  'title': titleCtrl.text.trim(),
+                                  'content': contentCtrl.text.trim(),
+                                  'category': category,
+                                });
+                                if (!mounted) return;
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                if (res['success'] == true) {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: Text(res['message']?.toString() ?? 'Postingan berhasil dibagikan!'),
+                                    backgroundColor: const Color(0xFF059669),
+                                  ));
+                                  _loadData();
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']?.toString() ?? 'Gagal membagikan postingan.')));
+                                }
+                              } catch (e) {
+                                if (!mounted) return;
+                                setDlgState(() => isSubmitting = false);
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                              }
+                            },
+                      child: isSubmitting
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white))
+                          : const Text('Kirim ke Forum Warga', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteDiscussion(int id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Hapus Postingan?', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+        content: const Text('Apakah Anda yakin ingin menghapus postingan diskusi ini beserta seluruh komentarnya?', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final res = await ApiService.instance.post('neighborhood/discussion/delete/$id', {});
+      if (!mounted) return;
+      if (res['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Postingan berhasil dihapus.')));
+        _loadData();
+      }
+    } catch (_) {}
+  }
+
+  void _showDiscussionDetailSheet(NeighborhoodDiscussion disc) {
+    final commentInputCtrl = TextEditingController();
+    bool isSending = false;
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => FutureBuilder<Map<String, dynamic>>(
+          future: ApiService.instance.get('neighborhood/discussion/${disc.id}'),
+          builder: (ctx, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox(
+                height: 320,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            final discussionData = snapshot.data?['discussion'] ?? {};
+            final detailedDisc = NeighborhoodDiscussion.fromJson(discussionData as Map<String, dynamic>);
+            final comments = detailedDisc.comments;
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                  left: 20,
+                  right: 20,
+                  top: 16,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.88),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Thread Header
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor: const Color(0xFF059669),
+                            child: Text(
+                              detailedDisc.authorName != null && detailedDisc.authorName!.isNotEmpty ? detailedDisc.authorName![0].toUpperCase() : 'W',
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(detailedDisc.authorName ?? 'Warga', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                                Text('Rumah ${detailedDisc.houseNumber ?? "-"} • ${detailedDisc.createdAt}', style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
+                            child: Text(detailedDisc.category, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+
+                      if (detailedDisc.title != null && detailedDisc.title!.isNotEmpty) ...[
+                        Text(detailedDisc.title!, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
+                        const SizedBox(height: 4),
+                      ],
+                      Text(detailedDisc.content, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4)),
+                      const SizedBox(height: 12),
+                      const Divider(),
+
+                      // Comments List
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Komentar Warga', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                          Text('${comments.length} Balasan', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      Expanded(
+                        child: comments.isEmpty
+                            ? const Center(
+                                child: Text('Belum ada balasan. Jadilah yang pertama berkomentar!', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                              )
+                            : ListView.builder(
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: comments.length,
+                                itemBuilder: (ctx, i) {
+                                  final c = comments[i];
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.bg,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: AppColors.border),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              '${c.authorName ?? "Warga"} (Rumah ${c.houseNumber ?? "-"})',
+                                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5),
+                                            ),
+                                            Text(c.createdAt, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(c.comment, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+
+                      // Input Comment Bar
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: commentInputCtrl,
+                                decoration: InputDecoration(
+                                  hintText: 'Tulis komentar balasan...',
+                                  filled: true,
+                                  fillColor: AppColors.bg,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: AppColors.border)),
+                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: AppColors.border)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF059669),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                elevation: 0,
+                              ),
+                              onPressed: isSending
+                                  ? null
+                                  : () async {
+                                      final text = commentInputCtrl.text.trim();
+                                      if (text.isEmpty) return;
+
+                                      setDlgState(() => isSending = true);
+                                      try {
+                                        final res = await ApiService.instance.post('neighborhood/discussion/${disc.id}/comment', {
+                                          'comment': text,
+                                        });
+                                        if (res['success'] == true) {
+                                          commentInputCtrl.clear();
+                                          setDlgState(() => isSending = false);
+                                          _loadData();
+                                        } else {
+                                          setDlgState(() => isSending = false);
+                                        }
+                                      } catch (_) {
+                                        setDlgState(() => isSending = false);
+                                      }
+                                    },
+                              child: isSending
+                                  ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : const Icon(Icons.send_rounded, size: 18),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // ── 3. DIALOG KAS RT ──
   void _showRecordKasDialog() {
     String type = 'in';
     String category = 'Iuran Warga';
@@ -428,7 +1022,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
 
                                 setDlgState(() => isSubmitting = true);
                                 try {
-                                  final res = await ApiService.instance.post('neighborhood/kas', {
+                                  final res = await ApiService.instance.post('neighborhood/kas/store', {
                                     'type': type,
                                     'category': category,
                                     'amount': amt,
@@ -489,7 +1083,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
     if (confirmed != true) return;
 
     try {
-      final res = await ApiService.instance.post('neighborhood/kas/delete', {'id': id});
+      final res = await ApiService.instance.post('neighborhood/kas/delete/$id', {});
       if (!mounted) return;
       if (res['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Catatan kas berhasil dihapus.')));
@@ -503,6 +1097,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
     }
   }
 
+  // ── 4. DIALOG AGENDA RT ──
   void _showAddActivityDialog() {
     final titleCtrl = TextEditingController();
     String category = 'Kerja Bakti';
@@ -674,7 +1269,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
 
                               setDlgState(() => isSubmitting = true);
                               try {
-                                final res = await ApiService.instance.post('neighborhood/activity', {
+                                final res = await ApiService.instance.post('neighborhood/activity/store', {
                                   'title': titleCtrl.text.trim(),
                                   'category': category,
                                   'event_date': dateCtrl.text.trim(),
@@ -735,7 +1330,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
     if (confirmed != true) return;
 
     try {
-      final res = await ApiService.instance.post('neighborhood/activity/delete', {'id': id});
+      final res = await ApiService.instance.post('neighborhood/activity/delete/$id', {});
       if (!mounted) return;
       if (res['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Agenda kegiatan berhasil dihapus.')));
@@ -837,7 +1432,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // ── SECTION UPLOAD FOTO / DOKUMEN SK ──
+                    // SECTION UPLOAD FOTO / DOKUMEN SK
                     const Text(
                       '📄 Foto / Dokumen Fisik SK Penunjukan RT',
                       style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
@@ -1111,7 +1706,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Hubungkan akun Anda dengan lingkungan RT setempat untuk menikmati pinjam alat bersama, pencatatan kas RT transparan, dan titip belanja tetangga.',
+                'Hubungkan akun Anda dengan lingkungan RT setempat untuk menikmati pinjam alat bersama, pencatatan kas RT transparan, forum diskusi, dan titip belanja tetangga.',
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12.5, height: 1.45),
                 textAlign: TextAlign.center,
               ),
@@ -1404,7 +1999,129 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
         ),
         const SizedBox(height: 16),
 
-        // ── 2. CARD INFORMATIF 1: LAPORAN KEUANGAN KAS RT ──
+        // ── 2. CARD PENGUMUMAN RESMI RT ──
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppColors.cardShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text('📢', style: TextStyle(fontSize: 16)),
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Papan Pengumuman RT', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                          Text('Informasi resmi pengurus', style: TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  if (_canManageKas)
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF059669),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.add, size: 14),
+                      label: const Text('Pengumuman', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                      onPressed: _showAddAnnouncementDialog,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              if (_announcements.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  width: double.infinity,
+                  decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(12)),
+                  child: const Center(
+                    child: Text('Belum ada pengumuman resmi dari pengurus RT.', style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
+                  ),
+                )
+              else
+                ..._announcements.map((ann) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: ann.isPinned ? const Color(0xFFFFFBEB) : AppColors.bg,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: ann.isPinned ? const Color(0xFFFDE68A) : AppColors.border),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: ann.badge == 'Penting'
+                                      ? const Color(0xFFFEE2E2)
+                                      : (ann.badge == 'Darurat' ? const Color(0xFFFEF3C7) : const Color(0xFFEFF6FF)),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '${ann.isPinned ? "📌 " : ""}${ann.badge}',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    color: ann.badge == 'Penting'
+                                        ? const Color(0xFF991B1B)
+                                        : (ann.badge == 'Darurat' ? const Color(0xFF92400E) : const Color(0xFF1E40AF)),
+                                  ),
+                                ),
+                              ),
+                              if (_canManageKas)
+                                InkWell(
+                                  onTap: () => _deleteAnnouncement(ann.id),
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(2),
+                                    child: Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(ann.title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5)),
+                          const SizedBox(height: 4),
+                          Text(ann.content, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4)),
+                          const SizedBox(height: 6),
+                          Text('Oleh: ${ann.authorName ?? "Pengurus RT"} • ${ann.createdAt}', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                        ],
+                      ),
+                    )),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // ── 3. CARD INFORMATIF 1: LAPORAN KEUANGAN KAS RT ──
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -1644,7 +2361,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
         ),
         const SizedBox(height: 16),
 
-        // ── 3. CARD INFORMATIF 2: DATA ALAT YANG BISA DIPINJAM ──
+        // ── 4. CARD INFORMATIF 2: DATA ALAT YANG BISA DIPINJAM ──
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -1781,7 +2498,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
         ),
         const SizedBox(height: 16),
 
-        // ── 4. CARD INFORMATIF 3: AGENDA KEGIATAN RT ──
+        // ── 5. CARD INFORMATIF 3: AGENDA KEGIATAN RT ──
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -1940,7 +2657,155 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
         ),
         const SizedBox(height: 16),
 
-        // ── 5. Quick Shortcut Titip Belanja ──
+        // ── 6. CARD FORUM DISKUSI WARGA ──
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppColors.cardShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text('💬', style: TextStyle(fontSize: 16)),
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Forum Diskusi Warga', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                          Text('Ruang usul & obrolan RT', style: TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6366F1),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    icon: const Icon(Icons.edit, size: 14),
+                    label: const Text('Tulis Topik', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                    onPressed: _showAddDiscussionDialog,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              if (_discussions.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  width: double.infinity,
+                  decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(12)),
+                  child: const Center(
+                    child: Text('Belum ada postingan di forum diskusi warga. Yuk mulai topik pertama!', style: TextStyle(fontSize: 11.5, color: AppColors.textMuted)),
+                  ),
+                )
+              else
+                ..._discussions.map((disc) => Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.bg,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 14,
+                                backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                                child: Text(
+                                  disc.authorName != null && disc.authorName!.isNotEmpty ? disc.authorName![0].toUpperCase() : 'W',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF6366F1)),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${disc.authorName ?? "Warga"}${disc.houseNumber != null ? " (Rumah ${disc.houseNumber})" : ""}',
+                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                                    ),
+                                    Text(disc.createdAt, style: const TextStyle(fontSize: 9.5, color: AppColors.textMuted)),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(color: const Color(0xFFE0E7FF), borderRadius: BorderRadius.circular(6)),
+                                child: Text(disc.category, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF4338CA))),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          if (disc.title != null && disc.title!.isNotEmpty) ...[
+                            Text(disc.title!, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5)),
+                            const SizedBox(height: 2),
+                          ],
+                          Text(disc.content, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4)),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              InkWell(
+                                onTap: () => _showDiscussionDetailSheet(disc),
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.chat_bubble_outline_rounded, size: 13, color: AppColors.textMuted),
+                                      const SizedBox(width: 4),
+                                      Text('${disc.commentsCount} Komentar', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              if (_isRtAdmin || disc.userId == _currentUserId)
+                                InkWell(
+                                  onTap: () => _deleteDiscussion(disc.id),
+                                  child: const Text('Hapus', style: TextStyle(fontSize: 11, color: Colors.redAccent, fontWeight: FontWeight.w700)),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    )),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // ── 7. Quick Shortcut Titip Belanja ──
         GestureDetector(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ErrandScreen())),
           child: Container(
@@ -1979,7 +2844,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
         ),
         const SizedBox(height: 16),
 
-        // ── 6. Approval Queue for Admin RT ──
+        // ── 8. Approval Queue for Admin RT ──
         if (_isRtAdmin && _pendingResidents.isNotEmpty) ...[
           Container(
             padding: const EdgeInsets.all(16),
@@ -2061,7 +2926,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
           const SizedBox(height: 16),
         ],
 
-        // ── 7. Verified Residents & Officers List ──
+        // ── 9. Verified Residents & Officers List ──
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
