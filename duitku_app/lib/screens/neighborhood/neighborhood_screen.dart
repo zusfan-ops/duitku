@@ -58,7 +58,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
   Future<void> _loadData() async {
     setState(() => _loading = true);
     try {
-      final prof = await ApiService.instance.get('profile');
+      final prof = await ApiService.instance.get('me');
       if (prof['success'] == true && prof['user'] != null) {
         _currentUserId = int.tryParse(prof['user']['id']?.toString() ?? '0') ?? 0;
       }
