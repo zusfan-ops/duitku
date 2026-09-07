@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -111,73 +110,38 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         bottomNavigationBar: SafeArea(
           bottom: true,
-          minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: SizedBox(
-            height: 88.0,
-            child: Stack(
-                    clipBehavior: Clip.none,
-                    alignment: Alignment.bottomCenter,
-                    children: [
-                // ── Floating Frosted Glass Capsule Bar ────────────────────────
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: 64.0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(32),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.12),
-                          blurRadius: 28,
-                          spreadRadius: 0,
-                          offset: const Offset(0, 8),
-                        ),
-                        BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(32),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF1E293B).withValues(alpha: 0.90)
-                                : Colors.white.withValues(alpha: 0.88),
-                            borderRadius: BorderRadius.circular(32),
-                            border: Border.all(
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? const Color(0xFF334155).withValues(alpha: 0.8)
-                                  : Colors.white.withValues(alpha: 0.9),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(child: _normalNavBtn(0, Icons.grid_view_outlined, Icons.grid_view_rounded, 'Dashboard')),
-                              Expanded(child: _normalNavBtn(1, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Aktivitas')),
-                              const Expanded(child: SizedBox()), // Center space for 3D button
-                              Expanded(child: _normalNavBtn(3, Icons.widgets_outlined, Icons.widgets_rounded, 'Fitur')),
-                              Expanded(child: _normalNavBtn(4, Icons.person_outline_rounded, Icons.person_rounded, 'Akun')),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+          minimum: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          child: Container(
+            height: 64.0,
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0B0E14),
+              borderRadius: BorderRadius.circular(36),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.08),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  blurRadius: 28,
+                  offset: const Offset(0, 10),
                 ),
-
-                // ── Center 3D Floating Action Button (Menu 2: Pesan / Chat & Status) ──
-                Positioned(
-                  top: 0,
-                  child: _center3DNavBtn(unreadChat),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.20),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildNavItem(0, Icons.grid_view_rounded, 'Home'),
+                _buildNavItem(1, Icons.receipt_long_rounded, 'Aktivitas'),
+                _buildNavItem(2, Icons.chat_bubble_rounded, 'Pesan', badge: unreadChat),
+                _buildNavItem(3, Icons.widgets_rounded, 'Fitur'),
+                _buildNavItem(4, Icons.person_rounded, 'Akun'),
               ],
             ),
           ),
@@ -186,211 +150,125 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _normalNavBtn(int index, IconData icon, IconData activeIcon, String label) {
+  Widget _buildNavItem(int index, IconData icon, String label, {int badge = 0}) {
     final active = _index == index;
-    const activeColor = Color(0xFF2563EB);
+    const limeColor = Color(0xFF6FF776);
+    const darkCapsuleBg = Color(0xFF161A22);
+    const inactiveIconBg = Color(0xFF14171F);
+    const inactiveIconColor = Color(0xFF8B949E);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _onTabSelected(index),
-        borderRadius: BorderRadius.circular(24),
-        splashColor: const Color(0xFF2563EB).withValues(alpha: 0.1),
-        highlightColor: Colors.transparent,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return GestureDetector(
+      onTap: () => _onTabSelected(index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeInOutCubic,
+        padding: EdgeInsets.only(
+          left: 4,
+          right: active ? 14 : 4,
+          top: 4,
+          bottom: 4,
+        ),
+        height: 48,
+        decoration: BoxDecoration(
+          color: active ? darkCapsuleBg : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+          border: active
+              ? Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1)
+              : null,
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
+            // Circle Icon Badge
             AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              width: active ? 18 : 0,
-              height: 3,
-              margin: const EdgeInsets.only(bottom: 4),
+              duration: const Duration(milliseconds: 240),
+              curve: Curves.easeOut,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
-                ),
-                borderRadius: BorderRadius.circular(3),
+                color: active ? limeColor : inactiveIconBg,
+                shape: BoxShape.circle,
+                boxShadow: active
+                    ? [
+                        BoxShadow(
+                          color: limeColor.withValues(alpha: 0.4),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    size: 19,
+                    color: active ? const Color(0xFF0A0D12) : inactiveIconColor,
+                  ),
+                  if (badge > 0)
+                    Positioned(
+                      top: -2,
+                      right: -2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xFF0B0E14),
+                            width: 1.5,
+                          ),
+                        ),
+                        constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                        child: Center(
+                          child: Text(
+                            badge > 99 ? '99+' : '$badge',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-            AnimatedScale(
-              duration: const Duration(milliseconds: 200),
-              scale: active ? 1.12 : 1.0,
-              child: Icon(
-                active ? activeIcon : icon,
-                size: 22,
-                color: active ? activeColor : const Color(0xFF64748B),
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-                color: active ? activeColor : const Color(0xFF64748B),
-                letterSpacing: -0.2,
-              ),
+            // Text Label
+            AnimatedSize(
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeInOutCubic,
+              child: active
+                  ? Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _center3DNavBtn(int unreadCount) {
-    final active = _index == 2;
-    const size = 58.0;
-
-    return GestureDetector(
-      onTap: () => _onTabSelected(2),
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedScale(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutBack,
-            scale: active ? 1.08 : 1.0,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  width: size,
-                  height: size,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      // Vibrant Ambient Glow
-                      BoxShadow(
-                        color: const Color(0xFF2563EB).withValues(alpha: 0.45),
-                        blurRadius: 18,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 8),
-                      ),
-                      // Deep Contact Shadow
-                      BoxShadow(
-                        color: const Color(0xFF1E3A8A).withValues(alpha: 0.35),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                      // Outer rim
-                      BoxShadow(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        blurRadius: 0,
-                        spreadRadius: 2.5,
-                      ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child: Stack(
-                      children: [
-                        // Rich Multi-stop Gradient
-                        Container(
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF1D4ED8), Color(0xFF2563EB), Color(0xFF38BDF8)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                          ),
-                        ),
-                        // Top Glossy 3D Highlight Reflection
-                        Positioned(
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          child: Container(
-                            height: size * 0.48,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.white.withValues(alpha: 0.45),
-                                  Colors.white.withValues(alpha: 0.0),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Inner Bottom Rim Shadow
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Container(
-                            height: size * 0.25,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.bottomCenter,
-                                end: Alignment.topCenter,
-                                colors: [
-                                  Colors.black.withValues(alpha: 0.25),
-                                  Colors.transparent,
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Center Icon
-                        Center(
-                          child: Icon(
-                            active ? Icons.forum_rounded : Icons.forum_outlined,
-                            size: 26,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Badge Notifikasi
-                if (unreadCount > 0)
-                  Positioned(
-                    top: -2,
-                    right: -2,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEF4444),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x33EF4444),
-                            blurRadius: 4,
-                            offset: Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                      child: Text(
-                        unreadCount > 99 ? '99+' : '$unreadCount',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Pesan',
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-              color: active ? const Color(0xFF2563EB) : const Color(0xFF64748B),
-              letterSpacing: -0.2,
-            ),
-          ),
-        ],
       ),
     );
   }
