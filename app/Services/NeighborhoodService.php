@@ -715,9 +715,9 @@ class NeighborhoodService
     }
 
     /**
-     * Tambah Komentar pada Diskusi Warga
+     * Tambah Komentar pada Diskusi Warga (Bisa Membalas Komentar Lain)
      */
-    public function addDiscussionComment(int $neighborhoodId, int $userId, int $discussionId, string $comment): array
+    public function addDiscussionComment(int $neighborhoodId, int $userId, int $discussionId, string $comment, ?int $parentId = null): array
     {
         $disc = $this->discussionModel->where('neighborhood_id', $neighborhoodId)->find($discussionId);
         if (!$disc) {
@@ -729,8 +729,19 @@ class NeighborhoodService
             return ['success' => false, 'message' => 'Komentar tidak boleh kosong.'];
         }
 
+        // Validasi parent_id jika diberikan
+        if ($parentId !== null && $parentId > 0) {
+            $parentComment = $this->discussionCommentModel->where('discussion_id', $discussionId)->find($parentId);
+            if (!$parentComment) {
+                $parentId = null; // reset jika tidak valid
+            }
+        } else {
+            $parentId = null;
+        }
+
         $commentId = $this->discussionCommentModel->insert([
             'discussion_id' => $discussionId,
+            'parent_id'     => $parentId,
             'user_id'       => $userId,
             'comment'       => $commentText,
         ]);

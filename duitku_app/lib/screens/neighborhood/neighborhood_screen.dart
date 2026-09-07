@@ -349,11 +349,11 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
 
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF059669),
+                        backgroundColor: const Color(0xFF1E40AF),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 1,
                       ),
                       onPressed: isSubmitting
                           ? null
@@ -616,6 +616,7 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
   void _showDiscussionDetailSheet(NeighborhoodDiscussion disc) {
     final commentInputCtrl = TextEditingController();
     bool isSending = false;
+    NeighborhoodDiscussionComment? replyingTo;
 
     showModalBottomSheet(
       context: context,
@@ -718,13 +719,24 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                                 itemCount: comments.length,
                                 itemBuilder: (ctx, i) {
                                   final c = comments[i];
+                                  final isReply = c.parentId != null && c.replyToAuthorName != null;
                                   return Container(
-                                    margin: const EdgeInsets.only(bottom: 8),
+                                    margin: EdgeInsets.only(
+                                      left: isReply ? 18 : 0,
+                                      bottom: 8,
+                                    ),
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
                                       color: AppColors.bg,
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: AppColors.border),
+                                      border: isReply
+                                          ? Border(
+                                              left: const BorderSide(color: Color(0xFF059669), width: 3),
+                                              top: BorderSide(color: AppColors.border),
+                                              right: BorderSide(color: AppColors.border),
+                                              bottom: BorderSide(color: AppColors.border),
+                                            )
+                                          : Border.all(color: AppColors.border),
                                     ),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -732,21 +744,90 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Text(
-                                              '${c.authorName ?? "Warga"} (Rumah ${c.houseNumber ?? "-"})',
-                                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5),
+                                            Expanded(
+                                              child: Row(
+                                                children: [
+                                                  Flexible(
+                                                    child: Text(
+                                                      '${c.authorName ?? "Warga"} (Rumah ${c.houseNumber ?? "-"})',
+                                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5),
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  if (isReply) ...[
+                                                    const SizedBox(width: 6),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFECFDF5),
+                                                        borderRadius: BorderRadius.circular(6),
+                                                      ),
+                                                      child: Text(
+                                                        '↩️ @${c.replyToAuthorName}',
+                                                        style: const TextStyle(fontSize: 9.5, color: Color(0xFF059669), fontWeight: FontWeight.bold),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
                                             ),
                                             Text(c.createdAt, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
                                           ],
                                         ),
                                         const SizedBox(height: 4),
                                         Text(c.comment, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                        const SizedBox(height: 6),
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: InkWell(
+                                            onTap: () {
+                                              setDlgState(() => replyingTo = c);
+                                            },
+                                            borderRadius: BorderRadius.circular(6),
+                                            child: const Padding(
+                                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.reply_rounded, size: 14, color: Color(0xFF059669)),
+                                                  SizedBox(width: 4),
+                                                  Text('Balas', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   );
                                 },
                               ),
                       ),
+
+                      // Reply banner if active
+                      if (replyingTo != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          margin: const EdgeInsets.only(top: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFECFDF5),
+                            borderRadius: BorderRadius.circular(8),
+                            border: const Border(left: BorderSide(color: Color(0xFF059669), width: 3)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '↩️ Membalas @${replyingTo!.authorName ?? "Warga"}',
+                                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF065F46)),
+                              ),
+                              GestureDetector(
+                                onTap: () => setDlgState(() => replyingTo = null),
+                                child: const Icon(Icons.close, size: 16, color: Colors.red),
+                              ),
+                            ],
+                          ),
+                        ),
 
                       // Input Comment Bar
                       Padding(
@@ -757,7 +838,9 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                               child: TextField(
                                 controller: commentInputCtrl,
                                 decoration: InputDecoration(
-                                  hintText: 'Tulis komentar balasan...',
+                                  hintText: replyingTo != null
+                                      ? 'Balas @${replyingTo!.authorName ?? "Warga"}...'
+                                      : 'Tulis komentar balasan...',
                                   filled: true,
                                   fillColor: AppColors.bg,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -783,12 +866,19 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
 
                                       setDlgState(() => isSending = true);
                                       try {
-                                        final res = await ApiService.instance.post('neighborhood/discussion/${disc.id}/comment', {
+                                        final Map<String, dynamic> body = {
                                           'comment': text,
-                                        });
+                                        };
+                                        if (replyingTo != null) {
+                                          body['parent_id'] = replyingTo!.id;
+                                        }
+                                        final res = await ApiService.instance.post('neighborhood/discussion/${disc.id}/comment', body);
                                         if (res['success'] == true) {
                                           commentInputCtrl.clear();
-                                          setDlgState(() => isSending = false);
+                                          setDlgState(() {
+                                            isSending = false;
+                                            replyingTo = null;
+                                          });
                                           _loadData();
                                         } else {
                                           setDlgState(() => isSending = false);
@@ -2037,16 +2127,16 @@ class _NeighborhoodScreenState extends State<NeighborhoodScreen> {
                   if (_canManageKas)
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF059669),
+                        backgroundColor: const Color(0xFF1E40AF),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        elevation: 1,
                       ),
-                      icon: const Icon(Icons.add, size: 14),
-                      label: const Text('Pengumuman', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                      icon: const Icon(Icons.campaign_rounded, size: 14),
+                      label: const Text('Buat Pengumuman', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
                       onPressed: _showAddAnnouncementDialog,
                     ),
                 ],

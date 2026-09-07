@@ -442,21 +442,25 @@ class NeighborhoodAnnouncement {
 class NeighborhoodDiscussionComment {
   final int id;
   final int discussionId;
+  final int? parentId;
   final int userId;
   final String comment;
   final String? authorName;
   final String? authorRole;
   final String? houseNumber;
+  final String? replyToAuthorName;
   final String createdAt;
 
   NeighborhoodDiscussionComment({
     required this.id,
     required this.discussionId,
+    this.parentId,
     required this.userId,
     required this.comment,
     this.authorName,
     this.authorRole,
     this.houseNumber,
+    this.replyToAuthorName,
     required this.createdAt,
   });
 
@@ -464,11 +468,13 @@ class NeighborhoodDiscussionComment {
     return NeighborhoodDiscussionComment(
       id: int.tryParse(json['id'].toString()) ?? 0,
       discussionId: int.tryParse(json['discussion_id'].toString()) ?? 0,
+      parentId: json['parent_id'] != null ? int.tryParse(json['parent_id'].toString()) : null,
       userId: int.tryParse(json['user_id'].toString()) ?? 0,
       comment: json['comment']?.toString() ?? '',
       authorName: json['author_name']?.toString() ?? 'Warga',
       authorRole: json['author_role']?.toString(),
       houseNumber: json['house_number']?.toString(),
+      replyToAuthorName: json['reply_to_author_name']?.toString(),
       createdAt: json['created_at']?.toString() ?? '',
     );
   }

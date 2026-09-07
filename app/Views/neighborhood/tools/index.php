@@ -217,14 +217,34 @@
 }
 .btn-create-submit {
     width: 100%;
-    padding: 12px;
+    padding: 13px 20px;
     border: none;
-    border-radius: 20px;
-    background: #059669;
-    color: #ffffff;
-    font-size: 13.5px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+    color: #ffffff !important;
+    font-size: 14px;
     font-weight: 800;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    transition: all 0.2s ease;
+}
+.btn-create-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
+    filter: brightness(1.05);
+}
+.btn-create-submit:active {
+    transform: translateY(0);
+}
+.btn-create-submit:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 </style>
 <?= $this->endSection() ?>

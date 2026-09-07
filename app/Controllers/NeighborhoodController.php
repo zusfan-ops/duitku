@@ -415,8 +415,9 @@ class NeighborhoodController extends BaseController
         $user   = $this->userModel->find($userId);
         $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
 
-        $comment = (string)$this->request->getPost('comment');
-        $res     = $this->neighborhoodService->addDiscussionComment($neighborhoodId, $userId, $id, $comment);
+        $comment  = (string)$this->request->getPost('comment');
+        $parentId = $this->request->getPost('parent_id') ? (int)$this->request->getPost('parent_id') : null;
+        $res      = $this->neighborhoodService->addDiscussionComment($neighborhoodId, $userId, $id, $comment, $parentId);
         return $this->response->setJSON($res);
     }
 

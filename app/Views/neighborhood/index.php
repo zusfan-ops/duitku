@@ -264,11 +264,41 @@
 
 /* ── Buttons ── */
 .btn-primary-sm {
-    background: var(--primary, #059669);
-    color: #ffffff;
+    background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+    color: #ffffff !important;
     border: none;
-    border-radius: 12px;
-    padding: 6px 14px;
+    border-radius: 20px;
+    padding: 7px 15px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+.btn-primary-sm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    filter: brightness(1.05);
+}
+
+.btn-announcement-header {
+    background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+.btn-announcement-header:hover {
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-secondary-sm {
+    background: var(--bg, #F8FAFC);
+    color: var(--text-primary, #0F172A);
+    border: 1.5px solid var(--border, #E2E8F0);
+    border-radius: 20px;
+    padding: 7px 15px;
     font-size: 12px;
     font-weight: 800;
     cursor: pointer;
@@ -277,20 +307,70 @@
     gap: 6px;
     transition: all 0.2s;
 }
-.btn-primary-sm:hover { opacity: 0.9; }
+.btn-secondary-sm:hover {
+    background: var(--border, #E2E8F0);
+}
 
-.btn-secondary-sm {
-    background: var(--bg, #F8FAFC);
-    color: var(--text-primary, #0F172A);
-    border: 1px solid var(--border, #E2E8F0);
-    border-radius: 12px;
-    padding: 6px 14px;
-    font-size: 12px;
+/* ── Main Action & Submit Buttons ── */
+.btn-create-submit {
+    width: 100%;
+    padding: 13px 20px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+    color: #ffffff !important;
+    font-size: 14px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    transition: all 0.2s ease;
+    font-family: inherit;
+    text-decoration: none;
+    outline: none;
+}
+.btn-create-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
+    filter: brightness(1.05);
+}
+.btn-create-submit:active {
+    transform: translateY(0);
+}
+.btn-create-submit:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-announcement-submit {
+    background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+}
+.btn-announcement-submit:hover {
+    box-shadow: 0 6px 18px rgba(59, 130, 246, 0.45);
+}
+
+.btn-comment-reply {
+    background: none;
+    border: none;
+    color: #059669;
+    font-size: 11px;
     font-weight: 800;
     cursor: pointer;
+    padding: 3px 8px;
+    border-radius: 8px;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
+    transition: background 0.15s;
+}
+.btn-comment-reply:hover {
+    background: rgba(5, 150, 105, 0.1);
 }
 
 .resident-avatar {
@@ -401,8 +481,8 @@
                 <span>📢</span> Papan Pengumuman RT
             </div>
             <?php if ($canManageKas): ?>
-                <button type="button" class="btn-primary-sm" onclick="openAnnouncementModal()">
-                    <span>➕</span> Buat Pengumuman
+                <button type="button" class="btn-primary-sm btn-announcement-header" onclick="openAnnouncementModal()">
+                    <span>📢</span> Buat Pengumuman
                 </button>
             <?php endif; ?>
         </div>
@@ -790,8 +870,8 @@
                 <textarea name="content" rows="4" class="create-input-text" placeholder="Tuliskan isi pengumuman secara rinci untuk warga..." required style="width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg);"></textarea>
             </div>
 
-            <button type="submit" id="btnSubmitAnnouncement" class="btn-create-submit" style="border-radius: 20px;">
-                <span>Siarkan Pengumuman Sekarang</span>
+            <button type="submit" id="btnSubmitAnnouncement" class="btn-create-submit btn-announcement-submit">
+                <span>📢 Siarkan Pengumuman Sekarang</span>
             </button>
         </form>
     </div>
@@ -830,8 +910,8 @@
                 <textarea name="content" rows="4" class="create-input-text" placeholder="Tulis pendapat atau hal yang ingin didiskusikan..." required style="width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg);"></textarea>
             </div>
 
-            <button type="submit" id="btnSubmitDiscussion" class="btn-create-submit" style="border-radius: 20px;">
-                <span>Kirim Postingan ke Forum Warga</span>
+            <button type="submit" id="btnSubmitDiscussion" class="btn-create-submit btn-discussion-submit">
+                <span>💬 Kirim Postingan ke Forum Warga</span>
             </button>
         </form>
     </div>
@@ -894,8 +974,8 @@
                 <textarea name="description" rows="2" class="create-input-text" placeholder="Contoh: Pembelian 5 buah sapu lidi untuk kerja bakti" style="width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg);"></textarea>
             </div>
 
-            <button type="submit" id="btnSubmitKas" class="btn-create-submit" style="border-radius: 20px;">
-                <span>Simpan Transaksi Kas RT</span>
+            <button type="submit" id="btnSubmitKas" class="btn-create-submit btn-kas-submit">
+                <span>💾 Simpan Transaksi Kas RT</span>
             </button>
         </form>
     </div>
@@ -950,8 +1030,8 @@
                 <textarea name="description" rows="2" class="create-input-text" placeholder="Contoh: Harap membawa cangkul & sapu lidi masing-masing" style="width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg);"></textarea>
             </div>
 
-            <button type="submit" id="btnSubmitActivity" class="btn-create-submit" style="border-radius: 20px;">
-                <span>Simpan Agenda RT</span>
+            <button type="submit" id="btnSubmitActivity" class="btn-create-submit btn-activity-submit">
+                <span>📅 Simpan Agenda RT</span>
             </button>
         </form>
     </div>
@@ -1115,12 +1195,18 @@ function deleteDiscussion(id) {
     });
 }
 
-// Open Discussion Detail with Comments
+// Global Reply State
+let currentDiscussionId = null;
+let currentReplyParentId = null;
+
+// Open Discussion Detail with Comments & Reply support
 function openDiscussionDetail(id) {
+    currentDiscussionId = id;
+    currentReplyParentId = null;
     const modal = document.getElementById('modalDiscussionDetail');
     const container = document.getElementById('discDetailContent');
     modal.classList.add('open');
-    container.innerHTML = '<div style="text-align:center; padding:30px;">Memuat komentar...</div>';
+    container.innerHTML = '<div style="text-align:center; padding:30px; font-weight:700; color:var(--text-secondary);">Memuat komentar...</div>';
 
     fetch('/neighborhood/discussion/' + id, {
         headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
@@ -1128,7 +1214,7 @@ function openDiscussionDetail(id) {
     .then(r => r.json())
     .then(data => {
         if (!data.success || !data.discussion) {
-            container.innerHTML = '<div style="color:red; text-align:center;">Gagal memuat diskusi.</div>';
+            container.innerHTML = '<div style="color:red; text-align:center; padding:20px;">Gagal memuat diskusi.</div>';
             return;
         }
 
@@ -1136,16 +1222,27 @@ function openDiscussionDetail(id) {
         const comments = d.comments || [];
 
         let commentsHtml = comments.length === 0 
-            ? '<div style="text-align:center; padding:16px; color:var(--text-secondary); font-size:12px;">Belum ada komentar. Jadilah yang pertama berkomentar!</div>'
-            : comments.map(c => `
-                <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                        <strong style="font-size:12px; color:var(--text-primary);">${c.author_name} (Rumah ${c.house_number || '-'})</strong>
+            ? '<div style="text-align:center; padding:20px; color:var(--text-secondary); font-size:12px;">Belum ada komentar. Jadilah yang pertama berkomentar!</div>'
+            : comments.map(c => {
+                const isReply = c.parent_id && c.reply_to_author_name;
+                const authorEscaped = (c.author_name || 'Warga').replace(/'/g, "\\'");
+                return `
+                <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; ${isReply ? 'margin-left:18px; border-left:3px solid #059669;' : ''}">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                            <strong style="font-size:12px; color:var(--text-primary);">${c.author_name} (Rumah ${c.house_number || '-'})</strong>
+                            ${isReply ? `<span style="font-size:10.5px; color:#059669; background:#ECFDF5; padding:1px 6px; border-radius:6px; font-weight:700;">↩️ Membalas @${c.reply_to_author_name}</span>` : ''}
+                        </div>
                         <span style="font-size:10px; color:var(--text-secondary);">${c.created_at}</span>
                     </div>
-                    <p style="font-size:12px; color:var(--text-secondary); margin:0; line-height:1.4;">${c.comment}</p>
+                    <p style="font-size:12.5px; color:var(--text-primary); margin:0 0 6px; line-height:1.4;">${c.comment}</p>
+                    <div style="display:flex; justify-content:flex-end;">
+                        <button type="button" class="btn-comment-reply" onclick="startReply(${c.id}, '${authorEscaped}')">
+                            ↩️ Balas
+                        </button>
+                    </div>
                 </div>
-            `).join('');
+            `}).join('');
 
         container.innerHTML = `
             <div style="margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--border);">
@@ -1153,25 +1250,55 @@ function openDiscussionDetail(id) {
                     <span class="discussion-category-pill">${d.category}</span>
                     <span style="font-size:11px; color:var(--text-secondary);">${d.created_at}</span>
                 </div>
-                ${d.title ? `<h3 style="font-size:15px; font-weight:900; margin:0 0 6px;">${d.title}</h3>` : ''}
+                ${d.title ? `<h3 style="font-size:15px; font-weight:900; margin:0 0 6px; color:var(--text-primary);">${d.title}</h3>` : ''}
                 <p style="font-size:13px; color:var(--text-primary); margin:0 0 8px; line-height:1.5;">${d.content}</p>
                 <div style="font-size:11px; color:var(--text-secondary);">Oleh: <strong>${d.author_name}</strong> (Rumah ${d.house_number || '-'})</div>
             </div>
 
-            <h4 style="font-size:13px; font-weight:800; margin:0 0 10px;">Komentar Warga (${comments.length})</h4>
-            <div style="max-height:240px; overflow-y:auto; margin-bottom:16px;">
+            <h4 style="font-size:13px; font-weight:800; margin:0 0 10px; color:var(--text-primary);">Komentar Warga (${comments.length})</h4>
+            <div style="max-height:260px; overflow-y:auto; margin-bottom:14px; padding-right:4px;">
                 ${commentsHtml}
             </div>
 
+            <div id="replyIndicatorBox" style="display:none; align-items:center; justify-content:space-between; background:#ECFDF5; border-left:3px solid #059669; padding:6px 12px; border-radius:8px; margin-bottom:8px; font-size:11.5px; color:#065F46;">
+                <span>↩️ Membalas <strong id="replyAuthorText">@...</strong></span>
+                <button type="button" onclick="cancelReply()" style="background:none; border:none; color:#EF4444; font-weight:800; font-size:11.5px; cursor:pointer;">✕ Batal</button>
+            </div>
+
             <form onsubmit="submitComment(event, ${d.id})" style="display:flex; gap:8px;">
-                <input type="text" id="inputCommentText" placeholder="Tulis komentar..." required style="flex:1; padding:10px 14px; border-radius:14px; border:1.5px solid var(--border); background:var(--bg); font-size:12.5px;">
-                <button type="submit" class="btn-primary-sm" style="padding:10px 16px; border-radius:14px;">Kirim</button>
+                <input type="text" id="inputCommentText" placeholder="Tulis komentar atau balasan..." required style="flex:1; padding:11px 14px; border-radius:14px; border:1.5px solid var(--border); background:var(--bg); font-size:12.5px; color:var(--text-primary); outline:none;">
+                <button type="submit" class="btn-primary-sm" style="padding:10px 18px; border-radius:14px; font-size:13px;">
+                    <span>Kirim</span>
+                </button>
             </form>
         `;
     })
     .catch(() => {
-        container.innerHTML = '<div style="color:red; text-align:center;">Terjadi kesalahan jaringan.</div>';
+        container.innerHTML = '<div style="color:red; text-align:center; padding:20px;">Terjadi kesalahan jaringan.</div>';
     });
+}
+
+function startReply(commentId, authorName) {
+    currentReplyParentId = commentId;
+    const box = document.getElementById('replyIndicatorBox');
+    const txt = document.getElementById('replyAuthorText');
+    const input = document.getElementById('inputCommentText');
+    if (box && txt && input) {
+        box.style.display = 'flex';
+        txt.textContent = '@' + authorName;
+        input.placeholder = 'Tulis balasan untuk @' + authorName + '...';
+        input.focus();
+    }
+}
+
+function cancelReply() {
+    currentReplyParentId = null;
+    const box = document.getElementById('replyIndicatorBox');
+    const input = document.getElementById('inputCommentText');
+    if (box) box.style.display = 'none';
+    if (input) {
+        input.placeholder = 'Tulis komentar atau balasan...';
+    }
 }
 
 function submitComment(e, discussionId) {
@@ -1182,6 +1309,9 @@ function submitComment(e, discussionId) {
 
     const fd = new FormData();
     fd.append('comment', comment);
+    if (currentReplyParentId) {
+        fd.append('parent_id', currentReplyParentId);
+    }
 
     fetch('/neighborhood/discussion/' + discussionId + '/comment', {
         method: 'POST',
@@ -1191,10 +1321,14 @@ function submitComment(e, discussionId) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
+            currentReplyParentId = null;
             openDiscussionDetail(discussionId); // Refresh discussion thread
         } else {
             alert(data.message || 'Gagal mengirim komentar.');
         }
+    })
+    .catch(() => {
+        alert('Terjadi kesalahan jaringan saat mengirim komentar.');
     });
 }
 

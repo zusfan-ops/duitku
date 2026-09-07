@@ -462,10 +462,11 @@ class NeighborhoodController extends ApiController
         $user   = $this->userModel->find($userId);
         $neighborhoodId = (int)($user['neighborhood_id'] ?? 0);
 
-        $json    = $this->request->getJSON(true) ?? $this->request->getPost();
-        $comment = trim($json['comment'] ?? '');
+        $json     = $this->request->getJSON(true) ?? $this->request->getPost();
+        $comment  = trim($json['comment'] ?? '');
+        $parentId = !empty($json['parent_id']) ? (int)$json['parent_id'] : null;
 
-        $res = $this->neighborhoodService->addDiscussionComment($neighborhoodId, $userId, $id, $comment);
+        $res = $this->neighborhoodService->addDiscussionComment($neighborhoodId, $userId, $id, $comment, $parentId);
         if (!$res['success']) {
             return $this->fail($res['message']);
         }
