@@ -1,4 +1,4 @@
-<?= $this->extend('layouts/main') ?>
+﻿<?= $this->extend('layouts/main') ?>
 
 <?= $this->section('styles') ?>
 <style>
@@ -466,7 +466,35 @@
 }
 .daily-chart-title { font-size:12px; font-weight:700; color:var(--text-primary); }
 .daily-chart-month { font-size:11px; font-weight:600; color:var(--text-muted); }
-
+/* -- Savings Progress Chart */
+.sv-chart-card {
+    background:var(--bg-card); border:1px solid rgba(124,58,237,.22);
+    border-radius:18px; padding:12px 14px 12px; margin-bottom:10px;
+}
+.sv-chart-hdr {
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;
+}
+.sv-chart-title { font-size:12px; font-weight:700; color:var(--text-primary); }
+.sv-chart-badge {
+    font-size:10px; font-weight:800; padding:2px 9px; border-radius:20px;
+}
+.sv-chart-badge.reached { background:rgba(16,185,129,.12); color:#059669; }
+.sv-chart-badge.progress { background:rgba(124,58,237,.10); color:#7C3AED; }
+.sv-bar-wrap {
+    height:10px; border-radius:6px; overflow:hidden;
+    background:rgba(124,58,237,.12); margin-bottom:8px;
+}
+.sv-bar {
+    height:100%; border-radius:6px;
+    background:#7C3AED; transition:width .6s cubic-bezier(.4,0,.2,1);
+}
+.sv-bar.reached { background:#10B981; }
+.sv-chart-footer {
+    display:flex; justify-content:space-between; align-items:center;
+}
+.sv-chart-saved { font-size:12px; font-weight:800; color:#7C3AED; }
+.sv-chart-target { font-size:11px; font-weight:600; color:var(--text-muted); }
+.sv-chart-rest { font-size:10px; color:var(--text-muted); margin-top:3px; line-height:1.3; }
 /* ── Reminders ─────────────────────────────────────────────────── */
 .reminder-card {
     background:var(--bg-card); border:1.5px solid #F59E0B;
@@ -2402,6 +2430,33 @@
     </div>
     <?php endif; ?>
 
+    <!-- -- SAVINGS PROGRESS CHART -- -->
+    <?php if ($savingsTarget > 0): ?>
+    <?php
+        $svPct     = min((float)$savingsPct, 100);
+        $svReached = $svPct >= 100;
+        $svName    = $savingsName ?: 'Target Menabung';
+        $svSisa    = max($savingsTarget - $savingsSaved, 0);
+    ?>
+    <div class="sv-chart-card">
+        <div class="sv-chart-hdr">
+            <span class="sv-chart-title">🎯 <?= esc(mb_strlen($svName) > 24 ? mb_substr($svName, 0, 24).'…' : $svName) ?></span>
+            <span class="sv-chart-badge <?= $svReached ? 'reached' : 'progress' ?>">
+                <?= $svReached ? '🎉 Tercapai!' : number_format($svPct, 0).'%' ?>
+            </span>
+        </div>
+        <div class="sv-bar-wrap">
+            <div class="sv-bar <?= $svReached ? 'reached' : '' ?>" style="width:<?= number_format($svPct, 2) ?>%"></div>
+        </div>
+        <div class="sv-chart-footer">
+            <span class="sv-chart-saved"><?= esc($symbol) ?> <?= number_format($savingsSaved, 0, ',', '.') ?></span>
+            <span class="sv-chart-target">Target <?= esc($symbol) ?> <?= number_format($savingsTarget, 0, ',', '.') ?></span>
+        </div>
+        <?php if (!$svReached && $svSisa > 0): ?>
+        <div class="sv-chart-rest">Sisa <?= esc($symbol) ?> <?= number_format($svSisa, 0, ',', '.') ?> lagi untuk mencapai target</div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
     <!-- ── REMINDERS (bills + debts) ───────────────────────── -->
     <?php
     $hasReminder = !empty($upcomingBills) || !empty($upcomingDebts);

@@ -1,4 +1,4 @@
-import 'package:fl_chart/fl_chart.dart';
+﻿import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -413,6 +413,8 @@ class DashboardScreenState extends State<DashboardScreen> {
           if ((data.wallets as List).isNotEmpty) _WalletStrip(wallets: data.wallets as List<Wallet>),
           if ((data.dailyBalance as List).length > 1)
             _DailyChart(data: data),
+          if (data.savingsTarget > 0)
+            _SavingsChart(data: data),
           _ReminderCard(data: data, onRefresh: _load),
           if (data.budget > 0) _BudgetCard(data: data),
           if ((data.topCategories as List).isNotEmpty) _TopCategoriesCard(data: data),
@@ -1230,7 +1232,7 @@ class _DailyChart extends StatelessWidget {
     }).toList();
 
     return Container(
-      margin: const EdgeInsets.only(top: 16),
+      margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.card,
@@ -1299,6 +1301,104 @@ class _DailyChart extends StatelessWidget {
   }
 }
 
+// -- Savings progress chart --
+class _SavingsChart extends StatelessWidget {
+  final dynamic data;
+  const _SavingsChart({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final symbol = '${data.symbol ?? "Rp"}';
+    final target = (data.savingsTarget as double);
+    final saved = (data.savingsSaved as double);
+    final name = '${data.savingsName ?? "Tabungan"}';
+    final pct = target > 0 ? (saved / target).clamp(0.0, 1.0) : 0.0;
+    final reached = pct >= 1.0;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF7C3AED).withValues(alpha: .22)),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  'Tabungan: ${name.length > 20 ? "${name.substring(0, 20)}..." : name}',
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: reached
+                      ? const Color(0xFF10B981).withValues(alpha: .12)
+                      : const Color(0xFF7C3AED).withValues(alpha: .10),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  reached ? 'Tercapai!' : '${(pct * 100).round()}%',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: reached ? const Color(0xFF059669) : const Color(0xFF7C3AED),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: pct,
+              minHeight: 10,
+              backgroundColor: const Color(0xFF7C3AED).withValues(alpha: .12),
+              valueColor: AlwaysStoppedAnimation(
+                reached ? const Color(0xFF10B981) : const Color(0xFF7C3AED),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                Fmt.money(saved, symbol: symbol),
+                style: const TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF7C3AED)),
+              ),
+              Text(
+                'Target ${Fmt.money(target, symbol: symbol)}',
+                style: const TextStyle(
+                    fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+              ),
+            ],
+          ),
+          if (!reached && target > 0) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Sisa ${Fmt.money(target - saved, symbol: symbol)} lagi',
+              style: const TextStyle(fontSize: 10, color: AppColors.textMuted, height: 1.3),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 // ── Reminders ──────────────────────────────────────────────────
 class _ReminderCard extends StatelessWidget {
   final dynamic data;
@@ -1348,7 +1448,7 @@ class _ReminderCard extends StatelessWidget {
     if (bills.isEmpty && debts.isEmpty && taxes.isEmpty && recurring.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.only(top: 16),
+      margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.card,
@@ -2052,7 +2152,7 @@ class _SavingsCard extends StatelessWidget {
     final reached = pct >= 1;
 
     return Container(
-      margin: const EdgeInsets.only(top: 16),
+      margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.card,
@@ -2115,7 +2215,7 @@ class _NotePreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final note = data.monthNote as String;
     return Container(
-      margin: const EdgeInsets.only(top: 16),
+      margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.card,
@@ -2151,7 +2251,7 @@ class _DebtSummaryCard extends StatelessWidget {
     final symbol = data.symbol as String;
     final sum = data.debtSummary as dynamic;
     return Container(
-      margin: const EdgeInsets.only(top: 16),
+      margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.card,
