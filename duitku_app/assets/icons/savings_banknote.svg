@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <defs>
+    <linearGradient id="gCoin" x1="2" y1="5" x2="22" y2="19" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EDE9FE"/>
+    </linearGradient>
+  </defs>
+  <rect x="2.5" y="6" width="19" height="12" rx="2.5" stroke="url(#gCoin)" stroke-width="1.8"/>
+  <circle cx="12" cy="12" r="2.6" stroke="url(#gCoin)" stroke-width="1.8"/>
+  <path d="M6 12h.01M18 12h.01" stroke="url(#gCoin)" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

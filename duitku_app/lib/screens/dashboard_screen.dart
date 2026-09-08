@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -2361,16 +2362,16 @@ class _FeatureStrip extends StatelessWidget {
 }
 
 class _FeatureTile extends StatelessWidget {
-  final List<Color> gradient;
-  final IconData icon;
+  final Color background;
+  final String iconAsset;
   final Color shadowColor;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
 
   const _FeatureTile({
-    required this.gradient,
-    required this.icon,
+    required this.background,
+    required this.iconAsset,
     required this.shadowColor,
     required this.title,
     required this.subtitle,
@@ -2382,20 +2383,28 @@ class _FeatureTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 9),
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: shadowColor.withValues(alpha: .28), blurRadius: 12, offset: const Offset(0, 5))],
+          color: background,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(color: shadowColor.withValues(alpha: .26), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: .22), borderRadius: BorderRadius.circular(9)),
-              child: Icon(icon, color: Colors.white, size: 15),
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .18),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(5),
+                child: SvgPicture.asset(iconAsset, width: 16, height: 16),
+              ),
             ),
             const SizedBox(height: 2),
             Expanded(
@@ -2405,12 +2414,12 @@ class _FeatureTile extends StatelessWidget {
                   Text(title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.2, height: 1.15)),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.2, height: 1.2)),
                   const SizedBox(height: 2),
                   Text(subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white.withValues(alpha: .85), height: 1.25)),
+                      style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600, color: Colors.white.withValues(alpha: .85), height: 1.3)),
                 ],
               ),
             ),
@@ -2465,9 +2474,9 @@ class _BelanjaHomeCardState extends State<_BelanjaHomeCard> {
 
     final unbought = _items.where((e) => (e['bought']?.toString() ?? 'false') != 'true').toList();
     return _FeatureTile(
-      gradient: const [Color(0xFF9D174D), Color(0xFFBE185D), Color(0xFFF43F5E)],
-      icon: Icons.shopping_bag_rounded,
-      shadowColor: const Color(0xFFF43F5E),
+      background: const Color(0xFFBE185D),
+      iconAsset: 'assets/icons/shopping_cart.svg',
+      shadowColor: const Color(0xFFBE185D),
       title: 'Daftar Belanja',
       subtitle: _items.isEmpty ? 'Rencana kebutuhan & checklist belanja' : '${unbought.length} item perlu dibeli',
       onTap: _openBelanja,
@@ -2524,9 +2533,9 @@ class _TodoHomeCardState extends State<_TodoHomeCard> {
     if (_loading) return const SizedBox.shrink();
 
     return _FeatureTile(
-      gradient: const [Color(0xFF4338CA), Color(0xFF6366F1), Color(0xFF8B5CF6)],
-      icon: Icons.checklist_rounded,
-      shadowColor: const Color(0xFF6366F1),
+      background: const Color(0xFF4F46E5),
+      iconAsset: 'assets/icons/todo_check.svg',
+      shadowColor: const Color(0xFF4F46E5),
       title: 'Target & Tugas',
       subtitle: _summary.totalAll == 0
           ? 'Rencanakan target & checklist tugas'
@@ -2543,9 +2552,9 @@ class _NeighborhoodHomeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _FeatureTile(
-      gradient: const [Color(0xFF047857), Color(0xFF059669), Color(0xFF10B981)],
-      icon: Icons.people_alt_rounded,
-      shadowColor: const Color(0xFF10B981),
+      background: const Color(0xFF059669),
+      iconAsset: 'assets/icons/community_home.svg',
+      shadowColor: const Color(0xFF059669),
       title: 'Komunitas RT & Pinjam Alat',
       subtitle: 'Pinjam alat, titip belanja & info RT',
       onTap: () => Navigator.of(context, rootNavigator: true).push(
@@ -2565,9 +2574,9 @@ class _ArisanHomeCard extends StatelessWidget {
     final sum = data.arisanSummary as Map<String, dynamic>? ?? const {};
     final count = int.tryParse('${sum['count']}') ?? 0;
     return _FeatureTile(
-      gradient: const [Color(0xFF155E75), Color(0xFF0E7490), Color(0xFF06B6D4)],
-      icon: Icons.group_rounded,
-      shadowColor: const Color(0xFF06B6D4),
+      background: const Color(0xFF0E7490),
+      iconAsset: 'assets/icons/arisan_community.svg',
+      shadowColor: const Color(0xFF0E7490),
       title: 'Arisan Komunitas',
       subtitle: count > 0 ? '$count grup arisan aktif' : 'Mulai arisan & catat setoran',
       onTap: () => Navigator.of(context, rootNavigator: true).push(
@@ -2588,9 +2597,9 @@ class _SubscriptionHomeCard extends StatelessWidget {
     final active = int.tryParse('${sum['active_count']}') ?? 0;
     final monthly = double.tryParse('${sum['total_monthly']}') ?? 0;
     return _FeatureTile(
-      gradient: const [Color(0xFFB45309), Color(0xFFD97706), Color(0xFFF59E0B)],
-      icon: Icons.restore_rounded,
-      shadowColor: const Color(0xFFF59E0B),
+      background: const Color(0xFFD97706),
+      iconAsset: 'assets/icons/subscriptions_repeat.svg',
+      shadowColor: const Color(0xFFD97706),
       title: 'Langganan',
       subtitle: active > 0 ? '$active aktif · ${data.symbol}${Fmt.money0(monthly)}/bln' : 'Pantau tagihan berulang bulanan',
       onTap: () => Navigator.of(context, rootNavigator: true).push(
@@ -2610,8 +2619,8 @@ class _SavingsHomeCard extends StatelessWidget {
     final sum = data.savingsSummary as Map<String, dynamic>? ?? const {};
     final count = int.tryParse('${sum['count']}') ?? 0;
     return _FeatureTile(
-      gradient: const [Color(0xFF4C1D95), Color(0xFF7C3AED), Color(0xFFA78BFA)],
-      icon: Icons.savings_rounded,
+      background: const Color(0xFF7C3AED),
+      iconAsset: 'assets/icons/savings_banknote.svg',
       shadowColor: const Color(0xFF7C3AED),
       title: 'Tabungan',
       subtitle: count > 0 ? '$count target menabung' : 'Atur target & sisihkan dana',

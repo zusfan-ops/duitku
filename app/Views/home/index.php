@@ -355,14 +355,14 @@
     letter-spacing: .5px; color: var(--text-muted);
 }
 .fw-grid {
-    display: grid; gap: 10px;
+    display: grid; gap: 8px;
     grid-template-columns: repeat(3, 1fr);
 }
 .fw-card {
-    aspect-ratio: 1 / 1; border-radius: 16px;
-    padding: 12px; text-decoration: none; color: #fff;
+    aspect-ratio: 1 / 1; border-radius: 14px;
+    padding: 10px 8px; text-decoration: none; color: #fff;
     display: flex; flex-direction: column; box-sizing: border-box;
-    box-shadow: 0 5px 14px rgba(0, 0, 0, .14);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, .14);
     transition: transform .14s ease; position: relative; overflow: hidden;
 }
 .fw-card::before {
@@ -371,25 +371,28 @@
     background: rgba(255, 255, 255, .08); pointer-events: none;
 }
 .fw-card:active { transform: scale(.96); }
-.fw-rose    { background: linear-gradient(135deg, #9D174D 0%, #BE185D 50%, #F43F5E 100%); }
-.fw-indigo  { background: linear-gradient(135deg, #4338CA 0%, #6366F1 50%, #8B5CF6 100%); }
-.fw-emerald { background: linear-gradient(135deg, #065F46 0%, #059669 50%, #10B981 100%); }
-.fw-cyan    { background: linear-gradient(135deg, #155E75 0%, #0E7490 50%, #06B6D4 100%); }
-.fw-amber   { background: linear-gradient(135deg, #B45309 0%, #D97706 50%, #F59E0B 100%); }
-.fw-violet  { background: linear-gradient(135deg, #4C1D95 0%, #7C3AED 50%, #A78BFA 100%); }
+.fw-rose    { background: #BE185D; }
+.fw-indigo  { background: #4F46E5; }
+.fw-emerald { background: #059669; }
+.fw-cyan    { background: #0E7490; }
+.fw-amber   { background: #D97706; }
+.fw-violet  { background: #7C3AED; }
 .fw-icon {
-    width: 30px; height: 30px; border-radius: 9px;
-    background: rgba(255, 255, 255, .22);
+    width: 26px; height: 26px; border-radius: 8px;
+    background: rgba(255, 255, 255, .18);
     display: flex; align-items: center; justify-content: center;
-    font-size: 15px; line-height: 1;
+    line-height: 1;
+}
+.fw-icon svg {
+    width: 16px; height: 16px; display: block;
 }
 .fw-title {
-    font-size: 12px; font-weight: 800; letter-spacing: -.2px;
-    line-height: 1.15; color: #fff; margin-top: auto;
+    font-size: 11px; font-weight: 800; letter-spacing: -.2px;
+    line-height: 1.2; color: #fff; margin-top: auto;
 }
 .fw-sub {
-    font-size: 10px; font-weight: 600; color: rgba(255, 255, 255, .85);
-    line-height: 1.25; margin-top: 3px;
+    font-size: 9.5px; font-weight: 600; color: rgba(255, 255, 255, .85);
+    line-height: 1.3; margin-top: 2px;
 }
 
 /* ── Wallet Strip ─────────────────────────────────────────────── */
@@ -2313,36 +2316,36 @@
         </div>
         <div class="fw-grid">
             <a href="/belanja" class="fw-card fw-rose">
-                <div class="fw-icon">🛒</div>
+                <div class="fw-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gCart" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FFE4E6"/></linearGradient></defs><circle cx="9" cy="20" r="1.2" stroke="url(#gCart)" stroke-width="1.8"/><circle cx="19" cy="20" r="1.2" stroke="url(#gCart)" stroke-width="1.8"/><path d="M2 3h2.5l2.5 11.4a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L22 6.5H6" stroke="url(#gCart)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                 <div class="fw-title">Daftar Rencana Belanja</div>
                 <div class="fw-sub">Kelola kebutuhan &amp; checklist belanja</div>
             </a>
             <a href="/todo" class="fw-card fw-indigo">
-                <div class="fw-icon">🎯</div>
+                <div class="fw-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gTodo" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E0E7FF"/></linearGradient></defs><rect x="3.5" y="3.5" width="17" height="17" rx="3" stroke="url(#gTodo)" stroke-width="1.8"/><polyline points="8 12 11 15 16.5 8.5" stroke="url(#gTodo)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                 <div class="fw-title">Target &amp; Tugas</div>
                 <div class="fw-sub"><?= (int)($todoSummary['completed_all'] ?? 0) ?>/<?= (int)($todoSummary['total_all'] ?? 0) ?> Selesai · <?= (int)($todoSummary['pending_all'] ?? 0) ?> Aktif</div>
             </a>
             <a href="/neighborhood" class="fw-card fw-emerald">
-                <div class="fw-icon">🏘️</div>
+                <div class="fw-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gHome" x1="2" y1="3" x2="22" y2="22" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D1FAE5"/></linearGradient></defs><path d="M4 10.5L12 3.5l8 7V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8.5z" stroke="url(#gHome)" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 21v-6.5h5V21" stroke="url(#gHome)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                 <div class="fw-title">Komunitas RT &amp; Pinjam Alat</div>
                 <div class="fw-sub">Pinjam alat, titip belanja &amp; info RT</div>
             </a>
             <a href="/arisan" class="fw-card fw-cyan">
-                <div class="fw-icon">🤝</div>
+                <div class="fw-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gUsers" x1="2" y1="3" x2="22" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#CFFAFE"/></linearGradient></defs><path d="M16.5 20v-1.5a3.5 3.5 0 0 0-3.5-3.5H6a3.5 3.5 0 0 0-3.5 3.5V20" stroke="url(#gUsers)" stroke-width="1.8" stroke-linecap="round"/><circle cx="9.5" cy="8" r="3.5" stroke="url(#gUsers)" stroke-width="1.8"/><path d="M21.5 20v-1.5a3.5 3.5 0 0 0-2.8-3.44" stroke="url(#gUsers)" stroke-width="1.8" stroke-linecap="round"/><path d="M14.5 4.6a3.5 3.5 0 0 1 0 6.8" stroke="url(#gUsers)" stroke-width="1.8" stroke-linecap="round"/></svg></div>
                 <div class="fw-title">Arisan Komunitas</div>
                 <div class="fw-sub"><?php $arisanCount = (int)($arisanSummary['count'] ?? 0); ?>
                     <?= $arisanCount > 0 ? $arisanCount . ' grup aktif' : 'Mulai arisan &amp; catat setoran' ?>
                 </div>
             </a>
             <a href="/subscriptions" class="fw-card fw-amber">
-                <div class="fw-icon">🔁</div>
+                <div class="fw-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gRepeat" x1="1" y1="4" x2="23" y2="20" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FEF3C7"/></linearGradient></defs><polyline points="22 4.5 22 10 16.5 10" stroke="url(#gRepeat)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="2 19.5 2 14 7.5 14" stroke="url(#gRepeat)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 10.5A8.6 8.6 0 0 0 5 6.3L2 10" stroke="url(#gRepeat)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13.5A8.6 8.6 0 0 0 19 17.7l3-3.7" stroke="url(#gRepeat)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                 <div class="fw-title">Langganan</div>
                 <div class="fw-sub"><?php $subActive = (int)($subscriptionSummary['active_count'] ?? 0); ?>
                     <?= $subActive > 0 ? $subActive . ' aktif · ' . esc($symbol) . ' ' . number_format((float)($subscriptionSummary['total_monthly'] ?? 0), 0, ',', '.') : 'Pantau tagihan berulang' ?>
                 </div>
             </a>
             <a href="/savings" class="fw-card fw-violet">
-                <div class="fw-icon">💰</div>
+                <div class="fw-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gCoin" x1="2" y1="5" x2="22" y2="19" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#EDE9FE"/></linearGradient></defs><rect x="2.5" y="6" width="19" height="12" rx="2.5" stroke="url(#gCoin)" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" stroke="url(#gCoin)" stroke-width="1.8"/><path d="M6 12h.01M18 12h.01" stroke="url(#gCoin)" stroke-width="2.2" stroke-linecap="round"/></svg></div>
                 <div class="fw-title">Tabungan</div>
                 <div class="fw-sub"><?php $svCount = (int)($savingsSummary['count'] ?? 0); ?>
                     <?= $svCount > 0 ? $svCount . ' target menabung' : 'Atur target &amp; sisihkan dana' ?>

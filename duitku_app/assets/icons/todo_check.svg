@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <defs>
+    <linearGradient id="gTodo" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E0E7FF"/>
+    </linearGradient>
+  </defs>
+  <rect x="3.5" y="3.5" width="17" height="17" rx="3" stroke="url(#gTodo)" stroke-width="1.8"/>
+  <polyline points="8 12 11 15 16.5 8.5" stroke="url(#gTodo)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
