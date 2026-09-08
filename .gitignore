@@ -142,3 +142,8 @@ app/Config/Database.php
 firebase-service-account.json
 google-services.json
 logo_duitku.png
+whatsapp_store.db
+whatsapp_store.db-shm
+whatsapp_store.db-wal
+duitku_app/pubspec.yaml
+duitku_app/lib/services/update_checker_service.dart
