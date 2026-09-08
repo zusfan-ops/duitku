@@ -2340,22 +2340,25 @@ class _FeatureStrip extends StatelessWidget {
           child: Text('FITUR UNGGULAN',
               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: .5, color: AppColors.textMuted)),
         ),
-        GridView.count(
-          crossAxisCount: 3,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 1,
-          children: [
-            const _BelanjaHomeCard(),
-            const _TodoHomeCard(),
-            const _NeighborhoodHomeCard(),
-            _ArisanHomeCard(data: data),
-            _SubscriptionHomeCard(data: data),
-            _SavingsHomeCard(data: data),
-          ],
-        ),
+        LayoutBuilder(builder: (context, constraints) {
+          final tileW = (constraints.maxWidth - 20) / 3;
+          return GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: tileW / 83,
+            children: [
+              const _BelanjaHomeCard(),
+              const _TodoHomeCard(),
+              const _NeighborhoodHomeCard(),
+              _ArisanHomeCard(data: data),
+              _SubscriptionHomeCard(data: data),
+              _SavingsHomeCard(data: data),
+            ],
+          );
+        }),
       ],
     );
   }
@@ -2383,30 +2386,29 @@ class _FeatureTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(10, 10, 10, 9),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 9),
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
-            BoxShadow(color: shadowColor.withValues(alpha: .26), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(color: shadowColor.withValues(alpha: .24), blurRadius: 8, offset: const Offset(0, 3)),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 26,
-              height: 26,
+              width: 22,
+              height: 22,
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: .18),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(7),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(5),
-                child: SvgPicture.asset(iconAsset, width: 16, height: 16),
+                padding: const EdgeInsets.all(4.5),
+                child: SvgPicture.asset(iconAsset, width: 13, height: 13),
               ),
             ),
-            const SizedBox(height: 2),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2414,12 +2416,12 @@ class _FeatureTile extends StatelessWidget {
                   Text(title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.2, height: 1.2)),
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.2, height: 1.2)),
                   const SizedBox(height: 2),
                   Text(subtitle,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600, color: Colors.white.withValues(alpha: .85), height: 1.3)),
+                      style: TextStyle(fontSize: 8, fontWeight: FontWeight.w600, color: Colors.white.withValues(alpha: .85), height: 1.25)),
                 ],
               ),
             ),

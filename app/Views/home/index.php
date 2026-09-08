@@ -355,12 +355,12 @@
     letter-spacing: .5px; color: var(--text-muted);
 }
 .fw-grid {
-    display: grid; gap: 8px;
+    display: grid; gap: 10px;
     grid-template-columns: repeat(3, 1fr);
 }
 .fw-card {
-    aspect-ratio: 1 / 1; border-radius: 14px;
-    padding: 10px 8px; text-decoration: none; color: #fff;
+    height: 83px; border-radius: 18px;
+    padding: 10px 12px 9px; text-decoration: none; color: #fff;
     display: flex; flex-direction: column; box-sizing: border-box;
     box-shadow: 0 4px 10px rgba(0, 0, 0, .14);
     transition: transform .14s ease; position: relative; overflow: hidden;
@@ -378,21 +378,23 @@
 .fw-amber   { background: #D97706; }
 .fw-violet  { background: #7C3AED; }
 .fw-icon {
-    width: 26px; height: 26px; border-radius: 8px;
+    width: 22px; height: 22px; border-radius: 7px;
     background: rgba(255, 255, 255, .18);
     display: flex; align-items: center; justify-content: center;
     line-height: 1;
 }
 .fw-icon svg {
-    width: 16px; height: 16px; display: block;
+    width: 13px; height: 13px; display: block;
 }
 .fw-title {
-    font-size: 11px; font-weight: 800; letter-spacing: -.2px;
+    font-size: 10px; font-weight: 800; letter-spacing: -.2px;
     line-height: 1.2; color: #fff; margin-top: auto;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .fw-sub {
-    font-size: 9.5px; font-weight: 600; color: rgba(255, 255, 255, .85);
-    line-height: 1.3; margin-top: 2px;
+    font-size: 8px; font-weight: 600; color: rgba(255, 255, 255, .85);
+    line-height: 1.25; margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* ── Wallet Strip ─────────────────────────────────────────────── */
