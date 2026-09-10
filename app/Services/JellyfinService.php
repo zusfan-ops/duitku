@@ -40,7 +40,7 @@ class JellyfinService
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => 6,
             CURLOPT_HTTPHEADER     => [
-                'X-Emby-Token: ' . self::API_KEY,
+                'Authorization: MediaBrowser Token=' . self::API_KEY,
                 'Accept: application/json',
             ],
             CURLOPT_SSL_VERIFYPEER => false,
