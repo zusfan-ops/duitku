@@ -45,6 +45,19 @@
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@mipmap/ic_launcher" />
 
+        <!-- Widget Compact (4x1) -->
+        <receiver
+            android:name=".DuitkuWidgetSmall"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/duitku_widget_small_info" />
+        </receiver>
+
+        <!-- Widget Standard (4x2) -->
         <receiver
             android:name=".DuitkuWidgetProvider"
             android:exported="true">
@@ -54,6 +67,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/duitku_widget_info" />
+        </receiver>
+
+        <!-- Widget Large (4x4) -->
+        <receiver
+            android:name=".DuitkuWidgetLarge"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/duitku_widget_large_info" />
         </receiver>
     </application>
     <!-- Required to query activities that can process text, see:

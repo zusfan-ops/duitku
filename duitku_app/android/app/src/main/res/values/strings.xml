@@ -7,4 +7,9 @@
     <string name="widget_balance_label">Total saldo</string>
     <string name="widget_income_label">Pemasukan</string>
     <string name="widget_expense_label">Pengeluaran</string>
+    <string name="widget_income_label_short">Masuk</string>
+    <string name="widget_expense_label_short">Keluar</string>
+    <string name="widget_quick_add">+ Transaksi</string>
+    <string name="widget_history">Riwayat</string>
+    <string name="widget_top_spending">Pengeluaran Teratas</string>
 </resources>
