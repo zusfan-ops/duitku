@@ -459,6 +459,19 @@ class ApiService {
     return '${ApiConfig.baseUrl}/export/pdf?month=$month';
   }
 
+  // ── Tax Report ──────────────────────────────────────────────
+  Future<Map<String, dynamic>> taxReport({required int year}) async {
+    return get('tax-report?year=$year');
+  }
+
+  String taxReportPdfUrl(int year) {
+    return '${ApiConfig.baseUrl}/tax-report/print?year=$year';
+  }
+
+  String taxReportCsvUrl(int year) {
+    return '${ApiConfig.baseUrl}/tax-report/csv?year=$year';
+  }
+
   Future<Map<String, dynamic>> storeCategory({
     required String name,
     required String type,

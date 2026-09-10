@@ -195,6 +195,11 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('/zakat-pajak',                'ZakatPajakController::index');
     $routes->get('/pajak-zakat',                'ZakatPajakController::index');
 
+    // Laporan Pajak Otomatis
+    $routes->get('/tax-report',                 'TaxReportController::index');
+    $routes->get('/tax-report/print',           'TaxReportController::print');
+    $routes->get('/tax-report/csv',             'TaxReportController::csv');
+
     // DuitKu Arcade Mini-Games Hub
     $routes->get('/arcade',                     'ArcadeController::index');
     $routes->get('/games',                      'ArcadeController::index');
@@ -558,6 +563,9 @@ $routes->group('api', function ($routes) {
         // Currency converter
         $routes->get('currency/rates',              'Api\TravelingController::currencyRates');
         $routes->get('currency/convert',            'Api\TravelingController::currencyConvert');
+
+        // Laporan Pajak Otomatis API
+        $routes->get('tax-report',                  'Api\TaxReportController::index');
 
         // Global Universal Search
         $routes->get('search',                      'Api\SearchController::index');

@@ -206,6 +206,60 @@ class TransactionModel extends Model
     }
 
     // -------------------------------------------------------------------------
+    // Yearly summary: income & expense per month for a given year (tax report)
+    // -------------------------------------------------------------------------
+    public function getYearlySummary(int $userId, int $year): array
+    {
+        $rows = $this->db->query("
+            SELECT
+                MONTH(date) AS month_num,
+                SUM(CASE WHEN type = 'income'  THEN amount ELSE 0 END) AS income,
+                SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) AS expense
+            FROM transactions
+            WHERE user_id = ? AND YEAR(date) = ?
+            GROUP BY MONTH(date)
+            ORDER BY month_num ASC
+        ", [$userId, $year])->getResultArray();
+
+        $idMonths = [
+            'Januari','Februari','Maret','April','Mei','Juni',
+            'Juli','Agustus','September','Oktober','November','Desember'
+        ];
+
+        $byMonth = [];
+        foreach ($rows as $r) {
+            $m = (int) $r['month_num'];
+            $byMonth[$m] = [
+                'month'   => $m,
+                'label'   => $idMonths[$m - 1],
+                'income'  => (float) $r['income'],
+                'expense' => (float) $r['expense'],
+                'balance' => (float) $r['income'] - (float) $r['expense'],
+            ];
+        }
+
+        $result = [];
+        $totalIncome  = 0.0;
+        $totalExpense = 0.0;
+        for ($m = 1; $m <= 12; $m++) {
+            if (isset($byMonth[$m])) {
+                $result[] = $byMonth[$m];
+                $totalIncome  += $byMonth[$m]['income'];
+                $totalExpense += $byMonth[$m]['expense'];
+            } else {
+                $result[] = ['month' => $m, 'label' => $idMonths[$m - 1], 'income' => 0, 'expense' => 0, 'balance' => 0];
+            }
+        }
+
+        return [
+            'months'       => $result,
+            'total_income' => $totalIncome,
+            'total_expense'=> $totalExpense,
+            'total_balance'=> $totalIncome - $totalExpense,
+        ];
+    }
+
+    // -------------------------------------------------------------------------
     // All transactions for a month (export)
     // -------------------------------------------------------------------------
     public function getForExport(int $userId, string $month): array

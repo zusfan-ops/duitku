@@ -34,6 +34,7 @@ import 'emergency/emergency_screen.dart';
 import 'nearby/nearby_places_screen.dart';
 import 'wallet_screen.dart';
 import 'zakat_pajak/zakat_pajak_screen.dart';
+import 'tax_report/tax_report_screen.dart';
 import 'marketplace/market_screen.dart';
 import 'neighborhood/neighborhood_screen.dart';
 import 'faq/faq_screen.dart';
@@ -88,6 +89,16 @@ class FeaturesScreen extends StatelessWidget {
               shadowColor: const Color(0xFF34D399),
               onTap: () => Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(builder: (_) => const ZakatPajakScreen()),
+              ),
+            ),
+            _FeatureItem(
+              title: 'Laporan Pajak',
+              subtitle: 'PPh Final UMKM & PPh 21 otomatis',
+              icon: Icons.receipt_long_rounded,
+              gradient: const [Color(0xFF6D28D9), Color(0xFFA78BFA)],
+              shadowColor: const Color(0xFFA78BFA),
+              onTap: () => Navigator.of(context, rootNavigator: true).push(
+                MaterialPageRoute(builder: (_) => const TaxReportScreen()),
               ),
             ),
             _FeatureItem(
