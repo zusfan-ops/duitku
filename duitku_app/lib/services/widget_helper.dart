@@ -24,6 +24,12 @@ class WidgetHelper {
   static const _largeName = 'DuitkuWidgetLarge';
   static const _pkg = 'com.duitku.duitku_app';
 
+  static const _providers = [
+    (_smallName, '$_pkg.$_smallName'),
+    (_standardName, '$_pkg.$_standardName'),
+    (_largeName, '$_pkg.$_largeName'),
+  ];
+
   /// Key data yang dibaca oleh semua native widget.
   static const _kBalance = 'widget_balance';
   static const _kIncome = 'widget_income';
@@ -113,32 +119,31 @@ class WidgetHelper {
 
         await HomeWidget.saveWidgetData('widget_cat_name_${i + 1}', name);
         await HomeWidget.saveWidgetData('widget_cat_amount_${i + 1}', amountStr);
-        await HomeWidget.saveWidgetData('widget_cat_color_${i + 1}', color);
+        await HomeWidget.saveWidgetData('widget_cat_color_${i + 1}', '$color');
       } else {
         await HomeWidget.saveWidgetData('widget_cat_name_${i + 1}', '');
         await HomeWidget.saveWidgetData('widget_cat_amount_${i + 1}', '');
-        await HomeWidget.saveWidgetData('widget_cat_color_${i + 1}', 0);
+        await HomeWidget.saveWidgetData('widget_cat_color_${i + 1}', '0');
       }
     }
   }
 
   /// Trigger update ke semua jenis widget.
+  ///
+  /// Each provider is updated independently so a failure in one
+  /// does not block the others.
   static Future<void> _updateAllWidgets() async {
-    await HomeWidget.updateWidget(
-      name: _smallName,
-      androidName: _smallName,
-      qualifiedAndroidName: '$_pkg.$_smallName',
-    );
-    await HomeWidget.updateWidget(
-      name: _standardName,
-      androidName: _standardName,
-      qualifiedAndroidName: '$_pkg.$_standardName',
-    );
-    await HomeWidget.updateWidget(
-      name: _largeName,
-      androidName: _largeName,
-      qualifiedAndroidName: '$_pkg.$_largeName',
-    );
+    for (final entry in _providers) {
+      try {
+        await HomeWidget.updateWidget(
+          name: entry.$1,
+          androidName: entry.$1,
+          qualifiedAndroidName: entry.$2,
+        );
+      } catch (e) {
+        log('updateWidget failed for ${entry.$1}: $e');
+      }
+    }
   }
 
   /// Request pin widget otomatis ke Layar Utama (Android 8.0+).
