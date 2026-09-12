@@ -21,14 +21,14 @@ class PosOrderItem {
 
   factory PosOrderItem.fromJson(Map<String, dynamic> json) {
     return PosOrderItem(
-      id: (json['id'] as num?)?.toInt() ?? 0,
-      orderId: (json['order_id'] as num?)?.toInt() ?? 0,
-      productId: (json['product_id'] as num?)?.toInt(),
+      id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      orderId: int.tryParse(json['order_id']?.toString() ?? '0') ?? 0,
+      productId: json['product_id'] != null ? int.tryParse(json['product_id'].toString()) : null,
       productName: json['product_name']?.toString() ?? '',
-      qty: (json['qty'] as num?)?.toInt() ?? 1,
-      price: double.tryParse('${json['price']}') ?? 0,
-      costPrice: double.tryParse('${json['cost_price']}') ?? 0,
-      subtotal: double.tryParse('${json['subtotal']}') ?? 0,
+      qty: int.tryParse(json['qty']?.toString() ?? '1') ?? 1,
+      price: double.tryParse(json['price']?.toString() ?? '0') ?? 0,
+      costPrice: double.tryParse(json['cost_price']?.toString() ?? '0') ?? 0,
+      subtotal: double.tryParse(json['subtotal']?.toString() ?? '0') ?? 0,
     );
   }
 
@@ -86,19 +86,19 @@ class PosOrder {
   factory PosOrder.fromJson(Map<String, dynamic> json) {
     final rawItems = json['items'] as List<dynamic>? ?? [];
     return PosOrder(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       orderNumber: json['order_number']?.toString() ?? '',
-      totalAmount: double.tryParse('${json['total_amount']}') ?? 0,
-      totalCost: double.tryParse('${json['total_cost']}') ?? 0,
-      profit: double.tryParse('${json['profit']}') ?? 0,
+      totalAmount: double.tryParse(json['total_amount']?.toString() ?? '0') ?? 0,
+      totalCost: double.tryParse(json['total_cost']?.toString() ?? '0') ?? 0,
+      profit: double.tryParse(json['profit']?.toString() ?? '0') ?? 0,
       paymentMethod: json['payment_method']?.toString() ?? 'cash',
-      walletId: (json['wallet_id'] as num?)?.toInt(),
-      cashReceived: double.tryParse('${json['cash_received']}') ?? 0,
-      changeAmount: double.tryParse('${json['change_amount']}') ?? 0,
+      walletId: json['wallet_id'] != null ? int.tryParse(json['wallet_id'].toString()) : null,
+      cashReceived: double.tryParse(json['cash_received']?.toString() ?? '0') ?? 0,
+      changeAmount: double.tryParse(json['change_amount']?.toString() ?? '0') ?? 0,
       customerName: json['customer_name']?.toString(),
       customerPhone: json['customer_phone']?.toString(),
-      debtId: (json['debt_id'] as num?)?.toInt(),
-      transactionId: (json['transaction_id'] as num?)?.toInt(),
+      debtId: json['debt_id'] != null ? int.tryParse(json['debt_id'].toString()) : null,
+      transactionId: json['transaction_id'] != null ? int.tryParse(json['transaction_id'].toString()) : null,
       notes: json['notes']?.toString(),
       date: json['date']?.toString() ?? '',
       createdAt: json['created_at']?.toString(),

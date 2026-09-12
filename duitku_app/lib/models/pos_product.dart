@@ -33,14 +33,14 @@ class PosProduct {
 
   factory PosProduct.fromJson(Map<String, dynamic> json) {
     return PosProduct(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       name: json['name']?.toString() ?? '',
       category: json['category']?.toString() ?? 'Umum',
       sku: json['sku']?.toString(),
-      costPrice: double.tryParse('${json['cost_price']}') ?? 0,
-      sellingPrice: double.tryParse('${json['selling_price']}') ?? 0,
-      stock: (json['stock'] as num?)?.toInt() ?? 0,
-      minStockAlert: (json['min_stock_alert'] as num?)?.toInt() ?? 5,
+      costPrice: double.tryParse(json['cost_price']?.toString() ?? '0') ?? 0,
+      sellingPrice: double.tryParse(json['selling_price']?.toString() ?? '0') ?? 0,
+      stock: int.tryParse(json['stock']?.toString() ?? '0') ?? 0,
+      minStockAlert: int.tryParse(json['min_stock_alert']?.toString() ?? '5') ?? 5,
       unit: json['unit']?.toString() ?? 'pcs',
       icon: json['icon']?.toString() ?? 'coffee',
       image: json['image']?.toString(),
